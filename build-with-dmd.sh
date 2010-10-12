@@ -28,8 +28,10 @@ cp -v -r build/$zeromq__project_name-$zeromq__hash/src/* build/src
 rm build/src/test_recieve.d 
 rm build/src/test_send.d
 
+git log -1 --pretty=format:"module myversion; public final static char[] author=\"%an\"; public final static char[] date=\"%ad\"; public final static char[] hash=\"%h\";">myversion.d
+
 rm Pacahon
-dmd -debug -g build/src/trioplax/memory/*.d build/src/trioplax/mongodb/*.d build/src/trioplax/*.d build/src/*.d lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon
+dmd -debug -g myversion.d build/src/trioplax/memory/*.d build/src/trioplax/mongodb/*.d build/src/trioplax/*.d build/src/*.d lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon
 rm *.o
 
  
