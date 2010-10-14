@@ -1,0 +1,124 @@
+# Saved by TopBraid on Fri Sep 24 13:53:59 MSD 2010
+# baseURI: http://user-onto.org#
+# imports: http://user-db#
+# imports: http://gost19.org/base#
+# imports: http://swrc.ontoware.org/ontology-07
+
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix docs19:  <http://gost19.org/docs#> .
+@prefix gost19:  <http://gost19.org/base#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrc:    <http://swrc.ontoware.org/ontology#> .
+@prefix user-onto:  <http://user-onto.org#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix zdb:     <http://user-db#> .
+
+user-onto:
+      rdf:type owl:Ontology ;
+      owl:imports <http://swrc.ontoware.org/ontology-07> , gost19: , zdb: ;
+      owl:versionInfo "Created with TopBraid Composer"^^xsd:string .
+
+user-onto:internal_memo
+      rdf:type rdfs:Class ;
+      rdfs:label "служебная записка"@ru , "internal memo"@en ;
+      rdfs:subClassOf gost19:Document ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:maxCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:content
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom swrc:Person ;
+                owl:onProperty docs19:carbon_copy
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:lastName ;
+                owl:onProperty docs19:to
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:lastName ;
+                owl:onProperty docs19:from
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:from
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                rdfs:label "тема"@ru ;
+                owl:allValuesFrom xsd:string ;
+                owl:onProperty dc:subject
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:lastName ;
+                owl:onProperty docs19:carbon_copy
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:firstName ;
+                owl:onProperty docs19:carbon_copy
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:content
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:to
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom swrc:Person ;
+                owl:onProperty docs19:to
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom gost19:Document ;
+                owl:onProperty docs19:link
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:firstName ;
+                owl:onProperty docs19:to
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:maxCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty dc:subject
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:hasValue swrc:firstName ;
+                owl:onProperty docs19:from
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom swrc:Person ;
+                owl:onProperty docs19:from
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom xsd:string ;
+                owl:onProperty docs19:content
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:allValuesFrom docs19:FileDescription ;
+                owl:onProperty docs19:file
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty dc:subject
+              ] ;
+      dc:creator zdb:Irma_1 ;
+      swrc:creationDate "2010-01-01"^^xsd:string .

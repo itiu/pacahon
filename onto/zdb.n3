@@ -1,0 +1,142 @@
+# Saved by TopBraid on Mon Jul 19 17:46:53 MSD 2010
+# baseURI: http://user-db#
+# imports: http://user-onto.org#
+# imports: http://gost19.org/base#
+# imports: http://swrc.ontoware.org/ontology-07
+
+@prefix dc:      <http://purl.org/dc/elements/1.1/> .
+@prefix docs19:   <http://gost19.org/docs#> .
+@prefix gost19:  <http://gost19.org/base#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix swrc:    <http://swrc.ontoware.org/ontology#> .
+@prefix user-onto:  <http://user-onto.org#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix zdb:     <http://user-db#> .
+
+zdb:  rdf:type owl:Ontology ;
+      owl:imports <http://swrc.ontoware.org/ontology-07> , gost19: , docs19:, user-onto: ;
+      owl:versionInfo "Created with TopBraid Composer"^^xsd:string .
+
+zdb:Department_1
+      rdf:type swrc:Department ;
+      swrc:name "УИП"^^xsd:string .
+
+zdb:Department_2
+      rdf:type swrc:Department .
+
+zdb:FileDescription_1
+      rdf:type docs19:FileDescription ;
+      docs19:file "http://img.yandex.net/i/www/logo.png"^^xsd:anyURI ;
+      docs19:tumbnail "http://img.yandex.net/i/www/SMALL_logo.png"^^xsd:anyURI ;
+      dc:creator zdb:zhuzhik_1 ;
+      swrc:creationDate "2010-01-01"^^xsd:date .
+
+zdb:Irma_1
+      rdf:type swrc:Person ;
+      swrc:lastName "Эвальд"^^xsd:string .
+
+zdb:Organization_1
+      rdf:type swrc:Organization ;
+      swrc:name "ОАО Монди СЛПК"^^xsd:string .
+
+zdb:att_author_addinfo_1
+      rdf:type rdf:Statement ;
+      rdf:object zdb:zhuzhik_1 ;
+      rdf:subject zdb:internal_memo_1 ;
+      swrc:firstName "Вова"^^xsd:string ;
+      swrc:lastName "Жужиков"^^xsd:string .
+
+zdb:bychin_1
+      rdf:type swrc:Person ;
+      swrc:firstName "Андрей"^^xsd:string ;
+      swrc:lastName "Бычин"^^xsd:string .
+
+zdb:carbon_copy_addinfo_1
+      rdf:type rdf:Statement ;
+      rdf:object zdb:Irma_1 ;
+      rdf:predicate docs19:carbon_copy ;
+      rdf:subject zdb:internal_memo_1 ;
+      swrc:firstName "Ирма"^^xsd:string ;
+      swrc:lastName "Эвальд"^^xsd:string .
+
+zdb:department_addinfo_1
+      rdf:type rdf:Statement ;
+      rdf:object zdb:Department_1 ;
+      rdf:predicate docs19:department ;
+      rdf:subject zdb:department_card_1 ;
+      swrc:name "УИП"^^xsd:string .
+
+zdb:department_addinfo_2
+      rdf:type rdf:Statement ;
+      rdf:object zdb:Department_2 ;
+      rdf:predicate docs19:department ;
+      rdf:subject zdb:department_card_2 ;
+      swrc:name "зондеркомманден"^^xsd:string .
+
+zdb:department_card_1
+      rdf:type docs19:department_card ;
+      docs19:department zdb:Department_1 ;
+      swrc:name "УИП"^^xsd:string ;
+      swrc:organization zdb:Organization_1 .
+
+zdb:department_card_2
+      rdf:type docs19:department_card ;
+      docs19:department zdb:Department_2 ;
+      docs19:parentDepartment
+              zdb:Department_1 ;
+      swrc:name "зондеркомманден"^^xsd:string ;
+      swrc:organization zdb:Organization_1 .
+
+zdb:employee_card_1
+      rdf:type docs19:employee_card ;
+      gost19:middlename "Александровна"^^xsd:string ;
+      docs19:department zdb:Department_1 ;
+      docs19:employee zdb:Irma_1 ;
+      swrc:firstName "Ирма"^^xsd:string ;
+      swrc:lastName "Эвальд"^^xsd:string ;
+      swrc:organization zdb:Organization_1 .
+
+zdb:from_addinfo_1
+      rdf:type rdf:Statement ;
+      rdf:object zdb:ivanoff_1 ;
+      rdf:predicate docs19:from ;
+      rdf:subject zdb:internal_memo_1 ;
+      swrc:firstName "Иван"^^xsd:string ;
+      swrc:lastName "Иванов"^^xsd:string .
+
+zdb:internal_memo_1
+      rdf:type user-onto:internal_memo ;
+      docs19:attachment zdb:FileDescription_1 ;
+      docs19:carbon_copy zdb:Irma_1 ;
+      docs19:content "тут содержимое этой аццкой служебки"^^xsd:string ;
+      docs19:from zdb:ivanoff_1 ;
+      docs19:theme "тут должна быть запись о теме"^^xsd:string ;
+      docs19:to zdb:bychin_1 ;
+      dc:creator zdb:zhuzhik_1 ;
+      dc:identifier "документ-1"^^xsd:string ;
+      swrc:creationDate "2010-02-15"^^xsd:date .
+
+zdb:ivanoff_1
+      rdf:type swrc:Person ;
+      swrc:firstName "Ivan"^^xsd:string ;
+      swrc:lastName "Ivanoff"^^xsd:string .
+
+zdb:organization_card_1
+      rdf:type docs19:organization_card ;
+      swrc:name "ОАО Монди СЛПК"^^xsd:string ;
+      swrc:organization zdb:Organization_1 .
+
+zdb:to_addinfo_1
+      rdf:type rdf:Statement ;
+      rdf:object zdb:bychin_1 ;
+      rdf:predicate docs19:to ;
+      rdf:subject zdb:internal_memo_1 ;
+      swrc:firstName "Андрей"^^xsd:string ;
+      swrc:lastName "Бычин"^^xsd:string .
+
+zdb:zhuzhik_1
+      rdf:type swrc:Person ;
+      swrc:firstName "Жужиков"^^xsd:string ;
+      swrc:lastName "Вова"^^xsd:string .

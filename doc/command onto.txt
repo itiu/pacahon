@@ -1,0 +1,56 @@
+комманды:
+
+получить тикет:
+
+INPUT
+{
+	id-command:123456 
+		cmd:command cmd:get-ticket;
+		cmd:args
+			[
+			auth:login "sender-uuid";
+			auth:credential "FdffeERtJjQ"
+			].
+}
+OUTPUT
+{
+	id-command:123456 cmd:result 
+			[
+			auth:ticket "123456-64743-32463-357-346";
+			].
+}
+
+
+INPUT
+{
+  загрузить новую онтологию:
+
+	аргумент [cmd:graph] -> указывает на корень загружаемого графа
+	
+	id-command:123457 
+		cmd:command cmd:load-onto;
+		cmd:from "sender-uuid";
+		cmd:ticket "12345-67890-4322-132345-56754";
+		cmd:args
+			[
+			onto:graph gost19:externalIdentifer;
+			onto:graph "swrc:Organization"
+			];
+		
+	gost19:externalIdentifer
+      		rdf:type owl:DatatypeProperty ;
+      		rdfs:subPropertyOf dc:identifier .
+
+	swrc:Organization
+      		rdfs:subClassOf
+              		[ rdf:type owl:Restriction ;
+                	owl:allValuesFrom xsd:string ;
+                	owl:onProperty swrc:name
+              		] .
+}
+OUTPUT
+{
+	id-command:123457 cmd:result "Ok".
+}
+
+

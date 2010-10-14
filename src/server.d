@@ -10,7 +10,7 @@ private import libzmq_client;
 
 void main(char[][] args)
 {
-    printf ("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
+	printf("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
 
 	mom_client client = null;
 
