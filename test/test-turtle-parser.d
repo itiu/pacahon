@@ -4,7 +4,7 @@ import std.string;
 import std.c.stdlib;
 import std.stdio;
 
-import pacahon.triple;
+import pacahon.graph;
 import pacahon.n3.parser;
 
 void main(string args[])
@@ -30,7 +30,7 @@ void main(string args[])
 
 		fclose(file);
 
-		for(int i = 0; i < 2_000_000; i++)
+		for(int i = 0; i < 1_000_000; i++)
 		{
 			sss(cast(char*) buffer, len_file);
 		}
