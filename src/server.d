@@ -8,8 +8,8 @@ private import std.thread;
 private import libzmq_headers;
 private import libzmq_client;
 
-private import n3.parser; 
-private import trioplax.triple; 
+private import n3.parser;
+private import trioplax.triple;
 
 void main(char[][] args)
 {
@@ -35,11 +35,9 @@ void get_message(byte* message, ulong message_size, mom_client from_client)
 	count++;
 	printf("[%i] data: %s\n", count, cast(char*) message);
 
-    char* buff = cast(char*) alloca(message_size);
+	char* buff = cast(char*) alloca(message_size);
 
-    Triple[] triples = parse(cast(char*) message, message_size, buff);
-
-	
+	Triple[] triples = parse(cast(char*) message, message_size, buff);
 
 	from_client.send("", "test message", false);
 	return;

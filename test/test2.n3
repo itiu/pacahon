@@ -1,0 +1,9 @@
+# test package
+
+id-command:123456 
+	cmd:command cmd:get-ticket ;
+	cmd:args
+	    [
+		auth:login "sender-uuid" ;
+		auth:credential "FdffeERtJjQ"
+	    ] .

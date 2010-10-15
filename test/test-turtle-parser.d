@@ -4,8 +4,8 @@ import std.string;
 import std.c.stdlib;
 import std.stdio;
 
-import trioplax.triple;
-import parser;
+import pacahon.triple;
+import pacahon.n3.parser;
 
 void main(string args[])
 {
@@ -24,13 +24,13 @@ void main(string args[])
 
 		while((len = fread(cast(void*) buffer, 1, buffer.sizeof, file)) != 0)
 		{
-			printf("%s len=%d\n", cast(char*) buffer, len);
+//			printf("%s len=%d\n", cast(char*) buffer, len);
 			len_file = len;
 		}
 
 		fclose(file);
 
-		for(int i = 0; i < 1; i++)
+		for(int i = 0; i < 2_000_000; i++)
 		{
 			sss(cast(char*) buffer, len_file);
 		}
@@ -48,7 +48,7 @@ private void sss(char* buffer, int len_file)
 	char* buff = cast(char*) alloca(len_file);
 
 	buffer[len_file] = 0;
-	Triple[] triples = parse(cast(char*) buffer, len_file, buff);
+	Subject*[] triples = parse(cast(char*) buffer, len_file, buff);
 
 	char* ptr = cast(char*) buffer;
 	for(int j = 0; j < len_file; j++)
@@ -60,11 +60,11 @@ private void sss(char* buffer, int len_file)
 		ptr++;
 	}
 
-	printf("read %d triples\n", triples.length);
+//	printf("read %d triples\n", triples.length);
 
 	for(int i = 0; i < triples.length; i++)
 	{
-		printf("<%s><%s>%s\n", triples[i].s, triples[i].p, triples[i].o);
+//		printf("%s \n", triples[i].subject);
 	}
 
 }

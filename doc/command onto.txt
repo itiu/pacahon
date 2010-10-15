@@ -1,3 +1,5 @@
+n3: http://www.w3.org/TeamSubmission/turtle/
+
 комманды:
 
 получить тикет:
@@ -16,7 +18,7 @@ OUTPUT
 {
 	id-command:123456 cmd:result 
 			[
-			auth:ticket "123456-64743-32463-357-346";
+			auth:ticket "123456-64743-32463-357-346"
 			].
 }
 
