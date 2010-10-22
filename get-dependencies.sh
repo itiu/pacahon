@@ -1,6 +1,6 @@
-mongo_d_driver__hash=2f60737
-trioplax__hash=9aaeb3f
-zeromq__hash=1aab186
+mongo_d_driver__hash=98aad67
+trioplax__hash=4c5e642
+zeromq__hash=1230c23
 
 mkdir build
 cd build

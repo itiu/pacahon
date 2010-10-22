@@ -1,9 +1,18 @@
 module pacahon.server;
 
-private import std.c.stdlib;
 private import myversion;
 
+version (D1)
+{
+private import std.c.stdlib;
 private import std.thread;
+}
+version (D2)
+{
+private import core.thread;
+private import core.stdc.stdio;
+private import core.stdc.stdlib;
+}
 
 private import libzmq_headers;
 private import libzmq_client;
@@ -17,7 +26,7 @@ void main(char[][] args)
 
 	mom_client client = null;
 
-	char* bind_to = "tcp://127.0.0.1:5556".ptr;
+	char* bind_to = cast(char*)"tcp://127.0.0.1:5556".ptr;
 	client = new libzmq_client(bind_to);
 
 	client.set_callback(&get_message);
@@ -25,12 +34,16 @@ void main(char[][] args)
 	Thread thread = new Thread(&client.listener);
 
 	thread.start();
+	
+	version (D1)
+	{
 	thread.wait();
+	}
 }
 
 int count = 0;
 
-void get_message(byte* message, ulong message_size, mom_client from_client)
+void get_message(byte* message, int message_size, mom_client from_client)
 {
 	count++;
 	printf("[%i] data: %s\n", count, cast(char*) message);
@@ -39,6 +52,6 @@ void get_message(byte* message, ulong message_size, mom_client from_client)
 
 	Subject*[] triples = parse(cast(char*) message, message_size, buff);
 
-	from_client.send("", "test message", false);
+	from_client.send(cast(char*)"".ptr, cast(char*)"test message".ptr, false);
 	return;
 }

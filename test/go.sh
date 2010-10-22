@@ -1,3 +1,3 @@
 date
-./test-turtle-parser
+time ./test-turtle-parser
 date

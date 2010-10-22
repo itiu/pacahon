@@ -1,3 +1,5 @@
 Pacahon: макет ядра документ ориентированной системы
+lang: D1 D2 
+runtime lib: phobos
 MQ:zeromq
 Triple storage:mongodb
