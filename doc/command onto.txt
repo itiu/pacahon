@@ -2,57 +2,122 @@ n3: http://www.w3.org/TeamSubmission/turtle/
 
 комманды:
 
-получить тикет:
+---------------------------------------------------------------------------------------------------------------
+получить тикет
+
+аргументы:
+    - credential - хэш пароля
+
+доступ: доступно всем
+
+пример:
 
 INPUT
 {
-	id-command:123456 
-		cmd:command cmd:get-ticket;
-		cmd:args
-			[
-			auth:login "sender-uuid";
-			auth:credential "FdffeERtJjQ"
-			].
+    id-command:123456 
+    	cmd:command cmd:get-ticket;
+	cmd:args
+		[
+		auth:login "sender-uuid";
+		auth:credential "FdffeERtJjQ"
+		].
 }
 OUTPUT
 {
-	id-command:123456 cmd:result 
-			[
-			auth:ticket "123456-64743-32463-357-346"
-			].
+    id-command:123456 cmd:result 
+	[
+	auth:ticket "123456-64743-32463-357-346"
+	].
 }
 
+---------------------------------------------------------------------------------------------------------------
+получить граф по шаблону с учетом прав доступа
+
+аргументы:
+    - список шаблонов для сопоставления 
+
+доступ: доступно всем
+
+примечание: 
+    в данном примере будет выданны все графы принадлежащие онтологии с именем "gost19"
+    для получения списка онтологий следует сделать так:
+		onto:template
+		    [ 
+		    onto:name *.
+		    ];		
+    
+    
+пример:
 
 INPUT
 {
-  загрузить новую онтологию:
+    id-command:123457 
+	cmd:command cmd:get-onto;
+	cmd:from "sender-uuid";
+	cmd:ticket "12345-67890-4322-132345-56754";
+	cmd:args
+		[
+		graph:template
+		    [ 
+		    onto:name "gost19".
+		    onto:graph *.			    
+		    ];		
+		]    
+}
+OUTPUT
+{
 
-	аргумент [cmd:graph] -> указывает на корень загружаемого графа
-	
-	id-command:123457 
-		cmd:command cmd:load-onto;
-		cmd:from "sender-uuid";
-		cmd:ticket "12345-67890-4322-132345-56754";
-		cmd:args
-			[
-			onto:graph gost19:externalIdentifer;
-			onto:graph "swrc:Organization"
-			];
+}  
+
+---------------------------------------------------------------------------------------------------------------
+загрузить новый граф
+
+аргументы:
+    - сохраняемые факты - все кроме субьекта id-command:xxxx и субьектов right:xxxx
+    - сразу могут быть сохранены ACL права на субьекты
+
+доступ: перезаписывать     
+
+пример:
+INPUT
+{
+    id-command:123457 
+	cmd:command cmd:put;
+	cmd:from "sender-uuid";
+	cmd:ticket "12345-67890-4322-132345-56754";
+
+    rights:
 		
-	gost19:externalIdentifer
-      		rdf:type owl:DatatypeProperty ;
-      		rdfs:subPropertyOf dc:identifier .
+    gost19:externalIdentifer
+    	rdf:type owl:DatatypeProperty ;
+    	rdfs:subPropertyOf dc:identifier .
 
-	swrc:Organization
-      		rdfs:subClassOf
-              		[ rdf:type owl:Restriction ;
-                	owl:allValuesFrom xsd:string ;
-                	owl:onProperty swrc:name
-              		] .
+    swrc:Organization
+    	rdfs:subClassOf
+      		[ 
+      		rdf:type owl:Restriction ;
+            	owl:allValuesFrom xsd:string ;
+            	owl:onProperty swrc:name
+      		] .
 }
 OUTPUT
 {
-	id-command:123457 cmd:result "Ok".
+    id-command:123457 cmd:result "Ok".
 }
 
+---------------------------------------------------------------------------------------------------------------
 
+аргументы:
+
+доступ:
+
+пример:
+
+INPUT
+{
+  
+}
+OUTPUT
+{
+
+}  
