@@ -1,7 +1,7 @@
 # Saved by TopBraid on Mon Oct 25 14:03:00 MSD 2010
 # baseURI: http://www.w3.org/2001/02/acls/ns
 
-@prefix acls:    <http://www.w3.org/2001/02/acls/ns#> .
+@prefix acl:    <http://www.w3.org/2001/02/acls/ns#> .
 @prefix owl:     <http://www.w3.org/2002/07/owl#> .
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
@@ -10,59 +10,68 @@
 <http://www.w3.org/2001/02/acls/ns>
       rdf:type owl:Ontology .
 
-acls:Group
+acl:Group
       rdf:type rdfs:Class ;
       rdfs:comment "Collection of Principles." ;
       rdfs:label "Group" ;
-      rdfs:subClassOf acls:Identity .
+      rdfs:isDefinedBy acl: ;
+      rdfs:subClassOf acl:Identity .
 
-acls:Identity
+acl:Identity
       rdf:type rdfs:Class ;
       rdfs:comment "Any entity to which access may be granted to a rdf:resource."^^xsd:string ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "Identity"@en ;
       rdfs:subClassOf rdfs:Resource .
 
-acls:Principle
+acl:Principle
       rdf:type rdfs:Class ;
       rdfs:comment "An Identity to which credentials or other uniquely distinguishing characteristics may be assigned." ;
       rdfs:label "Principle" ;
-      rdfs:subClassOf acls:Identity .
+      rdfs:subClassOf acl:Identity .
 
-acls:ResourceAccessRule
+acl:ResourceAccessRule
       rdf:type rdfs:Class ;
       rdfs:comment "An assertion of access privileges to a rdf:resource." ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "Access Rule" .
 
-acls:access
+acl:access
       rdf:type rdf:Property ;
       rdfs:comment "The access privileges extended to an accessor." ;
-      rdfs:domain acls:ResourceAccessRule ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:domain acl:ResourceAccessRule ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "access"@en ;
       rdfs:range rdfs:Literal .
 
-acls:accessor
+acl:accessor
       rdf:type rdf:Property ;
       rdfs:comment "The rdf:resource identifying an entity (for intance, a user) to whom access privileges have been granted." ;
-      rdfs:domain acls:ResourceAccessRule ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:domain acl:ResourceAccessRule ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "accessor" ;
-      rdfs:range acls:Identity .
+      rdfs:range acl:Identity .
 
-acls:hasAccessTo
+acl:creator
+      rdf:type rdf:Property ;
+      rdfs:comment "субьект, от имени которого было создано правило" ;
+      rdfs:domain acl:ResourceAccessRule ;
+      rdfs:isDefinedBy acl: ;
+      rdfs:label "" ;
+      rdfs:range rdfs:Resource .
+
+acl:hasAccessTo
       rdf:type rdf:Property ;
       rdfs:comment "Relates an Access Rule to the rdf:resources to which the rule applies.  The inverse relation is 'accessedBy'" ;
-      rdfs:domain acls:ResourceAccessRule ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:domain acl:ResourceAccessRule ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "has access to" ;
       rdfs:range rdfs:Resource .
 
-acls:time-interval
+acl:time-interval
       rdf:type rdf:Property ;
       rdfs:comment "The time interval over which an ACL rule is declared." ;
-      rdfs:domain acls:ResourceAccessRule ;
-      rdfs:isDefinedBy acls: ;
+      rdfs:domain acl:ResourceAccessRule ;
+      rdfs:isDefinedBy acl: ;
       rdfs:label "time interval"@en ;
       rdfs:range rdfs:Literal .
