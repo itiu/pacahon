@@ -4,15 +4,19 @@ private import myversion;
 
 version (D1)
 {
-private import std.c.stdlib;
-private import std.thread;
+ private import std.c.stdlib;
+ private import std.thread;
+ private import std.stdio;
 }
+
 version (D2)
 {
-private import core.thread;
-private import core.stdc.stdio;
-private import core.stdc.stdlib;
+ private import core.thread;
+ private import core.stdc.stdio;
+ private import core.stdc.stdlib;
 }
+
+private import std.c.string;
 
 private import libzmq_headers;
 private import libzmq_client;
@@ -51,6 +55,36 @@ void get_message(byte* message, int message_size, mom_client from_client)
 	char* buff = cast(char*) alloca(message_size);
 
 	Subject*[] triples = parse(cast(char*) message, message_size, buff);
+
+        // найдем в массиве triples субьекта с типом msg
+        for (int ii = 0; ii < triples.length; ii++)
+        {
+         Subject* ss = triples[ii];
+         
+         char* type = null;
+         char* reciever = null;
+          
+         for (short jj = 0; jj < ss.outGoingEdges.length; jj++)
+         {
+          if (strcmp (ss.outGoingEdges[jj].predicate, cast(char*)"rdf:type".ptr) == 0)
+            type = cast(char*)ss.outGoingEdges[jj].object;
+            
+          if (strcmp (ss.outGoingEdges[jj].predicate, cast(char*)"mgs:reciever".ptr) == 0)
+            reciever = cast(char*)ss.outGoingEdges[jj].object;
+            
+            if (type !is null && reciever !is null)
+        	break;
+          }
+          
+           // если это новое сообщение, проверим, нам ли оно адресованно 
+          if (strcmp (type, "msg:") == 0 && strcmp (reciever, "pacahon"))
+          {
+           
+           // , передаем его обработчику команд
+          }
+         }
+        
+	
 
 	from_client.send(cast(char*)"".ptr, cast(char*)"test message".ptr, false);
 	return;
