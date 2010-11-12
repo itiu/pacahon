@@ -28,8 +28,11 @@ struct state_struct
 	Subject* stack_nodes[8];
 	byte pos_in_stack_nodes;
 
-	PredicateObject edges[];
+	Predicate edges[];
 	int count_edges;
+
+	Objectz objects[];
+	int count_objects;
 
 	short parent[];
 	short child[];
@@ -63,7 +66,8 @@ public Subject*[] parse(char* src, int len, char* res_buff)
 	state.count_edges = 0;
 	state.nodes = new Subject[def_size_out_array];
 	state.roots = new Subject*[def_size_out_array];
-	state.edges = new PredicateObject[def_size_out_array];
+	state.edges = new Predicate[def_size_out_array];
+	state.objects = new Objectz[def_size_out_array];
 
 	while(ch != 0)
 	{
@@ -126,12 +130,22 @@ public Subject*[] parse(char* src, int len, char* res_buff)
 
 				if(*element == '"')
 				{
+					if(*(element + 1) == '"' && *(element + 2) == '"')
+					{
+						ptr += 2;
+						element = ptr;
+					}
+
 					ptr++;
 					ch = *ptr;
-					while(ch != '"')
+					while(true)
 					{
+						if(ch == '"' && *(ptr - 1) != '\\')
+							break;
+
 						ptr++;
 						ch = *ptr;
+
 					}
 				}
 
@@ -239,32 +253,50 @@ private void next_element(char* element, state_struct* state)
 
 		if(state.P !is null)
 		{
-			//			printf("[%s %s %s]\n", state.nodes[state.pos_in_stack_nodes].subject, state.P, state.O);
+			//						printf("\n[%s %s %s]\n", state.nodes[state.pos_in_stack_nodes].subject, state.P, state.O);
 			Subject* ss = state.stack_nodes[state.pos_in_stack_nodes];
 
-			if(ss.outGoingEdges is null)
-				ss.outGoingEdges = new PredicateObject*[50];
+			if(ss.edges is null)
+				ss.edges = new Predicate*[50];
 
-			int Pl = strlen(state.P) + 1;
+			Predicate* ee = null;
 
-			//						printf("count_edges=%d\n", state.count_edges);
-			PredicateObject* ee = &state.edges[state.count_edges];
+			// прежде чем создать новый Predicate, следует поискать у данного ss предикат с значением state.P
+			for(short jj = 0; jj < ss.count_edges; jj++)
+			{
+				if(strcmp(ss.edges[jj].predicate, state.P) == 0)
+				{
+					// такой уже найден
+					ee = ss.edges[jj];
+					//					printf("такой уже найден %s\n", state.P);
+				}
 
-			strncpy(state.res_buff, state.P, Pl);
-			ee.predicate = state.res_buff;
-			state.res_buff += Pl;
+			}
 
-			ss.outGoingEdges[ss.count_edges] = ee;
-			ss.count_edges++;
+			//					printf("count_edges=%d\n", state.count_edges);
+			if(ee is null)
+			{
+				// создаем новый предикат
+				//				printf("создаем новый предикат\n");
+				ee = &state.edges[state.count_edges];
 
-			// сохранить зависимости
-			//			state.parent[state.count_parent_child] = state.stack_nodes[state.pos_in_stack_nodes];
-			//			state.child[state.count_parent_child] = state.count_edges;
-			//			state.count_parent_child++;
+				if(ee.objects is null)
+					ee.objects = new Objectz[1];
+
+				int Pl = strlen(state.P) + 1;
+				strncpy(state.res_buff, state.P, Pl);
+				ee.predicate = state.res_buff;
+				state.res_buff += Pl;
+
+				ss.edges[ss.count_edges] = ee;
+				ss.count_edges++;
+			}
 
 			if(*element == '[')
 			{
 				// создадим новую ноду				
+				//				printf("создадим новую ноду\n");
+
 				state.count_nodes++;
 				Subject* new_nodes = &state.nodes[state.count_nodes];
 
@@ -272,9 +304,14 @@ private void next_element(char* element, state_struct* state)
 				state.pos_in_stack_nodes++;
 				state.stack_nodes[state.pos_in_stack_nodes] = new_nodes;
 
+				// увеличим размер массива если это требуется
+				if(ee.count_objects == ee.objects.length)
+					ee.objects.length += 50;
+
 				// сохраним ее в edges
-				ee.object = new_nodes;
-				ee.object_as_literal = false;
+				ee.objects[ee.count_objects].object = new_nodes;
+				ee.objects[ee.count_objects].object_as_literal = false;
+				ee.count_objects++;
 
 				state.count_nodes++;
 			}
@@ -282,8 +319,52 @@ private void next_element(char* element, state_struct* state)
 			{
 				int Ol = strlen(cast(char*) state.O) + 1;
 
+				// увеличим размер массива если это требуется
+				if(ee.count_objects == ee.objects.length)
+				{
+					//					printf("#22 %d += 50 \n", ee.count_objects);
+					ee.objects.length += 50;
+				}
+
 				strncpy(state.res_buff, cast(char*) state.O, Ol);
-				ee.object = state.res_buff;
+
+				char* ptr = cast(char*) state.O;
+				char* ptr1 = state.res_buff;
+				
+				if(*ptr == '"')
+					ptr++;
+
+				while(*ptr != 0)
+				{					
+					if(*ptr == '"' && *(ptr + 1) == '"' && *(ptr + 2) == '"')
+					{
+						*ptr1 = 0;
+						break;
+					}
+					
+					if(*ptr == '\\' && *(ptr + 1) == '"')
+						ptr++;
+					
+					if(*ptr == '"' && *(ptr - 1) != '\\')
+					{
+						*ptr1 = 0;
+						break;
+					}
+
+					//					if (*ptr == '^' && *(ptr+1) == '^')
+					//					{
+					//						*ptr1 = 0;
+					//						break;
+					//					}
+
+					*ptr1 = *ptr;
+					ptr++;
+					ptr1++;
+				}
+
+				ee.objects[ee.count_objects].object = state.res_buff;
+				ee.count_objects++;
+
 				state.res_buff += Ol;
 			}
 

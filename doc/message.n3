@@ -1,0 +1,61 @@
+# Saved by TopBraid on Fri Nov 12 18:05:46 MSK 2010
+# baseURI: http://gost19.org/message
+
+@prefix msg:     <http://gost19.org/message#> .
+@prefix owl:     <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+
+<http://gost19.org/message>
+      rdf:type owl:Ontology .
+
+msg:Message
+      rdf:type rdfs:Class ;
+      rdfs:comment "Message" ;
+      rdfs:isDefinedBy msg: ;
+      rdfs:label "Message" ;
+      rdfs:subClassOf rdfs:Resource .
+
+msg:Message_1
+      rdf:type msg:Message ;
+      rdfs:label "qqq"^^xsd:string ;
+      msg:args """:subject1 rdf:type auth:Authenticated ;
+        rdfs:label \"subject1 теперь может аутентифицироваться\" ;
+        auth:login \"user1\";
+         auth:credential \"QL0AFWMIX8NRZTKeof9cXsvbvu8=\"."""^^xsd:string ;
+      msg:command "put"^^xsd:string ;
+      msg:sender "client1"^^xsd:string ;
+      msg:ticket "12345-67-467-346534-546"^^xsd:string .
+
+msg:args
+      rdf:type rdf:Property ;
+      rdfs:comment "входящие аргументы команды, передаваемой агенту" ;
+      rdfs:domain msg:Message ;
+      rdfs:isDefinedBy msg: ;
+      rdfs:label "" ;
+      rdfs:range rdfs:Literal .
+
+msg:command
+      rdf:type rdf:Property ;
+      rdfs:comment "имя команды, передаваемой агенту" ;
+      rdfs:domain msg:Message ;
+      rdfs:isDefinedBy msg: ;
+      rdfs:label "" ;
+      rdfs:range rdfs:Literal .
+
+msg:sender
+      rdf:type rdf:Property ;
+      rdfs:comment "указывает на отправителя сообщения, строка идентифицирующая агента, генерировавшего данную команду" ;
+      rdfs:domain msg:Message ;
+      rdfs:isDefinedBy msg: ;
+      rdfs:label "" ;
+      rdfs:range rdfs:Literal .
+
+msg:ticket
+      rdf:type rdf:Property ;
+      rdfs:comment "тикет зарегистрированного пользователя, от имени которого происходит отправка данного сообщения, используется для определения полномочий (как правило агент действует от имени какого либо пользователя)" ;
+      rdfs:domain msg:Message ;
+      rdfs:isDefinedBy msg: ;
+      rdfs:label "" ;
+      rdfs:range rdfs:Literal .
