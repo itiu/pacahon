@@ -292,6 +292,11 @@ private void next_element(char* element, state_struct* state)
 				ss.count_edges++;
 			}
 
+				// увеличим размер массива если это требуется
+				Objectz[] objects = ee.objects;
+				if(ee.count_objects == objects.length)
+					objects.length = objects.length + 50;
+
 			if(*element == '[')
 			{
 				// создадим новую ноду				
@@ -304,10 +309,6 @@ private void next_element(char* element, state_struct* state)
 				state.pos_in_stack_nodes++;
 				state.stack_nodes[state.pos_in_stack_nodes] = new_nodes;
 
-				// увеличим размер массива если это требуется
-				if(ee.count_objects == ee.objects.length)
-					ee.objects.length += 50;
-
 				// сохраним ее в edges
 				ee.objects[ee.count_objects].object = new_nodes;
 				ee.objects[ee.count_objects].object_as_literal = false;
@@ -318,13 +319,6 @@ private void next_element(char* element, state_struct* state)
 			else
 			{
 				int Ol = strlen(cast(char*) state.O) + 1;
-
-				// увеличим размер массива если это требуется
-				if(ee.count_objects == ee.objects.length)
-				{
-					//					printf("#22 %d += 50 \n", ee.count_objects);
-					ee.objects.length += 50;
-				}
 
 				strncpy(state.res_buff, cast(char*) state.O, Ol);
 
