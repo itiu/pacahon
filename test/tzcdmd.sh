@@ -1,4 +1,4 @@
-rm test-turtle-parser
+rm test-turtle-parser-*
 cd ..
 mdir=$PWD
 cd $mdir/test

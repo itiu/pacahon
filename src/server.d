@@ -24,27 +24,50 @@ private import libzmq_client;
 private import pacahon.n3.parser;
 private import pacahon.graph;
 
+private import std.file;
+private import std.json;
+
+private import trioplax.triple;
+private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorageMongoDB;
+
 void main(char[][] args)
 {
-	printf("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
-
-	mom_client client = null;
-
-	char* bind_to = cast(char*) "tcp://127.0.0.1:5556".ptr;
-	client = new libzmq_client(bind_to);
-
-	client.set_callback(&get_message);
-
-	Thread thread = new Thread(&client.listener);
-
-	thread.start();
-
-	version(D1)
+	try
 	{
-		thread.wait();
+		JSONValue props = get_props("pacahon-properties.json");
+
+		printf("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
+
+		mom_client client = null;
+		
+		char* bind_to = cast(char*) props.object["zmq_point"].str;
+
+		client = new libzmq_client(bind_to);
+		client.set_callback(&get_message);
+
+		Thread thread = new Thread(&client.listener);
+
+		thread.start();
+
+		version(D1)
+		{
+			thread.wait();
+		}
+
+		char[] mongodb_server = cast(char[])props.object["mongodb_server"].str;
+		int mongodb_port = cast(int)props.object["mongodb_port"].integer;
+					
+		printf("connect to mongodb, \n");
+		printf("	port: %d\n", mongodb_port);
+		printf("	server: %s\n", cast(char*)mongodb_server);
+		
+		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port);		
+	} catch(Exception ex)
+	{
+		printf("Exception: %s", ex.msg);
 	}
-	
-	test1 ();
+
 }
 
 int count = 0;
@@ -56,7 +79,7 @@ void get_message(byte* message, int message_size, mom_client from_client)
 
 	char* buff = cast(char*) alloca(message_size);
 
-	Subject*[] triples = parse(cast(char*) message, message_size, buff);
+	Subject*[] triples = parse_n3_string(cast(char*) message, message_size, buff);
 
 	// найдем в массиве triples субьекта с типом msg
 	for(int ii = 0; ii < triples.length; ii++)
@@ -110,19 +133,36 @@ void command_preparer(Subject* ss)
 
 }
 
-private void test1 ()
+JSONValue get_props(string file_name)
 {
-	printf("unittest\n");
-	
-	string buff = "msg:123457 \n" //
-			"cmd:command cmd:put;\n" // 
-			"msg:sender \"sender-uuid\";\n" //
-			"msg:ticket \"12345-67890-4322-132345-56754\";\n" //
-			"cmd:args \":subject1 rdf:type auth:Authenticated;\n" //
-			"rdfs:label \"subject1 теперь может аутентифицироваться\";\n" //
-			"auth:login \"user1\";\n" //
-			"auth:credential \"QL0AFWMIX8NRZTKeof9cXsvbvu8=\".\".";
+	JSONValue res;
 
-	get_message(cast(byte*) buff, buff.length, null);
+	if(exists(file_name))
+	{
+		string buff = cast(string) read(file_name);
 
+		res = parseJSON(buff);
+	}
+	else
+	{
+		JSONValue element1, element2, element3;
+
+		res.type = JSON_TYPE.OBJECT;
+
+		element1.str = "tcp://127.0.0.1:5558";
+		res.object["zmq_point"] = element1;
+
+		element2.str = "172.17.4.66";
+		res.object["mongodb_srv"] = element2;
+
+		element3.type = JSON_TYPE.INTEGER;
+		element3.integer = 27017;
+		res.object["mongodb_port"] = element3;
+
+		string buff = toJSON(&res);
+
+		write(file_name, buff);
+	}
+
+	return res;
 }

@@ -2,6 +2,7 @@ module test_parser;
 
 import std.string;
 import std.c.stdlib;
+import std.date;
 
 version(D1)
 {
@@ -39,10 +40,23 @@ void main(string args[])
 
 		fclose(file);
 
-		for(int i = 0; i < 1_000_000; i++)
+		sss(cast(char*) buffer, len_file, true);
+
+		d_time start_time = getUTCtime();
+		int count = 1_000_000;
+
+		printf("execute parsing %d times\n", count);
+
+		for(int i = 0; i < count; i++)
 		{
 			sss(cast(char*) buffer, len_file);
 		}
+
+		d_time end_time = getUTCtime();
+
+		d_time delta = end_time - start_time;
+
+		printf("count: %d, total time: %5.3f sec\n", count, delta / 1000f);
 
 	}
 	else
@@ -51,12 +65,12 @@ void main(string args[])
 	}
 }
 
-private void sss(char* buffer, int len_file)
+private void sss(char* buffer, int len_file, bool printing = false)
 {
 	char* buff = cast(char*) alloca(len_file);
 
 	buffer[len_file] = 0;
-	Subject*[] subjects = parse(cast(char*) buffer, len_file, buff);
+	Subject*[] subjects = parse_n3_string(cast(char*) buffer, len_file, buff);
 
 	char* ptr = cast(char*) buffer;
 	for(int j = 0; j < len_file; j++)
@@ -68,30 +82,19 @@ private void sss(char* buffer, int len_file)
 		ptr++;
 	}
 
-//	printf("read %d graphs\n", subjects.length);
-
-	for(int ii = 0; ii < subjects.length; ii++)
+	if(printing == true)
 	{
-		Subject* ss = subjects[ii];
+		printf("read %d graphs\n", subjects.length);
 
-//		printf("s: %s \n", ss.subject);
-
-		for(int jj = 0; jj < ss.count_edges; jj++)
+		for(int ii = 0; ii < subjects.length; ii++)
 		{
-			Predicate* pp = ss.edges[jj];
-
-//			printf("	p: %s \n", pp.predicate);
-
-			for(int kk = 0; kk < pp.count_objects; kk++)
-			{
-
-//				printf("		o: %s \n", cast(char*) pp.objects[kk].object);
-
-			}
-
+			print_graph(subjects[ii]);
 		}
 
-		//	  set_outGoingEdgesOfPredicate (triples[i]);			    
+		printf("set hash table of graph elements\n");
+		for(int ii = 0; ii < subjects.length; ii++)
+		{
+			set_outGoingEdgesOfPredicate(subjects[ii]);
+		}
 	}
-
 }

@@ -2,6 +2,16 @@ module pacahon.graph;
 
 private import std.c.string;
 
+version(D1)
+{
+	import std.stdio;
+}
+
+version(D2)
+{
+	import core.stdc.stdio;
+}
+
 struct Subject
 {
 	char* subject = null;
@@ -51,4 +61,39 @@ void set_outGoingEdgesOfPredicate(Subject* ss)
 char[] fromStringz(char* s)
 {
 	return s ? s[0 .. strlen(s)] : null;
+}
+
+void print_graph(Subject* ss, int level = 0)
+{
+	for(int i = 0; i < level; i++)
+		printf("	");
+
+	if(ss.subject !is null)
+		printf("s: %s \n", ss.subject);
+	else
+		printf("s: %x \n", ss);
+
+	for(int jj = 0; jj < ss.count_edges; jj++)
+	{
+		Predicate* pp = ss.edges[jj];
+
+		for(int i = 0; i < level; i++)
+			printf("	");
+		printf("	p: %s \n", pp.predicate);
+
+		for(int kk = 0; kk < pp.count_objects; kk++)
+		{
+			Objectz oo = pp.objects[kk];
+
+			for(int i = 0; i < level; i++)
+				printf("	");
+
+			if(oo.object_as_literal == true)
+				printf("		o: %s \n", cast(char*) oo.object);
+			else
+				print_graph(cast(Subject*) oo.object, level + 1);
+
+		}
+
+	}
 }

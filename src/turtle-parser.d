@@ -47,8 +47,12 @@ struct state_struct
  *  ! память res_buff данной функцией не освобождается  
  */
 
-public Subject*[] parse(char* src, int len, char* res_buff)
+public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 {
+	assert(src !is null);
+	assert(len != 0);
+	assert(res_buff !is null);
+
 	char* ptr = src - 1;
 	char* new_line_ptr = src;
 	char* element;
@@ -174,70 +178,14 @@ public Subject*[] parse(char* src, int len, char* res_buff)
 	}
 	state.roots.length = state.count_roots;
 
-	//        printf ("len res buff=%d res_buff=%s\n", state.res_buff - res_buff, res_buff);
-	/*
-	 for(short i = 0; i < state.count_parent_child; i++)
-	 {
-	 short parent = state.parent[i];
-
-	 // подсчитаем количество потомков для этого родителя
-	 short count_childs = 0;
-
-	 for(short ii = 0; ii < state.count_parent_child; ii++)
-	 {
-	 if(state.parent[ii] == parent)
-	 {
-	 count_childs++;
-	 }
-	 }
-
-	 if(count_childs > 0)
-	 {
-	 Subject* ss = &nodes[parent];
-	 if(ss.outGoingEdges is null)
-	 {
-	 ss.outGoingEdges = new PredicateObject*[count_childs];
-	 //			printf("++10\n");
-	 }
-
-	 short stored_childs = 0;
-
-	 // сохраним этих потомков в список родителя
-	 for(short ii = 0; ii < state.count_parent_child; ii++)
-	 {
-	 if(state.parent[ii] == parent)
-	 {
-	 ss.outGoingEdges[stored_childs] = &(state.edges[ii]);
-	 stored_childs++;
-	 }
-	 }
-	 }
-	 */
-	//				printf("paren-child %d-%d\n", state.parent[i], state.child[i]);
-	/*		
-	 short qq = state.parent[i];
-	 short aa = state.child[i];
-	 if(state.nodes[qq].subject is null)
-	 {
-	 if(state.edges[aa].object_as_literal == true)
-	 printf("%X %s %s\n", &state.nodes[qq], state.edges[aa].predicate, state.edges[aa].object);
-	 else
-	 printf("%X %s %X\n", &state.nodes[qq], state.edges[aa].predicate, state.edges[aa].object);
-	 }
-	 else
-	 {
-	 if(state.edges[aa].object_as_literal == true)
-	 printf("%s %s %s\n", state.nodes[qq].subject, state.edges[aa].predicate, state.edges[aa].object);
-	 else
-	 printf("%s %s %X\n", state.nodes[qq].subject, state.edges[aa].predicate, state.edges[aa].object);
-	 }
-	 */
-	//	}
 	return state.roots;
 }
 
 private void next_element(char* element, state_struct* state)
 {
+	assert(element !is null);
+	assert(state !is null);
+
 	if(*element == ']')
 	{
 		state.pos_in_stack_nodes--;
@@ -292,10 +240,16 @@ private void next_element(char* element, state_struct* state)
 				ss.count_edges++;
 			}
 
-				// увеличим размер массива если это требуется
-				Objectz[] objects = ee.objects;
-				if(ee.count_objects == objects.length)
-					objects.length = objects.length + 50;
+			// увеличим размер массива если это требуется
+			//			Objectz[] objects = &ee.objects;
+			if(ee.count_objects >= ee.objects.length)
+			{
+				//				printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects, ee.objects.length);
+
+				//				objects.length = objects.length + 50;
+				ee.objects.length = ee.objects.length + 50;
+				//				printf("ee.objects.length= %d\n", ee.objects.length);
+			}
 
 			if(*element == '[')
 			{
@@ -324,21 +278,21 @@ private void next_element(char* element, state_struct* state)
 
 				char* ptr = cast(char*) state.O;
 				char* ptr1 = state.res_buff;
-				
+
 				if(*ptr == '"')
 					ptr++;
 
 				while(*ptr != 0)
-				{					
+				{
 					if(*ptr == '"' && *(ptr + 1) == '"' && *(ptr + 2) == '"')
 					{
 						*ptr1 = 0;
 						break;
 					}
-					
+
 					if(*ptr == '\\' && *(ptr + 1) == '"')
 						ptr++;
-					
+
 					if(*ptr == '"' && *(ptr - 1) != '\\')
 					{
 						*ptr1 = 0;
