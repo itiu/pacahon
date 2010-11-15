@@ -153,7 +153,7 @@ JSONValue get_props(string file_name)
 		res.object["zmq_point"] = element1;
 
 		element2.str = "172.17.4.66";
-		res.object["mongodb_srv"] = element2;
+		res.object["mongodb_server"] = element2;
 
 		element3.type = JSON_TYPE.INTEGER;
 		element3.integer = 27017;
