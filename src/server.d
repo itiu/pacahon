@@ -40,7 +40,7 @@ void main(char[][] args)
 		printf("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
 
 		mom_client client = null;
-		
+
 		char* bind_to = cast(char*) props.object["zmq_point"].str;
 
 		client = new libzmq_client(bind_to);
@@ -55,14 +55,16 @@ void main(char[][] args)
 			thread.wait();
 		}
 
-		char[] mongodb_server = cast(char[])props.object["mongodb_server"].str;
-		int mongodb_port = cast(int)props.object["mongodb_port"].integer;
-					
+		string mongodb_server = props.object["mongodb_server"].str;
+		string mongodb_collection = props.object["mongodb_collection"].str;
+		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
+
 		printf("connect to mongodb, \n");
 		printf("	port: %d\n", mongodb_port);
-		printf("	server: %s\n", cast(char*)mongodb_server);
-		
-		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port);		
+		printf("	server: %s\n", cast(char*) mongodb_server);
+		printf("	collection: %s\n", cast(char*) mongodb_collection);
+
+		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
 	} catch(Exception ex)
 	{
 		printf("Exception: %s", ex.msg);
@@ -145,19 +147,24 @@ JSONValue get_props(string file_name)
 	}
 	else
 	{
-		JSONValue element1, element2, element3;
-
 		res.type = JSON_TYPE.OBJECT;
 
-		element1.str = "tcp://127.0.0.1:5558";
+		JSONValue element1;
+		element1.str = "tcp://127.0.0.1:5555";
 		res.object["zmq_point"] = element1;
 
-		element2.str = "172.17.4.66";
+		JSONValue element2;
+		element2.str = "127.0.0.1";
 		res.object["mongodb_server"] = element2;
 
+		JSONValue element3;
 		element3.type = JSON_TYPE.INTEGER;
 		element3.integer = 27017;
 		res.object["mongodb_port"] = element3;
+
+		JSONValue element4;
+		element4.str = "pacahon";
+		res.object["mongodb_collection"] = element4;
 
 		string buff = toJSON(&res);
 
