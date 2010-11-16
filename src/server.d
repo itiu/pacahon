@@ -68,6 +68,10 @@ void main(char[][] args)
 		printf("	collection: %s\n", cast(char*) mongodb_collection);
 
 		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+
+                while (true)
+                   Thread.getThis().sleep (100_000_000);
+                 
 	} catch(Exception ex)
 	{
 		printf("Exception: %s", ex.msg);
@@ -115,7 +119,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		{
 			Predicate* sender = message.getEdge("msg:sender");
 			Subject*[] ss = command_preparer(message, sender);
-//			Subject*[] ss = new Subject*[3];
 			results[ii].array = ss;
 		}
 
@@ -124,11 +127,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	
 	for(int ii = 0; ii < results.length; ii++)
 	{
-//		Subject*[] qq = results[ii].array;
+		Subject*[] qq = results[ii].array;
 			
-//		for(int jj = 0; jj < qq.length; jj++)
+		for(int jj = 0; jj < qq.length; jj++)
 		{
-//			printf("*******\n%s\n", qq[jj].toString());			
+			printf("*******\n%s\n", qq[jj].toString());			
 		}				
 	}
 

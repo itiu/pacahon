@@ -80,12 +80,9 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 	while(ch != 0)
 	{
 		prev_ch = ch;
-		ptr++;
-		
+		ptr++;		
 		if (ptr - src > len)
-		{
-			throw new Exception ("куда лезем!");
-		}
+		    break;
 		
 		ch = *ptr;
 
@@ -106,13 +103,9 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				// это блок назначения префиксов
 
 				// пропускаем строку
-				while(ch != '\n')
+				while(ch != '\n' && ptr - src < len)
 				{
 					ptr++;
-					if (ptr - src > len)
-					{
-						throw new Exception ("куда лезем!");
-					}
 					ch = *ptr;
 					prev_ch = ch;
 				}
@@ -124,13 +117,9 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				// это комментарий
 
 				// пропускаем строку
-				while(ch != '\n')
+				while(ch != '\n' && ptr - src < len)
 				{
 					ptr++;
-					if (ptr - src > len)
-					{
-						throw new Exception ("куда лезем!");
-					}
 					ch = *ptr;
 					prev_ch = ch;
 				}
@@ -141,13 +130,9 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 			{
 
 				// пропустим прообелы
-				while(ch == ' ' || ch == 9)
+				while((ch == ' ' || ch == 9) && ptr - src < len)
 				{
 					ptr++;
-					if (ptr - src > len)
-					{
-						throw new Exception ("куда лезем!");
-					}
 					ch = *ptr;
 				}
 
@@ -163,33 +148,21 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 					}
 
 					ptr++;
-					if (ptr - src > len)
-					{
-						throw new Exception ("куда лезем!");
-					}
+
 					ch = *ptr;
-					while(true)
+					while(ptr - src < len)
 					{
 						if(ch == '"' && *(ptr - 1) != '\\')
 							break;
 
 						ptr++;
-						if (ptr - src > len)
-						{
-							throw new Exception ("куда лезем!");
-						}
 						ch = *ptr;
-
 					}
 				}
 
-				while(ch != ' ' && ch != '\n')
+				while(ch != ' ' && ch != '\n' && ptr - src < len)
 				{
 					ptr++;
-					if (ptr - src > len)
-					{
-						throw new Exception ("куда лезем!");
-					}
 					ch = *ptr;
 				}
 
@@ -197,10 +170,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				*ptr = 0;
 
 				ptr++;
-				if (ptr - src > len)
-				{
-					throw new Exception ("куда лезем!");
-				}
+				//assert (ptr - src > len);
+				//{
+				//	throw new Exception ("куда лезем! 8");
+				//}
 				ch = *ptr;
 
 				if(*element == 0)
@@ -223,6 +196,8 @@ private void next_element(char* element, state_struct* state)
 {
 	assert(element !is null);
 	assert(state !is null);
+
+//	printf("%s\n ", element);
 
 	if(*element == ']')
 	{

@@ -17,17 +17,16 @@ Subject*[] put (Subject* message, Predicate* sender)
 	for (short i; i < args.count_objects; i++)
 	{	     
 		char* args_text = cast (char*)args.objects[i].object;
-		printf("arg [%s]\n", args_text);
+//		printf("arg [%s]\n", args_text);
 		
 		int arg_size = strlen (args_text);
-		printf("arg_size= %d\n", arg_size);
 		
-		char* buff = cast(char*) alloca(arg_size*2);
+		char* buff = cast(char*) alloca(arg_size);
 		Subject*[] triples_on_put = parse_n3_string(cast(char*) args_text, arg_size, buff);
 		
-		return new Subject*[3];
+		printf(triples_on_put[0].toString());
+		return triples_on_put;
 //		print_graph(triples_on_put[0]);
-//		printf(triples_on_put[0].toString());
 //		triples_on_put[0].toString();
 	}
 	
