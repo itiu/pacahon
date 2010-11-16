@@ -18,7 +18,57 @@ struct Subject
 	Predicate*[] edges;
 	short count_edges = 0;
 
-	Predicate*[char[]] edges_of_predicate;
+	Predicate*[string] edges_of_predicate;
+
+	Predicate* getEdge(string pname)
+	{
+		Predicate* pp = null;
+		Predicate** ppp = (pname in edges_of_predicate);
+
+		if(ppp !is null)
+			pp = *ppp;
+
+		return pp;
+	}
+
+	char* toString(int level = 0)
+	{
+		char* res;
+
+		for(int i = 0; i < level; i++)
+			printf("	");
+
+		if(subject !is null)
+			printf("s: %s \n", subject);
+		else
+			printf("s: %x \n", this);
+
+		for(int jj = 0; jj < count_edges; jj++)
+		{
+			Predicate* pp = edges[jj];
+
+			for(int i = 0; i < level; i++)
+				printf("	");
+			printf("	p: %s \n", pp.predicate);
+
+			for(int kk = 0; kk < pp.count_objects; kk++)
+			{
+				Objectz oo = pp.objects[kk];
+
+				for(int i = 0; i < level; i++)
+					printf("	");
+
+				if(oo.object_as_literal == true)
+					printf("		o: %s \n", cast(char*) oo.object);
+				else
+					(cast(Subject*) oo.object).toString(level + 1);
+
+			}
+
+		}
+
+		return res;
+	}
 }
 
 struct Predicate
@@ -41,16 +91,16 @@ void set_outGoingEdgesOfPredicate(Subject* ss)
 	for(short jj = 0; jj < ss.count_edges; jj++)
 	{
 		Predicate* pp = ss.edges[jj];
-		                 
+
 		char[] predicate = fromStringz(pp.predicate);
 
 		ss.edges_of_predicate[predicate] = pp;
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
-			if (pp.objects[kk].object_as_literal == true)
+			if(pp.objects[kk].object_as_literal == true)
 			{
-				char[] object = fromStringz(cast(char*)pp.objects[kk].object);
+				char[] object = fromStringz(cast(char*) pp.objects[kk].object);
 				pp.objects_of_value[object] = &pp.objects[kk];
 			}
 		}

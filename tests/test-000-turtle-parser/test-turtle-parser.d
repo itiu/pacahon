@@ -53,9 +53,7 @@ void main(string args[])
 		}
 
 		d_time end_time = getUTCtime();
-
 		d_time delta = end_time - start_time;
-
 		printf("count: %d, total time: %5.3f sec\n", count, delta / 1000f);
 
 	}
