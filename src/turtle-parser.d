@@ -18,6 +18,8 @@ struct state_struct
 	byte e;
 
 	char* res_buff;
+	char* ptr_buff;
+	int len;
 
 	Subject nodes[];
 	short count_nodes;
@@ -63,7 +65,9 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 	state.P = null;
 	state.O = null;
 	state.e = 0;
+	state.ptr_buff = res_buff;
 	state.res_buff = res_buff;
+	state.len = len;
 	state.pos_in_stack_nodes = 0;
 
 	state.count_nodes = 0;
@@ -77,6 +81,12 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 	{
 		prev_ch = ch;
 		ptr++;
+		
+		if (ptr - src > len)
+		{
+			throw new Exception ("куда лезем!");
+		}
+		
 		ch = *ptr;
 
 		if(ptr == src || prev_ch == '\n')
@@ -99,6 +109,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				while(ch != '\n')
 				{
 					ptr++;
+					if (ptr - src > len)
+					{
+						throw new Exception ("куда лезем!");
+					}
 					ch = *ptr;
 					prev_ch = ch;
 				}
@@ -113,6 +127,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				while(ch != '\n')
 				{
 					ptr++;
+					if (ptr - src > len)
+					{
+						throw new Exception ("куда лезем!");
+					}
 					ch = *ptr;
 					prev_ch = ch;
 				}
@@ -126,6 +144,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				while(ch == ' ' || ch == 9)
 				{
 					ptr++;
+					if (ptr - src > len)
+					{
+						throw new Exception ("куда лезем!");
+					}
 					ch = *ptr;
 				}
 
@@ -141,6 +163,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 					}
 
 					ptr++;
+					if (ptr - src > len)
+					{
+						throw new Exception ("куда лезем!");
+					}
 					ch = *ptr;
 					while(true)
 					{
@@ -148,6 +174,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 							break;
 
 						ptr++;
+						if (ptr - src > len)
+						{
+							throw new Exception ("куда лезем!");
+						}
 						ch = *ptr;
 
 					}
@@ -156,6 +186,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				while(ch != ' ' && ch != '\n')
 				{
 					ptr++;
+					if (ptr - src > len)
+					{
+						throw new Exception ("куда лезем!");
+					}
 					ch = *ptr;
 				}
 
@@ -163,6 +197,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 				*ptr = 0;
 
 				ptr++;
+				if (ptr - src > len)
+				{
+					throw new Exception ("куда лезем!");
+				}
 				ch = *ptr;
 
 				if(*element == 0)
@@ -232,9 +270,11 @@ private void next_element(char* element, state_struct* state)
 					ee.objects = new Objectz[1];
 
 				int Pl = strlen(state.P) + 1;
-				strncpy(state.res_buff, state.P, Pl);
-				ee.predicate = state.res_buff;
-				state.res_buff += Pl;
+				strncpy(state.ptr_buff, state.P, Pl);
+				ee.predicate = state.ptr_buff;
+				state.ptr_buff += Pl;
+				if (state.ptr_buff - state.res_buff > state.len)
+					throw new Exception ("res_buff.used > len");
 
 				ss.edges[ss.count_edges] = ee;
 				ss.count_edges++;
@@ -246,7 +286,6 @@ private void next_element(char* element, state_struct* state)
 			{
 				//				printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects, ee.objects.length);
 
-				//				objects.length = objects.length + 50;
 				ee.objects.length = ee.objects.length + 50;
 				//				printf("ee.objects.length= %d\n", ee.objects.length);
 			}
@@ -265,7 +304,7 @@ private void next_element(char* element, state_struct* state)
 
 				// сохраним ее в edges
 				ee.objects[ee.count_objects].object = new_nodes;
-				ee.objects[ee.count_objects].object_as_literal = false;
+				ee.objects[ee.count_objects].type = SUBJECT;
 				ee.count_objects++;
 
 				state.count_nodes++;
@@ -274,13 +313,15 @@ private void next_element(char* element, state_struct* state)
 			{
 				int Ol = strlen(cast(char*) state.O) + 1;
 
-				strncpy(state.res_buff, cast(char*) state.O, Ol);
+				strncpy(state.ptr_buff, cast(char*) state.O, Ol);
 
 				char* ptr = cast(char*) state.O;
-				char* ptr1 = state.res_buff;
+				char* ptr1 = state.ptr_buff;
 
 				if(*ptr == '"')
 					ptr++;
+				else 
+					ee.objects[ee.count_objects].type = URI;
 
 				while(*ptr != 0)
 				{
@@ -310,10 +351,13 @@ private void next_element(char* element, state_struct* state)
 					ptr1++;
 				}
 
-				ee.objects[ee.count_objects].object = state.res_buff;
+				ee.objects[ee.count_objects].object = state.ptr_buff;
 				ee.count_objects++;
 
-				state.res_buff += Ol;
+				state.ptr_buff += Ol;
+				if (state.ptr_buff - state.res_buff > state.len)
+					throw new Exception ("res_buff > len");
+				
 			}
 
 			state.count_edges++;
@@ -341,13 +385,16 @@ private void next_element(char* element, state_struct* state)
 			}
 
 			int Sl = strlen(element) + 1;
-			strncpy(state.res_buff, element, Sl);
-			new_subject.subject = state.res_buff;
+			strncpy(state.ptr_buff, element, Sl);
+			new_subject.subject = state.ptr_buff;
 
 			state.roots[state.count_roots] = new_subject;
 			state.count_roots++;
 
-			state.res_buff += Sl;
+			state.ptr_buff += Sl;
+			if (state.ptr_buff - state.res_buff > state.len)
+				throw new Exception ("res_buff > len");
+			
 			state.count_nodes++;
 		}
 		else if(state.e == 1)

@@ -1,0 +1,4 @@
+:subject1 rdf:type auth:Authenticated ;
+   rdfs:label "subject1 теперь может аутентифицироваться" ;
+   auth:login "admin" ;
+   auth:credential "QL0AFWMIX8NRZTKeof9cXsvbvu8=" .

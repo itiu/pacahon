@@ -77,6 +77,11 @@ void main(char[][] args)
 
 int count = 0;
 
+struct subject_array
+{
+	Subject*[] array;	
+}
+
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	count++;
@@ -90,12 +95,15 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size, buff);
 
+	printf ("triples.length=%d\n", triples.length);
+	subject_array[] results = new subject_array[triples.length];
+	
 	// найдем в массиве triples субьекта с типом msg
 	for(int ii = 0; ii < triples.length; ii++)
 	{
 		Subject* message = triples[ii];
 
-		set_outGoingEdgesOfPredicate(message);
+		set_hashed_data(message);
 
 		Predicate* type = message.getEdge("a");
 		if(type is null)
@@ -106,11 +114,26 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		if(type !is null && reciever !is null && ("msg:Message" in type.objects_of_value) !is null && ("pacahon" in reciever.objects_of_value) !is null)
 		{
 			Predicate* sender = message.getEdge("msg:sender");
-			Subject*[] result = command_preparer(message, sender);
+			Subject*[] ss = command_preparer(message, sender);
+//			Subject*[] ss = new Subject*[3];
+			results[ii].array = ss;
 		}
 
 	}
 
+	
+	for(int ii = 0; ii < results.length; ii++)
+	{
+//		Subject*[] qq = results[ii].array;
+			
+//		for(int jj = 0; jj < qq.length; jj++)
+		{
+//			printf("*******\n%s\n", qq[jj].toString());			
+		}				
+	}
+
+	
+	
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) "test message".ptr, false);
 

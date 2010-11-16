@@ -92,7 +92,7 @@ private void sss(char* buffer, int len_file, bool printing = false)
 		printf("set hash table of graph elements\n");
 		for(int ii = 0; ii < subjects.length; ii++)
 		{
-			set_outGoingEdgesOfPredicate(subjects[ii]);
+			set_hashed_data(subjects[ii]);
 		}
 	}
 }

@@ -1,6 +1,7 @@
 module pacahon.graph;
 
 private import std.c.string;
+private import std.outbuffer;
 
 version(D1)
 {
@@ -31,43 +32,52 @@ struct Subject
 		return pp;
 	}
 
-	char* toString(int level = 0)
+	void toOutBuffer(ref OutBuffer outbuff, int level = 0)
 	{
-		char* res;
-
 		for(int i = 0; i < level; i++)
-			printf("	");
+			outbuff.write(cast(char[])"	");
 
 		if(subject !is null)
-			printf("s: %s \n", subject);
+			outbuff.printf("%s", subject);
 		else
-			printf("s: %x \n", this);
+			outbuff.printf("%x", this);
 
 		for(int jj = 0; jj < count_edges; jj++)
 		{
 			Predicate* pp = edges[jj];
 
 			for(int i = 0; i < level; i++)
-				printf("	");
-			printf("	p: %s \n", pp.predicate);
+				outbuff.write(cast(char[])"	");
+			outbuff.printf(" %s", pp.predicate);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
 			{
 				Objectz oo = pp.objects[kk];
 
 				for(int i = 0; i < level; i++)
-					printf("	");
+					outbuff.write(cast(char[])"		");
 
-				if(oo.object_as_literal == true)
-					printf("		o: %s \n", cast(char*) oo.object);
+				if(oo.type == LITERAL)
+					outbuff.printf(" \"%s\"\n", cast(char*) oo.object);
+				else if (oo.type == URI) 
+					outbuff.printf(" %s\n", cast(char*) oo.object);
 				else
-					(cast(Subject*) oo.object).toString(level + 1);
+					(cast(Subject*) oo.object).toOutBuffer(outbuff, level + 1);
 
 			}
 
 		}
 
-		return res;
+		return;
+	}
+
+	char* toString()
+	{
+		OutBuffer outbuff = new OutBuffer();
+
+		toOutBuffer (outbuff);
+		
+		return cast(char*) outbuff.toBytes();
 	}
 }
 
@@ -80,13 +90,18 @@ struct Predicate
 	Objectz*[char[]] objects_of_value;
 }
 
+immutable byte LITERAL = 0;
+immutable byte SUBJECT = 1;
+immutable byte URI = 2;
+
+
 struct Objectz
 {
 	void* object; // если object_as_literal == false, то здесь будет ссылка на Subject
-	bool object_as_literal = true;
+	byte type = LITERAL;
 }
 
-void set_outGoingEdgesOfPredicate(Subject* ss)
+void set_hashed_data(Subject* ss)
 {
 	for(short jj = 0; jj < ss.count_edges; jj++)
 	{
@@ -98,7 +113,7 @@ void set_outGoingEdgesOfPredicate(Subject* ss)
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
-			if(pp.objects[kk].object_as_literal == true)
+			if(pp.objects[kk].type != SUBJECT)
 			{
 				char[] object = fromStringz(cast(char*) pp.objects[kk].object);
 				pp.objects_of_value[object] = &pp.objects[kk];
@@ -138,10 +153,10 @@ void print_graph(Subject* ss, int level = 0)
 			for(int i = 0; i < level; i++)
 				printf("	");
 
-			if(oo.object_as_literal == true)
-				printf("		o: %s \n", cast(char*) oo.object);
-			else
+			if(oo.type == SUBJECT)
 				print_graph(cast(Subject*) oo.object, level + 1);
+			else
+				printf("		o: %s \n", cast(char*) oo.object);
 
 		}
 
