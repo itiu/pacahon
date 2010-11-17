@@ -24,6 +24,7 @@ private import libzmq_client;
 private import std.file;
 private import std.json;
 private import std.datetime;
+private import std.outbuffer;
 
 private import pacahon.n3.parser;
 private import pacahon.graph;
@@ -69,10 +70,11 @@ void main(char[][] args)
 
 		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
 
-                while (true)
-                   Thread.getThis().sleep (100_000_000);
-                 
-	} catch(Exception ex)
+		while(true)
+			Thread.getThis().sleep(100_000_000);
+
+	}
+	catch(Exception ex)
 	{
 		printf("Exception: %s", ex.msg);
 	}
@@ -83,7 +85,7 @@ int count = 0;
 
 struct subject_array
 {
-	Subject*[] array;	
+	Subject*[] array;
 }
 
 void get_message(byte* msg, int message_size, mom_client from_client)
@@ -91,17 +93,16 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	count++;
 
 	printf("[%i] data: \n%s\n", count, cast(char*) msg);
+	//	printf("[%i] \n", count);
 
 	StopWatch sw;
 	sw.start();
 
-	char* buff = cast(char*) alloca(message_size);
+	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size);
 
-	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size, buff);
-
-	printf ("triples.length=%d\n", triples.length);
+	//	printf("triples.length=%d\n", triples.length);
 	subject_array[] results = new subject_array[triples.length];
-	
+
 	// найдем в массиве triples субьекта с типом msg
 	for(int ii = 0; ii < triples.length; ii++)
 	{
@@ -124,21 +125,20 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	}
 
-	
+	OutBuffer outbuff = new OutBuffer();
+
 	for(int ii = 0; ii < results.length; ii++)
 	{
 		Subject*[] qq = results[ii].array;
-			
+
 		for(int jj = 0; jj < qq.length; jj++)
 		{
-			printf("*******\n%s\n", qq[jj].toString());			
-		}				
+			qq[jj].toOutBuffer(outbuff);
+		}
 	}
 
-	
-	
 	if(from_client !is null)
-		from_client.send(cast(char*) "".ptr, cast(char*) "test message".ptr, false);
+		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
 
 	sw.stop();
 
@@ -151,7 +151,7 @@ Subject*[] command_preparer(Subject* message, Predicate* sender)
 {
 	Subject*[] res;
 
-	printf("command_preparer\n");
+	//	printf("command_preparer\n");
 
 	Predicate* command = message.getEdge("msg:command");
 

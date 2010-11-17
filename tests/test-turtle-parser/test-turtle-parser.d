@@ -65,10 +65,7 @@ void main(string args[])
 
 private void sss(char* buffer, int len_file, bool printing = false)
 {
-	char* buff = cast(char*) alloca(len_file);
-
-	buffer[len_file] = 0;
-	Subject*[] subjects = parse_n3_string(cast(char*) buffer, len_file, buff);
+	Subject*[] subjects = parse_n3_string(cast(char*) buffer, len_file);
 
 	char* ptr = cast(char*) buffer;
 	for(int j = 0; j < len_file; j++)
@@ -89,10 +86,11 @@ private void sss(char* buffer, int len_file, bool printing = false)
 			print_graph(subjects[ii]);
 		}
 
-		printf("set hash table of graph elements\n");
-		for(int ii = 0; ii < subjects.length; ii++)
-		{
-			set_hashed_data(subjects[ii]);
-		}
+//		printf("set hash table of graph elements\n");
+	}
+	
+	for(int ii = 0; ii < subjects.length; ii++)
+	{
+		set_hashed_data(subjects[ii]);
 	}
 }

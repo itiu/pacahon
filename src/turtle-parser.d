@@ -17,8 +17,8 @@ struct state_struct
 
 	byte e;
 
-	char* res_buff;
-	char* ptr_buff;
+	//	char* res_buff;
+	//	char* ptr_buff;
 	int len;
 
 	Subject nodes[];
@@ -49,11 +49,10 @@ struct state_struct
  *  ! память res_buff данной функцией не освобождается  
  */
 
-public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
+public Subject*[] parse_n3_string(char* src, int len)
 {
 	assert(src !is null);
 	assert(len != 0);
-	assert(res_buff !is null);
 
 	char* ptr = src - 1;
 	char* new_line_ptr = src;
@@ -65,8 +64,6 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 	state.P = null;
 	state.O = null;
 	state.e = 0;
-	state.ptr_buff = res_buff;
-	state.res_buff = res_buff;
 	state.len = len;
 	state.pos_in_stack_nodes = 0;
 
@@ -80,10 +77,10 @@ public Subject*[] parse_n3_string(char* src, int len, char* res_buff)
 	while(ch != 0)
 	{
 		prev_ch = ch;
-		ptr++;		
-		if (ptr - src > len)
-		    break;
-		
+		ptr++;
+		if(ptr - src > len)
+			break;
+
 		ch = *ptr;
 
 		if(ptr == src || prev_ch == '\n')
@@ -197,7 +194,7 @@ private void next_element(char* element, state_struct* state)
 	assert(element !is null);
 	assert(state !is null);
 
-//	printf("%s\n ", element);
+	//	printf("%s\n ", element);
 
 	if(*element == ']')
 	{
@@ -225,7 +222,7 @@ private void next_element(char* element, state_struct* state)
 			// прежде чем создать новый Predicate, следует поискать у данного ss предикат с значением state.P
 			for(short jj = 0; jj < ss.count_edges; jj++)
 			{
-				if(strcmp(ss.edges[jj].predicate, state.P) == 0)
+				if(strcmp(ss.edges[jj].predicate.ptr, state.P) == 0)
 				{
 					// такой уже найден
 					ee = ss.edges[jj];
@@ -244,12 +241,7 @@ private void next_element(char* element, state_struct* state)
 				if(ee.objects is null)
 					ee.objects = new Objectz[1];
 
-				int Pl = strlen(state.P) + 1;
-				strncpy(state.ptr_buff, state.P, Pl);
-				ee.predicate = state.ptr_buff;
-				state.ptr_buff += Pl;
-				if (state.ptr_buff - state.res_buff > state.len)
-					throw new Exception ("res_buff.used > len");
+				ee.predicate = fromStringz(state.P);
 
 				ss.edges[ss.count_edges] = ee;
 				ss.count_edges++;
@@ -278,7 +270,7 @@ private void next_element(char* element, state_struct* state)
 				state.stack_nodes[state.pos_in_stack_nodes] = new_nodes;
 
 				// сохраним ее в edges
-				ee.objects[ee.count_objects].object = new_nodes;
+				ee.objects[ee.count_objects].subject = new_nodes;
 				ee.objects[ee.count_objects].type = SUBJECT;
 				ee.count_objects++;
 
@@ -286,16 +278,14 @@ private void next_element(char* element, state_struct* state)
 			}
 			else
 			{
-				int Ol = strlen(cast(char*) state.O) + 1;
-
-				strncpy(state.ptr_buff, cast(char*) state.O, Ol);
+				ee.objects[ee.count_objects].object = new char[strlen(cast(char*) state.O)];
 
 				char* ptr = cast(char*) state.O;
-				char* ptr1 = state.ptr_buff;
+				char* ptr1 = ee.objects[ee.count_objects].object.ptr;
 
 				if(*ptr == '"')
 					ptr++;
-				else 
+				else
 					ee.objects[ee.count_objects].type = URI;
 
 				while(*ptr != 0)
@@ -326,13 +316,10 @@ private void next_element(char* element, state_struct* state)
 					ptr1++;
 				}
 
-				ee.objects[ee.count_objects].object = state.ptr_buff;
-				ee.count_objects++;
+				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
 
-				state.ptr_buff += Ol;
-				if (state.ptr_buff - state.res_buff > state.len)
-					throw new Exception ("res_buff > len");
-				
+				//				ee.objects[ee.count_objects].subject = state.ptr_buff;
+				ee.count_objects++;
 			}
 
 			state.count_edges++;
@@ -359,17 +346,11 @@ private void next_element(char* element, state_struct* state)
 				state.stack_nodes[state.pos_in_stack_nodes] = new_subject;
 			}
 
-			int Sl = strlen(element) + 1;
-			strncpy(state.ptr_buff, element, Sl);
-			new_subject.subject = state.ptr_buff;
+			new_subject.subject = fromStringz(element);
 
 			state.roots[state.count_roots] = new_subject;
 			state.count_roots++;
 
-			state.ptr_buff += Sl;
-			if (state.ptr_buff - state.res_buff > state.len)
-				throw new Exception ("res_buff > len");
-			
 			state.count_nodes++;
 		}
 		else if(state.e == 1)
@@ -387,4 +368,9 @@ private void next_element(char* element, state_struct* state)
 	}
 
 	state.e++;
+}
+
+char[] fromStringz(char* s)
+{
+	return s ? s[0 .. strlen(s)] : null;
 }

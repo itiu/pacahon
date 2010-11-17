@@ -3,19 +3,15 @@ module pacahon.graph;
 private import std.c.string;
 private import std.outbuffer;
 
-version(D1)
-{
-	import std.stdio;
-}
-
 version(D2)
 {
-	import core.stdc.stdio;
+//	import core.stdc.stdio;
 }
+import std.stdio;
 
 struct Subject
 {
-	char* subject = null;
+	char[] subject = null;
 	Predicate*[] edges;
 	short count_edges = 0;
 
@@ -38,7 +34,7 @@ struct Subject
 			outbuff.write(cast(char[])"	");
 
 		if(subject !is null)
-			outbuff.printf("%s", subject);
+			outbuff.printf("%s", subject.ptr);
 		else
 			outbuff.printf("%x", this);
 
@@ -48,7 +44,7 @@ struct Subject
 
 			for(int i = 0; i < level; i++)
 				outbuff.write(cast(char[])"	");
-			outbuff.printf(" %s", pp.predicate);
+			outbuff.printf(" %s", pp.predicate.ptr);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
 			{
@@ -58,12 +54,17 @@ struct Subject
 					outbuff.write(cast(char[])"		");
 
 				if(oo.type == LITERAL)
-					outbuff.printf(" \"%s\"\n", cast(char*) oo.object);
+					outbuff.printf(" \"%s\"", cast(char*) oo.object.ptr);
 				else if (oo.type == URI) 
-					outbuff.printf(" %s\n", cast(char*) oo.object);
+					outbuff.printf(" %s", cast(char*) oo.object.ptr);
 				else
-					(cast(Subject*) oo.object).toOutBuffer(outbuff, level + 1);
+					oo.subject.toOutBuffer(outbuff, level + 1);
 
+				if (jj == count_edges - 1)
+					outbuff.printf(" .\n");
+				else
+					outbuff.printf(" ;\n");
+				
 			}
 
 		}
@@ -83,7 +84,7 @@ struct Subject
 
 struct Predicate
 {
-	char* predicate = null;
+	char[] predicate = null;
 	Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
 
@@ -97,7 +98,8 @@ immutable byte URI = 2;
 
 struct Objectz
 {
-	void* object; // если object_as_literal == false, то здесь будет ссылка на Subject
+	char[] object; // если object_as_literal == false, то здесь будет ссылка на Subject
+	Subject* subject; // если object_as_literal == false, то здесь будет ссылка на Subject
 	byte type = LITERAL;
 }
 
@@ -107,16 +109,13 @@ void set_hashed_data(Subject* ss)
 	{
 		Predicate* pp = ss.edges[jj];
 
-		char[] predicate = fromStringz(pp.predicate);
-
-		ss.edges_of_predicate[predicate] = pp;
+		ss.edges_of_predicate[pp.predicate] = pp;
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
 			if(pp.objects[kk].type != SUBJECT)
 			{
-				char[] object = fromStringz(cast(char*) pp.objects[kk].object);
-				pp.objects_of_value[object] = &pp.objects[kk];
+				pp.objects_of_value[pp.objects[kk].object] = &pp.objects[kk];
 			}
 		}
 
@@ -131,32 +130,32 @@ char[] fromStringz(char* s)
 void print_graph(Subject* ss, int level = 0)
 {
 	for(int i = 0; i < level; i++)
-		printf("	");
+		write("	");
 
 	if(ss.subject !is null)
-		printf("s: %s \n", ss.subject);
+		writeln("s: %s ", ss.subject);
 	else
-		printf("s: %x \n", ss);
+		writeln("s: %x ", ss);
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
 		Predicate* pp = ss.edges[jj];
 
 		for(int i = 0; i < level; i++)
-			printf("	");
-		printf("	p: %s \n", pp.predicate);
+			write("	");
+		writeln("	p: [%s] ", pp.predicate);
 
 		for(int kk = 0; kk < pp.count_objects; kk++)
 		{
 			Objectz oo = pp.objects[kk];
 
 			for(int i = 0; i < level; i++)
-				printf("	");
+				write("	");
 
 			if(oo.type == SUBJECT)
-				print_graph(cast(Subject*) oo.object, level + 1);
+				print_graph(cast(Subject*) oo.subject, level + 1);
 			else
-				printf("		o: %s \n", cast(char*) oo.object);
+				writeln("		o: [%s] ", oo.object);
 
 		}
 
