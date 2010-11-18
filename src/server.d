@@ -34,6 +34,7 @@ private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
 
 private import pacahon.command.multiplexor;
+private import pacahon.know_predicates;
 
 void main(char[][] args)
 {
@@ -50,15 +51,6 @@ void main(char[][] args)
 		client = new libzmq_client(bind_to);
 		client.set_callback(&get_message);
 
-		Thread thread = new Thread(&client.listener);
-
-		thread.start();
-
-		version(D1)
-		{
-			thread.wait();
-		}
-
 		string mongodb_server = props.object["mongodb_server"].str;
 		string mongodb_collection = props.object["mongodb_collection"].str;
 		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
@@ -68,7 +60,18 @@ void main(char[][] args)
 		printf("	server: %s\n", cast(char*) mongodb_server);
 		printf("	collection: %s\n", cast(char*) mongodb_collection);
 
-		TripleStorage ts_mongo = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+		printf("ok, connected : %X\n", ts);
+
+		ServerThread thread = new ServerThread(&client.listener, ts);
+		thread.start();
+
+		printf("listener of zmq started\n");
+
+		version(D1)
+		{
+			thread.wait();
+		}
 
 		while(true)
 			Thread.getThis().sleep(100_000_000);
@@ -81,18 +84,29 @@ void main(char[][] args)
 
 }
 
-int count = 0;
-
-struct subject_array
+class ServerThread: Thread
 {
-	Subject*[] array;
+	TripleStorage ts;
+
+	this(void delegate() _dd, TripleStorage _ts)
+	{
+		super(_dd);
+		ts = _ts;
+	}
 }
+
+int count = 0;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	msg[message_size] = 0;
+
+	ServerThread server_thread = cast(ServerThread) Thread.getThis();
+	TripleStorage ts = server_thread.ts;
+
 	count++;
 
-	printf("[%i] data: \n%s\n", count, cast(char*) msg);
+	printf("[%i] get message[%d]: \n%s\n", count, message_size, cast(char*) msg);
 	//	printf("[%i] \n", count);
 
 	StopWatch sw;
@@ -100,40 +114,82 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size);
 
-	//	printf("triples.length=%d\n", triples.length);
-	subject_array[] results = new subject_array[triples.length];
+	printf("triples.length=%d\n", triples.length);
+	Subject*[][] results = new Subject*[][triples.length];
 
 	// найдем в массиве triples субьекта с типом msg
 	for(int ii = 0; ii < triples.length; ii++)
 	{
 		Subject* message = triples[ii];
+		printf("message.subject=%s\n", message.subject.ptr);
 
 		set_hashed_data(message);
 
-		Predicate* type = message.getEdge("a");
+		Predicate* type = message.getEdge(cast(char[]) "a");
 		if(type is null)
-			type = message.getEdge("rdf:type");
+			type = message.getEdge(rdf__type);
 
-		Predicate* reciever = message.getEdge("msg:reciever");
-
-		if(type !is null && reciever !is null && ("msg:Message" in type.objects_of_value) !is null && ("pacahon" in reciever.objects_of_value) !is null)
+		if((msg__Message in type.objects_of_value) !is null)
 		{
-			Predicate* sender = message.getEdge("msg:sender");
-			Subject*[] ss = command_preparer(message, sender);
-			results[ii].array = ss;
-		}
 
+			Predicate* reciever = message.getEdge(msg__reciever);
+
+			Predicate* ticket = message.getEdge(msg__ticket);
+
+			char[] userId = null;
+
+			if(ticket !is null && ticket.objects !is null)
+			{
+				char[] ticket_str = ticket.objects[0].object;
+
+				printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
+
+				// найдем пользователя по сессионному билету
+				triple_list_element* iterator = ts.getTriples(null, msg__ticket, ticket_str);
+
+				if(iterator !is null)
+				{
+					userId = pacahon.graph.fromStringz(iterator.triple.s);
+				}
+				else
+				{
+					printf("# пользователь не найден\n");
+				}
+			}
+
+			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
+			{
+				Predicate* sender = message.getEdge(msg__sender);
+				Subject*[] ss = command_preparer(message, sender, userId, ts);
+
+				if(ss !is null)
+				{
+					results[ii] = ss;
+				}
+				else
+				{
+					results[ii] = new Subject*[1];
+					Subject ssss;
+					results[ii][0] = &ssss;
+				}
+			}
+		}
 	}
 
 	OutBuffer outbuff = new OutBuffer();
 
 	for(int ii = 0; ii < results.length; ii++)
 	{
-		Subject*[] qq = results[ii].array;
+		Subject*[] qq = results[ii];
 
-		for(int jj = 0; jj < qq.length; jj++)
+		if(qq !is null)
 		{
-			qq[jj].toOutBuffer(outbuff);
+			for(int jj = 0; jj < qq.length; jj++)
+			{
+				Subject* ss1 = qq[jj];
+				if(ss1 !is null)
+					ss1.toOutBuffer(outbuff);
+			}
 		}
 	}
 
@@ -147,25 +203,25 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	return;
 }
 
-Subject*[] command_preparer(Subject* message, Predicate* sender)
+Subject*[] command_preparer(Subject* message, Predicate* sender, char[] userId, TripleStorage ts)
 {
 	Subject*[] res;
 
 	//	printf("command_preparer\n");
 
-	Predicate* command = message.getEdge("msg:command");
+	Predicate* command = message.getEdge(msg__command);
 
 	if("put" in command.objects_of_value)
 	{
-		res = put(message, sender);
+		res = put(message, sender, userId, ts);
 	}
 	else if("get" in command.objects_of_value)
 	{
-		res = get(message, sender);
+		res = get(message, sender, userId, ts);
 	}
-	else if("get-ticket" in command.objects_of_value)
+	else if("msg:get_ticket" in command.objects_of_value)
 	{
-		res = get_ticket(message, sender);
+		res = get_ticket(message, sender, userId, ts);
 	}
 
 	return res;

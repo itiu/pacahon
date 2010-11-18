@@ -15,9 +15,9 @@ struct Subject
 	Predicate*[] edges;
 	short count_edges = 0;
 
-	Predicate*[string] edges_of_predicate;
+	Predicate*[char[]] edges_of_predicate;
 
-	Predicate* getEdge(string pname)
+	Predicate* getEdge(char[] pname)
 	{
 		Predicate* pp = null;
 		Predicate** ppp = (pname in edges_of_predicate);
@@ -89,6 +89,13 @@ struct Predicate
 	short count_objects = 0;
 
 	Objectz*[char[]] objects_of_value;
+	
+	char[] getFirstObject ()
+	{
+		if (count_objects > 0)
+			return objects[0].object; 
+		return null;
+	}
 }
 
 immutable byte LITERAL = 0;

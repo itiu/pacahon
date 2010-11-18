@@ -214,9 +214,6 @@ private void next_element(char* element, state_struct* state)
 			//						printf("\n[%s %s %s]\n", state.nodes[state.pos_in_stack_nodes].subject, state.P, state.O);
 			Subject* ss = state.stack_nodes[state.pos_in_stack_nodes];
 
-			if(ss.edges is null)
-				ss.edges = new Predicate*[50];
-
 			Predicate* ee = null;
 
 			// прежде чем создать новый Predicate, следует поискать у данного ss предикат с значением state.P
@@ -236,6 +233,9 @@ private void next_element(char* element, state_struct* state)
 			{
 				// создаем новый предикат
 				//				printf("создаем новый предикат\n");
+				if(ss.edges is null)
+					ss.edges = new Predicate*[50];
+
 				ee = &state.edges[state.count_edges];
 
 				if(ee.objects is null)
@@ -368,9 +368,4 @@ private void next_element(char* element, state_struct* state)
 	}
 
 	state.e++;
-}
-
-char[] fromStringz(char* s)
-{
-	return s ? s[0 .. strlen(s)] : null;
 }
