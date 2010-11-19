@@ -12,7 +12,7 @@ import std.stdio;
 struct Subject
 {
 	char[] subject = null;
-	Predicate*[] edges;
+	Predicate[] edges;
 	short count_edges = 0;
 
 	Predicate*[char[]] edges_of_predicate;
@@ -28,21 +28,38 @@ struct Subject
 		return pp;
 	}
 
+	void addPredicate (char[] predicate, char[] object)
+	{
+		if (edges.length == 0)
+			edges = new Predicate [16];
+					
+		if (edges.length == count_edges)
+		{			
+			edges.length += 16;
+		}		
+		
+		edges[count_edges].predicate = predicate;
+		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].count_objects = 1;
+		edges[count_edges].objects[0].object = object;	
+		count_edges++;
+	}
+	
 	void toOutBuffer(ref OutBuffer outbuff, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[])"  ");
 
 		if(subject !is null)
-			outbuff.printf("s:{%s}", subject.ptr);
+			outbuff.printf("%s", subject.ptr);
 
 		for(int jj = 0; jj < count_edges; jj++)
 		{
-			Predicate* pp = edges[jj];
+			Predicate* pp = &edges[jj];
 
 			for(int i = 0; i < level; i++)
 				outbuff.write(cast(char[])" ");
-			outbuff.printf("  p:{%s}", pp.predicate.ptr);
+			outbuff.printf("  %s", pp.predicate.ptr);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
 			{
@@ -52,9 +69,9 @@ struct Subject
 					outbuff.write(cast(char[])" ");
 
 				if(oo.type == LITERAL)
-					outbuff.printf("  o:{\"%s\"}", cast(char*) oo.object.ptr);
+					outbuff.printf("  \"%s\"", cast(char*) oo.object.ptr);
 				else if (oo.type == URI) 
-					outbuff.printf("  o:{%s}", cast(char*) oo.object.ptr);
+					outbuff.printf("  %s", cast(char*) oo.object.ptr);
 				else
 				{
 					outbuff.printf("\n  [ ");
@@ -120,7 +137,7 @@ void set_hashed_data(Subject* ss)
 {
 	for(short jj = 0; jj < ss.count_edges; jj++)
 	{
-		Predicate* pp = ss.edges[jj];
+		Predicate* pp = &ss.edges[jj];
 
 		ss.edges_of_predicate[pp.predicate] = pp;
 
@@ -156,7 +173,7 @@ void print_graph(Subject* ss, int level = 0)
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
-		Predicate* pp = ss.edges[jj];
+		Predicate* pp = &ss.edges[jj];
 
 		for(int i = 0; i < level; i++)
 			write("	");

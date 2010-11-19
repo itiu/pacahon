@@ -21,9 +21,9 @@ private import tango.math.random.Twister;
 /*
  * комманда добавления / изменения фактов в хранилище 
  */
-Subject*[] put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts)
+Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
 {
-	Subject*[] res;
+	Subject* res;
 	printf("command put\n");
 
 	Predicate* args = message.getEdge(msg__args);
@@ -58,7 +58,7 @@ Subject*[] put(Subject* message, Predicate* sender, char[] userId, TripleStorage
 
 				for(int kk = 0; kk < graph.count_edges; kk++)
 				{
-					Predicate* pp = graph.edges[kk];
+					Predicate pp = graph.edges[kk];
 
 					for(int ll = 0; ll < pp.count_objects; ll++)
 					{
@@ -76,7 +76,7 @@ Subject*[] put(Subject* message, Predicate* sender, char[] userId, TripleStorage
 
 		printf("command put is finish \n");
 
-		return graphs_on_put;
+		return res;
 		//		printf(triples_on_put[0].toString());
 		//		print_graph(triples_on_put[0]);
 		//		triples_on_put[0].toString();
@@ -85,9 +85,9 @@ Subject*[] put(Subject* message, Predicate* sender, char[] userId, TripleStorage
 	return res;
 }
 
-Subject*[] get(Subject* message, Predicate* sender, char[] userId, TripleStorage ts)
+Subject* get(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
 {
-	Subject*[] res;
+	Subject* res;
 	printf("command get\n");
 
 	// ! факты с предикатом [auth:credential] не возвращать !
@@ -98,15 +98,15 @@ Subject*[] get(Subject* message, Predicate* sender, char[] userId, TripleStorage
 /*
  * команда получения тикета
  */
-Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts)
+Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
 {
 	printf("command get_ticket\n");
 
 	bool isOk = false;
 
-	char[] reason = cast(char[]) "нет причин для выдачи тикета";
+	reason = cast(char[]) "нет причин для выдачи тикета";
 
-	Subject*[] res;
+	Subject* res;
 
 	try
 	{
@@ -160,7 +160,7 @@ Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, Triple
 		if(iterator !is null)
 		{
 			// такой логин и пароль найдены, формируем тикет
-			
+
 			Twister rnd;
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);

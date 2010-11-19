@@ -30,8 +30,8 @@ struct state_struct
 	Subject* stack_nodes[8];
 	byte pos_in_stack_nodes;
 
-	Predicate edges[];
-	int count_edges;
+//	Predicate edges[];
+//	int count_edges;
 
 	Objectz objects[];
 	int count_objects;
@@ -68,10 +68,10 @@ public Subject*[] parse_n3_string(char* src, int len)
 	state.pos_in_stack_nodes = 0;
 
 	state.count_nodes = 0;
-	state.count_edges = 0;
+//	state.count_edges = 0;
 	state.nodes = new Subject[def_size_out_array];
 	state.roots = new Subject*[def_size_out_array];
-	state.edges = new Predicate[def_size_out_array];
+//	state.edges = new Predicate[def_size_out_array];
 	state.objects = new Objectz[def_size_out_array];
 
 	while(ch != 0)
@@ -224,7 +224,7 @@ private void next_element(char* element, state_struct* state)
 				if(strcmp(ss.edges[jj].predicate.ptr, state.P) == 0)
 				{
 					// такой уже найден
-					ee = ss.edges[jj];
+					ee = &ss.edges[jj];
 					//					printf("такой уже найден %s\n", state.P);
 				}
 
@@ -238,16 +238,17 @@ private void next_element(char* element, state_struct* state)
 					printf("создаем новый предикат\n");
 
 				if(ss.edges is null)
-					ss.edges = new Predicate*[50];
+					ss.edges = new Predicate[16];
 
-				ee = &state.edges[state.count_edges];
+//				ee = &state.edges[state.count_edges];
+				ee = &ss.edges[ss.count_edges];
 
 				if(ee.objects is null)
 					ee.objects = new Objectz[1];
 
 				ee.predicate = fromStringz(state.P);
 
-				ss.edges[ss.count_edges] = ee;
+				ss.edges[ss.count_edges] = *ee;
 				ss.count_edges++;
 			}
 
@@ -259,7 +260,7 @@ private void next_element(char* element, state_struct* state)
 					printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects,
 							ee.objects.length);
 
-				ee.objects.length = ee.objects.length + 50;
+				ee.objects.length = ee.objects.length + 16;
 
 				version(trace_turtle_parser)
 					printf("ee.objects.length= %d\n", ee.objects.length);
@@ -331,7 +332,7 @@ private void next_element(char* element, state_struct* state)
 				ee.count_objects++;
 			}
 
-			state.count_edges++;
+//			state.count_edges++;
 			state.P = null;
 			state.O = null;
 		}
