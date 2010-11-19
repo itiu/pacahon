@@ -13,6 +13,11 @@ private import trioplax.TripleStorage;
 private import pacahon.authorization;
 private import pacahon.know_predicates;
 
+private import tango.util.uuid.NamespaceGenV5;
+private import tango.util.digest.Sha1;
+private import tango.util.uuid.RandomGen;
+private import tango.math.random.Twister;
+
 /*
  * комманда добавления / изменения фактов в хранилище 
  */
@@ -96,7 +101,7 @@ Subject*[] get(Subject* message, Predicate* sender, char[] userId, TripleStorage
 Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts)
 {
 	printf("command get_ticket\n");
-	
+
 	bool isOk = false;
 
 	char[] reason = cast(char[]) "нет причин для выдачи тикета";
@@ -105,9 +110,23 @@ Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, Triple
 
 	try
 	{
-		Predicate* login = message.getEdge(auth__login);
-		Predicate* credential = message.getEdge(auth__credential);
+		Predicate* arg = message.getEdge(msg__args);
+		if(arg is null)
+		{
+			reason = cast(char[]) "аргументы " ~ msg__args ~ " не указаны";
+			isOk = false;
+			return null;
+		}
 
+		Subject* ss = arg.objects[0].subject;
+		if(ss is null)
+		{
+			reason = cast(char[]) msg__args ~ " найден, но не заполнен";
+			isOk = false;
+			return null;
+		}
+
+		Predicate* login = ss.getEdge(auth__login);
 		if(login is null || login.getFirstObject() is null || login.getFirstObject.length < 2)
 		{
 			reason = cast(char[]) "login не указан";
@@ -115,6 +134,7 @@ Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, Triple
 			return null;
 		}
 
+		Predicate* credential = ss.getEdge(auth__credential);
 		if(credential is null || credential.getFirstObject() is null || credential.getFirstObject.length < 2)
 		{
 			reason = cast(char[]) "credential не указан";
@@ -123,19 +143,39 @@ Subject*[] get_ticket(Subject* message, Predicate* sender, char[] userId, Triple
 		}
 
 		Triple[] search_mask = new Triple[2];
-		
+
 		search_mask[0].s = null;
 		search_mask[0].p = auth__login.ptr;
-		search_mask[0].o = login.getFirstObject.ptr; 
-		
+		search_mask[0].o = login.getFirstObject.ptr;
+
 		search_mask[1].s = null;
 		search_mask[1].p = auth__credential.ptr;
 		search_mask[1].o = credential.getFirstObject.ptr;
-		
+
 		char[][1] readed_predicate;
 		readed_predicate[0] = auth__login;
-		
+
 		triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+
+		if(iterator !is null)
+		{
+			// такой логин и пароль найдены, формируем тикет
+			
+			Twister rnd;
+			rnd.seed;
+			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
+			Uuid generated = rndUuid.next;
+			printf("%s\n", generated.toString.ptr);
+
+			reason = cast(char[]) "login и password совпадают";
+			isOk = true;
+		}
+		else
+		{
+			reason = cast(char[]) "login и password не совпадают";
+			isOk = false;
+			return null;
+		}
 
 		return res;
 	}

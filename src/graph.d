@@ -31,37 +31,42 @@ struct Subject
 	void toOutBuffer(ref OutBuffer outbuff, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[])"	");
+			outbuff.write(cast(char[])"  ");
 
 		if(subject !is null)
-			outbuff.printf("%s", subject.ptr);
-		else
-			outbuff.printf("%x", this);
+			outbuff.printf("s:{%s}", subject.ptr);
 
 		for(int jj = 0; jj < count_edges; jj++)
 		{
 			Predicate* pp = edges[jj];
 
 			for(int i = 0; i < level; i++)
-				outbuff.write(cast(char[])"	");
-			outbuff.printf(" %s", pp.predicate.ptr);
+				outbuff.write(cast(char[])" ");
+			outbuff.printf("  p:{%s}", pp.predicate.ptr);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
 			{
 				Objectz oo = pp.objects[kk];
 
 				for(int i = 0; i < level; i++)
-					outbuff.write(cast(char[])"		");
+					outbuff.write(cast(char[])" ");
 
 				if(oo.type == LITERAL)
-					outbuff.printf(" \"%s\"", cast(char*) oo.object.ptr);
+					outbuff.printf("  o:{\"%s\"}", cast(char*) oo.object.ptr);
 				else if (oo.type == URI) 
-					outbuff.printf(" %s", cast(char*) oo.object.ptr);
+					outbuff.printf("  o:{%s}", cast(char*) oo.object.ptr);
 				else
+				{
+					outbuff.printf("\n  [ ");
 					oo.subject.toOutBuffer(outbuff, level + 1);
+					outbuff.printf("\n  ]");
+				}
 
 				if (jj == count_edges - 1)
-					outbuff.printf(" .\n");
+				{
+					if (level == 0)
+						outbuff.printf(" .\n");
+				}
 				else
 					outbuff.printf(" ;\n");
 				
@@ -77,6 +82,7 @@ struct Subject
 		OutBuffer outbuff = new OutBuffer();
 
 		toOutBuffer (outbuff);
+		outbuff.write(0);
 		
 		return cast(char*) outbuff.toBytes();
 	}
@@ -120,10 +126,14 @@ void set_hashed_data(Subject* ss)
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
-			if(pp.objects[kk].type != SUBJECT)
+			if(pp.objects[kk].type == SUBJECT)
+			{
+				set_hashed_data(pp.objects[kk].subject);
+			}
+			else
 			{
 				pp.objects_of_value[pp.objects[kk].object] = &pp.objects[kk];
-			}
+			}							
 		}
 
 	}

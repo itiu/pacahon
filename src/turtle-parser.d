@@ -194,12 +194,8 @@ private void next_element(char* element, state_struct* state)
 	assert(element !is null);
 	assert(state !is null);
 
-	//	printf("%s\n ", element);
-
-	if(*element == ']')
-	{
-		state.pos_in_stack_nodes--;
-	}
+	version(trace_turtle_parser)
+		printf("element: %s\n ", element);
 
 	if(*element == ';' || *element == '.' || *element == '[' || *element == ']')
 	{
@@ -211,8 +207,14 @@ private void next_element(char* element, state_struct* state)
 
 		if(state.P !is null)
 		{
-			//						printf("\n[%s %s %s]\n", state.nodes[state.pos_in_stack_nodes].subject, state.P, state.O);
+			version(trace_turtle_parser)
+				printf("\n pos_in_stack_nodes=%d [%s %s %s]\n", state.pos_in_stack_nodes,
+						state.nodes[state.pos_in_stack_nodes].subject.ptr, state.P, state.O);
+
 			Subject* ss = state.stack_nodes[state.pos_in_stack_nodes];
+
+			if(*element == ']')
+				state.pos_in_stack_nodes--;
 
 			Predicate* ee = null;
 
@@ -232,7 +234,9 @@ private void next_element(char* element, state_struct* state)
 			if(ee is null)
 			{
 				// создаем новый предикат
-				//				printf("создаем новый предикат\n");
+				version(trace_turtle_parser)
+					printf("создаем новый предикат\n");
+
 				if(ss.edges is null)
 					ss.edges = new Predicate*[50];
 
@@ -251,16 +255,21 @@ private void next_element(char* element, state_struct* state)
 			//			Objectz[] objects = &ee.objects;
 			if(ee.count_objects >= ee.objects.length)
 			{
-				//				printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects, ee.objects.length);
+				version(trace_turtle_parser)
+					printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects,
+							ee.objects.length);
 
 				ee.objects.length = ee.objects.length + 50;
-				//				printf("ee.objects.length= %d\n", ee.objects.length);
+
+				version(trace_turtle_parser)
+					printf("ee.objects.length= %d\n", ee.objects.length);
 			}
 
 			if(*element == '[')
 			{
 				// создадим новую ноду				
-				//				printf("создадим новую ноду\n");
+				version(trace_turtle_parser)
+					printf("создадим новую ноду\n");
 
 				state.count_nodes++;
 				Subject* new_nodes = &state.nodes[state.count_nodes];
@@ -338,7 +347,9 @@ private void next_element(char* element, state_struct* state)
 	{
 		if(state.e == 0)
 		{
-			//			printf("new node S=%s\n", element);
+			version(trace_turtle_parser)
+				printf("new node S=%s\n", element);
+
 			Subject* new_subject = &state.nodes[state.count_nodes];
 
 			if(state.pos_in_stack_nodes == 0)
@@ -356,13 +367,15 @@ private void next_element(char* element, state_struct* state)
 		else if(state.e == 1)
 		{
 			state.P = element;
-			//			printf("P=%s\n", element);
+			version(trace_turtle_parser)
+				printf("P=%s\n", element);
 		}
 		else if(state.e == 2)
 		{
 			state.O_is_literal = true;
 			state.O = element;
-			//			printf("O=%s\n", element);
+			version(trace_turtle_parser)
+				printf("O=%s\n", element);
 		}
 
 	}

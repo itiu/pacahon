@@ -120,21 +120,22 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	// найдем в массиве triples субьекта с типом msg
 	for(int ii = 0; ii < triples.length; ii++)
 	{
-		Subject* message = triples[ii];
-		printf("message.subject=%s\n", message.subject.ptr);
+		Subject* command = triples[ii];
+		printf("-----\n%s-----\n", command.toString());
 
-		set_hashed_data(message);
+		printf("message.subject=%s\n", command.subject.ptr);
 
-		Predicate* type = message.getEdge(cast(char[]) "a");
+		set_hashed_data(command);
+
+		Predicate* type = command.getEdge(cast(char[]) "a");
 		if(type is null)
-			type = message.getEdge(rdf__type);
+			type = command.getEdge(rdf__type);
 
 		if((msg__Message in type.objects_of_value) !is null)
 		{
+			Predicate* reciever = command.getEdge(msg__reciever);
 
-			Predicate* reciever = message.getEdge(msg__reciever);
-
-			Predicate* ticket = message.getEdge(msg__ticket);
+			Predicate* ticket = command.getEdge(msg__ticket);
 
 			char[] userId = null;
 
@@ -159,8 +160,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 			{
-				Predicate* sender = message.getEdge(msg__sender);
-				Subject*[] ss = command_preparer(message, sender, userId, ts);
+				Predicate* sender = command.getEdge(msg__sender);
+				Subject*[] ss = command_preparer(command, sender, userId, ts);
 
 				if(ss !is null)
 				{
@@ -176,6 +177,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		}
 	}
 
+	printf("# формируем ответ, серилизуем ответные графы в строку\n");
+
 	OutBuffer outbuff = new OutBuffer();
 
 	for(int ii = 0; ii < results.length; ii++)
@@ -188,10 +191,16 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			{
 				Subject* ss1 = qq[jj];
 				if(ss1 !is null)
+				{
+					printf("# серилизуем граф %X в строку\n", ss1);
 					ss1.toOutBuffer(outbuff);
+				}
 			}
 		}
 	}
+	outbuff.write(0);
+	
+	printf("# отправляем ответ:\n[%s] \n", cast(char*)outbuff.toBytes());
 
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
