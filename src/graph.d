@@ -30,6 +30,24 @@ struct Subject
 		return pp;
 	}
 
+	void addPredicateAsURI (char[] predicate, char[] object)
+	{
+		if (edges.length == 0)
+			edges = new Predicate [16];
+					
+		if (edges.length == count_edges)
+		{			
+			edges.length += 16;
+		}		
+		
+		edges[count_edges].predicate = predicate;
+		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].count_objects = 1;
+		edges[count_edges].objects[0].object = object;	
+		edges[count_edges].objects[0].type = URI;
+		count_edges++;
+	}	
+	
 	void addPredicate (char[] predicate, char[] object)
 	{
 		if (edges.length == 0)

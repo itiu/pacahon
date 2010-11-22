@@ -15,10 +15,11 @@ public char[] msg__reason = cast(char[]) "msg:reason";
 public char[] msg__result = cast(char[]) "msg:result";
 public char[] msg__in_reply_to = cast(char[]) "msg:in-reply-to";
 
-public char[] auth__Ticket = cast(char[]) "auth:Ticket";
-public char[] auth__login = cast(char[]) "auth:login";
+public char[] ticket__Ticket = cast(char[]) "ticket:Ticket";
+public char[] ticket__accessor = cast(char[]) "ticket:accessor";
+public char[] ticket__when = cast(char[]) "ticket:when";
+public char[] ticket__duration = cast(char[]) "ticket:duration";
+public char[] ticket__ticket = cast(char[]) "ticket:ticket";
+
 public char[] auth__credential = cast(char[]) "auth:credential";
-public char[] auth__accessor = cast(char[]) "auth:accessor";
-public char[] auth__when = cast(char[]) "auth:when";
-public char[] auth__duration = cast(char[]) "auth:duration";
-public char[] auth__ticket = cast(char[]) "auth:ticket";
+public char[] auth__login = cast(char[]) "auth:login";

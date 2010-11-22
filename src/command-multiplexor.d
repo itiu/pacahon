@@ -168,24 +168,23 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 			Uuid generated = rndUuid.next;
-			char[] ticket = generated.toString;
-			printf("%s\n", ticket.ptr);
 
 			// сохраняем в хранилище
 			char[] ticket_id = "auth:" ~ generated.toString;
+			printf("%s\n", ticket_id.ptr);
 
-			ts.addTriple(ticket_id, rdf__type, auth__Ticket);
-			ts.addTriple(ticket_id, auth__accessor, fromStringz(iterator.triple.s));
+			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
+			ts.addTriple(ticket_id, ticket__accessor, fromStringz(iterator.triple.s));
 
 			auto now = UTCtoLocalTime(getUTCtime());
 
-			ts.addTriple(ticket_id, auth__when, timeString(now));
-			ts.addTriple(ticket_id, auth__duration, cast(char[]) "3600");
+			ts.addTriple(ticket_id, ticket__when, timeString(now));
+			ts.addTriple(ticket_id, ticket__duration, cast(char[]) "3600");
 
 			reason = cast(char[]) "login и password совпадают";
 			isOk = true;
 			
-			out_graph.addPredicate (auth__ticket, ticket);
+			out_graph.addPredicate (ticket__ticket, ticket_id);
 			res = &out_graph;
 		}
 		else

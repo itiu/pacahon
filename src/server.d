@@ -216,6 +216,7 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 
 	out_message.subject = time;
 
+	out_message.addPredicateAsURI(rdf__type, msg__Message);
 	out_message.addPredicate(msg__in_reply_to, message.subject);
 	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
