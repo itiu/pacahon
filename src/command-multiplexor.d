@@ -1,22 +1,25 @@
 module pacahon.command.multiplexor;
 
 private import core.stdc.stdio;
-private import std.c.string;
 private import core.stdc.stdlib;
-
-private import pacahon.graph;
-private import pacahon.n3.parser;
-
-private import trioplax.triple;
-private import trioplax.TripleStorage;
-
-private import pacahon.authorization;
-private import pacahon.know_predicates;
+private import std.c.string;
+private import std.date;
 
 private import tango.util.uuid.NamespaceGenV5;
 private import tango.util.digest.Sha1;
 private import tango.util.uuid.RandomGen;
 private import tango.math.random.Twister;
+
+private import trioplax.triple;
+private import trioplax.TripleStorage;
+
+private import pacahon.graph;
+private import pacahon.n3.parser;
+
+private import pacahon.authorization;
+private import pacahon.know_predicates;
+
+private import pacahon.utils;
 
 /*
  * комманда добавления / изменения фактов в хранилище 
@@ -56,6 +59,8 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 					ts.addTriple(graph.subject, dc__creator, userId);
 				}
 
+				// основной цикл по добавлению фактов в хранилище из данного субьекта 
+				// TODO сделать рекурсивное добавление
 				for(int kk = 0; kk < graph.count_edges; kk++)
 				{
 					Predicate pp = graph.edges[kk];
@@ -77,9 +82,6 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 		printf("command put is finish \n");
 
 		return res;
-		//		printf(triples_on_put[0].toString());
-		//		print_graph(triples_on_put[0]);
-		//		triples_on_put[0].toString();
 	}
 
 	return res;
@@ -90,7 +92,7 @@ Subject* get(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 	Subject* res;
 	printf("command get\n");
 
-	// ! факты с предикатом [auth:credential] не возвращать !
+	// ! для пущей безопасности, факты с предикатом [auth:credential] не отдавать !
 
 	return res;
 }
@@ -104,8 +106,10 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 
 	bool isOk = false;
 
-	reason = cast(char[]) "нет причин для выдачи тикета";
+	reason = cast(char[]) "нет причин для выдачи сессионного билета";
 
+	Subject out_graph;
+	
 	Subject* res;
 
 	try
@@ -160,15 +164,29 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 		if(iterator !is null)
 		{
 			// такой логин и пароль найдены, формируем тикет
-
 			Twister rnd;
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 			Uuid generated = rndUuid.next;
-			printf("%s\n", generated.toString.ptr);
+			char[] ticket = generated.toString;
+			printf("%s\n", ticket.ptr);
+
+			// сохраняем в хранилище
+			char[] ticket_id = "auth:" ~ generated.toString;
+
+			ts.addTriple(ticket_id, rdf__type, auth__Ticket);
+			ts.addTriple(ticket_id, auth__accessor, fromStringz(iterator.triple.s));
+
+			auto now = UTCtoLocalTime(getUTCtime());
+
+			ts.addTriple(ticket_id, auth__when, timeString(now));
+			ts.addTriple(ticket_id, auth__duration, cast(char[]) "3600");
 
 			reason = cast(char[]) "login и password совпадают";
 			isOk = true;
+			
+			out_graph.addPredicate (auth__ticket, ticket);
+			res = &out_graph;
 		}
 		else
 		{
@@ -181,7 +199,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 	}
 	catch(Exception ex)
 	{
-		reason = cast(char[]) "ошибка при вычислении прав :" ~ ex.msg;
+		reason = cast(char[]) "ошибка при выдачи сессионного билет :" ~ ex.msg;
 		isOk = false;
 
 		return res;
@@ -192,7 +210,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 		printf("	результат:");
 
 		if(isOk == true)
-			printf("тикет выдан\n");
+			printf("сессионный билет выдан\n");
 		else
 			printf("отказанно\n");
 

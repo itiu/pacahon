@@ -6,6 +6,7 @@ import std.c.string;
 import std.stdio;
 
 import pacahon.graph;
+import pacahon.utils;
 
 int def_size_out_array = 100;
 

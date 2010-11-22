@@ -22,7 +22,6 @@ private import std.c.string;
 private import libzmq_headers;
 private import libzmq_client;
 
-private import std.file;
 private import std.json;
 private import std.datetime;
 private import std.outbuffer;
@@ -38,6 +37,8 @@ private import trioplax.mongodb.TripleStorageMongoDB;
 
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
+
+private import pacahon.utils;
 
 void main(char[][] args)
 {
@@ -151,7 +152,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				if(iterator !is null)
 				{
-					userId = pacahon.graph.fromStringz(iterator.triple.s);
+					userId = pacahon.utils.fromStringz(iterator.triple.s);
 				}
 				else
 				{
@@ -215,9 +216,9 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 
 	out_message.subject = time;
 
-	out_message.addPredicate(cast(char[]) "msg:in-reply-to", message.subject);
-	out_message.addPredicate(cast(char[]) "msg:sender", cast(char[]) "pacahon");
-	out_message.addPredicate(cast(char[]) "msg:reciever", sender.getFirstObject);
+	out_message.addPredicate(msg__in_reply_to, message.subject);
+	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
+	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	Predicate* command = message.getEdge(msg__command);
 	char[] reason;
@@ -235,54 +236,16 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 		res = get_ticket(message, sender, userId, ts, reason);
 	}
 
-	out_message.addPredicate(cast(char[]) "msg:reason", reason);
+	out_message.addPredicate(msg__reason, reason);
+	out_message.addPredicate(msg__result, res);
 
 	if(res is null)
 	{
-		out_message.addPredicate(cast(char[]) "msg:status", cast(char[]) "fail");
+		out_message.addPredicate(msg__status, cast(char[]) "fail");
 	}
 	else
 	{
-		out_message.addPredicate(cast(char[]) "msg:status", cast(char[]) "ok");
+		out_message.addPredicate(msg__status, cast(char[]) "ok");
 	}
 
-}
-
-JSONValue get_props(string file_name)
-{
-	JSONValue res;
-
-	if(exists(file_name))
-	{
-		string buff = cast(string) read(file_name);
-
-		res = parseJSON(buff);
-	}
-	else
-	{
-		res.type = JSON_TYPE.OBJECT;
-
-		JSONValue element1;
-		element1.str = "tcp://127.0.0.1:5555";
-		res.object["zmq_point"] = element1;
-
-		JSONValue element2;
-		element2.str = "127.0.0.1";
-		res.object["mongodb_server"] = element2;
-
-		JSONValue element3;
-		element3.type = JSON_TYPE.INTEGER;
-		element3.integer = 27017;
-		res.object["mongodb_port"] = element3;
-
-		JSONValue element4;
-		element4.str = "pacahon";
-		res.object["mongodb_collection"] = element4;
-
-		string buff = toJSON(&res);
-
-		write(file_name, buff);
-	}
-
-	return res;
 }

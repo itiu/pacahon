@@ -9,6 +9,8 @@ version(D2)
 }
 import std.stdio;
 
+import pacahon.utils;
+
 struct Subject
 {
 	char[] subject = null;
@@ -44,7 +46,25 @@ struct Subject
 		edges[count_edges].objects[0].object = object;	
 		count_edges++;
 	}
-	
+
+	void addPredicate (char[] predicate, Subject* subject)
+	{
+		if (edges.length == 0)
+			edges = new Predicate [16];
+					
+		if (edges.length == count_edges)
+		{			
+			edges.length += 16;
+		}		
+		
+		edges[count_edges].predicate = predicate;
+		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].count_objects = 1;
+		edges[count_edges].objects[0].subject = subject;
+		edges[count_edges].objects[0].type = SUBJECT;
+		count_edges++;
+	}
+
 	void toOutBuffer(ref OutBuffer outbuff, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
@@ -74,7 +94,7 @@ struct Subject
 					outbuff.printf("  %s", cast(char*) oo.object.ptr);
 				else
 				{
-					outbuff.printf("\n  [ ");
+					outbuff.printf("\n  [\n");
 					oo.subject.toOutBuffer(outbuff, level + 1);
 					outbuff.printf("\n  ]");
 				}
@@ -154,11 +174,6 @@ void set_hashed_data(Subject* ss)
 		}
 
 	}
-}
-
-char[] fromStringz(char* s)
-{
-	return s ? s[0 .. strlen(s)] : null;
 }
 
 void print_graph(Subject* ss, int level = 0)
