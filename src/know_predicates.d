@@ -19,7 +19,7 @@ public char[] ticket__Ticket = cast(char[]) "ticket:Ticket";
 public char[] ticket__accessor = cast(char[]) "ticket:accessor";
 public char[] ticket__when = cast(char[]) "ticket:when";
 public char[] ticket__duration = cast(char[]) "ticket:duration";
-public char[] ticket__ticket = cast(char[]) "ticket:ticket";
 
+public char[] auth__ticket = cast(char[]) "auth:ticket";
 public char[] auth__credential = cast(char[]) "auth:credential";
 public char[] auth__login = cast(char[]) "auth:login";

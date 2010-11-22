@@ -184,7 +184,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 			reason = cast(char[]) "login и password совпадают";
 			isOk = true;
 			
-			out_graph.addPredicate (ticket__ticket, ticket_id);
+			out_graph.addPredicate (auth__ticket, ticket_id);
 			res = &out_graph;
 		}
 		else
