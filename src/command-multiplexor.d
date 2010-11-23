@@ -24,8 +24,12 @@ private import pacahon.utils;
 /*
  * комманда добавления / изменения фактов в хранилище 
  */
-Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
+Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
+	isOk = false;
+	
+	reason = cast(char[]) "добавление фактов не возможно";
+	
 	Subject* res;
 	printf("command put\n");
 
@@ -49,7 +53,9 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 			 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
 			 * или может быть вычислено разрешающее право на U данного субъекта. */
 
-			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts) == true)
+			char[] authorize_reason;
+			
+			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 			{
 				// можно выполнять операцию по добавлению или обновлению фактов
 
@@ -76,7 +82,14 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 					}
 
 				}
+				
+				isOk = true;
 			}
+			else
+			{
+				reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;				
+			}
+			
 		}
 
 		printf("command put is finish \n");
@@ -87,8 +100,9 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 	return res;
 }
 
-Subject* get(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
+Subject* get(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
+	isOk = false;
 	Subject* res;
 	printf("command get\n");
 
@@ -100,11 +114,11 @@ Subject* get(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 /*
  * команда получения тикета
  */
-Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out char[] reason)
+Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
 	printf("command get_ticket\n");
 
-	bool isOk = false;
+	isOk = false;
 
 	reason = cast(char[]) "нет причин для выдачи сессионного билета";
 

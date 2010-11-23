@@ -23,11 +23,11 @@ enum operation
  * targetId - обьект охраны
  * op - список запрашиваемых операций
  */
-bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts)
+bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
 	bool res = false;
 
-	char[] reason = cast(char[]) "ничего разрешающего не было определено";
+	reason = cast(char[]) "ничего разрешающего не было определено";
 
 	if(userId !is null)
 		printf("# пользователь [%s]", userId);

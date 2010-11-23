@@ -217,30 +217,29 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 	out_message.subject = time;
 
 	out_message.addPredicateAsURI(rdf__type, msg__Message);
-	out_message.addPredicate(msg__in_reply_to, message.subject);
+	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
 	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	Predicate* command = message.getEdge(msg__command);
+
 	char[] reason;
+	bool isOk;
 
 	if("put" in command.objects_of_value)
 	{
-		res = put(message, sender, userId, ts, reason);
+		res = put(message, sender, userId, ts, isOk, reason);
 	}
 	else if("get" in command.objects_of_value)
 	{
-		res = get(message, sender, userId, ts, reason);
+		res = get(message, sender, userId, ts, isOk, reason);
 	}
 	else if("msg:get_ticket" in command.objects_of_value)
 	{
-		res = get_ticket(message, sender, userId, ts, reason);
+		res = get_ticket(message, sender, userId, ts, isOk, reason);
 	}
 
-	out_message.addPredicate(msg__reason, reason);
-	out_message.addPredicate(msg__result, res);
-
-	if(res is null)
+	if(isOk == false)
 	{
 		out_message.addPredicate(msg__status, cast(char[]) "fail");
 	}
@@ -248,5 +247,10 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 	{
 		out_message.addPredicate(msg__status, cast(char[]) "ok");
 	}
+
+	if(res !is null)
+		out_message.addPredicate(msg__result, res);
+
+	out_message.addPredicate(msg__reason, reason);
 
 }
