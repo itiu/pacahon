@@ -6,7 +6,7 @@ private import std.json;
 import core.stdc.stdio;
 private import std.c.string;
 
-char[] timeString(d_time t)
+char[] timeToString(d_time t)
 {
 	// Years are supposed to be -285616 .. 285616, or 7 digits
 	// "1996-02-24 02:04:57.2367"
@@ -22,6 +22,23 @@ char[] timeString(d_time t)
 	assert(len < buffer.length);
 
 	return buffer[0 .. len];
+}
+
+d_time stringToTime(char* str)
+{
+	d_time t;
+
+	int year = (str[0] - 48) * 1000 + (str[1] - 48) * 100 + (str[2] - 48) * 10 + (str[3] - 48);
+	int month = (str[5] - 48) * 10 + (str[6] - 48);
+	int dayofmonth = (str[8] - 48) * 10 + (str[9] - 48);
+	int hour = (str[11] - 48) * 10 + (str[12] - 48) ;
+	int minute = (str[14] - 48) * 10 + (str[15] - 48);
+	int second = (str[17] - 48) * 10 + (str[18] - 48);
+	int mseconds = (str[20] - 48) * 100 + (str[21] - 48) * 10 + (str[22] - 48);
+
+	t = std.date.makeDate(std.date.makeDay(year, month, dayofmonth), std.date.makeTime(hour, minute, second, mseconds));
+
+	return t;
 }
 
 JSONValue get_props(string file_name)

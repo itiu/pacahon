@@ -19,12 +19,13 @@ version(D2)
 
 private import std.c.string;
 
-private import libzmq_headers;
-private import libzmq_client;
-
 private import std.json;
 private import std.datetime;
 private import std.outbuffer;
+private import std.date;
+
+private import libzmq_headers;
+private import libzmq_client;
 
 private import Integer = tango.text.convert.Integer;
 
@@ -139,7 +140,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 			Predicate* ticket = command.getEdge(msg__ticket);
 
-			char[] userId = null;
+			char* userId = null;
 
 			if(ticket !is null && ticket.objects !is null)
 			{
@@ -147,16 +148,70 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
 
-				// найдем пользователя по сессионному билету
-				triple_list_element* iterator = ts.getTriples(null, msg__ticket, ticket_str);
+				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
+				triple_list_element* iterator = ts.getTriples(ticket_str, null, null);
 
-				if(iterator !is null)
+				char* when = null;
+				int duration = 0;
+
+				if(iterator is null)
 				{
-					userId = pacahon.utils.fromStringz(iterator.triple.s);
+					printf("# сессионный билет не найден\n");
 				}
-				else
+
+				while(iterator !is null)
 				{
-					printf("# пользователь не найден\n");
+					if(strcmp(iterator.triple.p, ticket__accessor.ptr) == 0)
+						userId = iterator.triple.o;
+
+					if(strcmp(iterator.triple.p, ticket__when.ptr) == 0)
+						when = iterator.triple.o;
+
+					if(strcmp(iterator.triple.p, ticket__duration.ptr) == 0)
+					{
+						duration = Integer.toInt(pacahon.utils.fromStringz(iterator.triple.o));
+						printf("# str duration = %s\n", iterator.triple.o);
+						printf("# duration = %d\n", duration);
+					}
+
+					if(userId !is null && when !is null && duration > 10)
+						break;
+
+					iterator = iterator.next_triple_list_element;
+				}
+
+				if(userId is null)
+				{
+					printf("# найденный сессионный билет не полон, пользователь не найден\n");
+				}
+
+				if(userId !is null && (when is null || duration < 10))
+				{
+					printf("# найденный сессионный билет не полон, считаем что пользователь не был найден\n");
+					userId = null;
+				}
+
+				// проверим время жизни тикета
+				if(userId !is null)
+				{
+					// TODO stringToTime очень медленная операция ~ 100 микросекунд
+					auto now = UTCtoLocalTime(getUTCtime());
+
+					d_time ticket_create_time = stringToTime(when);
+
+					printf("# duration=%d , now=%d\n", duration, (now - ticket_create_time) / 1000);
+					if((now - ticket_create_time) / 1000 > duration)
+					{
+						// тикет просрочен
+						printf("# тикет просрочен\n");
+						userId = null;
+					}
+				}
+				//
+
+				if(userId !is null)
+				{
+					printf("# пользователь найден, userId=%s\n", userId);
 				}
 			}
 
@@ -164,7 +219,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			{
 				Predicate* sender = command.getEdge(msg__sender);
 				Subject out_message;
-				command_preparer(command, out_message, sender, userId, ts);
+				char[] user_id;
+				if(userId !is null)
+					user_id = pacahon.utils.fromStringz(userId);
+				command_preparer(command, out_message, sender, user_id, ts);
 
 				results[ii] = &out_message;
 			}

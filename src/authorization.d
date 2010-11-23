@@ -30,7 +30,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	reason = cast(char[]) "ничего разрешающего не было определено";
 
 	if(userId !is null)
-		printf("# пользователь [%s]", userId);
+		printf("# пользователь [%s]", userId.ptr);
 	else
 		printf("# неизвестный пользователь");
 
@@ -57,33 +57,48 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 		if(targetId is null)
 			throw new Exception("char[] targetId == null");
 
+		bool subjectIsExist = ts.isExistSubject(targetId);
+
 		if(userId !is null)
 		{
-			printf("A 0. пользователь известен, проверка прав для всех операций");
+			printf("A 0. пользователь известен, проверка прав для всех операций\n");
 			/*
 			 * пользователь известен, проверка прав для всех операций
 			 */
 
-			// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
-			printf("A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [%s]\n", userId);
-
-			triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
-
-			if(iterator !is null)
+			if(subjectIsExist == true)
 			{
-				printf("#dc:creator найден\n");
+				// субьект уже существует
 
+				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
+				printf("A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [%s]\n", userId.ptr);
+
+				triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
+
+				if(iterator !is null)
+				{
+					printf("#dc:creator найден\n");
+					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
+					res = true;
+				}
+				else
+				{
+					printf("#dc:creator  не найден\n");
+					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
+					res = false;
+				}
 			}
 			else
 			{
-				printf("#dc:creator  не найден\n");
+				reason = cast(char[]) "пользователь известен, охраняемый субьект отсутствует в хранилище";
+				res = true;
 			}
 		}
 		else
 		{
 			// если пользователь не указан, то можно только добавление ранее не существовавшего субьекта
 
-			if(ts.isExistSubject(targetId) == true)
+			if(subjectIsExist == true)
 			{
 				// охраняемый субьект уже есть, все операции запрещены
 				reason = cast(char[]) "пользователь не известен, охраняемый субьект уже есть, все операции запрещены";

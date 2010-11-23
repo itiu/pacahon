@@ -1,3 +1,5 @@
+// TODO reasin -> exception ?
+
 module pacahon.command.multiplexor;
 
 private import core.stdc.stdio;
@@ -27,9 +29,9 @@ private import pacahon.utils;
 Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
 	isOk = false;
-	
+
 	reason = cast(char[]) "добавление фактов не возможно";
-	
+
 	Subject* res;
 	printf("command put\n");
 
@@ -38,7 +40,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		char* args_text = cast(char*) args.objects[ii].object;
-		//		printf("arg [%s]\n", args_text);
+		printf("arg [%s]\n", args_text);
 
 		int arg_size = strlen(args_text);
 
@@ -48,15 +50,19 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 		{
 			Subject* graph = graphs_on_put[jj];
 
+			printf("Subject* graph=%X\n", graph);
+
 			// цикл по всем добавляемым субьектам
 			/* Doc 2. если создается новый субъект, то ограничений по умолчанию нет
 			 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
 			 * или может быть вычислено разрешающее право на U данного субъекта. */
 
 			char[] authorize_reason;
-			
+
+			printf("start authorize\n");
 			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 			{
+				printf("end authorize = true\n");
 				// можно выполнять операцию по добавлению или обновлению фактов
 
 				if(userId !is null)
@@ -82,14 +88,16 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 					}
 
 				}
-				
+
+				reason = cast(char[]) "добавление фактов выполнено:" ~ authorize_reason;
 				isOk = true;
 			}
 			else
 			{
-				reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;				
+				printf("end authorize = false\n");
+				reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;
 			}
-			
+
 		}
 
 		printf("command put is finish \n");
@@ -123,7 +131,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 	reason = cast(char[]) "нет причин для выдачи сессионного билета";
 
 	Subject out_graph;
-	
+
 	Subject* res;
 
 	try
@@ -192,13 +200,13 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 
 			auto now = UTCtoLocalTime(getUTCtime());
 
-			ts.addTriple(ticket_id, ticket__when, timeString(now));
+			ts.addTriple(ticket_id, ticket__when, timeToString(now));
 			ts.addTriple(ticket_id, ticket__duration, cast(char[]) "3600");
 
 			reason = cast(char[]) "login и password совпадают";
 			isOk = true;
-			
-			out_graph.addPredicate (auth__ticket, ticket_id);
+
+			out_graph.addPredicate(auth__ticket, ticket_id);
 			res = &out_graph;
 		}
 		else

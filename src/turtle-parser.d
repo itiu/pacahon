@@ -31,8 +31,8 @@ struct state_struct
 	Subject* stack_nodes[8];
 	byte pos_in_stack_nodes;
 
-//	Predicate edges[];
-//	int count_edges;
+	//	Predicate edges[];
+	//	int count_edges;
 
 	Objectz objects[];
 	int count_objects;
@@ -69,10 +69,10 @@ public Subject*[] parse_n3_string(char* src, int len)
 	state.pos_in_stack_nodes = 0;
 
 	state.count_nodes = 0;
-//	state.count_edges = 0;
+	//	state.count_edges = 0;
 	state.nodes = new Subject[def_size_out_array];
 	state.roots = new Subject*[def_size_out_array];
-//	state.edges = new Predicate[def_size_out_array];
+	//	state.edges = new Predicate[def_size_out_array];
 	state.objects = new Objectz[def_size_out_array];
 
 	while(ch != 0)
@@ -187,6 +187,9 @@ public Subject*[] parse_n3_string(char* src, int len)
 	}
 	state.roots.length = state.count_roots;
 
+	version(trace_turtle_parser)
+		printf("parse finish\n");
+
 	return state.roots;
 }
 
@@ -241,7 +244,7 @@ private void next_element(char* element, state_struct* state)
 				if(ss.edges is null)
 					ss.edges = new Predicate[16];
 
-//				ee = &state.edges[state.count_edges];
+				//				ee = &state.edges[state.count_edges];
 				ee = &ss.edges[ss.count_edges];
 
 				if(ee.objects is null)
@@ -251,6 +254,9 @@ private void next_element(char* element, state_struct* state)
 
 				ss.edges[ss.count_edges] = *ee;
 				ss.count_edges++;
+
+				version(trace_turtle_parser)
+					printf("ok, ss.count_edges=%d\n", ss.count_edges);
 			}
 
 			// увеличим размер массива если это требуется
@@ -289,6 +295,9 @@ private void next_element(char* element, state_struct* state)
 			}
 			else
 			{
+				version(trace_turtle_parser)
+					printf("set object=%s\n", state.O);
+
 				ee.objects[ee.count_objects].object = new char[strlen(cast(char*) state.O)];
 
 				char* ptr = cast(char*) state.O;
@@ -331,9 +340,12 @@ private void next_element(char* element, state_struct* state)
 
 				//				ee.objects[ee.count_objects].subject = state.ptr_buff;
 				ee.count_objects++;
+
+				version(trace_turtle_parser)
+					printf("ee.count_objects=%d\n", ee.count_objects);
 			}
 
-//			state.count_edges++;
+			//			state.count_edges++;
 			state.P = null;
 			state.O = null;
 		}
@@ -342,6 +354,9 @@ private void next_element(char* element, state_struct* state)
 		{
 			state.e = 0;
 		}
+
+		version(trace_turtle_parser)
+			printf("next element finish #1\n");
 
 		return;
 	}
@@ -383,4 +398,7 @@ private void next_element(char* element, state_struct* state)
 	}
 
 	state.e++;
+
+	version(trace_turtle_parser)
+		printf("next element finish #2\n");
 }
