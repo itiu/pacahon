@@ -53,7 +53,8 @@ struct state_struct
 public Subject*[] parse_n3_string(char* src, int len)
 {
 	assert(src !is null);
-	assert(len != 0);
+	if(len == 0)
+		return null;
 
 	char* ptr = src - 1;
 	char* new_line_ptr = src;
@@ -75,7 +76,7 @@ public Subject*[] parse_n3_string(char* src, int len)
 	//	state.edges = new Predicate[def_size_out_array];
 	state.objects = new Objectz[def_size_out_array];
 
-	while(ch != 0)
+	while(ch != 0 && ptr - src < len)
 	{
 		prev_ch = ch;
 		ptr++;

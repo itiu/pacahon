@@ -104,6 +104,9 @@ int count = 0;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	StopWatch sw;
+	sw.start();
+
 	msg[message_size] = 0;
 
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
@@ -111,11 +114,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	count++;
 
-	printf("[%i] get message[%d]: \n%s\n", count, message_size, cast(char*) msg);
+//	printf("[%i] get message[%d]: \n%s\n", count, message_size, cast(char*) msg);
 	//	printf("[%i] \n", count);
-
-	StopWatch sw;
-	sw.start();
 
 	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size);
 	Subject*[] results = new Subject*[triples.length];
@@ -124,11 +124,19 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	for(int ii = 0; ii < triples.length; ii++)
 	{
 		Subject* command = triples[ii];
+		
 		printf("\n-----\n%s\n-----\n", command.toString());
+		printf("get_message:message.subject=%s\n", command.subject.ptr);
 
-		printf("message.subject=%s\n", command.subject.ptr);
-
+		if (command.count_edges < 3)
+		{
+			printf("подозрительная комманда, пропустим\n");
+			continue;
+		}
+		
 		set_hashed_data(command);
+		
+		printf("command.length=%d\n", triples.length);
 
 		Predicate* type = command.getEdge(cast(char[]) "a");
 		if(type is null)
@@ -219,9 +227,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			{
 				Predicate* sender = command.getEdge(msg__sender);
 				Subject out_message;
+
 				char[] user_id;
 				if(userId !is null)
 					user_id = pacahon.utils.fromStringz(userId);
+
 				command_preparer(command, out_message, sender, user_id, ts);
 
 				results[ii] = &out_message;
@@ -258,7 +268,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 void command_preparer(Subject* message, ref Subject out_message, Predicate* sender, char[] userId, TripleStorage ts)
 {
-	//	printf("command_preparer\n");
+	printf("command_preparer\n");
 	Predicate[] ppp = new Predicate[5];
 
 	Subject* res;
@@ -284,17 +294,24 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 	char[] reason;
 	bool isOk;
 
-	if("put" in command.objects_of_value)
+	if(command !is null)
 	{
-		res = put(message, sender, userId, ts, isOk, reason);
+		if("msg:put" in command.objects_of_value)
+		{
+			res = put(message, sender, userId, ts, isOk, reason);
+		}
+		else if("msg:get" in command.objects_of_value)
+		{
+			res = get(message, sender, userId, ts, isOk, reason);
+		}
+		else if("msg:get_ticket" in command.objects_of_value)
+		{
+			res = get_ticket(message, sender, userId, ts, isOk, reason);
+		}
 	}
-	else if("get" in command.objects_of_value)
+	else
 	{
-		res = get(message, sender, userId, ts, isOk, reason);
-	}
-	else if("msg:get_ticket" in command.objects_of_value)
-	{
-		res = get_ticket(message, sender, userId, ts, isOk, reason);
+		reason = cast(char[])"в сообщении не указанна команда";
 	}
 
 	if(isOk == false)
@@ -310,5 +327,4 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 		out_message.addPredicate(msg__result, res);
 
 	out_message.addPredicate(msg__reason, reason);
-
 }

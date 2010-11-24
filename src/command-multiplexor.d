@@ -28,23 +28,29 @@ private import pacahon.utils;
  */
 Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
+	printf("command put\n");
+
 	isOk = false;
 
 	reason = cast(char[]) "добавление фактов не возможно";
 
 	Subject* res;
-	printf("command put\n");
 
 	Predicate* args = message.getEdge(msg__args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		char* args_text = cast(char*) args.objects[ii].object;
-		printf("arg [%s]\n", args_text);
-
 		int arg_size = strlen(args_text);
+		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject*[] graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
+
+		printf("arguments has been read\n");
+		if(graphs_on_put is null)
+		{
+			reason = cast(char[]) "в сообщении нет фактов которые следует поместить в хранилище";
+		}
 
 		for(int jj = 0; jj < graphs_on_put.length; jj++)
 		{
