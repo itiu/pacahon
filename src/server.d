@@ -15,7 +15,7 @@ version(D2)
 	private import core.stdc.stdlib;
 }
 
-//private import std.stdio;
+private import std.stdio;
 
 private import std.c.string;
 
@@ -104,29 +104,34 @@ int count = 0;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	count++;
+
+//	msg[message_size - 1] = 0;
+	printf("********************************************************************\n");
+	printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
+	printf("********************************************************************\n");
+
 	StopWatch sw;
 	sw.start();
 
-	msg[message_size] = 0;
-
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	TripleStorage ts = server_thread.ts;
-
-	count++;
-
-//	printf("[%i] get message[%d]: \n%s\n", count, message_size, cast(char*) msg);
+	ts.release_all_lists();
+	
 	//	printf("[%i] \n", count);
 
 	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size);
+	printf("command.length=%d\n", triples.length);
 	Subject*[] results = new Subject*[triples.length];
 
 	// найдем в массиве triples субьекта с типом msg
+	
 	for(int ii = 0; ii < triples.length; ii++)
 	{
 		Subject* command = triples[ii];
 		
-		printf("\n-----\n%s\n-----\n", command.toString());
-		printf("get_message:message.subject=%s\n", command.subject.ptr);
+		printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n", command.count_edges, command.toStringz());
+		writeln("get_message:message.subject=", command.subject);
 
 		if (command.count_edges < 3)
 		{
@@ -136,8 +141,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		
 		set_hashed_data(command);
 		
-		printf("command.length=%d\n", triples.length);
-
 		Predicate* type = command.getEdge(cast(char[]) "a");
 		if(type is null)
 			type = command.getEdge(rdf__type);
@@ -145,21 +148,20 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		if((msg__Message in type.objects_of_value) !is null)
 		{
 			Predicate* reciever = command.getEdge(msg__reciever);
-
 			Predicate* ticket = command.getEdge(msg__ticket);
 
-			char* userId = null;
+			char[] userId = null;
 
 			if(ticket !is null && ticket.objects !is null)
 			{
 				char[] ticket_str = ticket.objects[0].object;
-
+				
 				printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
 
 				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
 				triple_list_element* iterator = ts.getTriples(ticket_str, null, null);
 
-				char* when = null;
+				char[] when = null;
 				int duration = 0;
 
 				if(iterator is null)
@@ -169,17 +171,17 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				while(iterator !is null)
 				{
-					if(strcmp(iterator.triple.p, ticket__accessor.ptr) == 0)
+					if(iterator.triple.p == ticket__accessor)
 						userId = iterator.triple.o;
 
-					if(strcmp(iterator.triple.p, ticket__when.ptr) == 0)
+					if(iterator.triple.p == ticket__when)
 						when = iterator.triple.o;
 
-					if(strcmp(iterator.triple.p, ticket__duration.ptr) == 0)
+					if(iterator.triple.p == ticket__duration)
 					{
-						duration = Integer.toInt(pacahon.utils.fromStringz(iterator.triple.o));
-						printf("# str duration = %s\n", iterator.triple.o);
-						printf("# duration = %d\n", duration);
+						duration = Integer.toInt(iterator.triple.o);
+						writeln("# str duration = %s\n", iterator.triple.o);
+						writeln("# duration = %d\n", duration);
 					}
 
 					if(userId !is null && when !is null && duration > 10)
@@ -187,7 +189,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 					iterator = iterator.next_triple_list_element;
 				}
-
+				
 				if(userId is null)
 				{
 					printf("# найденный сессионный билет не полон, пользователь не найден\n");
@@ -205,9 +207,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					// TODO stringToTime очень медленная операция ~ 100 микросекунд
 					auto now = UTCtoLocalTime(getUTCtime());
 
-					d_time ticket_create_time = stringToTime(when);
+					d_time ticket_create_time = stringToTime(when.ptr);
 
-					printf("# duration=%d , now=%d\n", duration, (now - ticket_create_time) / 1000);
+//					printf("# duration=%d , now=%d\n", duration, (now - ticket_create_time) / 1000);
 					if((now - ticket_create_time) / 1000 > duration)
 					{
 						// тикет просрочен
@@ -219,7 +221,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				if(userId !is null)
 				{
-					printf("# пользователь найден, userId=%s\n", userId);
+					writeln("# пользователь найден, userId=", userId);
 				}
 			}
 
@@ -228,18 +230,16 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				Predicate* sender = command.getEdge(msg__sender);
 				Subject out_message;
 
-				char[] user_id;
-				if(userId !is null)
-					user_id = pacahon.utils.fromStringz(userId);
-
-				command_preparer(command, out_message, sender, user_id, ts);
+				command_preparer(command, out_message, sender, userId, ts);
 
 				results[ii] = &out_message;
 			}
+			
 		}
+	
 	}
 
-	printf("# формируем ответ, серилизуем ответные графы в строку\n");
+//	printf("# формируем ответ, серилизуем ответные графы в строку\n");
 	OutBuffer outbuff = new OutBuffer();
 
 	for(int ii = 0; ii < results.length; ii++)
@@ -248,16 +248,18 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(out_message !is null)
 		{
-			printf("# серилизуем граф %X в строку\n", out_message);
+//			printf("# серилизуем граф %X в строку\n", out_message);
 			out_message.toOutBuffer(outbuff);
 		}
 	}
 	outbuff.write(0);
 
-	printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
+//	printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
 
 	if(from_client !is null)
-		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
+	from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
+
+//	from_client.send(cast(char*) "".ptr, cast(char*) "empty", false);
 
 	sw.stop();
 
@@ -283,6 +285,7 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
 
 	out_message.subject = time;
+//	out_message.subject = cast(char[])"msg:time";
 
 	out_message.addPredicateAsURI(rdf__type, msg__Message);
 	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
@@ -296,18 +299,21 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 
 	if(command !is null)
 	{
-		if("msg:put" in command.objects_of_value)
+		
+		if("put" in command.objects_of_value)
 		{
 			res = put(message, sender, userId, ts, isOk, reason);
 		}
-		else if("msg:get" in command.objects_of_value)
+		else if("get" in command.objects_of_value)
 		{
 			res = get(message, sender, userId, ts, isOk, reason);
 		}
-		else if("msg:get_ticket" in command.objects_of_value)
+		
+		 if("get_ticket" in command.objects_of_value)
 		{
 			res = get_ticket(message, sender, userId, ts, isOk, reason);
 		}
+		
 	}
 	else
 	{

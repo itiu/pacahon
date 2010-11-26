@@ -6,6 +6,7 @@ private import core.stdc.stdio;
 private import core.stdc.stdlib;
 private import std.c.string;
 private import std.date;
+private import std.stdio;
 
 private import tango.util.uuid.NamespaceGenV5;
 private import tango.util.digest.Sha1;
@@ -38,13 +39,16 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 
 	Predicate* args = message.getEdge(msg__args);
 
+	printf("command put, args=%X \n", args);
+
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
-		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
+		//		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject*[] graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
+		//		Subject*[] graphs_on_put = null;
 
 		printf("arguments has been read\n");
 		if(graphs_on_put is null)
@@ -56,7 +60,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 		{
 			Subject* graph = graphs_on_put[jj];
 
-			printf("Subject* graph=%X\n", graph);
+			//			printf("Subject* graph=%X\n", graph);
 
 			// цикл по всем добавляемым субьектам
 			/* Doc 2. если создается новый субъект, то ограничений по умолчанию нет
@@ -65,10 +69,8 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 
 			char[] authorize_reason;
 
-			printf("start authorize\n");
 			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 			{
-				printf("end authorize = true\n");
 				// можно выполнять операцию по добавлению или обновлению фактов
 
 				if(userId !is null)
@@ -100,7 +102,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 			}
 			else
 			{
-				printf("end authorize = false\n");
+				//				printf("end authorize = false\n");
 				reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;
 			}
 
@@ -177,33 +179,38 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 		Triple[] search_mask = new Triple[2];
 
 		search_mask[0].s = null;
-		search_mask[0].p = auth__login.ptr;
-		search_mask[0].o = login.getFirstObject.ptr;
+		search_mask[0].p = auth__login;
+		search_mask[0].o = login.getFirstObject;
 
 		search_mask[1].s = null;
-		search_mask[1].p = auth__credential.ptr;
-		search_mask[1].o = credential.getFirstObject.ptr;
+		search_mask[1].p = auth__credential;
+		search_mask[1].o = credential.getFirstObject;
 
 		char[][1] readed_predicate;
 		readed_predicate[0] = auth__login;
-
+		
 		triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(iterator !is null)
 		{
+			writeln ("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			// такой логин и пароль найдены, формируем тикет
 			Twister rnd;
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 			Uuid generated = rndUuid.next;
+			writeln ("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			// сохраняем в хранилище
 			char[] ticket_id = "auth:" ~ generated.toString;
-			printf("%s\n", ticket_id.ptr);
+			writeln(ticket_id);
+			writeln ("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
-			ts.addTriple(ticket_id, ticket__accessor, fromStringz(iterator.triple.s));
+			writeln ("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			ts.addTriple(ticket_id, ticket__accessor, iterator.triple.s);
 
+			writeln ("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			auto now = UTCtoLocalTime(getUTCtime());
 
 			ts.addTriple(ticket_id, ticket__when, timeToString(now));

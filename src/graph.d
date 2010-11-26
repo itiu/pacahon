@@ -89,7 +89,7 @@ struct Subject
 			outbuff.write(cast(char[])"  ");
 
 		if(subject !is null)
-			outbuff.printf("%s", subject.ptr);
+			outbuff.write(subject);
 
 		for(int jj = 0; jj < count_edges; jj++)
 		{
@@ -97,7 +97,8 @@ struct Subject
 
 			for(int i = 0; i < level; i++)
 				outbuff.write(cast(char[])" ");
-			outbuff.printf("  %s", pp.predicate.ptr);
+			outbuff.write(cast(char[])"  ");
+			outbuff.write(pp.predicate);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
 			{
@@ -105,26 +106,34 @@ struct Subject
 
 				for(int i = 0; i < level; i++)
 					outbuff.write(cast(char[])" ");
-
+				
 				if(oo.type == LITERAL)
-					outbuff.printf("  \"%s\"", cast(char*) oo.object.ptr);
-				else if (oo.type == URI) 
-					outbuff.printf("  %s", cast(char*) oo.object.ptr);
+				{
+					outbuff.write(cast (char[])"   \"");
+					outbuff.write (oo.object);
+					outbuff.write(cast (char[])"\"");
+				}
+				else if (oo.type == URI)
+				{
+					outbuff.write(cast (char[])"   ");
+					outbuff.write(oo.object);
+				}
 				else
 				{
-					outbuff.printf("\n  [\n");
+					outbuff.write(cast (char[])"\n  [\n");
 					oo.subject.toOutBuffer(outbuff, level + 1);
-					outbuff.printf("\n  ]");
+					outbuff.write(cast (char[])"\n  ]");
 				}
 
 				if (jj == count_edges - 1)
 				{
 					if (level == 0)
-						outbuff.printf(" .\n");
+						outbuff.write(cast (char[])" .\n");
 				}
 				else
-					outbuff.printf(" ;\n");
-				
+				{
+					outbuff.write(cast (char[])" ;\n");
+				}
 			}
 
 		}
@@ -132,7 +141,7 @@ struct Subject
 		return;
 	}
 
-	char* toString()
+	char* toStringz()
 	{
 		OutBuffer outbuff = new OutBuffer();
 

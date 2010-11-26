@@ -84,3 +84,8 @@ char[] fromStringz(char* s)
 {
 	return s ? s[0 .. strlen(s)] : null;
 }
+
+char[] fromStringz(char* s, int len)
+{
+	return s ? s[0 .. len] : null;
+}

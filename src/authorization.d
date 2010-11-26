@@ -1,6 +1,8 @@
 module pacahon.authorization;
 
 private import core.stdc.stdio;
+private import std.datetime;
+private import std.stdio;
 
 private import trioplax.triple;
 private import trioplax.TripleStorage;
@@ -25,6 +27,9 @@ enum operation
  */
 bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
+	StopWatch sw;
+	sw.start();
+	
 	bool res = false;
 
 	reason = cast(char[]) "ничего разрешающего не было определено";
@@ -47,7 +52,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	if(op & operation.DELETE)
 		printf(" DELETE,");
 
-	printf("над субьектом охраны [%s]. \n", targetId.ptr);
+	writeln("над субьектом охраны [", targetId, "]. \n");
 
 	try
 	{
@@ -61,7 +66,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 		if(userId !is null)
 		{
-			printf("A 0. пользователь известен, проверка прав для всех операций\n");
+//			printf("A 0. пользователь известен, проверка прав для всех операций\n");
 			/*
 			 * пользователь известен, проверка прав для всех операций
 			 */
@@ -71,19 +76,19 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				// субьект уже существует
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
-				printf("A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [%s]\n", userId.ptr);
+//				printf("A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [%s]\n", userId.ptr);
 
 				triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
-					printf("#dc:creator найден\n");
+//					printf("#dc:creator найден\n");
 					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
 					res = true;
 				}
 				else
 				{
-					printf("#dc:creator  не найден\n");
+//					printf("#dc:creator  не найден\n");
 					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
 					res = false;
 				}
@@ -133,6 +138,12 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 			printf("отказанно\n");
 
 		printf("	причина: %s\n", reason.ptr);
+		sw.stop();
+		long t = cast(long) sw.peek().microseconds;
 
+		if (t > 100)
+		{		
+			printf("total time authorize: %d[µs]\n", t);
+		}
 	}
 }
