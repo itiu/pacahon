@@ -35,11 +35,11 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	reason = cast(char[]) "ничего разрешающего не было определено";
 
 	if(userId !is null)
-		printf("# пользователь [%s]", userId.ptr);
+		write("# пользователь [", userId, "]");
 	else
-		printf("# неизвестный пользователь");
+		write("# неизвестный пользователь");
 
-	printf(" запрашивает разрешение на выполнении ");
+	writeln(" запрашивает разрешение на выполнении ");
 
 	if(op & operation.BROWSE)
 		printf(" BROWSE,");

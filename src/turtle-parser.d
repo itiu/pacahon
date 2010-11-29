@@ -11,6 +11,11 @@ import pacahon.utils;
 
 int def_size_out_array = 100;
 
+version(trace_turtle_parser)
+	bool print_found_element = true;
+else
+	bool print_found_element = false;
+
 struct state_struct
 {
 	char* P;
@@ -224,11 +229,21 @@ private void next_element(char* element, int el_length, state_struct* state)
 	assert(element !is null);
 	assert(state !is null);
 
-	//	writeln("ELEMENT (", el_length, ") [", fromStringz (element, el_length), "]");
+	if(print_found_element)
+		writeln("ELEMENT (", el_length, ") [", fromStringz(element, el_length), "]");
 
-	if(*element == ';' || *element == '.' || *element == '[' || *element == ']')
+	if(*element == ';' || *element == '.' || *element == '[' || *element == ']' || *element == ',')
 	{
-		state.e = 1;
+		if(*element != ',')
+		{
+			state.e = 1;
+		}
+
+		if(*element == ',')
+		{
+			state.e = 2;
+		}
+
 		if(*element == '.')
 		{
 			state.e = 0;
@@ -237,8 +252,8 @@ private void next_element(char* element, int el_length, state_struct* state)
 		if(state.P !is null)
 		{
 			version(trace_turtle_parser)
-				printf("\n pos_in_stack_nodes=%d [%s %s %s]\n", state.pos_in_stack_nodes,
-						state.nodes[state.pos_in_stack_nodes].subject.ptr, state.P, state.O);
+				writeln("pos_in_stack_nodes=", state.pos_in_stack_nodes, "[", state.nodes[state.pos_in_stack_nodes].subject, " ", state.P,
+						" ", state.O, "]");
 
 			Subject* ss = state.stack_nodes[state.pos_in_stack_nodes];
 
@@ -263,9 +278,6 @@ private void next_element(char* element, int el_length, state_struct* state)
 			if(ee is null)
 			{
 				// создаем новый предикат
-				version(trace_turtle_parser)
-					printf("создаем новый предикат, p=%s\n", state.P);
-
 				if(ss.edges is null)
 					ss.edges = new Predicate[16];
 
@@ -284,6 +296,9 @@ private void next_element(char* element, int el_length, state_struct* state)
 					ee.predicate = fromStringz(state.P, state.P_length);
 				//					ee.predicate[state.P_length] = 0;
 
+				version(trace_turtle_parser)
+					writeln("создаем новый предикат, p=", ee.predicate);
+
 				ss.edges[ss.count_edges] = *ee;
 				ss.count_edges++;
 
@@ -299,7 +314,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					printf("увеличим размер массива если это требуется, ee.count_objects=%d, ee.objects.length= %d\n", ee.count_objects,
 							ee.objects.length);
 
-				ee.objects.length = ee.objects.length + 16;
+				ee.objects.length = ee.objects.length + 20;
 
 				version(trace_turtle_parser)
 					printf("ee.objects.length= %d\n", ee.objects.length);
@@ -327,15 +342,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 			}
 			else
 			{
-				version(trace_turtle_parser)
-					printf("set object=%s\n", state.O);
-
 				ee.objects[ee.count_objects].object = new char[state.O_length];
 
 				char* ptr = cast(char*) state.O;
 				int idx1 = 0;
-
-				//				= ee.objects[ee.count_objects].object.ptr;
 
 				if(*ptr == '"')
 					ptr++;
@@ -367,13 +377,27 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 					ee.objects[ee.count_objects].object[idx1] = *ptr;
 
-					//					*ptr1 = *ptr;
 					ptr++;
 					idx1++;
 				}
+				
+				ptr++;
+				
+				if(*ptr == '@')
+				{
+					if(*(ptr + 1) == 'r' && *(ptr + 2) == 'u')
+						ee.objects[ee.count_objects].lang = _RU;
+
+					if(*(ptr + 1) == 'e' && *(ptr + 2) == 'n')
+						ee.objects[ee.count_objects].lang = _EN;
+				}
+
 
 				//				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
 				ee.objects[ee.count_objects].object.length = idx1;
+
+				version(trace_turtle_parser)
+					writeln("set object=", ee.objects[ee.count_objects].object, " lang=", lang);
 
 				//				ee.objects[ee.count_objects].subject = state.ptr_buff;
 				ee.count_objects++;
@@ -383,7 +407,9 @@ private void next_element(char* element, int el_length, state_struct* state)
 			}
 
 			//			state.count_edges++;
-			state.P = null;
+			if(*element != ',')
+				state.P = null;
+
 			state.O = null;
 		}
 
@@ -393,16 +419,19 @@ private void next_element(char* element, int el_length, state_struct* state)
 		}
 
 		version(trace_turtle_parser)
-			printf("next element finish #1\n");
+			printf("next element finish #1, state.e=%d\n", state.e);
 
 		return;
 	}
 	else
 	{
+		version(trace_turtle_parser)
+			writeln("state.e:", state.e);
+
 		if(state.e == 0)
 		{
 			version(trace_turtle_parser)
-				printf("new node S=%s\n", element);
+				writeln("new node S=", element);
 
 			Subject* new_subject = &state.nodes[state.count_nodes];
 
@@ -424,7 +453,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 			state.P = element;
 			state.P_length = el_length;
 			version(trace_turtle_parser)
-				printf("P=%s\n", element);
+				writeln("found P=", fromStringz(element, el_length));
 		}
 		else if(state.e == 2)
 		{
@@ -432,13 +461,20 @@ private void next_element(char* element, int el_length, state_struct* state)
 			state.O = element;
 			state.O_length = el_length;
 			version(trace_turtle_parser)
-				printf("O=%s\n", element);
+				writeln("found O=", fromStringz(element, el_length));
 		}
 
 	}
 
+	//	if(*element == ',')
+	//	{
+	//		state.e = 2;
+	//	}
+	//	else
+	//	{
 	state.e++;
+	//	}
 
 	version(trace_turtle_parser)
-		printf("next element finish #2\n");
+		printf("next element finish #2, state.e=%d\n", state.e);
 }

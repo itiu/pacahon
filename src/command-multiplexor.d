@@ -90,9 +90,9 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 						Objectz oo = pp.objects[ll];
 
 						if(oo.type == LITERAL || oo.type == URI)
-							ts.addTriple(graph.subject, pp.predicate, oo.object);
+							ts.addTriple(graph.subject, pp.predicate, oo.object, oo.lang);
 						else
-							ts.addTriple(graph.subject, pp.predicate, oo.subject.subject);
+							ts.addTriple(graph.subject, pp.predicate, oo.subject.subject, oo.lang);
 					}
 
 				}

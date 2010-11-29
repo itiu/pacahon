@@ -168,16 +168,20 @@ struct Predicate
 	}
 }
 
-immutable byte LITERAL = 0;
-immutable byte SUBJECT = 1;
-immutable byte URI = 2;
+public immutable byte LITERAL = 0;
+public immutable byte SUBJECT = 1;
+public immutable byte URI = 2;
 
+public immutable byte _NONE = 0;
+public immutable byte _RU = 1;
+public immutable byte _EN = 2;
 
 struct Objectz
 {
 	char[] object; // если object_as_literal == false, то здесь будет ссылка на Subject
 	Subject* subject; // если object_as_literal == false, то здесь будет ссылка на Subject
 	byte type = LITERAL;
+	byte lang;
 }
 
 void set_hashed_data(Subject* ss)
