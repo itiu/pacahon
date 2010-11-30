@@ -231,6 +231,21 @@ docs19:employee_card
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
+                owl:allValuesFrom xsd:string ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:maxCardinality "1"^^xsd:int ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
                 owl:allValuesFrom swrc:Organization ;
                 owl:onProperty swrc:organization
               ] .
@@ -316,7 +331,22 @@ docs19:staffing_card
       rdfs:subClassOf gost19:Document ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
+                owl:allValuesFrom docs19:RequirementPosition ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
                 owl:allValuesFrom xsd:string ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
+                owl:onProperty docs19:position
+              ] ;
+      rdfs:subClassOf
+              [ rdf:type owl:Restriction ;
+                owl:maxCardinality "1"^^xsd:int ;
                 owl:onProperty docs19:position
               ] ;
       rdfs:subClassOf
@@ -328,11 +358,6 @@ docs19:staffing_card
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom swrc:Organization ;
                 owl:onProperty swrc:organization
-              ] ;
-      rdfs:subClassOf
-              [ rdf:type owl:Restriction ;
-                owl:allValuesFrom docs19:RequirementPosition ;
-                owl:onProperty docs19:position
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
@@ -381,18 +406,8 @@ docs19:staffing_card
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
-                owl:minCardinality "1"^^xsd:nonNegativeInteger ;
-                owl:onProperty docs19:position
-              ] ;
-      rdfs:subClassOf
-              [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:firstName ;
                 owl:onProperty docs19:employee
-              ] ;
-      rdfs:subClassOf
-              [ rdf:type owl:Restriction ;
-                owl:maxCardinality "1"^^xsd:int ;
-                owl:onProperty docs19:position
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
