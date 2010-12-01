@@ -76,19 +76,19 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				// субьект уже существует
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
-//				printf("A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [%s]\n", userId.ptr);
+				writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
 
 				triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
-//					printf("#dc:creator найден\n");
+					printf("#dc:creator найден\n");
 					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
 					res = true;
 				}
 				else
 				{
-//					printf("#dc:creator  не найден\n");
+					printf("#dc:creator  не найден\n");
 					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
 					res = false;
 				}

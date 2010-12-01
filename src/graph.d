@@ -1,5 +1,22 @@
 module pacahon.graph;
 
+/*
+ * набор структур и методов для работы с фактами как с графом
+ * 
+ * модель:
+ * 
+ * GraphCluster 
+ * 		└─Subject[]
+ * 				└─Predicates[]
+ * 						└─Objects[]	
+ * 
+ * доступные возможности: 
+ * - сборка графа из фактов или их частей
+ * - навигация по графу
+ * - серилизации графа в строку
+ */
+
+
 private import std.c.string;
 private import std.outbuffer;
 
@@ -10,6 +27,40 @@ version(D2)
 import std.stdio;
 
 import pacahon.utils;
+
+struct GraphCluster 
+{	
+	Subject*[char[]] graphs_of_subject;
+	
+	void addTriple (char[] s, char[] p, char[] o)
+	{
+		Subject* ss = graphs_of_subject.get (s, null);
+		
+		if (ss is null)
+		{
+			 ss = new Subject;
+			 ss.subject = s;
+		}
+		graphs_of_subject[s] = ss;  
+		ss.addPredicate (p, o);		
+	}
+	
+	char* toEscStringz()
+	{
+		OutBuffer outbuff = new OutBuffer();
+
+		outbuff.write(cast(char[])"\"\"");
+        foreach(s; graphs_of_subject)
+        {
+        	s.toOutBuffer (outbuff, true);
+        }
+		outbuff.write(cast(char[])"\"\"");
+        
+		outbuff.write(0);
+		
+		return cast(char*) outbuff.toBytes();
+	}
+}
 
 struct Subject
 {
@@ -83,7 +134,7 @@ struct Subject
 		count_edges++;
 	}
 
-	void toOutBuffer(ref OutBuffer outbuff, int level = 0)
+	void toOutBuffer(ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[])"  ");
@@ -109,9 +160,17 @@ struct Subject
 				
 				if(oo.type == LITERAL)
 				{
-					outbuff.write(cast (char[])"   \"");
+					if (escaping_quotes == true)
+						outbuff.write(cast (char[])"   \\\"");
+					else	
+						outbuff.write(cast (char[])"   \"");
+					
 					outbuff.write (oo.object);
-					outbuff.write(cast (char[])"\"");
+					
+					if (escaping_quotes == true)
+						outbuff.write(cast (char[])"\\\"");
+					else
+						outbuff.write(cast (char[])"\"");
 				}
 				else if (oo.type == URI)
 				{
@@ -121,7 +180,7 @@ struct Subject
 				else
 				{
 					outbuff.write(cast (char[])"\n  [\n");
-					oo.subject.toOutBuffer(outbuff, level + 1);
+					oo.subject.toOutBuffer(outbuff, escaping_quotes, level + 1);
 					outbuff.write(cast (char[])"\n  ]");
 				}
 
