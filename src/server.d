@@ -327,7 +327,7 @@ void command_preparer(Subject* message, ref Subject out_message, Predicate* send
 				local_ticket = res.edges[0].getFirstObject;
 		}
 
-		reason = cast(char[]) "запрос выполнен";
+//		reason = cast(char[]) "запрос выполнен";
 	}
 	else
 	{
