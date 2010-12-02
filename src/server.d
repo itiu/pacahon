@@ -235,11 +235,12 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 			{
 				Predicate* sender = command.getEdge(msg__sender);
-				Subject out_message;
+//				Subject* out_message = new Subject;
+				results[ii] = new Subject;
 
-				command_preparer(command, out_message, sender, userId, ts, local_ticket);
+				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
 
-				results[ii] = &out_message;
+//				results[ii] = out_message;
 			}
 
 		}
@@ -275,7 +276,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	return;
 }
 
-void command_preparer(Subject* message, ref Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
+void command_preparer(Subject* message, Subject* out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
 	printf("command_preparer\n");
 	Predicate[] ppp = new Predicate[5];

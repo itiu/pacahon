@@ -350,6 +350,7 @@ public void get(Subject* message, Predicate* sender, char[] userId, TripleStorag
 	        }
 
 			
+	    	reason = cast(char[]) "запрос выполнен";
 
 			isOk = true;
 
