@@ -187,7 +187,7 @@ class Subject
 				if (jj == count_edges - 1)
 				{
 					if (level == 0)
-						outbuff.write(cast (char[])" .\n");
+						outbuff.write(cast (char[])" .\n\n");
 				}
 				else
 				{

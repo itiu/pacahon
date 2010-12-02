@@ -97,9 +97,9 @@ public Subject[] parse_n3_string(char* src, int len)
 
 		ch = *ptr;
 
-		if(ptr == src || prev_ch == '\n')
+		if(ptr == src || (prev_ch == '\n' || prev_ch == '\r'))
 		{
-			if(ch == '\n')
+			if(ch == '\n' || ch == '\r')
 			{
 				continue;
 			}
@@ -114,7 +114,7 @@ public Subject[] parse_n3_string(char* src, int len)
 				// это блок назначения префиксов
 
 				// пропускаем строку
-				while(ch != '\n' && ptr - src < len)
+				while(ch != '\n' && ch != '\r' && ptr - src < len)
 				{
 					ptr++;
 					ch = *ptr;
@@ -128,7 +128,7 @@ public Subject[] parse_n3_string(char* src, int len)
 				// это комментарий
 
 				// пропускаем строку
-				while(ch != '\n' && ptr - src < len)
+				while(ch != '\n' && ch != '\r' && ptr - src < len)
 				{
 					ptr++;
 					ch = *ptr;
@@ -137,7 +137,7 @@ public Subject[] parse_n3_string(char* src, int len)
 				continue;
 			}
 
-			while(ch != '\n' && ch != 0)
+			while(ch != '\n' && ch != '\r' && ch != 0)
 			{
 
 				// пропустим прообелы
@@ -176,15 +176,16 @@ public Subject[] parse_n3_string(char* src, int len)
 					}
 				}
 
-				while(ch != ' ' && ch != '\n' && ptr - src < len)
+				while(ch != ' ' && ch != '\r' && ch != '\n' && ptr - src < len)
 				{
 					ptr++;
 					ch = *ptr;
+//					writeln("CH [", ch, "]");					
 				}
+
 
 				if(ptr - src > len)
 				{
-					//					printf ("куда лезем! 8  ptr - src=%d > len=%d \n", ptr - src, len);
 					break;
 				}
 
@@ -197,7 +198,6 @@ public Subject[] parse_n3_string(char* src, int len)
 
 				if(ptr - src > len)
 				{
-					//					printf ("куда лезем! 9  ptr - src=%d > len=%d \n", ptr - src, len);
 					break;
 				}
 				ch = *ptr;
@@ -229,8 +229,14 @@ private void next_element(char* element, int el_length, state_struct* state)
 	assert(element !is null);
 	assert(state !is null);
 
+	if (el_length == 1 && !(*element == ';' || *element == '.' || *element == '[' || *element == ']' || *element == ',' || *element == 'a'))
+		return;
+	
 	if(print_found_element)
+	{
+		writeln("ELEMENT [", *element, "]");
 		writeln("ELEMENT (", el_length, ") [", fromStringz(element, el_length), "]");
+	}
 
 	if(*element == ';' || *element == '.' || *element == '[' || *element == ']' || *element == ',')
 	{
@@ -357,8 +363,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 				if(*ptr == '"')
 					ptr++;
 				else
+				{
 					ee.objects[ee.count_objects].type = URI;
-
+				}
+				
 				while(ptr - state.O < state.O_length)
 				{
 					if(*ptr == '"' && *(ptr + 1) == '"' && *(ptr + 2) == '"')
@@ -398,6 +406,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					if(*(ptr + 1) == 'e' && *(ptr + 2) == 'n')
 						ee.objects[ee.count_objects].lang = _EN;
 				}
+//				printf("!!! 7\n");
 
 				//				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
 				ee.objects[ee.count_objects].object.length = idx1;
@@ -411,7 +420,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				version(trace_turtle_parser)
 					printf("ee.count_objects=%d\n", ee.count_objects);
 			}
-
+			
 			//			state.count_edges++;
 			if(*element != ',')
 				state.P = null;

@@ -108,8 +108,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	//	msg[message_size - 1] = 0;
 	printf("********************************************************************\n");
-//	printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
-//	printf("********************************************************************\n");
+	printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
+	printf("********************************************************************\n");
 
 	StopWatch sw;
 	sw.start();
@@ -133,9 +133,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	{
 		Subject command = triples[ii];
 
-		printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-				command.count_edges, command.toStringz());
-		writeln("get_message:message.subject=", command.subject);
+//		printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+//				command.count_edges, command.toStringz());
+//		writeln("get_message:message.subject=", command.subject);
 
 		if(command.count_edges < 3)
 		{
@@ -164,9 +164,16 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					ticket_str = local_ticket;
 
 				printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
+				sw.stop();
+				printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
 
 				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
 				triple_list_element* iterator = ts.getTriples(ticket_str, null, null);
+				
+				sw.stop();
+				printf("T count: %d, %d [µs] end get data\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
 
 				char[] when = null;
 				int duration = 0;
@@ -209,6 +216,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				}
 
 				// проверим время жизни тикета
+				sw.stop();
+				printf("T count: %d, %d [µs] start: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
+				
 				if(userId !is null)
 				{
 					// TODO stringToTime очень медленная операция ~ 100 микросекунд
@@ -224,6 +235,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 						userId = null;
 					}
 				}
+				
+				sw.stop();
+				printf("T count: %d, %d [µs] end: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
 				//
 
 				if(userId !is null)
@@ -238,8 +253,15 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 //				Subject* out_message = new Subject;
 				results[ii] = new Subject;
 
+				sw.stop();
+				printf("T  count: %d, %d [µs] next: command_preparer\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
+				
 				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
 
+				sw.stop();
+				printf("T count: %d, %d [µs] end: command_preparer\n", count, cast(long) sw.peek().microseconds);
+				sw.start();
 //				results[ii] = out_message;
 			}
 
@@ -256,7 +278,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(out_message !is null)
 		{
-			//			printf("# серилизуем граф %X в строку\n", out_message);
+//						printf("# серилизуем граф %X в строку\n", out_message);
 			out_message.toOutBuffer(outbuff);
 		}
 	}
@@ -270,8 +292,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	//	from_client.send(cast(char*) "".ptr, cast(char*) "empty", false);
 
 	sw.stop();
-
-	printf("count: %d, total time: %d microseconds\n", count, cast(long) sw.peek().microseconds);
+	printf("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
 
 	return;
 }

@@ -128,7 +128,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 	reason = cast(char[]) "нет причин для выдачи сессионного билета";
 
-	Subject res = new Subject ();
+	Subject res = new Subject();
 
 	try
 	{
@@ -174,31 +174,31 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		search_mask[1].p = auth__credential;
 		search_mask[1].o = credential.getFirstObject;
 
-		char[][1] readed_predicate;
-		readed_predicate[0] = auth__login;
+		bool[char[]] readed_predicate;
+		readed_predicate[auth__login] = true;
 
 		triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(iterator !is null)
 		{
-//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			// такой логин и пароль найдены, формируем тикет
 			Twister rnd;
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 			Uuid generated = rndUuid.next;
-//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			// сохраняем в хранилище
 			char[] ticket_id = "auth:" ~ generated.toString;
 			writeln(ticket_id);
-//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
-//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(ticket_id, ticket__accessor, iterator.triple.s);
 
-//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			auto now = UTCtoLocalTime(getUTCtime());
 
 			ts.addTriple(ticket_id, ticket__when, timeToString(now));
@@ -240,8 +240,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	}
 }
 
-public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason,
-		ref GraphCluster res)
+public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
 	// в качестве аргумента - шаблон для выборки
 	// query:get - обозначает что будет возвращено значение соответствующего предиката
@@ -254,17 +253,17 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 	Predicate* args = message.getEdge(msg__args);
 
-	//	printf("command get, args=%X \n", args);
+	printf("command get, args=%X \n", args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
-		//		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
+		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
-		//		printf("arguments has been read\n");
+		printf("arguments has been read\n");
 		if(graphs_as_template is null)
 		{
 			reason = cast(char[]) "в сообщении отсутствует граф-шаблон";
@@ -274,7 +273,9 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		{
 			Subject graph = graphs_as_template[jj];
 
-			char[][] readed_predicate = new char[][graph.count_edges];
+			writeln("%%% graph.subject=", graph.subject);
+			
+			bool[char[]] readed_predicate;
 			int readed_predicate_length = 0;
 
 			Triple[] search_mask = new Triple[graph.count_edges];
@@ -293,21 +294,23 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
-							//							writeln("*** данный предикат [", pp.predicate, "] добавить в список возвращаемых");
+							writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
+							writeln("readed_predicate_length=", readed_predicate_length);
 
-							readed_predicate[readed_predicate_length] = pp.predicate;
-							readed_predicate_length++;
+							readed_predicate[pp.predicate] = true;
 						}
 						else
 						{
 							search_mask[search_mask_length].p = pp.predicate;
+							writeln("*** p=", search_mask[search_mask_length].p);
 							search_mask[search_mask_length].o = oo.object;
+							writeln("*** o=", search_mask[search_mask_length].o);
 						}
 
 						search_mask[search_mask_length].s = graph.subject;
 
-						//						writeln("*** данный факт <", search_mask[search_mask_length].s, "><", search_mask[search_mask_length].p, "><",
-						//								search_mask[search_mask_length].o, "> добавим в маску запроса");
+						writeln("*** s=", search_mask[search_mask_length].s);
+						writeln("*** search_mask_length=", search_mask_length);
 
 						search_mask_length++;
 
@@ -316,38 +319,37 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				}
 			}
 
-			readed_predicate.length = readed_predicate_length;
+//			readed_predicate.length = readed_predicate_length;
 			search_mask.length = search_mask_length;
 
 			triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 			while(iterator !is null)
 			{
-//				writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o);
 
 				iterator = iterator.next_triple_list_element;
 			}
-			
-			// авторизуем найденные субьекты
-	        foreach(s; res.graphs_of_subject)
-	        {
-	        	char[] authorize_reason;
-	        	bool result_of_az = authorize(userId, s.subject, operation.READ, ts, authorize_reason);
-	        	
-	        	if (result_of_az == false)
-	        	{
-		        	writeln ("AZ: ", authorize_reason);
-	        		s.count_edges = 0;
-	        		s.subject = null;
-		        	writeln ("remove from list");	        		
-	        	}
-	        	
-	        }
 
-			
-	    	reason = cast(char[]) "запрос выполнен";
+			// авторизуем найденные субьекты
+			foreach(s; res.graphs_of_subject)
+			{
+				char[] authorize_reason;
+				bool result_of_az = authorize(userId, s.subject, operation.READ, ts, authorize_reason);
+
+				if(result_of_az == false)
+				{
+					writeln("AZ: ", authorize_reason);
+					s.count_edges = 0;
+					s.subject = null;
+					writeln("remove from list");
+				}
+
+			}
+
+			reason = cast(char[]) "запрос выполнен";
 
 			isOk = true;
 
