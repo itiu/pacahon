@@ -30,11 +30,11 @@ import pacahon.utils;
 
 struct GraphCluster 
 {	
-	Subject*[char[]] graphs_of_subject;
+	Subject[char[]] graphs_of_subject;
 	
 	void addTriple (char[] s, char[] p, char[] o)
 	{
-		Subject* ss = graphs_of_subject.get (s, null);
+		Subject ss = graphs_of_subject.get (s, null);
 		
 		if (ss is null)
 		{
@@ -62,7 +62,7 @@ struct GraphCluster
 	}
 }
 
-struct Subject
+class Subject
 {
 	char[] subject = null;
 	Predicate[] edges;
@@ -116,7 +116,7 @@ struct Subject
 		count_edges++;
 	}
 
-	void addPredicate (char[] predicate, Subject* subject)
+	void addPredicate (char[] predicate, Subject subject)
 	{
 		if (edges.length == 0)
 			edges = new Predicate [16];
@@ -238,12 +238,12 @@ public immutable byte _EN = 2;
 struct Objectz
 {
 	char[] object; // если object_as_literal == false, то здесь будет ссылка на Subject
-	Subject* subject; // если object_as_literal == false, то здесь будет ссылка на Subject
+	Subject subject; // если object_as_literal == false, то здесь будет ссылка на Subject
 	byte type = LITERAL;
 	byte lang;
 }
 
-void set_hashed_data(Subject* ss)
+void set_hashed_data(Subject ss)
 {
 	for(short jj = 0; jj < ss.count_edges; jj++)
 	{
@@ -266,37 +266,4 @@ void set_hashed_data(Subject* ss)
 	}
 }
 
-void print_graph(Subject* ss, int level = 0)
-{
-	for(int i = 0; i < level; i++)
-		write("	");
 
-	if(ss.subject !is null)
-		writeln("s: %s ", ss.subject);
-	else
-		writeln("s: %x ", ss);
-
-	for(int jj = 0; jj < ss.count_edges; jj++)
-	{
-		Predicate* pp = &ss.edges[jj];
-
-		for(int i = 0; i < level; i++)
-			write("	");
-		writeln("	p: [%s] ", pp.predicate);
-
-		for(int kk = 0; kk < pp.count_objects; kk++)
-		{
-			Objectz oo = pp.objects[kk];
-
-			for(int i = 0; i < level; i++)
-				write("	");
-
-			if(oo.type == SUBJECT)
-				print_graph(cast(Subject*) oo.subject, level + 1);
-			else
-				writeln("		o: [%s] ", oo.object);
-
-		}
-
-	}
-}

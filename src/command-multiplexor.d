@@ -28,7 +28,7 @@ private import pacahon.utils;
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
 	printf("command put\n");
 
@@ -36,7 +36,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 
 	reason = cast(char[]) "добавление фактов не возможно";
 
-	Subject* res;
+	Subject res;
 
 	Predicate* args = message.getEdge(msg__args);
 
@@ -48,7 +48,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 		int arg_size = strlen(args_text);
 		//		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
-		Subject*[] graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
+		Subject[] graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
 		//		Subject*[] graphs_on_put = null;
 
 		printf("arguments has been read\n");
@@ -59,7 +59,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 
 		for(int jj = 0; jj < graphs_on_put.length; jj++)
 		{
-			Subject* graph = graphs_on_put[jj];
+			Subject graph = graphs_on_put[jj];
 
 			//			printf("Subject* graph=%X\n", graph);
 
@@ -120,7 +120,7 @@ Subject* put(Subject* message, Predicate* sender, char[] userId, TripleStorage t
 /*
  * команда получения тикета
  */
-Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
 	printf("command get_ticket\n");
 
@@ -128,9 +128,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 
 	reason = cast(char[]) "нет причин для выдачи сессионного билета";
 
-	Subject out_graph;
-
-	Subject* res;
+	Subject res = new Subject ();
 
 	try
 	{
@@ -142,7 +140,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 			return null;
 		}
 
-		Subject* ss = arg.objects[0].subject;
+		Subject ss = arg.objects[0].subject;
 		if(ss is null)
 		{
 			reason = cast(char[]) msg__args ~ " найден, но не заполнен";
@@ -209,8 +207,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 			reason = cast(char[]) "login и password совпадают";
 			isOk = true;
 
-			out_graph.addPredicate(auth__ticket, ticket_id);
-			res = &out_graph;
+			res.addPredicate(auth__ticket, ticket_id);
 		}
 		else
 		{
@@ -243,7 +240,7 @@ Subject* get_ticket(Subject* message, Predicate* sender, char[] userId, TripleSt
 	}
 }
 
-public void get(Subject* message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason,
+public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason,
 		ref GraphCluster res)
 {
 	// в качестве аргумента - шаблон для выборки
@@ -265,7 +262,7 @@ public void get(Subject* message, Predicate* sender, char[] userId, TripleStorag
 		int arg_size = strlen(args_text);
 		//		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
-		Subject*[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
+		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
 		//		printf("arguments has been read\n");
 		if(graphs_as_template is null)
@@ -275,7 +272,7 @@ public void get(Subject* message, Predicate* sender, char[] userId, TripleStorag
 
 		for(int jj = 0; jj < graphs_as_template.length; jj++)
 		{
-			Subject* graph = graphs_as_template[jj];
+			Subject graph = graphs_as_template[jj];
 
 			char[][] readed_predicate = new char[][graph.count_edges];
 			int readed_predicate_length = 0;

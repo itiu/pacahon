@@ -34,10 +34,10 @@ struct state_struct
 	Subject nodes[];
 	short count_nodes;
 
-	Subject* roots[];
+	Subject roots[];
 	short count_roots;
 
-	Subject* stack_nodes[8];
+	Subject stack_nodes[8];
 	byte pos_in_stack_nodes;
 
 	//	Predicate edges[];
@@ -59,7 +59,7 @@ struct state_struct
  *  ! память res_buff данной функцией не освобождается  
  */
 
-public Subject*[] parse_n3_string(char* src, int len)
+public Subject[] parse_n3_string(char* src, int len)
 {
 	StopWatch sw;
 	sw.start();
@@ -84,7 +84,7 @@ public Subject*[] parse_n3_string(char* src, int len)
 	state.count_nodes = 0;
 	//	state.count_edges = 0;
 	state.nodes = new Subject[def_size_out_array];
-	state.roots = new Subject*[def_size_out_array];
+	state.roots = new Subject[def_size_out_array];
 	//	state.edges = new Predicate[def_size_out_array];
 	state.objects = new Objectz[def_size_out_array];
 
@@ -252,10 +252,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 		if(state.P !is null)
 		{
 			version(trace_turtle_parser)
-				writeln("pos_in_stack_nodes=", state.pos_in_stack_nodes, "[", state.nodes[state.pos_in_stack_nodes].subject, " ", state.P,
-						" ", state.O, "]");
+				writeln("pos_in_stack_nodes=", state.pos_in_stack_nodes, "[", state.stack_nodes[state.pos_in_stack_nodes].subject, " ",
+						state.P, " ", state.O, "]");
 
-			Subject* ss = state.stack_nodes[state.pos_in_stack_nodes];
+			Subject ss = state.stack_nodes[state.pos_in_stack_nodes];
 
 			if(*element == ']')
 				state.pos_in_stack_nodes--;
@@ -326,19 +326,26 @@ private void next_element(char* element, int el_length, state_struct* state)
 				version(trace_turtle_parser)
 					printf("создадим новую ноду\n");
 
+				Subject new_nodes = new Subject();
+				state.nodes[state.count_nodes] = new_nodes;
 				state.count_nodes++;
-				Subject* new_nodes = &state.nodes[state.count_nodes];
+
+				version(trace_turtle_parser)
+					printf("и сохраним ее на стеке -> pos_in_stack_nodes=%X\n", state.pos_in_stack_nodes);
 
 				// и сохраним ее на стеке
 				state.pos_in_stack_nodes++;
 				state.stack_nodes[state.pos_in_stack_nodes] = new_nodes;
+
+				version(trace_turtle_parser)
+					printf("и сохраним ее на стеке -> pos_in_stack_nodes=%X\n", state.pos_in_stack_nodes);
 
 				// сохраним ее в edges
 				ee.objects[ee.count_objects].subject = new_nodes;
 				ee.objects[ee.count_objects].type = SUBJECT;
 				ee.count_objects++;
 
-				state.count_nodes++;
+				//				state.count_nodes++;
 			}
 			else
 			{
@@ -380,9 +387,9 @@ private void next_element(char* element, int el_length, state_struct* state)
 					ptr++;
 					idx1++;
 				}
-				
+
 				ptr++;
-				
+
 				if(*ptr == '@')
 				{
 					if(*(ptr + 1) == 'r' && *(ptr + 2) == 'u')
@@ -392,12 +399,11 @@ private void next_element(char* element, int el_length, state_struct* state)
 						ee.objects[ee.count_objects].lang = _EN;
 				}
 
-
 				//				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
 				ee.objects[ee.count_objects].object.length = idx1;
 
 				version(trace_turtle_parser)
-					writeln("set object=", ee.objects[ee.count_objects].object, " lang=", lang);
+					writeln("set object=", ee.objects[ee.count_objects].object, " lang=", ee.objects[ee.count_objects].lang);
 
 				//				ee.objects[ee.count_objects].subject = state.ptr_buff;
 				ee.count_objects++;
@@ -412,7 +418,6 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 			state.O = null;
 		}
-
 		if(*element == ']')
 		{
 			state.e = 0;
@@ -433,7 +438,8 @@ private void next_element(char* element, int el_length, state_struct* state)
 			version(trace_turtle_parser)
 				writeln("new node S=", element);
 
-			Subject* new_subject = &state.nodes[state.count_nodes];
+			Subject new_subject = new Subject;
+			state.nodes[state.count_nodes] = new_subject;
 
 			if(state.pos_in_stack_nodes == 0)
 			{

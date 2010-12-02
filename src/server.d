@@ -120,9 +120,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	//	printf("[%i] \n", count);
 
-	Subject*[] triples = parse_n3_string(cast(char*) msg, message_size);
+	Subject[] triples = parse_n3_string(cast(char*) msg, message_size);
 //	printf("command.length=%d\n", triples.length);
-	Subject*[] results = new Subject*[triples.length];
+	Subject[] results = new Subject[triples.length];
 
 	// найдем в массиве triples субьекта с типом msg
 
@@ -131,7 +131,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
-		Subject* command = triples[ii];
+		Subject command = triples[ii];
 
 		printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 				command.count_edges, command.toStringz());
@@ -252,7 +252,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	for(int ii = 0; ii < results.length; ii++)
 	{
-		Subject* out_message = results[ii];
+		Subject out_message = results[ii];
 
 		if(out_message !is null)
 		{
@@ -276,12 +276,12 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	return;
 }
 
-void command_preparer(Subject* message, Subject* out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
+void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
 	printf("command_preparer\n");
 	Predicate[] ppp = new Predicate[5];
 
-	Subject* res;
+	Subject res;
 
 	Ticks m_TimeStart = systime();
 	char[] time = new char[18];
