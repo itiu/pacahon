@@ -273,7 +273,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		{
 			Subject graph = graphs_as_template[jj];
 
-			writeln("%%% graph.subject=", graph.subject);
+//			writeln("%%% graph.subject=", graph.subject);
 			
 			bool[char[]] readed_predicate;
 			int readed_predicate_length = 0;
@@ -294,23 +294,23 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
-							writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
-							writeln("readed_predicate_length=", readed_predicate_length);
+//							writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
+//							writeln("readed_predicate_length=", readed_predicate_length);
 
 							readed_predicate[pp.predicate] = true;
 						}
 						else
 						{
 							search_mask[search_mask_length].p = pp.predicate;
-							writeln("*** p=", search_mask[search_mask_length].p);
+//							writeln("*** p=", search_mask[search_mask_length].p);
 							search_mask[search_mask_length].o = oo.object;
-							writeln("*** o=", search_mask[search_mask_length].o);
+//							writeln("*** o=", search_mask[search_mask_length].o);
 						}
 
 						search_mask[search_mask_length].s = graph.subject;
 
-						writeln("*** s=", search_mask[search_mask_length].s);
-						writeln("*** search_mask_length=", search_mask_length);
+//						writeln("*** s=", search_mask[search_mask_length].s);
+//						writeln("*** search_mask_length=", search_mask_length);
 
 						search_mask_length++;
 
@@ -319,6 +319,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				}
 			}
 
+//			writeln("*** mask formed");
 //			readed_predicate.length = readed_predicate_length;
 			search_mask.length = search_mask_length;
 
@@ -326,7 +327,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			while(iterator !is null)
 			{
-				writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+//				writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o);
 

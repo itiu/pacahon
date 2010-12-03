@@ -152,6 +152,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		if((msg__Message in type.objects_of_value) !is null)
 		{
 			Predicate* reciever = command.getEdge(msg__reciever);
+			Predicate* sender = command.getEdge(msg__sender);
+			
+			writeln ("FROM:", sender.getFirstObject());
+			
 			Predicate* ticket = command.getEdge(msg__ticket);
 
 			char[] userId = null;
@@ -216,10 +220,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				}
 
 				// проверим время жизни тикета
-				sw.stop();
-				printf("T count: %d, %d [µs] start: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
-				
 				if(userId !is null)
 				{
 					// TODO stringToTime очень медленная операция ~ 100 микросекунд
@@ -249,7 +249,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 			{
-				Predicate* sender = command.getEdge(msg__sender);
+//				Predicate* sender = command.getEdge(msg__sender);
 //				Subject* out_message = new Subject;
 				results[ii] = new Subject;
 
@@ -322,7 +322,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	Predicate* command = message.getEdge(msg__command);
-
+	
 	char[] reason;
 	bool isOk;
 
