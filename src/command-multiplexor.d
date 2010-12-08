@@ -13,6 +13,8 @@ private import tango.util.digest.Sha1;
 private import tango.util.uuid.RandomGen;
 private import tango.math.random.Twister;
 
+private import std.datetime;
+
 private import trioplax.triple;
 private import trioplax.TripleStorage;
 
@@ -120,9 +122,16 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 /*
  * команда получения тикета
  */
+bool trace__get_ticket = false;
+bool timing__get_ticket = true;
+
 Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
-	printf("command get_ticket\n");
+	StopWatch sw;
+	sw.start();
+
+	if(trace__get_ticket)
+		printf("command get_ticket\n");
 
 	isOk = false;
 
@@ -228,34 +237,49 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	finally
 	{
 
-		printf("	результат:");
+		if(trace__get_ticket)
+		{
+			printf("	результат:");
 
-		if(isOk == true)
-			printf("сессионный билет выдан\n");
-		else
-			printf("отказанно\n");
+			if(isOk == true)
+				printf("сессионный билет выдан\n");
+			else
+				printf("отказанно\n");
 
-		printf("	причина: %s\n", reason.ptr);
+			printf("	причина: %s\n", reason.ptr);
+		}
+
+		if(timing__get_ticket)
+		{
+			sw.stop();
+			printf("total time command get_ticket: %d [µs]\n", cast(long) sw.peek().microseconds);
+		}
 
 	}
 }
 
-bool trace_get = false;
+bool trace__get = false;
+bool timing__get = true;
 
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
+	StopWatch sw;
+	sw.start();
+
 	// в качестве аргумента - шаблон для выборки
 	// query:get - обозначает что будет возвращено значение соответствующего предиката
 	// TODO ! в данный момент метод обрабатывает только одноуровневые шаблоны
 
 	isOk = false;
-	printf("command get\n");
+
+	if(trace__get)
+		printf("command get\n");
 
 	reason = cast(char[]) "запрос не может быть выполнен";
 
 	Predicate* args = message.getEdge(msg__args);
 
-	if(trace_get)
+	if(trace__get)
 		printf("command get, args=%X \n", args);
 
 	for(short ii; ii < args.count_objects; ii++)
@@ -263,12 +287,12 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
 
-		if(trace_get)
+		if(trace__get)
 			printf("arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
-		if(trace_get)
+		if(trace__get)
 			printf("arguments has been read\n");
 
 		if(graphs_as_template is null)
@@ -280,7 +304,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		{
 			Subject graph = graphs_as_template[jj];
 
-			if(trace_get)
+			if(trace__get)
 				writeln("%%% graph.subject=", graph.subject);
 
 			bool[char[]] readed_predicate;
@@ -302,7 +326,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
-							if(trace_get)
+							if(trace__get)
 							{
 								writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
 								writeln("readed_predicate_length=", readed_predicate_length);
@@ -313,10 +337,10 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						else
 						{
 							search_mask[search_mask_length].p = pp.predicate;
-							if(trace_get)
+							if(trace__get)
 								writeln("*** p=", search_mask[search_mask_length].p);
 							search_mask[search_mask_length].o = oo.object;
-							if(trace_get)
+							if(trace__get)
 								writeln("*** o=", search_mask[search_mask_length].o);
 						}
 
@@ -324,7 +348,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						{
 							search_mask[search_mask_length].s = graph.subject;
 
-							if(trace_get)
+							if(trace__get)
 							{
 								writeln("*** s=", search_mask[search_mask_length].s);
 								writeln("*** search_mask_length=", search_mask_length);
@@ -338,7 +362,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				}
 			}
 
-			if(trace_get)
+			if(trace__get)
 				writeln("*** mask formed");
 			search_mask.length = search_mask_length;
 
@@ -346,7 +370,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			while(iterator !is null)
 			{
-				if(trace_get)
+				if(trace__get)
 					writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o);
@@ -362,7 +386,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 				if(result_of_az == false)
 				{
-					writeln("AZ: ", authorize_reason);
+					writeln("AZ: s= ", s.subject, " -> ", authorize_reason);
 					s.count_edges = 0;
 					s.subject = null;
 					writeln("remove from list");
@@ -376,6 +400,11 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 		}
 
+		if(timing__get)
+		{
+			sw.stop();
+			printf("total time command get: %d [µs]\n", cast(long) sw.peek().microseconds);
+		}
 	}
 
 	// TODO !для пущей безопасности, факты с предикатом [auth:credential] не отдавать !

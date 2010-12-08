@@ -25,34 +25,40 @@ enum operation
  * targetId - обьект охраны
  * op - список запрашиваемых операций
  */
+bool trace__authorize = false;
+bool timing__authorize = true;
+
 bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
 	StopWatch sw;
 	sw.start();
-	
+
 	bool res = false;
 
 	reason = cast(char[]) "ничего разрешающего не было определено";
 
-	if(userId !is null)
-		write("# пользователь [", userId, "]");
-	else
-		write("# неизвестный пользователь");
+	if(trace__authorize)
+	{
+		if(userId !is null)
+			write("# пользователь [", userId, "]");
+		else
+			write("# неизвестный пользователь");
 
-	writeln(" запрашивает разрешение на выполнении ");
+		writeln(" запрашивает разрешение на выполнении ");
 
-	if(op & operation.BROWSE)
-		printf(" BROWSE,");
-	if(op & operation.CREATE)
-		printf(" CREATE,");
-	if(op & operation.READ)
-		printf(" READ,");
-	if(op & operation.UPDATE)
-		printf(" UPDATE,");
-	if(op & operation.DELETE)
-		printf(" DELETE,");
+		if(op & operation.BROWSE)
+			printf(" BROWSE,");
+		if(op & operation.CREATE)
+			printf(" CREATE,");
+		if(op & operation.READ)
+			printf(" READ,");
+		if(op & operation.UPDATE)
+			printf(" UPDATE,");
+		if(op & operation.DELETE)
+			printf(" DELETE,");
 
-	writeln("над субьектом охраны [", targetId, "]. \n");
+		writeln("над субьектом охраны [", targetId, "]. \n");
+	}
 
 	try
 	{
@@ -66,7 +72,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 		if(userId !is null)
 		{
-//			printf("A 0. пользователь известен, проверка прав для всех операций\n");
+			//			printf("A 0. пользователь известен, проверка прав для всех операций\n");
 			/*
 			 * пользователь известен, проверка прав для всех операций
 			 */
@@ -76,19 +82,24 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				// субьект уже существует
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
-				writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
+				if(trace__authorize)
+					writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
 
 				triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
-					printf("#dc:creator найден\n");
+					if(trace__authorize)
+						printf("#dc:creator найден\n");
+
 					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
 					res = true;
 				}
 				else
 				{
-					printf("#dc:creator  не найден\n");
+					if(trace__authorize)
+						printf("#dc:creator  не найден\n");
+
 					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
 					res = false;
 				}
@@ -96,6 +107,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 			else
 			{
 				reason = cast(char[]) "пользователь известен, охраняемый субьект отсутствует в хранилище";
+
 				res = true;
 			}
 		}
@@ -130,20 +142,25 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	finally
 	{
 
-		printf("	результат:");
+		if(trace__authorize)
+		{
+			printf("	результат:");
 
-		if(res == true)
-			printf("разрешено\n");
-		else
-			printf("отказанно\n");
+			if(res == true)
+				printf("разрешено\n");
+			else
+				printf("отказанно\n");
 
-		printf("	причина: %s\n", reason.ptr);
+			printf("	причина: %s\n", reason.ptr);
+		}
+
 		sw.stop();
 		long t = cast(long) sw.peek().microseconds;
 
-		if (t > 100)
-		{		
+		if(t > 100 || timing__authorize)
+		{
 			printf("total time authorize: %d[µs]\n", t);
 		}
+
 	}
 }
