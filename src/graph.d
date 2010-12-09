@@ -18,6 +18,7 @@ module pacahon.graph;
 
 
 private import std.c.string;
+private import std.string;
 private import std.outbuffer;
 
 version(D2)
@@ -57,6 +58,8 @@ struct GraphCluster
 		outbuff.write(cast(char[])"\"\"");
         
 		outbuff.write(0);
+		
+//		printf ("***:%s\n", cast(char*) outbuff.toBytes());
 		
 		return cast(char*) outbuff.toBytes();
 	}
@@ -100,7 +103,7 @@ class Subject
 	}	
 	
 	void addPredicate (char[] predicate, char[] object)
-	{
+	{	
 		if (edges.length == 0)
 			edges = new Predicate [16];
 					
@@ -160,16 +163,55 @@ class Subject
 				
 				if(oo.type == LITERAL)
 				{
-					if (escaping_quotes == true)
-						outbuff.write(cast (char[])"   \\\"");
-					else	
+//					if (escaping_quotes == true)
+//						outbuff.write(cast (char[])"   \\\"");
+//					else	
 						outbuff.write(cast (char[])"   \"");
 					
-					outbuff.write (oo.object);
+					char prev_ch;
+					char[] new_str = new char[oo.object.length * 2];
+					int pos_in_new_str = 0;
+
+					// заменим все неэкранированные кавычки на [\"]
+					for (int i = 0; i < oo.object.length; i++)
+					{
+						int len = oo.object.length;
+
+						// если подрят идут "", то пропустим их
+						if (len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i+1] == '"')
+						{		
+							for (byte hh = 0; hh < 2; hh++)
+							{
+								new_str[pos_in_new_str] = oo.object[i];
+								pos_in_new_str ++;
+								i ++;
+							}
+							
+						}
+						
+						if (i >= oo.object.length)
+							break;
+						
+						char ch = oo.object[i];
+							
+						if (ch == '"' && len > 4)
+						{
+							new_str[pos_in_new_str] = '\\';
+							pos_in_new_str++;
+						}
+						
+						new_str[pos_in_new_str] = ch;
+						pos_in_new_str ++;
+
+						prev_ch = ch;
+					}
+					new_str.length = pos_in_new_str;
 					
-					if (escaping_quotes == true)
-						outbuff.write(cast (char[])"\\\"");
-					else
+					outbuff.write (new_str);
+					
+//					if (escaping_quotes == true)
+//						outbuff.write(cast (char[])"\\\"");
+//					else
 						outbuff.write(cast (char[])"\"");
 				}
 				else if (oo.type == URI)
@@ -187,7 +229,7 @@ class Subject
 				if (jj == count_edges - 1)
 				{
 					if (level == 0)
-						outbuff.write(cast (char[])" .\n\n");
+						outbuff.write(cast (char[])" .\n");
 				}
 				else
 				{
