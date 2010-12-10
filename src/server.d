@@ -278,16 +278,14 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(out_message !is null)
 		{
-						printf("# серилизуем граф %X в строку 1\n", out_message);
+//						printf("# серилизуем граф %X в строку 1\n", out_message);
 			out_message.toOutBuffer(outbuff);
-			printf("# серилизуем граф %X в строку 2\n", out_message);
+//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
 	outbuff.write(0);
 
 	printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
-
-	printf ("OUT MSG:\n%s", cast(char*) outbuff.toBytes());
 
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
