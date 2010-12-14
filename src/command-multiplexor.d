@@ -373,7 +373,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				if(trace__get)
 					writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
-				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o);
+				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o, iterator.triple.lang);
 
 				iterator = iterator.next_triple_list_element;
 			}

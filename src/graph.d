@@ -33,7 +33,7 @@ struct GraphCluster
 {	
 	Subject[char[]] graphs_of_subject;
 	
-	void addTriple (char[] s, char[] p, char[] o)
+	void addTriple (char[] s, char[] p, char[] o, byte lang)
 	{
 		Subject ss = graphs_of_subject.get (s, null);
 		
@@ -43,7 +43,7 @@ struct GraphCluster
 			 ss.subject = s;
 		}
 		graphs_of_subject[s] = ss;  
-		ss.addPredicate (p, o);		
+		ss.addPredicate (p, o, lang);		
 	}
 	
 	char* toEscStringz()
@@ -102,7 +102,7 @@ class Subject
 		count_edges++;
 	}	
 	
-	void addPredicate (char[] predicate, char[] object)
+	void addPredicate (char[] predicate, char[] object, byte lang = _NONE)
 	{	
 		if (edges.length == 0)
 			edges = new Predicate [16];
@@ -115,7 +115,8 @@ class Subject
 		edges[count_edges].predicate = predicate;
 		edges[count_edges].objects = new Objectz [1];
 		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].object = object;	
+		edges[count_edges].objects[0].object = object;
+		edges[count_edges].objects[0].lang = lang;
 		count_edges++;
 	}
 
@@ -163,10 +164,7 @@ class Subject
 				
 				if(oo.type == LITERAL)
 				{
-//					if (escaping_quotes == true)
-//						outbuff.write(cast (char[])"   \\\"");
-//					else	
-						outbuff.write(cast (char[])"   \"");
+					outbuff.write(cast (char[])"   \"");
 					
 					char prev_ch;
 					char[] new_str = new char[oo.object.length * 2];
@@ -208,11 +206,17 @@ class Subject
 					new_str.length = pos_in_new_str;
 					
 					outbuff.write (new_str);
-					
-//					if (escaping_quotes == true)
-//						outbuff.write(cast (char[])"\\\"");
-//					else
-						outbuff.write(cast (char[])"\"");
+										
+					outbuff.write(cast (char[])"\"");
+					if (oo.lang == _RU)
+					{
+						outbuff.write (cast (char[])"@ru");
+					}
+					else
+						if (oo.lang == _EN)
+						{
+							outbuff.write (cast (char[])"@en");
+						}
 				}
 				else if (oo.type == URI)
 				{
