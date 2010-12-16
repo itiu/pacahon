@@ -75,29 +75,37 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 			{
 				// можно выполнять операцию по добавлению или обновлению фактов
-
 				if(userId !is null)
 				{
 					// добавим признак dc:creator
 					ts.addTriple(graph.subject, dc__creator, userId);
 				}
 
-				// основной цикл по добавлению фактов в хранилище из данного субьекта 
-				// TODO сделать рекурсивное добавление (для многоуровневых графов)
-				for(int kk = 0; kk < graph.count_edges; kk++)
+				if(false)
 				{
-					Predicate pp = graph.edges[kk];
+					// определить, несет ли в себе субьект, реифицированные данные
+					// если, да то добавить их в хранилище через метод addTripleToReifedData
 
-					for(int ll = 0; ll < pp.count_objects; ll++)
+				}
+				else
+				{
+					// основной цикл по добавлению фактов в хранилище из данного субьекта 
+					// TODO сделать рекурсивное добавление (для многоуровневых графов)
+					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
-						Objectz oo = pp.objects[ll];
+						Predicate pp = graph.edges[kk];
 
-						if(oo.type == LITERAL || oo.type == URI)
-							ts.addTriple(graph.subject, pp.predicate, oo.object, oo.lang);
-						else
-							ts.addTriple(graph.subject, pp.predicate, oo.subject.subject, oo.lang);
+						for(int ll = 0; ll < pp.count_objects; ll++)
+						{
+							Objectz oo = pp.objects[ll];
+
+							if(oo.type == LITERAL || oo.type == URI)
+								ts.addTriple(graph.subject, pp.predicate, oo.object, oo.lang);
+							else
+								ts.addTriple(graph.subject, pp.predicate, oo.subject.subject, oo.lang);
+						}
+
 					}
-
 				}
 
 				reason = cast(char[]) "добавление фактов выполнено:" ~ authorize_reason;
