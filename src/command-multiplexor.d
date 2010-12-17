@@ -81,10 +81,46 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 					ts.addTriple(graph.subject, dc__creator, userId);
 				}
 
-				if(false)
+				set_hashed_data(graph);
+
+				Predicate* type = graph.getEdge(cast(char[]) "a");
+				if(type is null)
+					type = graph.getEdge(rdf__type);
+
+				if(rdf__Statement in type.objects_of_value)
 				{
-					// определить, несет ли в себе субьект, реифицированные данные
+					// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 					// если, да то добавить их в хранилище через метод addTripleToReifedData
+					Predicate* r_subject = graph.getEdge(cast(char[]) "rdf:subject");
+					Predicate* r_predicate = graph.getEdge(cast(char[]) "rdf:predicate");
+					Predicate* r_object = graph.getEdge(cast(char[]) "rdf:object");
+
+					if(r_subject !is null && r_predicate !is null && r_object !is null)
+					{
+						char[] sr_subject = r_subject.getFirstObject();
+						char[] sr_predicate = r_predicate.getFirstObject();
+						char[] sr_object = r_object.getFirstObject();
+
+						for(int kk = 0; kk < graph.count_edges; kk++)
+						{
+							Predicate* pp = &graph.edges[kk];
+
+							if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
+							{
+								for(int ll = 0; ll < pp.count_objects; ll++)
+								{
+									Objectz oo = pp.objects[ll];
+
+									if(oo.type == LITERAL || oo.type == URI)
+										ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.object, oo.lang);
+									else
+										ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.subject.subject,
+												oo.lang);
+								}
+							}
+
+						}
+					}
 
 				}
 				else
@@ -191,7 +227,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		search_mask[1].p = auth__credential;
 		search_mask[1].o = credential.getFirstObject;
 
-		bool[char[]] readed_predicate;
+		byte[char[]] readed_predicate;
 		readed_predicate[auth__login] = true;
 
 		triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
@@ -315,7 +351,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			if(trace__get)
 				writeln("%%% graph.subject=", graph.subject);
 
-			bool[char[]] readed_predicate;
+			byte[char[]] readed_predicate;
 			int readed_predicate_length = 0;
 
 			Triple[] search_mask = new Triple[graph.count_edges];
@@ -331,7 +367,20 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 					Objectz oo = pp.objects[ll];
 					if(oo.type == LITERAL || oo.type == URI)
 					{
-						if(oo.object == "query:get")
+						if(oo.object == "query:get_reifed")
+						{
+							// требуются так-же реифицированные данные по этому полю
+							// данный предикат добавить в список возвращаемых
+							if(trace__get)
+							{
+								writeln("*** данный предикат и реифицированные данные добавим в список возвращаемых: ", pp.predicate);
+								writeln("readed_predicate_length=", readed_predicate_length);
+							}
+
+							readed_predicate[pp.predicate] = _GET_REIFED;
+
+						}
+						else if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
 							if(trace__get)
@@ -340,7 +389,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 								writeln("readed_predicate_length=", readed_predicate_length);
 							}
 
-							readed_predicate[pp.predicate] = true;
+							readed_predicate[pp.predicate] = _GET;
 						}
 						else
 						{

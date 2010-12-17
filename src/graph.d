@@ -84,6 +84,20 @@ class Subject
 		return pp;
 	}
 
+	Predicate* getEdge_brute_force(char[] pname)
+	{
+		for(int kk = 0; kk < count_edges; kk++)
+		{
+			if (edges[kk].predicate == pname)
+			{				
+				return &edges[kk];
+			}
+		}
+		
+		return null;
+	}
+	
+	
 	void addPredicateAsURI (char[] predicate, char[] object)
 	{
 		if (edges.length == 0)

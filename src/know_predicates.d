@@ -1,6 +1,7 @@
 module pacahon.know_predicates;
 
 public char[] rdf__type = cast(char[]) "rdf:type";
+public char[] rdf__Statement = cast(char[]) "rdf:Statement";
 
 public char[] dc__creator = cast(char[]) "dc:creator";
 
