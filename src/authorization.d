@@ -26,7 +26,7 @@ enum operation
  * op - список запрашиваемых операций
  */
 bool trace__authorize = false;
-bool timing__authorize = true;
+bool timing__authorize = false;
 
 bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
@@ -44,7 +44,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 		else
 			write("# неизвестный пользователь");
 
-		writeln(" запрашивает разрешение на выполнении ");
+		printf(" запрашивает разрешение на выполнение операции ");
 
 		if(op & operation.BROWSE)
 			printf(" BROWSE,");
@@ -85,7 +85,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				if(trace__authorize)
 					writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
 
-				triple_list_element* iterator = ts.getTriples(targetId, dc__creator, userId);
+				triple_list_element iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
@@ -157,7 +157,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 		sw.stop();
 		long t = cast(long) sw.peek().microseconds;
 
-		if(t > 100 || timing__authorize)
+		if(t > 200 || timing__authorize)
 		{
 			printf("total time authorize: %d[µs]\n", t);
 		}

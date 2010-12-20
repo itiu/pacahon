@@ -173,7 +173,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				sw.start();
 
 				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-				triple_list_element* iterator = ts.getTriples(ticket_str, null, null);
+				triple_list_element iterator = ts.getTriples(ticket_str, null, null);
 				
 				sw.stop();
 				printf("T count: %d, %d [µs] end get data\n", count, cast(long) sw.peek().microseconds);

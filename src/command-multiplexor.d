@@ -219,10 +219,12 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 		Triple[] search_mask = new Triple[2];
 
+		search_mask[0] = new Triple;
 		search_mask[0].s = null;
 		search_mask[0].p = auth__login;
 		search_mask[0].o = login.getFirstObject;
 
+		search_mask[1] = new Triple;
 		search_mask[1].s = null;
 		search_mask[1].p = auth__credential;
 		search_mask[1].o = credential.getFirstObject;
@@ -230,28 +232,28 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		byte[char[]] readed_predicate;
 		readed_predicate[auth__login] = true;
 
-		triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+		triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(iterator !is null)
 		{
-			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			// такой логин и пароль найдены, формируем тикет
 			Twister rnd;
 			rnd.seed;
 			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 			Uuid generated = rndUuid.next;
-			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			// сохраняем в хранилище
 			char[] ticket_id = "auth:" ~ generated.toString;
 			writeln(ticket_id);
-			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
-			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(ticket_id, ticket__accessor, iterator.triple.s);
 
-			//			writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			auto now = UTCtoLocalTime(getUTCtime());
 
 			ts.addTriple(ticket_id, ticket__when, timeToString(now));
@@ -393,12 +395,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						}
 						else
 						{
+							search_mask[search_mask_length] = new Triple;
 							search_mask[search_mask_length].p = pp.predicate;
 							if(trace__get)
 								writeln("*** p=", search_mask[search_mask_length].p);
 							search_mask[search_mask_length].o = oo.object;
 							if(trace__get)
 								writeln("*** o=", search_mask[search_mask_length].o);
+							search_mask_length++;
 						}
 
 						if(graph.subject != "query:any")
@@ -412,8 +416,6 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 							}
 						}
 
-						search_mask_length++;
-
 					}
 
 				}
@@ -421,9 +423,10 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			if(trace__get)
 				writeln("*** mask formed");
+
 			search_mask.length = search_mask_length;
 
-			triple_list_element* iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+			triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 			while(iterator !is null)
 			{
@@ -434,6 +437,9 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 				iterator = iterator.next_triple_list_element;
 			}
+
+			if(trace__get)
+				writeln("*** авторизуем найденные субьекты");
 
 			// авторизуем найденные субьекты
 			foreach(s; res.graphs_of_subject)
