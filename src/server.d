@@ -312,6 +312,10 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	time[2] = 'g';
 	time[3] = ':';
 	time[4] = 'M';
+	time[5] = '_';
+	time[6] = '_';
+	time[7] = '_';
+
 	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
 
 	out_message.subject = time;
