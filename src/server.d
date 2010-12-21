@@ -306,7 +306,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	Subject res;
 
 	Ticks m_TimeStart = systime();
-	char[] time = new char[18];
+	char[] time = new char[21];
 	time[0] = 'm';
 	time[1] = 's';
 	time[2] = 'g';
