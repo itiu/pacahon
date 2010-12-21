@@ -230,7 +230,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		search_mask[1].o = credential.getFirstObject;
 
 		byte[char[]] readed_predicate;
-		readed_predicate[cast(immutable)auth__login] = true;
+		readed_predicate[cast(immutable) auth__login] = true;
 
 		triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
@@ -354,7 +354,6 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				writeln("%%% graph.subject=", graph.subject);
 
 			byte[char[]] readed_predicate;
-			int readed_predicate_length = 0;
 
 			Triple[] search_mask = new Triple[graph.count_edges];
 			int search_mask_length = 0;
@@ -374,28 +373,29 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 							// требуются так-же реифицированные данные по этому полю
 							// данный предикат добавить в список возвращаемых
 							if(trace__get)
-							{
 								writeln("*** данный предикат и реифицированные данные добавим в список возвращаемых: ", pp.predicate);
-								writeln("readed_predicate_length=", readed_predicate_length);
-							}
 
-							readed_predicate[cast(immutable)pp.predicate] = _GET_REIFED;
+							readed_predicate[cast(immutable) pp.predicate] = _GET_REIFED;
 
+							if(trace__get)
+								writeln("readed_predicate.length=", readed_predicate.length);
 						}
 						else if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
 							if(trace__get)
-							{
 								writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
-								writeln("readed_predicate_length=", readed_predicate_length);
-							}
 
-							readed_predicate[cast(immutable)pp.predicate] = _GET;
+							readed_predicate[cast(immutable) pp.predicate] = _GET;
+
+							if(trace__get)
+								writeln("readed_predicate.length=", readed_predicate.length);
 						}
 						else
 						{
-							search_mask[search_mask_length] = new Triple;
+							if(search_mask[search_mask_length] is null)
+								search_mask[search_mask_length] = new Triple;
+
 							search_mask[search_mask_length].p = pp.predicate;
 							if(trace__get)
 								writeln("*** p=", search_mask[search_mask_length].p);
@@ -407,6 +407,12 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 						if(graph.subject != "query:any")
 						{
+							if(trace__get)
+								writeln("query:any");
+
+							if(search_mask[search_mask_length] is null)
+								search_mask[search_mask_length] = new Triple;
+
 							search_mask[search_mask_length].s = graph.subject;
 
 							if(trace__get)

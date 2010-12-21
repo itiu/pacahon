@@ -317,6 +317,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	time[7] = '_';
 
 	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
+	
+	printf("command_preparer #1\n");
 
 	out_message.subject = time;
 	//	out_message.subject = cast(char[])"msg:time";
@@ -360,7 +362,6 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	{
 		reason = cast(char[]) "в сообщении не указанна команда";
 	}
-
 	if(isOk == false)
 	{
 		out_message.addPredicate(msg__status, cast(char[]) "fail");
