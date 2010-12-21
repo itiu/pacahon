@@ -157,7 +157,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 		sw.stop();
 		long t = cast(long) sw.peek().microseconds;
 
-		if(t > 200 || timing__authorize)
+		if(t > 300 || timing__authorize)
 		{
 			printf("total time authorize: %d[µs]\n", t);
 		}

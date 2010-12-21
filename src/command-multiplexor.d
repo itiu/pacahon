@@ -305,7 +305,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 }
 
 bool trace__get = false;
-bool timing__get = true;
+bool timing__get = false;
 
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {

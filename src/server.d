@@ -101,15 +101,35 @@ class ServerThread: Thread
 }
 
 int count = 0;
+bool trace__get_message__M001 = true;
+bool trace__get_message__M002 = false;
+bool trace__get_message__M003 = false;
+bool trace__get_message__M004 = false;
+bool trace__get_message__M005 = false;
+bool trace__get_message__M006 = false;
+bool trace__get_message__M007 = false;
+bool trace__get_message__M008 = false;
+bool trace__get_message__M009 = false;
+bool trace__get_message__M010 = false;
+bool trace__get_message__M011 = false;
+bool trace__get_message__M012 = false;
+bool trace__get_message__M013 = false;
+bool trace__get_message__M014 = false;
+bool trace__get_message__M015 = false;
+bool trace__get_message__M016 = false;
+bool trace__get_message__M017 = true;
+bool trace__get_message__M018 = true;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	count++;
 
-	//	msg[message_size - 1] = 0;
-	printf("********************************************************************\n");
-	printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
-	printf("********************************************************************\n");
+	if(trace__get_message__M001)
+	{
+		printf("********************************************************************\n");
+		printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
+		printf("********************************************************************\n");
+	}
 
 	StopWatch sw;
 	sw.start();
@@ -118,24 +138,31 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	TripleStorage ts = server_thread.ts;
 	ts.release_all_lists();
 
-	//	printf("[%i] \n", count);
+	if(trace__get_message__M002)
+		printf("[%i] \n", count);
 
 	Subject[] triples = parse_n3_string(cast(char*) msg, message_size);
-//	printf("command.length=%d\n", triples.length);
+
+	if(trace__get_message__M003)
+		printf("command.length=%d\n", triples.length);
+
 	Subject[] results = new Subject[triples.length];
 
 	// найдем в массиве triples субьекта с типом msg
 
 	// local_ticket <- здесь может быть тикет для выполнения пакетных операций
-	char[] local_ticket;		
+	char[] local_ticket;
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
 		Subject command = triples[ii];
 
-//		printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-//				command.count_edges, command.toStringz());
-//		writeln("get_message:message.subject=", command.subject);
+		if(trace__get_message__M004)
+		{
+			printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
+					command.count_edges, command.toStringz());
+			writeln("get_message:message.subject=", command.subject);
+		}
 
 		if(command.count_edges < 3)
 		{
@@ -153,9 +180,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		{
 			Predicate* reciever = command.getEdge(msg__reciever);
 			Predicate* sender = command.getEdge(msg__sender);
-			
-			writeln ("FROM:", sender.getFirstObject());
-			
+
+			if(trace__get_message__M005)
+				writeln("FROM:", sender.getFirstObject());
+
 			Predicate* ticket = command.getEdge(msg__ticket);
 
 			char[] userId = null;
@@ -163,28 +191,35 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			if(ticket !is null && ticket.objects !is null)
 			{
 				char[] ticket_str = ticket.objects[0].object;
-				
-				if (ticket_str == "@local")
+
+				if(ticket_str == "@local")
 					ticket_str = local_ticket;
 
-				printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
-				sw.stop();
-				printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
+				if(trace__get_message__M006)
+				{
+					printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
+					sw.stop();
+					printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
+					sw.start();
+				}
 
 				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
 				triple_list_element iterator = ts.getTriples(ticket_str, null, null);
-				
-				sw.stop();
-				printf("T count: %d, %d [µs] end get data\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
+
+				if(trace__get_message__M007)
+				{
+					sw.stop();
+					printf("T count: %d, %d [µs] end get data\n", count, cast(long) sw.peek().microseconds);
+					sw.start();
+				}
 
 				char[] when = null;
 				int duration = 0;
 
 				if(iterator is null)
 				{
-					printf("# сессионный билет не найден\n");
+					if(trace__get_message__M008)
+						printf("# сессионный билет не найден\n");
 				}
 
 				while(iterator !is null)
@@ -198,8 +233,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					if(iterator.triple.p == ticket__duration)
 					{
 						duration = Integer.toInt(iterator.triple.o);
-//						writeln("# str duration = ", iterator.triple.o);
-//						writeln("# duration = ", duration);
+						//						writeln("# str duration = ", iterator.triple.o);
+						//						writeln("# duration = ", duration);
 					}
 
 					if(userId !is null && when !is null && duration > 10)
@@ -210,12 +245,14 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				if(userId is null)
 				{
-					printf("# найденный сессионный билет не полон, пользователь не найден\n");
+					if(trace__get_message__M009)
+						printf("# найденный сессионный билет не полон, пользователь не найден\n");
 				}
 
 				if(userId !is null && (when is null || duration < 10))
 				{
-					printf("# найденный сессионный билет не полон, считаем что пользователь не был найден\n");
+					if(trace__get_message__M010)
+						printf("# найденный сессионный билет не полон, считаем что пользователь не был найден\n");
 					userId = null;
 				}
 
@@ -231,45 +268,58 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					if((now - ticket_create_time) / 1000 > duration)
 					{
 						// тикет просрочен
-						printf("# тикет просрочен\n");
+						if(trace__get_message__M011)
+							printf("# тикет просрочен\n");
 						userId = null;
 					}
 				}
-				
-				sw.stop();
-				printf("T count: %d, %d [µs] end: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
+
+				if(trace__get_message__M012)
+				{
+					sw.stop();
+					printf("T count: %d, %d [µs] end: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
+					sw.start();
+				}
 				//
 
 				if(userId !is null)
 				{
-					writeln("# пользователь найден, userId=", userId);
+					if(trace__get_message__M013)
+						writeln("# пользователь найден, userId=", userId);
 				}
 			}
 
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 			{
-//				Predicate* sender = command.getEdge(msg__sender);
-//				Subject* out_message = new Subject;
+				//				Predicate* sender = command.getEdge(msg__sender);
+				//				Subject* out_message = new Subject;
 				results[ii] = new Subject;
 
-				sw.stop();
-				printf("T  count: %d, %d [µs] next: command_preparer\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
-				
+				if(trace__get_message__M014)
+				{
+					sw.stop();
+					printf("T  count: %d, %d [µs] next: command_preparer\n", count, cast(long) sw.peek().microseconds);
+					sw.start();
+				}
+
 				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
 
-				sw.stop();
-				printf("T count: %d, %d [µs] end: command_preparer\n", count, cast(long) sw.peek().microseconds);
-				sw.start();
-//				results[ii] = out_message;
+				if(trace__get_message__M015)
+				{
+					sw.stop();
+					printf("T count: %d, %d [µs] end: command_preparer\n", count, cast(long) sw.peek().microseconds);
+					sw.start();
+				}
+				//				results[ii] = out_message;
 			}
 
 		}
 
 	}
 
-	printf("# формируем ответ, серилизуем ответные графы в строку\n");
+	if(trace__get_message__M016)
+		printf("# формируем ответ, серилизуем ответные графы в строку\n");
+
 	OutBuffer outbuff = new OutBuffer();
 
 	for(int ii = 0; ii < results.length; ii++)
@@ -278,22 +328,26 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(out_message !is null)
 		{
-//						printf("# серилизуем граф %X в строку 1\n", out_message);
+			//						printf("# серилизуем граф %X в строку 1\n", out_message);
 			out_message.toOutBuffer(outbuff);
-//			printf("# серилизуем граф %X в строку 2\n", out_message);
+			//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
 	outbuff.write(0);
 
-	printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
+	if(trace__get_message__M017)
+		printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
 
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
-	
+
 	//	from_client.send(cast(char*) "".ptr, cast(char*) "empty", false);
 
-	sw.stop();
-	printf("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
+	if(trace__get_message__M018)
+	{
+		sw.stop();
+		printf("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
+	}
 
 	return;
 }
@@ -317,8 +371,6 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	time[7] = '_';
 
 	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
-	
-	printf("command_preparer #1\n");
 
 	out_message.subject = time;
 	//	out_message.subject = cast(char[])"msg:time";
@@ -329,7 +381,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	Predicate* command = message.getEdge(msg__command);
-	
+
 	char[] reason;
 	bool isOk;
 
@@ -346,17 +398,17 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 			get(message, sender, userId, ts, isOk, reason, gres);
 			if(isOk == true)
 			{
-				out_message.addPredicate(msg__result, fromStringz (gres.toEscStringz()));
+				out_message.addPredicate(msg__result, fromStringz(gres.toEscStringz()));
 			}
 		}
 		else if("get_ticket" in command.objects_of_value)
 		{
 			res = get_ticket(message, sender, userId, ts, isOk, reason);
-			if (isOk)
+			if(isOk)
 				local_ticket = res.edges[0].getFirstObject;
 		}
 
-//		reason = cast(char[]) "запрос выполнен";
+		//		reason = cast(char[]) "запрос выполнен";
 	}
 	else
 	{
