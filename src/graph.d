@@ -42,7 +42,7 @@ struct GraphCluster
 			 ss = new Subject;
 			 ss.subject = s;
 		}
-		graphs_of_subject[s] = ss;  
+		graphs_of_subject[cast(immutable)s] = ss;  
 		ss.addPredicate (p, o, lang);		
 	}
 	
@@ -309,7 +309,7 @@ void set_hashed_data(Subject ss)
 	{
 		Predicate* pp = &ss.edges[jj];
 
-		ss.edges_of_predicate[pp.predicate] = pp;
+		ss.edges_of_predicate[cast(immutable)pp.predicate] = pp;
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
@@ -319,7 +319,7 @@ void set_hashed_data(Subject ss)
 			}
 			else
 			{
-				pp.objects_of_value[pp.objects[kk].object] = &pp.objects[kk];
+				pp.objects_of_value[cast(immutable)pp.objects[kk].object] = &pp.objects[kk];
 			}							
 		}
 

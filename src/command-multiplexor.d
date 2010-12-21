@@ -230,7 +230,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		search_mask[1].o = credential.getFirstObject;
 
 		byte[char[]] readed_predicate;
-		readed_predicate[auth__login] = true;
+		readed_predicate[cast(immutable)auth__login] = true;
 
 		triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
@@ -379,7 +379,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 								writeln("readed_predicate_length=", readed_predicate_length);
 							}
 
-							readed_predicate[pp.predicate] = _GET_REIFED;
+							readed_predicate[cast(immutable)pp.predicate] = _GET_REIFED;
 
 						}
 						else if(oo.object == "query:get")
@@ -391,7 +391,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 								writeln("readed_predicate_length=", readed_predicate_length);
 							}
 
-							readed_predicate[pp.predicate] = _GET;
+							readed_predicate[cast(immutable)pp.predicate] = _GET;
 						}
 						else
 						{
