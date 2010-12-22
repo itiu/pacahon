@@ -40,14 +40,25 @@ private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
 
 private import pacahon.utils;
+private import pacahon.Logger;
+
+Logger log;
+Logger io_msg;
+
+        static this()
+        {
+             log = new Logger("pacahon.log");
+             io_msg = new Logger("pacahon.io");
+        }
+                        
 
 void main(char[][] args)
 {
 	try
-	{
+    	{
 		JSONValue props = get_props("pacahon-properties.json");
 
-		printf("Pacahon commit=%s date=%s\n", myversion.hash.ptr, myversion.date.ptr);
+		log.trace_log_and_console ("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
 
 		mom_client client = null;
 
@@ -101,7 +112,7 @@ class ServerThread: Thread
 }
 
 int count = 0;
-bool trace__get_message__M001 = true;
+bool trace__get_message__M001 = false;
 bool trace__get_message__M002 = false;
 bool trace__get_message__M003 = false;
 bool trace__get_message__M004 = false;
@@ -117,11 +128,13 @@ bool trace__get_message__M013 = false;
 bool trace__get_message__M014 = false;
 bool trace__get_message__M015 = false;
 bool trace__get_message__M016 = false;
-bool trace__get_message__M017 = true;
+bool trace__get_message__M017 = false;
 bool trace__get_message__M018 = true;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	log.trace ("get message");
+	
 	count++;
 
 	if(trace__get_message__M001)
@@ -130,6 +143,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
 		printf("********************************************************************\n");
 	}
+
+	io_msg.trace_io (true, msg, message_size);
 
 	StopWatch sw;
 	sw.start();
@@ -335,18 +350,20 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	}
 	outbuff.write(0);
 
-	if(trace__get_message__M017)
-		printf("# отправляем ответ:\n[%s] \n", cast(char*) outbuff.toBytes());
+	ubyte[] msg_out = outbuff.toBytes();
 
 	if(from_client !is null)
-		from_client.send(cast(char*) "".ptr, cast(char*) outbuff.toBytes(), false);
+		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, false);
 
 	//	from_client.send(cast(char*) "".ptr, cast(char*) "empty", false);
+	{
+		io_msg.trace_io (false, cast(byte*)msg_out, msg_out.length);
+	}
 
 	if(trace__get_message__M018)
 	{
 		sw.stop();
-		printf("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
+		log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
 	}
 
 	return;
