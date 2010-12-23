@@ -1,5 +1,48 @@
-Pacahon: макет ядра документ ориентированной системы
-lang: D1 D2 
-runtime lib: phobos
-MQ:zeromq
-Triple storage:mongodb
+1. ОСНОВНЫЕ ФАКТЫ
+
+Pacahon: 
+    Ядро документ-ориентированной системы. 
+    Концептуальная идея системы - хранение и обработка данных на основе онтологий.
+    Ядро системы предназначено для хранения / поиска / авторизации данных хранимых в виде триплетов.
+Используемые языки: 
+    D2.
+Runtime библиотека: 
+    phobos.
+Транспортный уровень: 
+    zeromq.
+Хранилище триплетов: 
+    mongodb.
+
+
+2. УСТАНОВКА
+
+2.1. Требуемое ПО:
+- Клиент системы контроля версий GIT.
+- mongodb v1.6.3+ ( http://www.mongodb.com )
+- zeromq v2.1.0+ ( http://www.zeromq.com )
+- Digital mars D2 compiler ( http://www.digitalmars.com )
+- phobos (D2 runtime library) ( http://www.digitalmars.com )
+
+2.2. Процедура сборки / установки:
+
+2.2.1. Установить требуемое ПО.
+
+2.2.2. Загрузить и скомпилировать pacahon:
+
+git clone git@github.com:itiu/pacahon.git
+cd pacahon
+./get-dependencies.sh
+./build-with-dmd
+
+2.3. MongoDB
+С помощью клиента mondgo установить индексы на БД pacahon:
+
+cd /mongo/install/path
+./mongo
+
+use pacahon;
+db.simple.ensureIndex({"auth:login":1, "auth:credential":1});
+db.simple.ensureIndex({"SUBJECT":1});
+db.simple.ensureIndex({"a":1});
+db.simple.ensureIndex({"gost19:active":1});
+db.simple.ensureIndex({"_keywords":1});
