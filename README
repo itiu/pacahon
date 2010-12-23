@@ -16,12 +16,14 @@ Runtime библиотека:
 
 2. УСТАНОВКА
 
+NB: Описание сборки / установки приведено для POSIX-систем.
+
 2.1. Требуемое ПО:
 - Клиент системы контроля версий GIT.
 - mongodb v1.6.3+ ( http://www.mongodb.com )
 - zeromq v2.1.0+ ( http://www.zeromq.com )
-- Digital mars D2 compiler ( http://www.digitalmars.com )
-- phobos (D2 runtime library) ( http://www.digitalmars.com )
+- Digital mars D2 compiler ( http://www.digitalmars.com/d )
+- phobos (D2 runtime library) ( http://www.digitalmars.com/d/2.0/phobos/phobos.html )
 
 2.2. Процедура сборки / установки:
 
@@ -33,6 +35,8 @@ git clone git@github.com:itiu/pacahon.git
 cd pacahon
 ./get-dependencies.sh
 ./build-with-dmd
+
+После компиляции в каталоге появится исполняемый файл Pacahon-D2.
 
 2.3. MongoDB
 С помощью клиента mondgo установить индексы на БД pacahon:
