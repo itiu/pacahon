@@ -50,3 +50,11 @@ db.simple.ensureIndex({"SUBJECT":1});
 db.simple.ensureIndex({"a":1});
 db.simple.ensureIndex({"gost19:active":1});
 db.simple.ensureIndex({"_keywords":1});
+
+3. ФУНКЦИОНАЛЬНЫЕ ТЕСТЫ:
+
+Проверку работоспособности pacahon, можно выполнить с помощью внешнего 
+модуля функционального тестирования pacahon-tests git@github.com:itiu/pacahon-tests.git 
+
+
+
