@@ -3,6 +3,8 @@ cp -v -r src/* build/src
 git log -1 --pretty=format:"module myversion; public static char[] author=cast(char[])\"%an\"; public static char[] date=cast(char[])\"%ad\"; public static char[] hash=cast(char[])\"%h\";">myversion.d
 
 rm Pacahon-*
+rm *.log
+rm *.io
 
 bf=build/src
 

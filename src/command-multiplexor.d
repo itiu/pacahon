@@ -304,8 +304,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	}
 }
 
-bool trace__get = false;
-bool timing__get = false;
+byte trace_msg[30] = 0;
 
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
@@ -318,14 +317,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 	isOk = false;
 
-	if(trace__get)
+	if(trace_msg[0] == 1)
 		printf("command get\n");
 
 	reason = cast(char[]) "запрос не может быть выполнен";
 
 	Predicate* args = message.getEdge(msg__args);
 
-	if(trace__get)
+	if(trace_msg[1] == 1)
 		printf("command get, args=%X \n", args);
 
 	for(short ii; ii < args.count_objects; ii++)
@@ -333,13 +332,13 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
 
-		if(trace__get)
-			printf("arg [%s], arg_size=%d\n", args_text, arg_size);
+		if(trace_msg[2] == 1)
+			printf("*** arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
-		if(trace__get)
-			printf("arguments has been read\n");
+		if(trace_msg[3] == 1)
+			printf("*** arguments has been read\n");
 
 		if(graphs_as_template is null)
 		{
@@ -350,8 +349,8 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		{
 			Subject graph = graphs_as_template[jj];
 
-			if(trace__get)
-				writeln("%%% graph.subject=", graph.subject);
+			if(trace_msg[4] == 1)
+				writeln("*** graph.subject=", graph.subject);
 
 			byte[char[]] readed_predicate;
 
@@ -362,6 +361,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			for(int kk = 0; kk < graph.count_edges; kk++)
 			{
 				Predicate pp = graph.edges[kk];
+				Triple statement = null;
 
 				for(int ll = 0; ll < pp.count_objects; ll++)
 				{
@@ -372,62 +372,73 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						{
 							// требуются так-же реифицированные данные по этому полю
 							// данный предикат добавить в список возвращаемых
-							if(trace__get)
+							if(trace_msg[5] == 1)
 								writeln("*** данный предикат и реифицированные данные добавим в список возвращаемых: ", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET_REIFED;
 
-							if(trace__get)
-								writeln("readed_predicate.length=", readed_predicate.length);
+							if(trace_msg[6] == 1)
+								writeln("*** readed_predicate.length=", readed_predicate.length);
 						}
 						else if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
-							if(trace__get)
+							if(trace_msg[7] == 1)
 								writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET;
 
-							if(trace__get)
-								writeln("readed_predicate.length=", readed_predicate.length);
+							if(trace_msg[8] == 1)
+								writeln("*** readed_predicate.length=", readed_predicate.length);
 						}
 						else
 						{
-							if(search_mask[search_mask_length] is null)
-								search_mask[search_mask_length] = new Triple;
+							if(statement is null)
+								statement = new Triple;
 
-							search_mask[search_mask_length].p = pp.predicate;
-							if(trace__get)
-								writeln("*** p=", search_mask[search_mask_length].p);
-							search_mask[search_mask_length].o = oo.object;
-							if(trace__get)
-								writeln("*** o=", search_mask[search_mask_length].o);
-							search_mask_length++;
-						}
+							statement.p = pp.predicate;
 
-						if(graph.subject != "query:any")
-						{
-							if(trace__get)
-								writeln("query:any");
+							if(trace_msg[9] == 1)
+								writeln("*** p=", statement.p);
 
-							if(search_mask[search_mask_length] is null)
-								search_mask[search_mask_length] = new Triple;
+							statement.o = oo.object;
 
-							search_mask[search_mask_length].s = graph.subject;
-
-							if(trace__get)
-							{
-								writeln("*** s=", search_mask[search_mask_length].s);
-								writeln("*** search_mask_length=", search_mask_length);
-							}
+							if(trace_msg[10] == 1)
+								writeln("*** o=", statement.o);
 						}
 
 					}
 
 				}
+				if(graph.subject != "query:any" && statement !is null || statement is null && search_mask_length == 0)
+				{
+					if(trace_msg[10] == 1)
+						writeln("*** subject=", graph.subject);
+
+					if(statement is null)
+						statement = new Triple;
+
+					statement.s = graph.subject;
+
+					if(trace_msg[12] == 1)
+					{
+						writeln("*** s=", statement.s);
+					}
+				}
+
+				if(statement !is null)
+				{
+					search_mask[search_mask_length] = statement;
+					search_mask_length++;
+					if(trace_msg[12] == 1)
+					{
+						writeln("*** search_mask_length=", search_mask_length);
+					}
+				}
+
 			}
 
-			if(trace__get)
+			if(trace_msg[13] == 1)
 				writeln("*** mask formed");
 
 			search_mask.length = search_mask_length;
@@ -436,7 +447,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			while(iterator !is null)
 			{
-				if(trace__get)
+				if(trace_msg[14] == 1)
 					writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o, iterator.triple.lang);
@@ -444,8 +455,8 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				iterator = iterator.next_triple_list_element;
 			}
 
-			if(trace__get)
-				writeln("*** авторизуем найденные субьекты");
+			if(trace_msg[15] == 1)
+				writeln("*** авторизуем найденные субьекты, для пользователя %s", userId);
 
 			// авторизуем найденные субьекты
 			foreach(s; res.graphs_of_subject)
@@ -455,10 +466,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 				if(result_of_az == false)
 				{
-					writeln("AZ: s= ", s.subject, " -> ", authorize_reason);
+					if(trace_msg[16] == 1)
+						writeln("AZ: s= ", s.subject, " -> ", authorize_reason);
+
 					s.count_edges = 0;
 					s.subject = null;
-					writeln("remove from list");
+
+					if(trace_msg[17] == 1)
+						writeln("remove from list");
 				}
 
 			}
@@ -469,7 +484,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 		}
 
-		if(timing__get)
+		if(trace_msg[18] == 1)
 		{
 			sw.stop();
 			printf("total time command get: %d [µs]\n", cast(long) sw.peek().microseconds);

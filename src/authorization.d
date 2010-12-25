@@ -25,8 +25,8 @@ enum operation
  * targetId - обьект охраны
  * op - список запрашиваемых операций
  */
-bool trace__authorize = false;
-bool timing__authorize = false;
+
+byte trace_msg[20]=0;
 
 bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
@@ -37,7 +37,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 	reason = cast(char[]) "ничего разрешающего не было определено";
 
-	if(trace__authorize)
+	if(trace_msg[0] == 1)
 	{
 		if(userId !is null)
 			write("# пользователь [", userId, "]");
@@ -82,14 +82,14 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				// субьект уже существует
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
-				if(trace__authorize)
+				if(trace_msg[1] == 1)
 					writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
 
 				triple_list_element iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
-					if(trace__authorize)
+					if(trace_msg[2] == 1)
 						printf("#dc:creator найден\n");
 
 					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
@@ -97,7 +97,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				}
 				else
 				{
-					if(trace__authorize)
+					if(trace_msg[3] == 1)
 						printf("#dc:creator  не найден\n");
 
 					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
@@ -142,7 +142,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	finally
 	{
 
-		if(trace__authorize)
+		if(trace_msg[4] == 1)
 		{
 			printf("	результат:");
 
@@ -157,7 +157,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 		sw.stop();
 		long t = cast(long) sw.peek().microseconds;
 
-		if(t > 300 || timing__authorize)
+		if(t > 300 || trace_msg[5] == 1)
 		{
 			printf("total time authorize: %d[µs]\n", t);
 		}

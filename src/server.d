@@ -40,25 +40,26 @@ private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
 
 private import pacahon.utils;
-private import pacahon.Logger;
+private import trioplax.Logger;
 
 Logger log;
 Logger io_msg;
 
-        static this()
-        {
-             log = new Logger("pacahon.log");
-             io_msg = new Logger("pacahon.io");
-        }
-                        
+static this()
+{
+	log = new Logger("pacahon.log");
+	io_msg = new Logger("pacahon.io");
+}
+
+byte trace_msg[10][30];
 
 void main(char[][] args)
 {
 	try
-    	{
+	{
 		JSONValue props = get_props("pacahon-properties.json");
 
-		log.trace_log_and_console ("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
+		log.trace_log_and_console("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
 
 		mom_client client = null;
 
@@ -112,39 +113,27 @@ class ServerThread: Thread
 }
 
 int count = 0;
-bool trace__get_message__M001 = false;
-bool trace__get_message__M002 = false;
-bool trace__get_message__M003 = false;
-bool trace__get_message__M004 = false;
-bool trace__get_message__M005 = false;
-bool trace__get_message__M006 = false;
-bool trace__get_message__M007 = false;
-bool trace__get_message__M008 = false;
-bool trace__get_message__M009 = false;
-bool trace__get_message__M010 = false;
-bool trace__get_message__M011 = false;
-bool trace__get_message__M012 = false;
-bool trace__get_message__M013 = false;
-bool trace__get_message__M014 = false;
-bool trace__get_message__M015 = false;
-bool trace__get_message__M016 = false;
-bool trace__get_message__M017 = false;
-bool trace__get_message__M018 = true;
+
+class Ticket
+{
+	char[] id;
+	char[] userId;
+	d_time end_time;
+}
+
+Ticket[char[]] user_of_ticket;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
-	log.trace ("get message");
-	
+	trace_msg[0][0] = 1;
+	trace_msg[0][16] = 1;
+
+	log.trace("get message");
+
 	count++;
 
-	if(trace__get_message__M001)
-	{
-		printf("********************************************************************\n");
-		printf("[%i] GET MESSAGE [%d]: \n%s\n", count, message_size, cast(char*) msg);
-		printf("********************************************************************\n");
-	}
-
-	io_msg.trace_io (true, msg, message_size);
+	if(trace_msg[0][0] == 1)
+		io_msg.trace_io(true, msg, message_size);
 
 	StopWatch sw;
 	sw.start();
@@ -153,12 +142,12 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	TripleStorage ts = server_thread.ts;
 	ts.release_all_lists();
 
-	if(trace__get_message__M002)
+	if(trace_msg[0][1] == 1)
 		printf("[%i] \n", count);
 
 	Subject[] triples = parse_n3_string(cast(char*) msg, message_size);
 
-	if(trace__get_message__M003)
+	if(trace_msg[0][2] == 1)
 		printf("command.length=%d\n", triples.length);
 
 	Subject[] results = new Subject[triples.length];
@@ -172,7 +161,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	{
 		Subject command = triples[ii];
 
-		if(trace__get_message__M004)
+		if(trace_msg[0][3] == 1)
 		{
 			printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
 					command.count_edges, command.toStringz());
@@ -185,6 +174,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			continue;
 		}
 
+		log.trace(command.subject);
+
 		set_hashed_data(command);
 
 		Predicate* type = command.getEdge(cast(char[]) "a");
@@ -196,12 +187,12 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			Predicate* reciever = command.getEdge(msg__reciever);
 			Predicate* sender = command.getEdge(msg__sender);
 
-			if(trace__get_message__M005)
-				writeln("FROM:", sender.getFirstObject());
+			if(trace_msg[0][4] == 1)
+				log.trace("FROM:%s", sender.getFirstObject());
 
 			Predicate* ticket = command.getEdge(msg__ticket);
 
-			char[] userId = null;
+			char[] userId;
 
 			if(ticket !is null && ticket.objects !is null)
 			{
@@ -210,98 +201,29 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;
 
-				if(trace__get_message__M006)
-				{
-					printf("# найдем пользователя по сессионному билету ticket=%s\n", cast(char*) ticket_str);
-					sw.stop();
-					printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
-					sw.start();
-				}
-
-				// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-				triple_list_element iterator = ts.getTriples(ticket_str, null, null);
-
-				if(trace__get_message__M007)
-				{
-					sw.stop();
-					printf("T count: %d, %d [µs] end get data\n", count, cast(long) sw.peek().microseconds);
-					sw.start();
-				}
-
-				char[] when = null;
-				int duration = 0;
-
-				if(iterator is null)
-				{
-					if(trace__get_message__M008)
-						printf("# сессионный билет не найден\n");
-				}
-
-				while(iterator !is null)
-				{
-					if(iterator.triple.p == ticket__accessor)
-						userId = iterator.triple.o;
-
-					if(iterator.triple.p == ticket__when)
-						when = iterator.triple.o;
-
-					if(iterator.triple.p == ticket__duration)
-					{
-						duration = Integer.toInt(iterator.triple.o);
-						//						writeln("# str duration = ", iterator.triple.o);
-						//						writeln("# duration = ", duration);
-					}
-
-					if(userId !is null && when !is null && duration > 10)
-						break;
-
-					iterator = iterator.next_triple_list_element;
-				}
-
-				if(userId is null)
-				{
-					if(trace__get_message__M009)
-						printf("# найденный сессионный билет не полон, пользователь не найден\n");
-				}
-
-				if(userId !is null && (when is null || duration < 10))
-				{
-					if(trace__get_message__M010)
-						printf("# найденный сессионный билет не полон, считаем что пользователь не был найден\n");
-					userId = null;
-				}
+				Ticket tt = getTicket(ticket_str, ts);
 
 				// проверим время жизни тикета
-				if(userId !is null)
+				if(tt !is null)
 				{
-					// TODO stringToTime очень медленная операция ~ 100 микросекунд
 					auto now = UTCtoLocalTime(getUTCtime());
 
-					d_time ticket_create_time = stringToTime(when.ptr);
-
-					//					printf("# duration=%d , now=%d\n", duration, (now - ticket_create_time) / 1000);
-					if((now - ticket_create_time) / 1000 > duration)
+					if(now > tt.end_time)
 					{
 						// тикет просрочен
-						if(trace__get_message__M011)
-							printf("# тикет просрочен\n");
-						userId = null;
+						if(trace_msg[0][10] == 1)
+							log.trace("# тикет просрочен");
+					}
+					else
+					{
+						userId = tt.userId;
 					}
 				}
 
-				if(trace__get_message__M012)
-				{
-					sw.stop();
-					printf("T count: %d, %d [µs] end: проверим время жизни тикета\n", count, cast(long) sw.peek().microseconds);
-					sw.start();
-				}
-				//
+				if(trace_msg[0][12] == 1)
+					if(userId !is null)
+						log.trace("# пользователь найден, userId=%s", userId);
 
-				if(userId !is null)
-				{
-					if(trace__get_message__M013)
-						writeln("# пользователь найден, userId=", userId);
-				}
 			}
 
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
@@ -310,7 +232,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				//				Subject* out_message = new Subject;
 				results[ii] = new Subject;
 
-				if(trace__get_message__M014)
+				if(trace_msg[0][13] == 1)
 				{
 					sw.stop();
 					printf("T  count: %d, %d [µs] next: command_preparer\n", count, cast(long) sw.peek().microseconds);
@@ -319,7 +241,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
 
-				if(trace__get_message__M015)
+				if(trace_msg[0][14] == 1)
 				{
 					sw.stop();
 					printf("T count: %d, %d [µs] end: command_preparer\n", count, cast(long) sw.peek().microseconds);
@@ -332,7 +254,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	}
 
-	if(trace__get_message__M016)
+	if(trace_msg[0][15] == 1)
 		printf("# формируем ответ, серилизуем ответные графы в строку\n");
 
 	OutBuffer outbuff = new OutBuffer();
@@ -355,23 +277,20 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, false);
 
-	//	from_client.send(cast(char*) "".ptr, cast(char*) "empty", false);
-	{
-		io_msg.trace_io (false, cast(byte*)msg_out, msg_out.length);
-	}
+	if(trace_msg[0][16] == 1)
+		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
-	if(trace__get_message__M018)
-	{
-		sw.stop();
-		log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
-	}
+	sw.stop();
+	log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
 
 	return;
 }
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
-	printf("command_preparer\n");
+	if(trace_msg[1][0] == 1)
+		printf("command_preparer\n");
+
 	Predicate[] ppp = new Predicate[5];
 
 	Subject res;
@@ -445,5 +364,94 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 
 	out_message.addPredicate(msg__reason, reason);
 
-	printf("command_preparer end\n");
+	if(trace_msg[1][1] == 1)
+		printf("command_preparer end\n");
+}
+
+Ticket getTicket(char[] ticket_id, TripleStorage ts)
+{
+	Ticket tt;
+
+//	trace_msg[2] = 0;
+
+	if((ticket_id in user_of_ticket) !is null)
+	{
+		if(trace_msg[2][0] == 1)
+			log.trace("# тикет нашли в кеше, %s", ticket_id);
+
+		tt = user_of_ticket[ticket_id];
+	}
+
+	if(tt is null)
+	{
+		tt = new Ticket;
+		tt.id = ticket_id;
+
+		if(trace_msg[2][1] == 1)
+		{
+			log.trace("# найдем пользователя по сессионному билету ticket=%s", ticket_id);
+			//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
+		}
+
+		// найдем пользователя по сессионному билету и проверим просрочен билет или нет
+		triple_list_element iterator = ts.getTriples(ticket_id, null, null);
+
+		char[] when = null;
+		int duration = 0;
+
+		if(trace_msg[2][2] == 1)
+			if(iterator is null)
+				log.trace("# сессионный билет не найден");
+
+		while(iterator !is null)
+		{
+			if(trace_msg[2][6] == 1)
+				log.trace("# %s %s %s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
+
+			if(iterator.triple.p == ticket__accessor)
+			{
+				tt.userId = iterator.triple.o;
+				if(trace_msg[2][6] == 1)
+					log.trace("# tt.userId=%s", tt.userId);
+			}
+			if(iterator.triple.p == ticket__when)
+				when = iterator.triple.o;
+
+			if(iterator.triple.p == ticket__duration)
+			{
+				duration = Integer.toInt(iterator.triple.o);
+			}
+			if(tt.userId !is null && when !is null && duration > 10)
+				break;
+
+			iterator = iterator.next_triple_list_element;
+		}
+
+		if(tt.userId is null)
+		{
+			if(trace_msg[2][3] == 1)
+				log.trace("# найденный сессионный билет не полон, пользователь не найден");
+		}
+
+		if(tt.userId !is null && (when is null || duration < 10))
+		{
+			if(trace_msg[2][4] == 1)
+				log.trace("# найденный сессионный билет не полон, считаем что пользователь не был найден");
+			tt.userId = null;
+		}
+
+		if(when !is null)
+		{
+			if(trace_msg[2][5] == 1)
+				log.trace("# сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
+
+			//			printf("#1 when=%s\n", when.ptr);
+			// TODO stringToTime очень медленная операция ~ 100 микросекунд
+			tt.end_time = stringToTime(when.ptr) + duration * 1000;
+
+			user_of_ticket[cast(immutable) ticket_id] = tt;
+		}
+	}
+
+	return tt;
 }
