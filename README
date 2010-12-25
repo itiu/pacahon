@@ -20,9 +20,9 @@ NB: Описание сборки / установки приведено для
 
 2.1. Требуемое ПО:
 - Клиент системы контроля версий GIT.
-- mongodb v1.6.3+ ( http://www.mongodb.com )
-- zeromq v2.1.0+ ( http://www.zeromq.com )
-- Digital mars D2 compiler ( http://www.digitalmars.com/d )
+- mongodb v1.6.5+ ( http://www.mongodb.com )
+- zeromq v2.0.10+ ( http://www.zeromq.com )
+- Digital mars D2 compiler 2.051 ( http://www.digitalmars.com/d )
 - phobos (D2 runtime library) ( http://www.digitalmars.com/d/2.0/phobos/phobos.html )
 
 2.2. Процедура сборки / установки:
@@ -34,7 +34,7 @@ NB: Описание сборки / установки приведено для
 git clone git@github.com:itiu/pacahon.git
 cd pacahon
 ./get-dependencies.sh
-./build-with-dmd
+./build-with-dmd.sh
 
 После компиляции в каталоге появится исполняемый файл Pacahon-D2.
 
