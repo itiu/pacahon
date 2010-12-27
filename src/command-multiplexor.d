@@ -25,6 +25,16 @@ private import pacahon.authorization;
 private import pacahon.know_predicates;
 
 private import pacahon.utils;
+private import trioplax.Logger;
+
+Logger log;
+
+static this()
+{
+	log = new Logger("pacahon.log", "multiplexor");
+}
+
+byte trace_msg[10][30];
 
 /*
  * комманда добавления / изменения фактов в хранилище 
@@ -32,7 +42,13 @@ private import pacahon.utils;
  */
 Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
-	printf("command put\n");
+	//	trace_msg[0] = 1;
+	//	trace_msg[0][4] = 1;
+	//	trace_msg[0][5] = 1;
+	//	trace_msg[0][6] = 1;
+
+	if(trace_msg[0][0] == 1)
+		log.trace("command put");
 
 	isOk = false;
 
@@ -42,89 +58,57 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 
 	Predicate* args = message.getEdge(msg__args);
 
-	printf("command put, args=%X \n", args);
+	if(trace_msg[0][1] == 1)
+		log.trace("command put, args=%X ", args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
-		//		printf("arg [%s], arg_size=%d\n", args_text, arg_size);
+
+		//		if(trace_msg[0][2] == 1)
+		//			printf("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
 
 		Subject[] graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
-		//		Subject*[] graphs_on_put = null;
 
-		printf("arguments has been read\n");
+		if(trace_msg[0][3] == 1)
+			log.trace("arguments has been read");
+
 		if(graphs_on_put is null)
 		{
 			reason = cast(char[]) "в сообщении нет фактов которые следует поместить в хранилище";
 		}
 
+		// фаза I, добавим основные данные
 		for(int jj = 0; jj < graphs_on_put.length; jj++)
 		{
 			Subject graph = graphs_on_put[jj];
+			set_hashed_data(graph);
 
-			//			printf("Subject* graph=%X\n", graph);
+			Predicate* type = graph.getEdge(cast(char[]) "a");
+			if(type is null)
+				type = graph.getEdge(rdf__type);
 
-			// цикл по всем добавляемым субьектам
-			/* Doc 2. если создается новый субъект, то ограничений по умолчанию нет
-			 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
-			 * или может быть вычислено разрешающее право на U данного субъекта. */
-
-			char[] authorize_reason;
-
-			if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
+			if((rdf__Statement in type.objects_of_value) is null)
 			{
-				// можно выполнять операцию по добавлению или обновлению фактов
-				if(userId !is null)
+				if(trace_msg[0][4] == 1)
+					log.trace("adding subject=%s", graph.subject);
+
+				// цикл по всем добавляемым субьектам
+				/* Doc 2. если создается новый субъект, то ограничений по умолчанию нет
+				 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
+				 * или может быть вычислено разрешающее право на U данного субъекта. */
+
+				char[] authorize_reason;
+
+				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 				{
-					// добавим признак dc:creator
-					ts.addTriple(graph.subject, dc__creator, userId);
-				}
-
-				set_hashed_data(graph);
-
-				Predicate* type = graph.getEdge(cast(char[]) "a");
-				if(type is null)
-					type = graph.getEdge(rdf__type);
-
-				if(rdf__Statement in type.objects_of_value)
-				{
-					// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
-					// если, да то добавить их в хранилище через метод addTripleToReifedData
-					Predicate* r_subject = graph.getEdge(cast(char[]) "rdf:subject");
-					Predicate* r_predicate = graph.getEdge(cast(char[]) "rdf:predicate");
-					Predicate* r_object = graph.getEdge(cast(char[]) "rdf:object");
-
-					if(r_subject !is null && r_predicate !is null && r_object !is null)
+					if(userId !is null)
 					{
-						char[] sr_subject = r_subject.getFirstObject();
-						char[] sr_predicate = r_predicate.getFirstObject();
-						char[] sr_object = r_object.getFirstObject();
-
-						for(int kk = 0; kk < graph.count_edges; kk++)
-						{
-							Predicate* pp = &graph.edges[kk];
-
-							if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
-							{
-								for(int ll = 0; ll < pp.count_objects; ll++)
-								{
-									Objectz oo = pp.objects[ll];
-
-									if(oo.type == LITERAL || oo.type == URI)
-										ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.object, oo.lang);
-									else
-										ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.subject.subject,
-												oo.lang);
-								}
-							}
-
-						}
+						// добавим признак dc:creator
+						ts.addTriple(graph.subject, dc__creator, userId);
 					}
 
-				}
-				else
-				{
 					// основной цикл по добавлению фактов в хранилище из данного субьекта 
 					// TODO сделать рекурсивное добавление (для многоуровневых графов)
 					for(int kk = 0; kk < graph.count_edges; kk++)
@@ -142,20 +126,68 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 						}
 
 					}
+
+					reason = cast(char[]) "добавление фактов выполнено:" ~ authorize_reason;
+					isOk = true;
+				}
+				else
+				{
+					reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;
+					if(trace_msg[0][6] == 1)
+						log.trace("autorize=%s", reason);
 				}
 
-				reason = cast(char[]) "добавление фактов выполнено:" ~ authorize_reason;
-				isOk = true;
 			}
-			else
-			{
-				//				printf("end authorize = false\n");
-				reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;
-			}
-
 		}
 
-		printf("command put is finish \n");
+		// фаза I, добавим реифицированные данные 
+		// !TODO авторизация для реифицированных данных пока не выполняется
+		for(int jj = 0; jj < graphs_on_put.length; jj++)
+		{
+			Subject graph = graphs_on_put[jj];
+
+			Predicate* type = graph.getEdge(cast(char[]) "a");
+			if(type is null)
+				type = graph.getEdge(rdf__type);
+
+			if((rdf__Statement in type.objects_of_value))
+			{
+				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
+				// если, да то добавить их в хранилище через метод addTripleToReifedData
+				Predicate* r_subject = graph.getEdge(cast(char[]) "rdf:subject");
+				Predicate* r_predicate = graph.getEdge(cast(char[]) "rdf:predicate");
+				Predicate* r_object = graph.getEdge(cast(char[]) "rdf:object");
+
+				if(r_subject !is null && r_predicate !is null && r_object !is null)
+				{
+					char[] sr_subject = r_subject.getFirstObject();
+					char[] sr_predicate = r_predicate.getFirstObject();
+					char[] sr_object = r_object.getFirstObject();
+
+					for(int kk = 0; kk < graph.count_edges; kk++)
+					{
+						Predicate* pp = &graph.edges[kk];
+
+						if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
+						{
+							for(int ll = 0; ll < pp.count_objects; ll++)
+							{
+								Objectz oo = pp.objects[ll];
+
+								if(oo.type == LITERAL || oo.type == URI)
+									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.object, oo.lang);
+								else
+									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.subject.subject, oo.lang);
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		if(trace_msg[0][7] == 1)
+			log.trace("command put is finish");
 
 		return res;
 	}
@@ -304,8 +336,6 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	}
 }
 
-byte trace_msg[30] = 0;
-
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
 	StopWatch sw;
@@ -317,14 +347,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 	isOk = false;
 
-	if(trace_msg[0] == 1)
+	if(trace_msg[2][0] == 1)
 		printf("command get\n");
 
 	reason = cast(char[]) "запрос не может быть выполнен";
 
 	Predicate* args = message.getEdge(msg__args);
 
-	if(trace_msg[1] == 1)
+	if(trace_msg[2][1] == 1)
 		printf("command get, args=%X \n", args);
 
 	for(short ii; ii < args.count_objects; ii++)
@@ -332,12 +362,12 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		char* args_text = cast(char*) args.objects[ii].object;
 		int arg_size = strlen(args_text);
 
-		if(trace_msg[2] == 1)
+		if(trace_msg[2][2] == 1)
 			printf("*** arg [%s], arg_size=%d\n", args_text, arg_size);
 
 		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
-		if(trace_msg[3] == 1)
+		if(trace_msg[2][3] == 1)
 			printf("*** arguments has been read\n");
 
 		if(graphs_as_template is null)
@@ -349,7 +379,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		{
 			Subject graph = graphs_as_template[jj];
 
-			if(trace_msg[4] == 1)
+			if(trace_msg[2][4] == 1)
 				writeln("*** graph.subject=", graph.subject);
 
 			byte[char[]] readed_predicate;
@@ -372,23 +402,23 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						{
 							// требуются так-же реифицированные данные по этому полю
 							// данный предикат добавить в список возвращаемых
-							if(trace_msg[5] == 1)
+							if(trace_msg[2][5] == 1)
 								writeln("*** данный предикат и реифицированные данные добавим в список возвращаемых: ", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET_REIFED;
 
-							if(trace_msg[6] == 1)
+							if(trace_msg[2][6] == 1)
 								writeln("*** readed_predicate.length=", readed_predicate.length);
 						}
 						else if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
-							if(trace_msg[7] == 1)
+							if(trace_msg[2][7] == 1)
 								writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET;
 
-							if(trace_msg[8] == 1)
+							if(trace_msg[2][8] == 1)
 								writeln("*** readed_predicate.length=", readed_predicate.length);
 						}
 						else
@@ -398,21 +428,22 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 							statement.p = pp.predicate;
 
-							if(trace_msg[9] == 1)
+							if(trace_msg[2][9] == 1)
 								writeln("*** p=", statement.p);
 
 							statement.o = oo.object;
 
-							if(trace_msg[10] == 1)
+							if(trace_msg[2][10] == 1)
 								writeln("*** o=", statement.o);
 						}
 
 					}
 
 				}
-				if(graph.subject != "query:any" && statement !is null || statement is null && search_mask_length == 0)
+				if((graph.subject != "query:any" && statement !is null) || 
+				   (graph.subject != "query:any" && statement !is null && search_mask_length == 0))
 				{
-					if(trace_msg[10] == 1)
+					if(trace_msg[2][11] == 1)
 						writeln("*** subject=", graph.subject);
 
 					if(statement is null)
@@ -420,7 +451,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 					statement.s = graph.subject;
 
-					if(trace_msg[12] == 1)
+					if(trace_msg[2][12] == 1)
 					{
 						writeln("*** s=", statement.s);
 					}
@@ -430,7 +461,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				{
 					search_mask[search_mask_length] = statement;
 					search_mask_length++;
-					if(trace_msg[12] == 1)
+					if(trace_msg[2][13] == 1)
 					{
 						writeln("*** search_mask_length=", search_mask_length);
 					}
@@ -438,7 +469,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			}
 
-			if(trace_msg[13] == 1)
+			if(trace_msg[2][14] == 1)
 				writeln("*** mask formed");
 
 			search_mask.length = search_mask_length;
@@ -447,7 +478,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			while(iterator !is null)
 			{
-				if(trace_msg[14] == 1)
+				if(trace_msg[2][15] == 1)
 					writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o, iterator.triple.lang);
@@ -455,7 +486,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				iterator = iterator.next_triple_list_element;
 			}
 
-			if(trace_msg[15] == 1)
+			if(trace_msg[2][16] == 1)
 				writeln("*** авторизуем найденные субьекты, для пользователя %s", userId);
 
 			// авторизуем найденные субьекты
@@ -466,13 +497,13 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 				if(result_of_az == false)
 				{
-					if(trace_msg[16] == 1)
+					if(trace_msg[2][17] == 1)
 						writeln("AZ: s= ", s.subject, " -> ", authorize_reason);
 
 					s.count_edges = 0;
 					s.subject = null;
 
-					if(trace_msg[17] == 1)
+					if(trace_msg[2][18] == 1)
 						writeln("remove from list");
 				}
 
@@ -484,7 +515,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 		}
 
-		if(trace_msg[18] == 1)
+		if(trace_msg[2][19] == 1)
 		{
 			sw.stop();
 			printf("total time command get: %d [µs]\n", cast(long) sw.peek().microseconds);

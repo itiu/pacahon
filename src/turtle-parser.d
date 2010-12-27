@@ -216,7 +216,7 @@ public Subject[] parse_n3_string(char* src, int len)
 	sw.stop();
 	long t = cast(long) sw.peek().microseconds;
 
-	if(t > 30)
+	if(t > 100)
 	{
 		printf("total time parse: %d[µs]\n", t);
 	}

@@ -47,8 +47,8 @@ Logger io_msg;
 
 static this()
 {
-	log = new Logger("pacahon.log");
-	io_msg = new Logger("pacahon.io");
+	log = new Logger("pacahon.log", "server");
+	io_msg = new Logger("pacahon.io", "server");
 }
 
 byte trace_msg[10][30];
@@ -125,8 +125,8 @@ Ticket[char[]] user_of_ticket;
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
-	trace_msg[0][0] = 1;
-	trace_msg[0][16] = 1;
+	trace_msg[0][0] = 1; // Input message
+	trace_msg[0][16] = 1; // Output message
 
 	log.trace("get message");
 
