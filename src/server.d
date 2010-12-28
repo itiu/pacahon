@@ -128,8 +128,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
 
-	log.trace("get message");
-
 	count++;
 
 	if(trace_msg[0][0] == 1)
@@ -143,9 +141,17 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	ts.release_all_lists();
 
 	if(trace_msg[0][1] == 1)
-		printf("[%i] \n", count);
+		printf("get message, [%i] \n", count);
 
-	Subject[] triples = parse_n3_string(cast(char*) msg, message_size);
+	Subject[] triples;
+	if (*msg == '{')
+	{
+//		 triples = parse_json_string(cast(char*) msg, message_size);				
+	}
+	else
+	{
+		 triples = parse_n3_string(cast(char*) msg, message_size);		
+	}
 
 	if(trace_msg[0][2] == 1)
 		printf("command.length=%d\n", triples.length);
