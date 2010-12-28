@@ -441,7 +441,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 				}
 				if((graph.subject != "query:any" && statement !is null) || 
-				   (graph.subject != "query:any" && statement !is null && search_mask_length == 0))
+				   (graph.subject != "query:any" && search_mask_length == 0))
 				{
 					if(trace_msg[2][11] == 1)
 						writeln("*** subject=", graph.subject);
