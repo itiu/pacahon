@@ -1,0 +1,9 @@
+use pacahon;
+
+db.simple.ensureIndex({"auth:login":1, "auth:credential":1});
+db.simple.ensureIndex({"@":1}, {unique:true});                                                             
+db.simple.ensureIndex({"a":1});
+db.simple.ensureIndex({"gost19:active":1});
+db.simple.ensureIndex({"_keywords":1});
+db.simple.ensureIndex({"gost19:externalIdentifer":1});
+db.simple.ensureIndex({"gost19:parentDepartment":1});
