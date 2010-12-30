@@ -130,50 +130,83 @@ char[] getString(char* s, int length)
 
 public Subject[] parse_json_ld_string(char* msg, int message_size)
 {
-	void prepare_node(JSONValue node, Subject[] triples)
+	void prepare_node(JSONValue node, GraphCluster* gcl)
 	{
-		writeln("node.object.length=", node.object.length);
-		for(int i = 0; i < node.object.keys.length; i++)
+		if(node.type == JSON_TYPE.OBJECT)
 		{
-			string key = node.object.keys[i];
-			JSONValue element = node.object.values[i];
+			Subject ss = new Subject;
+			for(int i = 0; i < node.object.keys.length; i++)
+			{
+				string key = node.object.keys[i];
 
-			writeln(element.type, ":key= ", key);
+				if(key == "#")
+					continue; // определение контекстов опустим, пока в этом нет необходимости
 
-			if(element.type == JSON_TYPE.STRING)
-				writeln(" element=", element.str);
+				if(key == "@")
+				{
+					ss.subject = cast(char[]) node.object.values[i].str;
+//										writeln("SUBJECT = ", ss.subject);
+					gcl.addSubject(ss);
+				}
+				else
+				{
+					JSONValue element = node.object.values[i];
 
-			if(element.type == JSON_TYPE.OBJECT)
-				prepare_node(element, triples);
+					//					writeln(element.type, ":key= ", key);
+
+					//					if(element.type == JSON_TYPE.STRING)
+					//						writeln(" element value=", element.str);
+
+					if(element.type == JSON_TYPE.OBJECT)
+					{
+						GraphCluster inner_gcl;
+						//						writeln(" element value= \n{");
+						prepare_node(element, &inner_gcl);
+						//						writeln("}");
+					}
+
+					if(element.type == JSON_TYPE.STRING)
+					{
+//						writeln("ss.addPredicate ", key, " ", element.str);
+						ss.addPredicate(cast(char[]) key, cast(char[]) element.str);
+					}
+				}
+			}
+		}
+		else if(JSON_TYPE.ARRAY)
+		{
+			foreach(element; node.array)
+			{
+				prepare_node(element, gcl);
+			}
 		}
 	}
 
-	Subject[] res;
+	GraphCluster gcl;
 
 	JSONValue node;
 
-	//	StopWatch sw1;
-	//	sw1.start();
+	StopWatch sw1;
+	sw1.start();
 
 	char[] buff = getString(msg, message_size);
 
 	node = parseJSON(buff);
 
-	if(node.type == JSON_TYPE.OBJECT)
-	{
-		prepare_node(node, res);
-	}
+	prepare_node(node, &gcl);
 
-	// sw1.stop();
-	//	log.trace("json msg parse %d [µs]", cast(long) sw.peek().microseconds);
+	sw1.stop();
+	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
-	return res;
+	return gcl.graphs_of_subject.values;
 }
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
+	trace_msg[0][3] = 1;
+	//	trace_msg[0][1] = 1;
 
 	count++;
 
@@ -188,17 +221,17 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	ts.release_all_lists();
 
 	if(trace_msg[0][1] == 1)
-		printf("get message, [%i] \n", count);
+		log.trace("get message, [%d]", count);
 
 	Subject[] triples;
 
-	if(*msg == '{')
+	if(*msg == '{' || *msg == '[')
 		triples = parse_json_ld_string(cast(char*) msg, message_size);
 	else
 		triples = parse_n3_string(cast(char*) msg, message_size);
 
 	if(trace_msg[0][2] == 1)
-		printf("command.length=%d\n", triples.length);
+		log.trace("command.length=%d", triples.length);
 
 	Subject[] results = new Subject[triples.length];
 
@@ -213,18 +246,15 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(trace_msg[0][3] == 1)
 		{
-			printf("\n--subject.count_edges=%d>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n%s\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n",
-					command.count_edges, command.toStringz());
-			writeln("get_message:message.subject=", command.subject);
+			log.trace("get_message:subject.count_edges=%d", command.count_edges);
+			log.trace("get_message:message.subject=%s", command.subject);
 		}
 
 		if(command.count_edges < 3)
 		{
-			printf("подозрительная комманда, пропустим\n");
+			log.trace("данная команда [%s] не является полной (command.count_edges < 3), пропустим\n", command.subject);
 			continue;
 		}
-
-		log.trace(command.subject);
 
 		set_hashed_data(command);
 
@@ -331,7 +361,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
 	sw.stop();
-	log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
+	log.trace("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
 
 	return;
 }
