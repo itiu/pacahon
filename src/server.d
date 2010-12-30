@@ -123,6 +123,53 @@ class Ticket
 
 Ticket[char[]] user_of_ticket;
 
+char[] getString(char* s, int length)
+{
+	return s ? s[0 .. length] : null;
+}
+
+public Subject[] parse_json_ld_string(char* msg, int message_size)
+{
+	void prepare_node(JSONValue node, Subject[] triples)
+	{
+		writeln("node.object.length=", node.object.length);
+		for(int i = 0; i < node.object.keys.length; i++)
+		{
+			string key = node.object.keys[i];
+			JSONValue element = node.object.values[i];
+
+			writeln(element.type, ":key= ", key);
+
+			if(element.type == JSON_TYPE.STRING)
+				writeln(" element=", element.str);
+
+			if(element.type == JSON_TYPE.OBJECT)
+				prepare_node(element, triples);
+		}
+	}
+
+	Subject[] res;
+
+	JSONValue node;
+
+	//	StopWatch sw1;
+	//	sw1.start();
+
+	char[] buff = getString(msg, message_size);
+
+	node = parseJSON(buff);
+
+	if(node.type == JSON_TYPE.OBJECT)
+	{
+		prepare_node(node, res);
+	}
+
+	// sw1.stop();
+	//	log.trace("json msg parse %d [µs]", cast(long) sw.peek().microseconds);
+
+	return res;
+}
+
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	trace_msg[0][0] = 1; // Input message
@@ -144,14 +191,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		printf("get message, [%i] \n", count);
 
 	Subject[] triples;
-	if (*msg == '{')
-	{
-//		 triples = parse_json_string(cast(char*) msg, message_size);				
-	}
+
+	if(*msg == '{')
+		triples = parse_json_ld_string(cast(char*) msg, message_size);
 	else
-	{
-		 triples = parse_n3_string(cast(char*) msg, message_size);		
-	}
+		triples = parse_n3_string(cast(char*) msg, message_size);
 
 	if(trace_msg[0][2] == 1)
 		printf("command.length=%d\n", triples.length);
@@ -378,7 +422,7 @@ Ticket getTicket(char[] ticket_id, TripleStorage ts)
 {
 	Ticket tt;
 
-//	trace_msg[2] = 0;
+	//	trace_msg[2] = 0;
 
 	if((ticket_id in user_of_ticket) !is null)
 	{

@@ -119,7 +119,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 						{
 							Objectz oo = pp.objects[ll];
 
-							if(oo.type == LITERAL || oo.type == URI)
+							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 								ts.addTriple(graph.subject, pp.predicate, oo.object, oo.lang);
 							else
 								ts.addTriple(graph.subject, pp.predicate, oo.subject.subject, oo.lang);
@@ -174,7 +174,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 							{
 								Objectz oo = pp.objects[ll];
 
-								if(oo.type == LITERAL || oo.type == URI)
+								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.object, oo.lang);
 								else
 									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.subject.subject, oo.lang);
@@ -396,7 +396,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				for(int ll = 0; ll < pp.count_objects; ll++)
 				{
 					Objectz oo = pp.objects[ll];
-					if(oo.type == LITERAL || oo.type == URI)
+					if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 					{
 						if(oo.object == "query:get_reifed")
 						{

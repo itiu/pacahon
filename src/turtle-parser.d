@@ -348,7 +348,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 				// сохраним ее в edges
 				ee.objects[ee.count_objects].subject = new_nodes;
-				ee.objects[ee.count_objects].type = SUBJECT;
+				ee.objects[ee.count_objects].type = OBJECT_TYPE.SUBJECT;
 				ee.count_objects++;
 
 				//				state.count_nodes++;
@@ -364,7 +364,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					ptr++;
 				else
 				{
-					ee.objects[ee.count_objects].type = URI;
+					ee.objects[ee.count_objects].type = OBJECT_TYPE.URI;
 				}
 				
 				while(ptr - state.O < state.O_length)
@@ -401,10 +401,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 				if(*ptr == '@')
 				{
 					if(*(ptr + 1) == 'r' && *(ptr + 2) == 'u')
-						ee.objects[ee.count_objects].lang = _RU;
+						ee.objects[ee.count_objects].lang = LITERAL_LANG.RU;
 
 					if(*(ptr + 1) == 'e' && *(ptr + 2) == 'n')
-						ee.objects[ee.count_objects].lang = _EN;
+						ee.objects[ee.count_objects].lang = LITERAL_LANG.EN;
 				}
 //				printf("!!! 7\n");
 

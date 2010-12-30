@@ -16,7 +16,6 @@ module pacahon.graph;
  * - серилизации графа в строку
  */
 
-
 private import std.c.string;
 private import std.string;
 private import std.outbuffer;
@@ -25,42 +24,43 @@ version(D2)
 {
 //	import core.stdc.stdio;
 }
+
 import std.stdio;
 
 import pacahon.utils;
 
-struct GraphCluster 
-{	
+struct GraphCluster
+{
 	Subject[char[]] graphs_of_subject;
-	
-	void addTriple (char[] s, char[] p, char[] o, byte lang)
+
+	void addTriple(char[] s, char[] p, char[] o, byte lang)
 	{
-		Subject ss = graphs_of_subject.get (s, null);
-		
-		if (ss is null)
+		Subject ss = graphs_of_subject.get(s, null);
+
+		if(ss is null)
 		{
-			 ss = new Subject;
-			 ss.subject = s;
+			ss = new Subject;
+			ss.subject = s;
 		}
-		graphs_of_subject[cast(immutable)s] = ss;  
-		ss.addPredicate (p, o, lang);		
+		graphs_of_subject[cast(immutable) s] = ss;
+		ss.addPredicate(p, o, lang);
 	}
-	
+
 	char* toEscStringz()
 	{
 		OutBuffer outbuff = new OutBuffer();
 
-		outbuff.write(cast(char[])"\"\"");
-        foreach(s; graphs_of_subject)
-        {
-        	s.toOutBuffer (outbuff, true);
-        }
-		outbuff.write(cast(char[])"\"\"");
-        
+		outbuff.write(cast(char[]) "\"\"");
+		foreach(s; graphs_of_subject)
+		{
+			s.toOutBuffer(outbuff, true);
+		}
+		outbuff.write(cast(char[]) "\"\"");
+
 		outbuff.write(0);
-		
-//		printf ("***:%s\n", cast(char*) outbuff.toBytes());
-		
+
+		//		printf ("***:%s\n", cast(char*) outbuff.toBytes());
+
 		return cast(char*) outbuff.toBytes();
 	}
 }
@@ -88,74 +88,73 @@ class Subject
 	{
 		for(int kk = 0; kk < count_edges; kk++)
 		{
-			if (edges[kk].predicate == pname)
-			{				
+			if(edges[kk].predicate == pname)
+			{
 				return &edges[kk];
 			}
 		}
-		
+
 		return null;
 	}
-	
-	
-	void addPredicateAsURI (char[] predicate, char[] object)
+
+	void addPredicateAsURI(char[] predicate, char[] object)
 	{
-		if (edges.length == 0)
-			edges = new Predicate [16];
-					
-		if (edges.length == count_edges)
-		{			
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == count_edges)
+		{
 			edges.length += 16;
-		}		
-		
+		}
+
 		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].object = object;	
-		edges[count_edges].objects[0].type = URI;
+		edges[count_edges].objects[0].object = object;
+		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
 		count_edges++;
-	}	
-	
-	void addPredicate (char[] predicate, char[] object, byte lang = _NONE)
-	{	
-		if (edges.length == 0)
-			edges = new Predicate [16];
-					
-		if (edges.length == count_edges)
-		{			
+	}
+
+	void addPredicate(char[] predicate, char[] object, byte lang = LITERAL_LANG.NONE)
+	{
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == count_edges)
+		{
 			edges.length += 16;
-		}		
-		
+		}
+
 		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
 		edges[count_edges].objects[0].object = object;
 		edges[count_edges].objects[0].lang = lang;
 		count_edges++;
 	}
 
-	void addPredicate (char[] predicate, Subject subject)
+	void addPredicate(char[] predicate, Subject subject)
 	{
-		if (edges.length == 0)
-			edges = new Predicate [16];
-					
-		if (edges.length == count_edges)
-		{			
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == count_edges)
+		{
 			edges.length += 16;
-		}		
-		
+		}
+
 		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz [1];
+		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
 		edges[count_edges].objects[0].subject = subject;
-		edges[count_edges].objects[0].type = SUBJECT;
+		edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
 		count_edges++;
 	}
 
 	void toOutBuffer(ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[])"  ");
+			outbuff.write(cast(char[]) "  ");
 
 		if(subject !is null)
 			outbuff.write(subject);
@@ -165,8 +164,8 @@ class Subject
 			Predicate* pp = &edges[jj];
 
 			for(int i = 0; i < level; i++)
-				outbuff.write(cast(char[])" ");
-			outbuff.write(cast(char[])"  ");
+				outbuff.write(cast(char[]) " ");
+			outbuff.write(cast(char[]) "  ");
 			outbuff.write(pp.predicate);
 
 			for(int kk = 0; kk < pp.count_objects; kk++)
@@ -174,84 +173,83 @@ class Subject
 				Objectz oo = pp.objects[kk];
 
 				for(int i = 0; i < level; i++)
-					outbuff.write(cast(char[])" ");
-				
-				if(oo.type == LITERAL)
+					outbuff.write(cast(char[]) " ");
+
+				if(oo.type == OBJECT_TYPE.LITERAL)
 				{
-					outbuff.write(cast (char[])"   \"");
-					
+					outbuff.write(cast(char[]) "   \"");
+
 					char prev_ch;
 					char[] new_str = new char[oo.object.length * 2];
 					int pos_in_new_str = 0;
 
 					// заменим все неэкранированные кавычки на [\"]
-					for (int i = 0; i < oo.object.length; i++)
+					for(int i = 0; i < oo.object.length; i++)
 					{
 						int len = oo.object.length;
 
 						// если подрят идут "", то пропустим их
-						if (len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i+1] == '"')
-						{		
-							for (byte hh = 0; hh < 2; hh++)
+						if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
+						{
+							for(byte hh = 0; hh < 2; hh++)
 							{
 								new_str[pos_in_new_str] = oo.object[i];
-								pos_in_new_str ++;
-								i ++;
+								pos_in_new_str++;
+								i++;
 							}
-							
+
 						}
-						
-						if (i >= oo.object.length)
+
+						if(i >= oo.object.length)
 							break;
-						
+
 						char ch = oo.object[i];
-							
-						if (ch == '"' && len > 4)
+
+						if(ch == '"' && len > 4)
 						{
 							new_str[pos_in_new_str] = '\\';
 							pos_in_new_str++;
 						}
-						
+
 						new_str[pos_in_new_str] = ch;
-						pos_in_new_str ++;
+						pos_in_new_str++;
 
 						prev_ch = ch;
 					}
 					new_str.length = pos_in_new_str;
-					
-					outbuff.write (new_str);
-										
-					outbuff.write(cast (char[])"\"");
-					if (oo.lang == _RU)
+
+					outbuff.write(new_str);
+
+					outbuff.write(cast(char[]) "\"");
+					if(oo.lang == LITERAL_LANG.RU)
 					{
-						outbuff.write (cast (char[])"@ru");
+						outbuff.write(cast(char[]) "@ru");
 					}
-					else
-						if (oo.lang == _EN)
-						{
-							outbuff.write (cast (char[])"@en");
-						}
+					else if(oo.lang == LITERAL_LANG.EN)
+					{
+						outbuff.write(cast(char[]) "@en");
+					}
 				}
-				else if (oo.type == URI)
+				else if(oo.type == OBJECT_TYPE.URI)
 				{
-					outbuff.write(cast (char[])"   ");
+					outbuff.write(cast(char[]) "   ");
 					outbuff.write(oo.object);
 				}
 				else
 				{
-					outbuff.write(cast (char[])"\n  [\n");
+					outbuff.write(cast(char[]) "\n  [\n");
 					oo.subject.toOutBuffer(outbuff, escaping_quotes, level + 1);
-					outbuff.write(cast (char[])"\n  ]");
+					outbuff.write(cast(char[]) "\n  ]");
 				}
 
-				if (jj == count_edges - 1)
+				if(jj == count_edges - 1)
 				{
-					if (level == 0)
-						outbuff.write(cast (char[])" .\n");
+					if(level == 0)
+						outbuff.write(cast(char[]) " .\n");
 				}
 				else
 				{
-					outbuff.write(cast (char[])" ;\n");
+					outbuff.write(cast(char[]) " ;\n");
 				}
 			}
 
@@ -264,9 +262,9 @@ class Subject
 	{
 		OutBuffer outbuff = new OutBuffer();
 
-		toOutBuffer (outbuff);
+		toOutBuffer(outbuff);
 		outbuff.write(0);
-		
+
 		return cast(char*) outbuff.toBytes();
 	}
 }
@@ -278,28 +276,37 @@ struct Predicate
 	short count_objects = 0;
 
 	Objectz*[char[]] objects_of_value;
-	
-	char[] getFirstObject ()
+
+	char[] getFirstObject()
 	{
-		if (count_objects > 0)
-			return objects[0].object; 
+		if(count_objects > 0)
+			return objects[0].object;
 		return null;
 	}
 }
 
-public immutable byte LITERAL = 0;
-public immutable byte SUBJECT = 1;
-public immutable byte URI = 2;
+enum OBJECT_TYPE: byte
+{
+	LITERAL = 0,
+	SUBJECT = 1,
+	URI = 2,
+	CLUSTER = 3
+}
 
-public immutable byte _NONE = 0;
-public immutable byte _RU = 1;
-public immutable byte _EN = 2;
+enum LITERAL_LANG: byte
+{
+	NONE = 0,
+	RU = 1,
+	EN = 2
+}
 
 struct Objectz
 {
-	char[] object; // если object_as_literal == false, то здесь будет ссылка на Subject
-	Subject subject; // если object_as_literal == false, то здесь будет ссылка на Subject
-	byte type = LITERAL;
+	char[] object; // если type == LITERAL
+	Subject subject; // если type == SUBJECT
+	GraphCluster cluster; // если type == CLUSTER 
+
+	byte type = OBJECT_TYPE.LITERAL;
 	byte lang;
 }
 
@@ -309,21 +316,19 @@ void set_hashed_data(Subject ss)
 	{
 		Predicate* pp = &ss.edges[jj];
 
-		ss.edges_of_predicate[cast(immutable)pp.predicate] = pp;
+		ss.edges_of_predicate[cast(immutable) pp.predicate] = pp;
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
-			if(pp.objects[kk].type == SUBJECT)
+			if(pp.objects[kk].type == OBJECT_TYPE.SUBJECT)
 			{
 				set_hashed_data(pp.objects[kk].subject);
 			}
 			else
 			{
-				pp.objects_of_value[cast(immutable)pp.objects[kk].object] = &pp.objects[kk];
-			}							
+				pp.objects_of_value[cast(immutable) pp.objects[kk].object] = &pp.objects[kk];
+			}
 		}
 
 	}
 }
-
-
