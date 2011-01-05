@@ -6,9 +6,9 @@ module pacahon.graph;
  * модель:
  * 
  * GraphCluster 
- * 		└─Subject[]
- * 				└─Predicates[]
- * 						└─Objects[]	
+ * 	└─Subject[]
+ * 		└─Predicates[]
+ * 			└─Objects[]	
  * 
  * доступные возможности: 
  * - сборка графа из фактов или их частей
@@ -145,6 +145,24 @@ class Subject
 		edges[count_edges].count_objects = 1;
 		edges[count_edges].objects[0].object = object;
 		edges[count_edges].objects[0].lang = lang;
+		count_edges++;
+	}
+
+	void addPredicate(char[] predicate, GraphCluster cluster)
+	{
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == count_edges)
+		{
+			edges.length += 16;
+		}
+
+		edges[count_edges].predicate = predicate;
+		edges[count_edges].objects = new Objectz[1];
+		edges[count_edges].count_objects = 1;
+		edges[count_edges].objects[0].cluster = cluster;
+		edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
 		count_edges++;
 	}
 
