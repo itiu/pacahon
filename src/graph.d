@@ -29,6 +29,21 @@ import std.stdio;
 
 import pacahon.utils;
 
+enum OBJECT_TYPE: byte
+{
+	LITERAL = 0,
+	SUBJECT = 1,
+	URI = 2,
+	CLUSTER = 3
+}
+
+enum LITERAL_LANG: byte
+{
+	NONE = 0,
+	RU = 1,
+	EN = 2
+}
+
 struct GraphCluster
 {
 	Subject[char[]] graphs_of_subject;
@@ -316,21 +331,6 @@ struct Predicate
 			return objects[0].object;
 		return null;
 	}
-}
-
-enum OBJECT_TYPE: byte
-{
-	LITERAL = 0,
-	SUBJECT = 1,
-	URI = 2,
-	CLUSTER = 3
-}
-
-enum LITERAL_LANG: byte
-{
-	NONE = 0,
-	RU = 1,
-	EN = 2
 }
 
 struct Objectz

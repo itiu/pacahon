@@ -124,12 +124,23 @@ class Ticket
 
 Ticket[char[]] user_of_ticket;
 
+enum format: byte
+{
+	TURTLE = 0,
+        JSON_LD = 1,
+        UNKNOWN = -1        
+}
+                        
+                        
+
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	byte msg_format = format.UNKNOWN;
+
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
 	trace_msg[0][3] = 1;
-	//	trace_msg[0][1] = 1;
+	//	trace_msg[0] = 1;
 
 	count++;
 
@@ -149,9 +160,15 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	Subject[] triples;
 
 	if(*msg == '{' || *msg == '[')
+	{
+		msg_format = format.JSON_LD;
 		triples = parse_json_ld_string(cast(char*) msg, message_size);
+	}	
 	else
+	{
+		msg_format = format.TURTLE;
 		triples = parse_n3_string(cast(char*) msg, message_size);
+	}
 
 	if(trace_msg[0][2] == 1)
 		log.trace("command.length=%d", triples.length);

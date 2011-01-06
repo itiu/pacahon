@@ -1,5 +1,6 @@
 module pacahon.json_ld.parser;
 
+private import std.stdio;
 private import std.datetime;
 private import std.json;
 private import pacahon.graph;
@@ -55,14 +56,23 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 					if(element.type == JSON_TYPE.STRING)
 					{
-//						writeln("ss.addPredicate ", key, " ", element.str);
-						ss.addPredicate(cast(char[]) key, cast(char[]) element.str);
+						char[] val = cast(char[]) element.str;
+
+						//writeln("444 %c ", val[val.length - 7]);
+
+						if (val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
+						{
+						    // очень вероятно что окончание строки содержит ^^xsd:string
+						    val = val [0.. val.length - 12];
+						}
+						
+						ss.addPredicate(cast(char[]) key, val);
 					}
 				}
 			}
 		}
 		else if(JSON_TYPE.ARRAY)
-		{
+		{                              
 			foreach(element; node.array)
 			{
 				prepare_node(element, gcl);
