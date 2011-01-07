@@ -103,5 +103,12 @@ char[] getString(char* s, int length)
 {
     return s ? s[0 .. length] : null;
 }
-        
-        
+ 
+ 
+//void toJson_ld(Subject ss, ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
+//{
+//}
+
+//char* toJson_ld(GraphCluster gcl)
+//{
+//}

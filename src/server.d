@@ -354,7 +354,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 			get(message, sender, userId, ts, isOk, reason, gres);
 			if(isOk == true)
 			{
-				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
+//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
+				out_message.addPredicate(msg__result, gres);				
 			}
 		}
 		else if("get_ticket" in command.objects_of_value)

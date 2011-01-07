@@ -495,7 +495,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 		printf("next element finish #2, state.e=%d\n", state.e);
 }
 
-	void toTurtle(Subject ss, ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
+	void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "  ");
@@ -579,11 +579,20 @@ private void next_element(char* element, int el_length, state_struct* state)
 					outbuff.write(cast(char[]) "   ");
 					outbuff.write(oo.object);
 				}
-				else
+				else if(oo.type == OBJECT_TYPE.SUBJECT)
 				{
 					outbuff.write(cast(char[]) "\n  [\n");
-					toTurtle(oo.subject, outbuff, escaping_quotes, level + 1);
+					toTurtle(oo.subject, outbuff, level + 1);
 					outbuff.write(cast(char[]) "\n  ]");
+				}
+				else if(oo.type == OBJECT_TYPE.CLUSTER)
+				{
+					outbuff.write(cast(char[]) "\"\"");
+					foreach(s; oo.cluster.graphs_of_subject)
+					{
+						toTurtle(s, outbuff, true);
+					}
+					outbuff.write(cast(char[]) "\"\"");
 				}
 
 				if(jj == ss.count_edges - 1)
@@ -602,7 +611,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 		return;
 	}
 
-
+/*
 	char* toTurtle(GraphCluster gcl)
 	{
 		OutBuffer outbuff = new OutBuffer();
@@ -620,5 +629,5 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 		return cast(char*) outbuff.toBytes();
 	}
-
+*/
 
