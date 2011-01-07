@@ -75,24 +75,6 @@ struct GraphCluster
 	{
 		graphs_of_subject[cast(immutable)ss.subject] = ss;
 	}
-
-	char* toTurtle()
-	{
-		OutBuffer outbuff = new OutBuffer();
-
-		outbuff.write(cast(char[]) "\"\"");
-		foreach(s; graphs_of_subject)
-		{
-			s.toTurtle(outbuff, true);
-		}
-		outbuff.write(cast(char[]) "\"\"");
-
-		outbuff.write(0);
-
-		//		printf ("***:%s\n", cast(char*) outbuff.toBytes());
-
-		return cast(char*) outbuff.toBytes();
-	}
 }
 
 class Subject
@@ -199,122 +181,16 @@ class Subject
 		count_edges++;
 	}
 
-	void toTurtle(ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
-	{
-		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[]) "  ");
 
-		if(subject !is null)
-			outbuff.write(subject);
-
-		for(int jj = 0; jj < count_edges; jj++)
-		{
-			Predicate* pp = &edges[jj];
-
-			for(int i = 0; i < level; i++)
-				outbuff.write(cast(char[]) " ");
-			outbuff.write(cast(char[]) "  ");
-			outbuff.write(pp.predicate);
-
-			for(int kk = 0; kk < pp.count_objects; kk++)
-			{
-				Objectz oo = pp.objects[kk];
-
-				for(int i = 0; i < level; i++)
-					outbuff.write(cast(char[]) " ");
-
-				if(oo.type == OBJECT_TYPE.LITERAL)
-				{
-					outbuff.write(cast(char[]) "   \"");
-
-					char prev_ch;
-					char[] new_str = new char[oo.object.length * 2];
-					int pos_in_new_str = 0;
-
-					// заменим все неэкранированные кавычки на [\"]
-					for(int i = 0; i < oo.object.length; i++)
-					{
-						int len = oo.object.length;
-
-						// если подрят идут "", то пропустим их
-						if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
-						{
-							for(byte hh = 0; hh < 2; hh++)
-							{
-								new_str[pos_in_new_str] = oo.object[i];
-								pos_in_new_str++;
-								i++;
-							}
-
-						}
-
-						if(i >= oo.object.length)
-							break;
-
-						char ch = oo.object[i];
-
-						if(ch == '"' && len > 4)
-						{
-							new_str[pos_in_new_str] = '\\';
-							pos_in_new_str++;
-						}
-
-						new_str[pos_in_new_str] = ch;
-						pos_in_new_str++;
-
-						prev_ch = ch;
-					}
-					new_str.length = pos_in_new_str;
-
-					outbuff.write(new_str);
-
-					outbuff.write(cast(char[]) "\"");
-					if(oo.lang == LITERAL_LANG.RU)
-					{
-						outbuff.write(cast(char[]) "@ru");
-					}
-					else if(oo.lang == LITERAL_LANG.EN)
-					{
-						outbuff.write(cast(char[]) "@en");
-					}
-				}
-				else if(oo.type == OBJECT_TYPE.URI)
-				{
-					outbuff.write(cast(char[]) "   ");
-					outbuff.write(oo.object);
-				}
-				else
-				{
-					outbuff.write(cast(char[]) "\n  [\n");
-					oo.subject.toTurtle(outbuff, escaping_quotes, level + 1);
-					outbuff.write(cast(char[]) "\n  ]");
-				}
-
-				if(jj == count_edges - 1)
-				{
-					if(level == 0)
-						outbuff.write(cast(char[]) " .\n");
-				}
-				else
-				{
-					outbuff.write(cast(char[]) " ;\n");
-				}
-			}
-
-		}
-
-		return;
-	}
-
-	char* toTurtle()
-	{
-		OutBuffer outbuff = new OutBuffer();
-
-		toTurtle(outbuff);
-		outbuff.write(0);
-
-		return cast(char*) outbuff.toBytes();
-	}
+//	char* toTurtle()
+//	{
+//		OutBuffer outbuff = new OutBuffer();
+//
+//		toTurtle(outbuff);
+//		outbuff.write(0);
+//
+//		return cast(char*) outbuff.toBytes();
+//	}
 }
 
 struct Predicate
