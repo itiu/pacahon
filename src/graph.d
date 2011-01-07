@@ -76,14 +76,14 @@ struct GraphCluster
 		graphs_of_subject[cast(immutable)ss.subject] = ss;
 	}
 
-	char* toEscStringz()
+	char* toTurtle()
 	{
 		OutBuffer outbuff = new OutBuffer();
 
 		outbuff.write(cast(char[]) "\"\"");
 		foreach(s; graphs_of_subject)
 		{
-			s.toOutBuffer(outbuff, true);
+			s.toTurtle(outbuff, true);
 		}
 		outbuff.write(cast(char[]) "\"\"");
 
@@ -199,7 +199,7 @@ class Subject
 		count_edges++;
 	}
 
-	void toOutBuffer(ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
+	void toTurtle(ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
 	{
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "  ");
@@ -286,7 +286,7 @@ class Subject
 				else
 				{
 					outbuff.write(cast(char[]) "\n  [\n");
-					oo.subject.toOutBuffer(outbuff, escaping_quotes, level + 1);
+					oo.subject.toTurtle(outbuff, escaping_quotes, level + 1);
 					outbuff.write(cast(char[]) "\n  ]");
 				}
 
@@ -306,11 +306,11 @@ class Subject
 		return;
 	}
 
-	char* toStringz()
+	char* toTurtle()
 	{
 		OutBuffer outbuff = new OutBuffer();
 
-		toOutBuffer(outbuff);
+		toTurtle(outbuff);
 		outbuff.write(0);
 
 		return cast(char*) outbuff.toBytes();

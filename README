@@ -39,14 +39,15 @@ cd pacahon
 После компиляции в каталоге появится исполняемый файл Pacahon-D2.
 
 2.3. MongoDB
-С помощью клиента mondgo установить индексы на БД pacahon:
+Для приемлемой, c точки зрения времени выполнения запросов к mongodb, на базу следует установить индексы. 
+Выполить эту операцию можно с помощью клиента mondgo:
 
 cd /mongo/install/path
 ./mongo
 
 use pacahon;
 db.simple.ensureIndex({"auth:login":1, "auth:credential":1});
-db.simple.ensureIndex({"SUBJECT":1});
+db.simple.ensureIndex({"@":1});
 db.simple.ensureIndex({"a":1});
 db.simple.ensureIndex({"gost19:active":1});
 db.simple.ensureIndex({"_keywords":1});
@@ -55,6 +56,3 @@ db.simple.ensureIndex({"_keywords":1});
 
 Проверку работоспособности pacahon, можно выполнить с помощью внешнего 
 модуля функционального тестирования pacahon-tests git@github.com:itiu/pacahon-tests.git 
-
-
-

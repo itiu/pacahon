@@ -286,7 +286,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		if(out_message !is null)
 		{
 			//						printf("# серилизуем граф %X в строку 1\n", out_message);
-			out_message.toOutBuffer(outbuff);
+			out_message.toTurtle(outbuff);
 			//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
@@ -354,7 +354,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 			get(message, sender, userId, ts, isOk, reason, gres);
 			if(isOk == true)
 			{
-				out_message.addPredicate(msg__result, fromStringz(gres.toEscStringz()));
+				out_message.addPredicate(msg__result, fromStringz(gres.toTurtle()));
 			}
 		}
 		else if("get_ticket" in command.objects_of_value)
