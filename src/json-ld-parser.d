@@ -3,9 +3,12 @@ module pacahon.json_ld.parser;
 private import std.stdio;
 private import std.datetime;
 private import std.json;
+private import std.outbuffer;
+
 private import pacahon.graph;
 
 private import trioplax.Logger;
+
 
 Logger log;
 
@@ -18,6 +21,9 @@ static this()
 
 public Subject[] parse_json_ld_string(char* msg, int message_size)
 {
+// простой вариант парсинга, когда уже есть json-tree в памяти
+// но это не оптимально по затратам памяти и производительности
+
 	void prepare_node(JSONValue node, GraphCluster* gcl)
 	{
 		if(node.type == JSON_TYPE.OBJECT)
@@ -105,10 +111,101 @@ char[] getString(char* s, int length)
 }
  
  
-//void toJson_ld(Subject ss, ref OutBuffer outbuff, bool escaping_quotes = false, int level = 0)
-//{
-//}
+void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
+{
+	// A: перевод triple-tree в json-tree, а затем серилизация с помощью метода - string toJSON(in JSONValue* root); 
+	// (-) затратная операция, память на json-tree и процесс перевода
+	// (+) стандартное формирование JSON
+	//
+	// B: запись строки в формате JSON напрямую из triple-tree
+	// (+) быстрое по сравнением с вариантом A
 
-//char* toJson_ld(GraphCluster gcl)
-//{
-//}
+	// вариант В
+	outbuff.write(cast(char[]) "{\n");
+
+	for(int i = 0; i <= level; i++)
+			outbuff.write(cast(char[]) "	");
+
+	outbuff.write(cast(char[])"\"@\" : \"");
+
+	if(ss.subject !is null)
+		outbuff.write(ss.subject);
+	outbuff.write(cast(char[]) "\"");
+
+
+	for(int jj = 0; jj < ss.count_edges; jj++)
+	{
+		Predicate* pp = &(ss.edges[jj]);
+
+		outbuff.write(cast(char[]) ",\n");
+
+		for(int i = 0; i <= level; i++)
+			outbuff.write(cast(char[]) "	");
+
+		outbuff.write('"');
+		outbuff.write(pp.predicate);
+		outbuff.write(cast(char[]) "\" : ");
+
+		if (pp.count_objects > 1)
+			outbuff.write('[');
+
+		for(int kk = 0; kk < pp.count_objects; kk++)
+		{
+			Objectz oo = pp.objects[kk];
+
+
+			outbuff.write('"');
+			if(oo.type == OBJECT_TYPE.LITERAL)
+			{
+			 // заменим все неэкранированные кавычки на [\"]
+			bool is_exist_quotes = false;	
+			foreach (ch ; oo.object)
+			{
+				if (ch == '"')
+				{
+					is_exist_quotes = true;
+					break;
+				}
+			}			
+			
+			if (is_exist_quotes)
+			{
+			 int len = oo.object.length;
+
+			 for(int i = 0; i < len; i++)
+			 {
+				if(i >= len)
+				break;
+
+				char ch = oo.object[i];
+
+				if(ch == '"' && len > 4)
+				{
+					outbuff.write('\\');
+				}
+
+				outbuff.write(ch);
+			 }
+			}
+			
+			else
+			{
+				outbuff.write(oo.object);
+			}
+		     }
+		    else if(oo.type == OBJECT_TYPE.URI)
+		    {
+				outbuff.write(oo.object);			
+		    }
+			outbuff.write('"');
+
+		}
+
+		if (pp.count_objects > 1)
+			outbuff.write(']');
+
+	}
+
+	outbuff.write(cast(char[]) "\n}");
+}
+

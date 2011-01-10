@@ -523,15 +523,14 @@ private void next_element(char* element, int el_length, state_struct* state)
 				{
 					outbuff.write(cast(char[]) "   \"");
 
+					// заменим все неэкранированные кавычки на [\"]
 					char prev_ch;
 					char[] new_str = new char[oo.object.length * 2];
 					int pos_in_new_str = 0;
+					int len = oo.object.length;
 
-					// заменим все неэкранированные кавычки на [\"]
-					for(int i = 0; i < oo.object.length; i++)
+					for(int i = 0; i < len; i++)
 					{
-						int len = oo.object.length;
-
 						// если подрят идут "", то пропустим их
 						if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
 						{
@@ -544,7 +543,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 						}
 
-						if(i >= oo.object.length)
+						if(i >= len)
 							break;
 
 						char ch = oo.object[i];

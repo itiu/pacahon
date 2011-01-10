@@ -285,8 +285,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		if(out_message !is null)
 		{
-			//						printf("# серилизуем граф %X в строку 1\n", out_message);
-			toTurtle(out_message, outbuff);
+			//									printf("# серилизуем граф %X в строку 1\n", out_message);
+		        if (msg_format == format.TURTLE)
+			    toTurtle(out_message, outbuff);
+		        if (msg_format == format.JSON_LD)
+			    toJson_ld(out_message, outbuff);
 			//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
