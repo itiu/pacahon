@@ -21,11 +21,13 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 	// простой вариант парсинга, когда уже есть json-tree в памяти
 	// но это не оптимально по затратам памяти и производительности
 
-	void prepare_node(JSONValue node, GraphCluster* gcl)
+	void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss=null)
 	{
 		if(node.type == JSON_TYPE.OBJECT)
 		{
-			Subject ss = new Subject;
+			if (ss is null) 
+			    ss = new Subject;
+			    
 			for(int i = 0; i < node.object.keys.length; i++)
 			{
 				string key = node.object.keys[i];
@@ -50,18 +52,25 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 					if(element.type == JSON_TYPE.OBJECT)
 					{
-						GraphCluster inner_gcl;
-						//	writeln(" element value= \n{");
-						prepare_node(element, &inner_gcl);
-						//	writeln("}");
-						ss.addPredicate(cast(char[]) key, inner_gcl);
+						if (("@" in element.object) is null)
+						{
+						    Subject ss_in = new Subject;
+						    prepare_node(element, gcl, ss_in);
+						    ss.addPredicate(cast(char[]) key, ss_in);				
+						}
+						else
+						{
+						    GraphCluster inner_gcl;
+						    prepare_node(element, &inner_gcl);
+						    ss.addPredicate(cast(char[]) key, inner_gcl);
+						}
 					}
 
 					if(element.type == JSON_TYPE.STRING)
 					{
 						char[] val = cast(char[]) element.str;
 
-						//writeln("444 %c ", val[val.length - 7]);
+//						writeln("ss=", ss.subject, ",key=", key, ",val=", val);
 
 						if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
 						{
