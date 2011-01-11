@@ -181,9 +181,8 @@ public Subject[] parse_n3_string(char* src, int len)
 				{
 					ptr++;
 					ch = *ptr;
-//					writeln("CH [", ch, "]");					
+					//					writeln("CH [", ch, "]");					
 				}
-
 
 				if(ptr - src > len)
 				{
@@ -230,9 +229,9 @@ private void next_element(char* element, int el_length, state_struct* state)
 	assert(element !is null);
 	assert(state !is null);
 
-	if (el_length == 1 && !(*element == ';' || *element == '.' || *element == '[' || *element == ']' || *element == ',' || *element == 'a'))
+	if(el_length == 1 && !(*element == ';' || *element == '.' || *element == '[' || *element == ']' || *element == ',' || *element == 'a'))
 		return;
-	
+
 	if(print_found_element)
 	{
 		writeln("ELEMENT [", *element, "]");
@@ -367,7 +366,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				{
 					ee.objects[ee.count_objects].type = OBJECT_TYPE.URI;
 				}
-				
+
 				while(ptr - state.O < state.O_length)
 				{
 					if(*ptr == '"' && *(ptr + 1) == '"' && *(ptr + 2) == '"')
@@ -407,7 +406,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					if(*(ptr + 1) == 'e' && *(ptr + 2) == 'n')
 						ee.objects[ee.count_objects].lang = LITERAL_LANG.EN;
 				}
-//				printf("!!! 7\n");
+				//				printf("!!! 7\n");
 
 				//				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
 				ee.objects[ee.count_objects].object.length = idx1;
@@ -421,7 +420,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				version(trace_turtle_parser)
 					printf("ee.count_objects=%d\n", ee.count_objects);
 			}
-			
+
 			//			state.count_edges++;
 			if(*element != ',')
 				state.P = null;
@@ -495,138 +494,138 @@ private void next_element(char* element, int el_length, state_struct* state)
 		printf("next element finish #2, state.e=%d\n", state.e);
 }
 
-	void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
+void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
+{
+	for(int i = 0; i < level; i++)
+		outbuff.write(cast(char[]) "  ");
+
+	if(ss.subject !is null)
+		outbuff.write(ss.subject);
+
+	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
+		Predicate* pp = &(ss.edges[jj]);
+
 		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[]) "  ");
+			outbuff.write(cast(char[]) " ");
+		outbuff.write(cast(char[]) "  ");
+		outbuff.write(pp.predicate);
 
-		if(ss.subject !is null)
-			outbuff.write(ss.subject);
-
-		for(int jj = 0; jj < ss.count_edges; jj++)
+		for(int kk = 0; kk < pp.count_objects; kk++)
 		{
-			Predicate* pp = &(ss.edges[jj]);
+			Objectz oo = pp.objects[kk];
 
 			for(int i = 0; i < level; i++)
 				outbuff.write(cast(char[]) " ");
-			outbuff.write(cast(char[]) "  ");
-			outbuff.write(pp.predicate);
 
-			for(int kk = 0; kk < pp.count_objects; kk++)
+			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
-				Objectz oo = pp.objects[kk];
+				outbuff.write(cast(char[]) "   \"");
 
-				for(int i = 0; i < level; i++)
-					outbuff.write(cast(char[]) " ");
+				// заменим все неэкранированные кавычки на [\"]
+				char prev_ch;
+				char[] new_str = new char[oo.object.length * 2];
+				int pos_in_new_str = 0;
+				int len = oo.object.length;
 
-				if(oo.type == OBJECT_TYPE.LITERAL)
+				for(int i = 0; i < len; i++)
 				{
-					outbuff.write(cast(char[]) "   \"");
-
-					// заменим все неэкранированные кавычки на [\"]
-					char prev_ch;
-					char[] new_str = new char[oo.object.length * 2];
-					int pos_in_new_str = 0;
-					int len = oo.object.length;
-
-					for(int i = 0; i < len; i++)
+					// если подрят идут "", то пропустим их
+					if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
 					{
-						// если подрят идут "", то пропустим их
-						if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
+						for(byte hh = 0; hh < 2; hh++)
 						{
-							for(byte hh = 0; hh < 2; hh++)
-							{
-								new_str[pos_in_new_str] = oo.object[i];
-								pos_in_new_str++;
-								i++;
-							}
-
-						}
-
-						if(i >= len)
-							break;
-
-						char ch = oo.object[i];
-
-						if(ch == '"' && len > 4)
-						{
-							new_str[pos_in_new_str] = '\\';
+							new_str[pos_in_new_str] = oo.object[i];
 							pos_in_new_str++;
+							i++;
 						}
 
-						new_str[pos_in_new_str] = ch;
+					}
+
+					if(i >= len)
+						break;
+
+					char ch = oo.object[i];
+
+					if(ch == '"' && len > 4)
+					{
+						new_str[pos_in_new_str] = '\\';
 						pos_in_new_str++;
-
-						prev_ch = ch;
 					}
-					new_str.length = pos_in_new_str;
 
-					outbuff.write(new_str);
+					new_str[pos_in_new_str] = ch;
+					pos_in_new_str++;
 
-					outbuff.write(cast(char[]) "\"");
-					if(oo.lang == LITERAL_LANG.RU)
-					{
-						outbuff.write(cast(char[]) "@ru");
-					}
-					else if(oo.lang == LITERAL_LANG.EN)
-					{
-						outbuff.write(cast(char[]) "@en");
-					}
+					prev_ch = ch;
 				}
-				else if(oo.type == OBJECT_TYPE.URI)
-				{
-					outbuff.write(cast(char[]) "   ");
-					outbuff.write(oo.object);
-				}
-				else if(oo.type == OBJECT_TYPE.SUBJECT)
-				{
-					outbuff.write(cast(char[]) "\n  [\n");
-					toTurtle(oo.subject, outbuff, level + 1);
-					outbuff.write(cast(char[]) "\n  ]");
-				}
-				else if(oo.type == OBJECT_TYPE.CLUSTER)
-				{
-					outbuff.write(cast(char[]) "\"\"");
-					foreach(s; oo.cluster.graphs_of_subject)
-					{
-						toTurtle(s, outbuff, true);
-					}
-					outbuff.write(cast(char[]) "\"\"");
-				}
+				new_str.length = pos_in_new_str;
 
-				if(jj == ss.count_edges - 1)
+				outbuff.write(new_str);
+
+				outbuff.write(cast(char[]) "\"");
+				if(oo.lang == LITERAL_LANG.RU)
 				{
-					if(level == 0)
-						outbuff.write(cast(char[]) " .\n");
+					outbuff.write(cast(char[]) "@ru");
 				}
-				else
+				else if(oo.lang == LITERAL_LANG.EN)
 				{
-					outbuff.write(cast(char[]) " ;\n");
+					outbuff.write(cast(char[]) "@en");
 				}
 			}
+			else if(oo.type == OBJECT_TYPE.URI)
+			{
+				outbuff.write(cast(char[]) "   ");
+				outbuff.write(oo.object);
+			}
+			else if(oo.type == OBJECT_TYPE.SUBJECT)
+			{
+				outbuff.write(cast(char[]) "\n  [\n");
+				toTurtle(oo.subject, outbuff, level + 1);
+				outbuff.write(cast(char[]) "\n  ]");
+			}
+			else if(oo.type == OBJECT_TYPE.CLUSTER)
+			{
+				outbuff.write(cast(char[]) "\"\"");
+				foreach(s; oo.cluster.graphs_of_subject)
+				{
+					toTurtle(s, outbuff, true);
+				}
+				outbuff.write(cast(char[]) "\"\"");
+			}
 
+			if(jj == ss.count_edges - 1)
+			{
+				if(level == 0)
+					outbuff.write(cast(char[]) " .\n");
+			}
+			else
+			{
+				outbuff.write(cast(char[]) " ;\n");
+			}
 		}
 
-		return;
 	}
+
+	return;
+}
 
 /*
-	char* toTurtle(GraphCluster gcl)
-	{
-		OutBuffer outbuff = new OutBuffer();
+ char* toTurtle(GraphCluster gcl)
+ {
+ OutBuffer outbuff = new OutBuffer();
 
-		outbuff.write(cast(char[]) "\"\"");
-		foreach(s; gcl.graphs_of_subject)
-		{
-			toTurtle(s, outbuff, true);
-		}
-		outbuff.write(cast(char[]) "\"\"");
+ outbuff.write(cast(char[]) "\"\"");
+ foreach(s; gcl.graphs_of_subject)
+ {
+ toTurtle(s, outbuff, true);
+ }
+ outbuff.write(cast(char[]) "\"\"");
 
-		outbuff.write(0);
+ outbuff.write(0);
 
-		//		printf ("***:%s\n", cast(char*) outbuff.toBytes());
+ //		printf ("***:%s\n", cast(char*) outbuff.toBytes());
 
-		return cast(char*) outbuff.toBytes();
-	}
-*/
+ return cast(char*) outbuff.toBytes();
+ }
+ */
 

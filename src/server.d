@@ -127,11 +127,9 @@ Ticket[char[]] user_of_ticket;
 enum format: byte
 {
 	TURTLE = 0,
-        JSON_LD = 1,
-        UNKNOWN = -1        
+	JSON_LD = 1,
+	UNKNOWN = -1
 }
-                        
-                        
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
@@ -163,7 +161,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	{
 		msg_format = format.JSON_LD;
 		triples = parse_json_ld_string(cast(char*) msg, message_size);
-	}	
+	}
 	else
 	{
 		msg_format = format.TURTLE;
@@ -286,10 +284,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		if(out_message !is null)
 		{
 			//									printf("# серилизуем граф %X в строку 1\n", out_message);
-		        if (msg_format == format.TURTLE)
-			    toTurtle(out_message, outbuff);
-		        if (msg_format == format.JSON_LD)
-			    toJson_ld(out_message, outbuff);
+			if(msg_format == format.TURTLE)
+				toTurtle(out_message, outbuff);
+			if(msg_format == format.JSON_LD)
+				toJson_ld(out_message, outbuff);
 			//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
@@ -357,8 +355,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 			get(message, sender, userId, ts, isOk, reason, gres);
 			if(isOk == true)
 			{
-//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
-				out_message.addPredicate(msg__result, gres);				
+				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
+				out_message.addPredicate(msg__result, gres);
 			}
 		}
 		else if("get_ticket" in command.objects_of_value)

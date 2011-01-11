@@ -9,20 +9,17 @@ private import pacahon.graph;
 
 private import trioplax.Logger;
 
-
 Logger log;
 
 static this()
 {
-        log = new Logger("pacahon.log", "pacahon.json_ld.parser");
+	log = new Logger("pacahon.log", "pacahon.json_ld.parser");
 }
-
-
 
 public Subject[] parse_json_ld_string(char* msg, int message_size)
 {
-// простой вариант парсинга, когда уже есть json-tree в памяти
-// но это не оптимально по затратам памяти и производительности
+	// простой вариант парсинга, когда уже есть json-tree в памяти
+	// но это не оптимально по затратам памяти и производительности
 
 	void prepare_node(JSONValue node, GraphCluster* gcl)
 	{
@@ -39,7 +36,7 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 				if(key == "@")
 				{
 					ss.subject = cast(char[]) node.object.values[i].str;
-//										writeln("SUBJECT = ", ss.subject);
+					//										writeln("SUBJECT = ", ss.subject);
 					gcl.addSubject(ss);
 				}
 				else
@@ -66,19 +63,19 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 						//writeln("444 %c ", val[val.length - 7]);
 
-						if (val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
+						if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
 						{
-						    // очень вероятно что окончание строки содержит ^^xsd:string
-						    val = val [0.. val.length - 12];
+							// очень вероятно что окончание строки содержит ^^xsd:string
+							val = val[0 .. val.length - 12];
 						}
-						
+
 						ss.addPredicate(cast(char[]) key, val);
 					}
 				}
 			}
 		}
 		else if(JSON_TYPE.ARRAY)
-		{                              
+		{
 			foreach(element; node.array)
 			{
 				prepare_node(element, gcl);
@@ -107,10 +104,9 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 char[] getString(char* s, int length)
 {
-    return s ? s[0 .. length] : null;
+	return s ? s[0 .. length] : null;
 }
- 
- 
+
 void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 {
 	// A: перевод triple-tree в json-tree, а затем серилизация с помощью метода - string toJSON(in JSONValue* root); 
@@ -124,14 +120,13 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	outbuff.write(cast(char[]) "{\n");
 
 	for(int i = 0; i <= level; i++)
-			outbuff.write(cast(char[]) "	");
+		outbuff.write(cast(char[]) "	");
 
-	outbuff.write(cast(char[])"\"@\" : \"");
+	outbuff.write(cast(char[]) "\"@\" : \"");
 
 	if(ss.subject !is null)
 		outbuff.write(ss.subject);
 	outbuff.write(cast(char[]) "\"");
-
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
@@ -146,66 +141,64 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		outbuff.write(pp.predicate);
 		outbuff.write(cast(char[]) "\" : ");
 
-		if (pp.count_objects > 1)
+		if(pp.count_objects > 1)
 			outbuff.write('[');
 
 		for(int kk = 0; kk < pp.count_objects; kk++)
 		{
 			Objectz oo = pp.objects[kk];
 
-
 			outbuff.write('"');
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
-			 // заменим все неэкранированные кавычки на [\"]
-			bool is_exist_quotes = false;	
-			foreach (ch ; oo.object)
-			{
-				if (ch == '"')
+				// заменим все неэкранированные кавычки на [\"]
+				bool is_exist_quotes = false;
+				foreach(ch; oo.object)
 				{
-					is_exist_quotes = true;
-					break;
-				}
-			}			
-			
-			if (is_exist_quotes)
-			{
-			 int len = oo.object.length;
-
-			 for(int i = 0; i < len; i++)
-			 {
-				if(i >= len)
-				break;
-
-				char ch = oo.object[i];
-
-				if(ch == '"' && len > 4)
-				{
-					outbuff.write('\\');
+					if(ch == '"')
+					{
+						is_exist_quotes = true;
+						break;
+					}
 				}
 
-				outbuff.write(ch);
-			 }
+				if(is_exist_quotes)
+				{
+					int len = oo.object.length;
+
+					for(int i = 0; i < len; i++)
+					{
+						if(i >= len)
+							break;
+
+						char ch = oo.object[i];
+
+						if(ch == '"' && len > 4)
+						{
+							outbuff.write('\\');
+						}
+
+						outbuff.write(ch);
+					}
+				}
+
+				else
+				{
+					outbuff.write(oo.object);
+				}
 			}
-			
-			else
+			else if(oo.type == OBJECT_TYPE.URI)
 			{
 				outbuff.write(oo.object);
 			}
-		     }
-		    else if(oo.type == OBJECT_TYPE.URI)
-		    {
-				outbuff.write(oo.object);			
-		    }
 			outbuff.write('"');
 
 		}
 
-		if (pp.count_objects > 1)
+		if(pp.count_objects > 1)
 			outbuff.write(']');
 
 	}
 
 	outbuff.write(cast(char[]) "\n}");
 }
-

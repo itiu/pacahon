@@ -66,23 +66,23 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 		Subject[] graphs_on_put = null;
 
 		if(trace_msg[0][2] == 1)
-		    log.trace ("args.objects[%d].type = %d", ii, args.objects[ii].type);
+			log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
 
-		if (args.objects[ii].type == OBJECT_TYPE.CLUSTER)
-                {
-		    graphs_on_put = args.objects[ii].cluster.graphs_of_subject.values;
-                }                  
-		else if (args.objects[ii].type == OBJECT_TYPE.LITERAL)
+		if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
 		{
-		    char* args_text = cast(char*) args.objects[ii].object;
-		    int arg_size = strlen(args_text);
+			graphs_on_put = args.objects[ii].cluster.graphs_of_subject.values;
+		}
+		else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
+		{
+			char* args_text = cast(char*) args.objects[ii].object;
+			int arg_size = strlen(args_text);
 
-		    //	if(trace_msg[0][2] == 1)
-		    //		printf("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
+			//	if(trace_msg[0][2] == 1)
+			//		printf("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
 
-		    graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
-                 }
-                 
+			graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
+		}
+
 		if(trace_msg[0][3] == 1)
 			log.trace("arguments has been read");
 
@@ -452,8 +452,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 					}
 
 				}
-				if((graph.subject != "query:any" && statement !is null) || 
-				   (graph.subject != "query:any" && search_mask_length == 0))
+				if((graph.subject != "query:any" && statement !is null) || (graph.subject != "query:any" && search_mask_length == 0))
 				{
 					if(trace_msg[2][11] == 1)
 						writeln("*** subject=", graph.subject);

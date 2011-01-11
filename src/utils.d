@@ -31,7 +31,7 @@ d_time stringToTime(char* str)
 	int year = (str[0] - 48) * 1000 + (str[1] - 48) * 100 + (str[2] - 48) * 10 + (str[3] - 48);
 	int month = (str[5] - 48) * 10 + (str[6] - 48);
 	int dayofmonth = (str[8] - 48) * 10 + (str[9] - 48);
-	int hour = (str[11] - 48) * 10 + (str[12] - 48) ;
+	int hour = (str[11] - 48) * 10 + (str[12] - 48);
 	int minute = (str[14] - 48) * 10 + (str[15] - 48);
 	int second = (str[17] - 48) * 10 + (str[18] - 48);
 	int mseconds = (str[20] - 48) * 100 + (str[21] - 48) * 10 + (str[22] - 48);

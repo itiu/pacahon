@@ -64,16 +64,16 @@ struct GraphCluster
 	Subject addSubject(string subject_id)
 	{
 		Subject ss = new Subject;
-		ss.subject = cast(char[])subject_id;
+		ss.subject = cast(char[]) subject_id;
 
 		graphs_of_subject[subject_id] = ss;
-		
+
 		return ss;
 	}
 
 	void addSubject(Subject ss)
 	{
-		graphs_of_subject[cast(immutable)ss.subject] = ss;
+		graphs_of_subject[cast(immutable) ss.subject] = ss;
 	}
 }
 
@@ -180,7 +180,6 @@ class Subject
 		edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
 		count_edges++;
 	}
-
 
 //	char* toTurtle()
 //	{
