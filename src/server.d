@@ -280,36 +280,39 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	StopWatch sw1;
 	sw1.start();
 
-	if(msg_format == format.JSON_LD)
+	// TODO сделать серилизацию кластера фактов и убрать нижележащую частность
 	{
-		outbuff.write(cast(char[]) "[\n");
-	}
 
-	for(int ii = 0; ii < results.length; ii++)
-	{
-		Subject out_message = results[ii];
-
-		if(out_message !is null)
+		if(msg_format == format.JSON_LD)
 		{
-			//									printf("# серилизуем граф %X в строку 1\n", out_message);
-			if(msg_format == format.TURTLE)
-				toTurtle(out_message, outbuff);
-			if(msg_format == format.JSON_LD)
-			{
-				if(ii > 0)
-					outbuff.write(cast(char[]) ",\n");
-
-				toJson_ld(out_message, outbuff);
-			}
-			//			printf("# серилизуем граф %X в строку 2\n", out_message);
+			outbuff.write(cast(char[]) "[\n");
 		}
-	}
-	if(msg_format == format.JSON_LD)
-	{
-		outbuff.write(cast(char[]) "\n]");
-	}
-	outbuff.write(0);
 
+		for(int ii = 0; ii < results.length; ii++)
+		{
+			Subject out_message = results[ii];
+
+			if(out_message !is null)
+			{
+				//									printf("# серилизуем граф %X в строку 1\n", out_message);
+				if(msg_format == format.TURTLE)
+					toTurtle(out_message, outbuff);
+				if(msg_format == format.JSON_LD)
+				{
+					if(ii > 0)
+						outbuff.write(cast(char[]) ",\n");
+
+					toJson_ld(out_message, outbuff);
+				}
+				//			printf("# серилизуем граф %X в строку 2\n", out_message);
+			}
+		}
+		if(msg_format == format.JSON_LD)
+		{
+			outbuff.write(cast(char[]) "\n]");
+		}
+		outbuff.write(0);
+	}
 	//       sw1.stop();
 	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
 

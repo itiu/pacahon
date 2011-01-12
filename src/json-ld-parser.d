@@ -1,3 +1,4 @@
+// TODO сделать серилизацию кластера фактов
 module pacahon.json_ld.parser;
 
 private import std.stdio;
