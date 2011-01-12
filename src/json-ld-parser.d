@@ -105,8 +105,8 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	prepare_node(node, &gcl);
 
-	sw1.stop();
-	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
+//	sw1.stop();
+//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
 	return gcl.graphs_of_subject.values;
 }
@@ -126,24 +126,30 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	// (+) быстрое по сравнением с вариантом A
 
 	// вариант В
-	outbuff.write(cast(char[]) "{\n");
 
-	for(int i = 0; i <= level; i++)
+	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
-	outbuff.write(cast(char[]) "\"@\" : \"");
+	outbuff.write(cast(char[])"{\n");
 
-	if(ss.subject !is null)
-		outbuff.write(ss.subject);
-	outbuff.write(cast(char[]) "\"");
+	for(int i = 0; i < level; i++)
+		outbuff.write(cast(char[]) "	");
+
+	if (ss.subject !is null)
+	{
+	    outbuff.write(cast(char[]) "\"@\" : \"");
+            outbuff.write(ss.subject);
+	    outbuff.write('"');
+	}    
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
 		Predicate* pp = &(ss.edges[jj]);
 
-		outbuff.write(cast(char[]) ",\n");
+		if (jj > 0)
+		    outbuff.write(cast(char[]) ",\n");
 
-		for(int i = 0; i <= level; i++)
+		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	");
 
 		outbuff.write('"');
@@ -157,9 +163,11 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		{
 			Objectz oo = pp.objects[kk];
 
-			outbuff.write('"');
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
+//				log.trace ("write literal");
+
+				outbuff.write('"');
 				// заменим все неэкранированные кавычки на [\"]
 				bool is_exist_quotes = false;
 				foreach(ch; oo.object)
@@ -170,6 +178,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						break;
 					}
 				}
+//				log.trace ("write literal 2");
 
 				if(is_exist_quotes)
 				{
@@ -195,12 +204,27 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				{
 					outbuff.write(oo.object);
 				}
+				outbuff.write('"');
+//				log.trace ("write literal end");
 			}
 			else if(oo.type == OBJECT_TYPE.URI)
 			{
+				outbuff.write('"');
 				outbuff.write(oo.object);
+				outbuff.write('"');
 			}
-			outbuff.write('"');
+			else if(oo.type == OBJECT_TYPE.SUBJECT)
+			{
+				outbuff.write('\n');
+				toJson_ld(oo.subject, outbuff, level + 1);
+			}
+			else if(oo.type == OBJECT_TYPE.CLUSTER)
+			{
+			    foreach(element; oo.cluster.graphs_of_subject.values)
+			    {
+				toJson_ld(element, outbuff, level + 1);
+			    }
+			}
 
 		}
 
@@ -209,5 +233,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 	}
 
-	outbuff.write(cast(char[]) "\n}");
+	outbuff.write('\n');
+
+	for(int i = 0; i < level; i++)
+		outbuff.write(cast(char[]) "	");
+
+	outbuff.write('}');
 }

@@ -137,8 +137,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
-	trace_msg[0][3] = 1;
-	//	trace_msg[0] = 1;
+//	trace_msg[0][3] = 1;
+//		trace_msg[0] = 1;
 
 	count++;
 
@@ -272,11 +272,14 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	}
 
-	if(trace_msg[0][15] == 1)
-		printf("# формируем ответ, серилизуем ответные графы в строку\n");
-
 	OutBuffer outbuff = new OutBuffer();
 
+	if(trace_msg[0][15] == 1)
+		log.trace("формируем ответ, серилизуем ответные графы в строку");
+
+        StopWatch sw1;
+                sw1.start();            
+                
 	for(int ii = 0; ii < results.length; ii++)
 	{
 		Subject out_message = results[ii];
@@ -292,6 +295,13 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		}
 	}
 	outbuff.write(0);
+
+ //       sw1.stop();
+ //               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
+                
+
+	if(trace_msg[0][15] == 1)
+		log.trace("send");
 
 	ubyte[] msg_out = outbuff.toBytes();
 
