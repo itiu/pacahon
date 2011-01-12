@@ -21,13 +21,13 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 	// простой вариант парсинга, когда уже есть json-tree в памяти
 	// но это не оптимально по затратам памяти и производительности
 
-	void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss=null)
+	void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
 	{
 		if(node.type == JSON_TYPE.OBJECT)
 		{
-			if (ss is null) 
-			    ss = new Subject;
-			    
+			if(ss is null)
+				ss = new Subject;
+
 			for(int i = 0; i < node.object.keys.length; i++)
 			{
 				string key = node.object.keys[i];
@@ -52,17 +52,17 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 					if(element.type == JSON_TYPE.OBJECT)
 					{
-						if (("@" in element.object) is null)
+						if(("@" in element.object) is null)
 						{
-						    Subject ss_in = new Subject;
-						    prepare_node(element, gcl, ss_in);
-						    ss.addPredicate(cast(char[]) key, ss_in);				
+							Subject ss_in = new Subject;
+							prepare_node(element, gcl, ss_in);
+							ss.addPredicate(cast(char[]) key, ss_in);
 						}
 						else
 						{
-						    GraphCluster inner_gcl;
-						    prepare_node(element, &inner_gcl);
-						    ss.addPredicate(cast(char[]) key, inner_gcl);
+							GraphCluster inner_gcl;
+							prepare_node(element, &inner_gcl);
+							ss.addPredicate(cast(char[]) key, inner_gcl);
 						}
 					}
 
@@ -70,7 +70,7 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 					{
 						char[] val = cast(char[]) element.str;
 
-//						writeln("ss=", ss.subject, ",key=", key, ",val=", val);
+						//						writeln("ss=", ss.subject, ",key=", key, ",val=", val);
 
 						if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
 						{
@@ -105,8 +105,8 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	prepare_node(node, &gcl);
 
-//	sw1.stop();
-//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
+	//	sw1.stop();
+	//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
 	return gcl.graphs_of_subject.values;
 }
@@ -130,24 +130,24 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
-	outbuff.write(cast(char[])"{\n");
+	outbuff.write(cast(char[]) "{\n");
 
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
-	if (ss.subject !is null)
+	if(ss.subject !is null)
 	{
-	    outbuff.write(cast(char[]) "\"@\" : \"");
-            outbuff.write(ss.subject);
-	    outbuff.write('"');
-	}    
+		outbuff.write(cast(char[]) "\"@\" : \"");
+		outbuff.write(ss.subject);
+		outbuff.write(cast(char[]) "\",\n");
+	}
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
 		Predicate* pp = &(ss.edges[jj]);
 
-		if (jj > 0)
-		    outbuff.write(cast(char[]) ",\n");
+		if(jj > 0)
+			outbuff.write(cast(char[]) ",\n");
 
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	");
@@ -165,7 +165,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
-//				log.trace ("write literal");
+				//				log.trace ("write literal");
 
 				outbuff.write('"');
 				// заменим все неэкранированные кавычки на [\"]
@@ -178,7 +178,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						break;
 					}
 				}
-//				log.trace ("write literal 2");
+				//				log.trace ("write literal 2");
 
 				if(is_exist_quotes)
 				{
@@ -205,7 +205,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 					outbuff.write(oo.object);
 				}
 				outbuff.write('"');
-//				log.trace ("write literal end");
+				//				log.trace ("write literal end");
 			}
 			else if(oo.type == OBJECT_TYPE.URI)
 			{
@@ -220,10 +220,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 			}
 			else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-			    foreach(element; oo.cluster.graphs_of_subject.values)
-			    {
-				toJson_ld(element, outbuff, level + 1);
-			    }
+				foreach(element; oo.cluster.graphs_of_subject.values)
+				{
+					toJson_ld(element, outbuff, level + 1);
+				}
 			}
 
 		}
