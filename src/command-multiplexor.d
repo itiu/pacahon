@@ -350,7 +350,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
-	trace_msg[2] = 1;
+//	trace_msg[2] = 1;
 
 	StopWatch sw;
 	sw.start();

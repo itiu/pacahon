@@ -138,7 +138,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
 	//	trace_msg[0][3] = 1;
-	trace_msg[0] = 1;
+//	trace_msg[0] = 1;
 
 	count++;
 
@@ -335,7 +335,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
-	trace_msg[1] = 1;
+//	trace_msg[1] = 1;
 
 	if(trace_msg[1][0] == 1)
 		log.trace("command_preparer start");
