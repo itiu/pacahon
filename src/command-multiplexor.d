@@ -350,6 +350,8 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
 {
+	trace_msg[2] = 1;
+
 	StopWatch sw;
 	sw.start();
 
@@ -360,31 +362,43 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 	isOk = false;
 
 	if(trace_msg[2][0] == 1)
-		printf("command get\n");
+		log.trace("command get");
 
 	reason = cast(char[]) "запрос не может быть выполнен";
 
 	Predicate* args = message.getEdge(msg__args);
 
 	if(trace_msg[2][1] == 1)
-		printf("command get, args=%X \n", args);
+		log.trace("command get, args=%X", args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
-		char* args_text = cast(char*) args.objects[ii].object;
-		int arg_size = strlen(args_text);
-
 		if(trace_msg[2][2] == 1)
-			printf("*** arg [%s], arg_size=%d\n", args_text, arg_size);
+			log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
 
-		Subject[] graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
+		Subject[] graphs_as_template;
 
-		if(trace_msg[2][3] == 1)
-			printf("*** arguments has been read\n");
-
-		if(graphs_as_template is null)
+		if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
 		{
-			reason = cast(char[]) "в сообщении отсутствует граф-шаблон";
+			graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
+		}
+		else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
+		{
+			char* args_text = cast(char*) args.objects[ii].object;
+			int arg_size = strlen(args_text);
+
+			if(trace_msg[2][2] == 1)
+				log.trace("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
+
+			graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
+
+			if(trace_msg[2][3] == 1)
+				log.trace("arguments has been read");
+
+			if(graphs_as_template is null)
+			{
+				reason = cast(char[]) "в сообщении отсутствует граф-шаблон";
+			}
 		}
 
 		for(int jj = 0; jj < graphs_as_template.length; jj++)
@@ -392,7 +406,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			Subject graph = graphs_as_template[jj];
 
 			if(trace_msg[2][4] == 1)
-				writeln("*** graph.subject=", graph.subject);
+				log.trace("graph.subject=%s", graph.subject);
 
 			byte[char[]] readed_predicate;
 
@@ -415,23 +429,23 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 							// требуются так-же реифицированные данные по этому полю
 							// данный предикат добавить в список возвращаемых
 							if(trace_msg[2][5] == 1)
-								writeln("*** данный предикат и реифицированные данные добавим в список возвращаемых: ", pp.predicate);
+								log.trace("данный предикат и реифицированные данные добавим в список возвращаемых: %s", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET_REIFED;
 
 							if(trace_msg[2][6] == 1)
-								writeln("*** readed_predicate.length=", readed_predicate.length);
+								log.trace("readed_predicate.length=%d", readed_predicate.length);
 						}
 						else if(oo.object == "query:get")
 						{
 							// данный предикат добавить в список возвращаемых
 							if(trace_msg[2][7] == 1)
-								writeln("*** данный предикат добавим в список возвращаемых: ", pp.predicate);
+								log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
 
 							readed_predicate[cast(immutable) pp.predicate] = _GET;
 
 							if(trace_msg[2][8] == 1)
-								writeln("*** readed_predicate.length=", readed_predicate.length);
+								log.trace("readed_predicate.length=%d", readed_predicate.length);
 						}
 						else
 						{
@@ -441,12 +455,12 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 							statement.p = pp.predicate;
 
 							if(trace_msg[2][9] == 1)
-								writeln("*** p=", statement.p);
+								log.trace("p=%s", statement.p);
 
 							statement.o = oo.object;
 
 							if(trace_msg[2][10] == 1)
-								writeln("*** o=", statement.o);
+								log.trace("o=%s", statement.o);
 						}
 
 					}
@@ -455,7 +469,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				if((graph.subject != "query:any" && statement !is null) || (graph.subject != "query:any" && search_mask_length == 0))
 				{
 					if(trace_msg[2][11] == 1)
-						writeln("*** subject=", graph.subject);
+						log.trace("subject=%s", graph.subject);
 
 					if(statement is null)
 						statement = new Triple;
@@ -464,7 +478,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 					if(trace_msg[2][12] == 1)
 					{
-						writeln("*** s=", statement.s);
+						log.trace("s=%s", statement.s);
 					}
 				}
 
@@ -474,14 +488,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 					search_mask_length++;
 					if(trace_msg[2][13] == 1)
 					{
-						writeln("*** search_mask_length=", search_mask_length);
+						log.trace("search_mask_length=%d", search_mask_length);
 					}
 				}
 
 			}
 
 			if(trace_msg[2][14] == 1)
-				writeln("*** mask formed");
+				log.trace("mask formed");
 
 			search_mask.length = search_mask_length;
 
@@ -490,7 +504,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			while(iterator !is null)
 			{
 				if(trace_msg[2][15] == 1)
-					writeln("GET: f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+					log.trace("GET: f.read tr... S:%s P:%s O:%s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
 
 				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o, iterator.triple.lang);
 
@@ -498,7 +512,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			}
 
 			if(trace_msg[2][16] == 1)
-				writeln("*** авторизуем найденные субьекты, для пользователя %s", userId);
+				log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
 
 			// авторизуем найденные субьекты
 			foreach(s; res.graphs_of_subject)
@@ -509,13 +523,13 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 				if(result_of_az == false)
 				{
 					if(trace_msg[2][17] == 1)
-						writeln("AZ: s= ", s.subject, " -> ", authorize_reason);
+						log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
 
 					s.count_edges = 0;
 					s.subject = null;
 
 					if(trace_msg[2][18] == 1)
-						writeln("remove from list");
+						log.trace("remove from list");
 				}
 
 			}
@@ -529,7 +543,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 		if(trace_msg[2][19] == 1)
 		{
 			sw.stop();
-			printf("total time command get: %d [µs]\n", cast(long) sw.peek().microseconds);
+			log.trace("total time command get: %d [µs]", cast(long) sw.peek().microseconds);
 		}
 	}
 

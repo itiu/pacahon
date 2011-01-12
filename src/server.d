@@ -138,7 +138,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
 	//	trace_msg[0][3] = 1;
-	//		trace_msg[0] = 1;
+	trace_msg[0] = 1;
 
 	count++;
 
@@ -230,7 +230,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					{
 						// тикет просрочен
 						if(trace_msg[0][10] == 1)
-							log.trace("# тикет просрочен");
+							log.trace("тикет просрочен");
 					}
 					else
 					{
@@ -240,7 +240,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				if(trace_msg[0][12] == 1)
 					if(userId !is null)
-						log.trace("# пользователь найден, userId=%s", userId);
+						log.trace("пользователь найден, userId=%s", userId);
 
 			}
 
@@ -253,7 +253,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(trace_msg[0][13] == 1)
 				{
 					sw.stop();
-					printf("T  count: %d, %d [µs] next: command_preparer\n", count, cast(long) sw.peek().microseconds);
+					log.trace("T count: %d, %d [µs] next: command_preparer", count, cast(long) sw.peek().microseconds);
 					sw.start();
 				}
 
@@ -262,7 +262,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(trace_msg[0][14] == 1)
 				{
 					sw.stop();
-					printf("T count: %d, %d [µs] end: command_preparer\n", count, cast(long) sw.peek().microseconds);
+					log.trace("T count: %d, %d [µs] end: command_preparer", count, cast(long) sw.peek().microseconds);
 					sw.start();
 				}
 				//				results[ii] = out_message;
@@ -335,8 +335,10 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
+	trace_msg[1] = 1;
+
 	if(trace_msg[1][0] == 1)
-		printf("command_preparer\n");
+		log.trace("command_preparer start");
 
 	Predicate[] ppp = new Predicate[5];
 
@@ -373,10 +375,16 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 
 		if("put" in command.objects_of_value)
 		{
+			if(trace_msg[1][1] == 1)
+				log.trace("command_preparer, put");
+			
 			res = put(message, sender, userId, ts, isOk, reason);
 		}
 		else if("get" in command.objects_of_value)
 		{
+			if(trace_msg[1][2] == 1)
+				log.trace("command_preparer, get");
+
 			GraphCluster gres;
 			get(message, sender, userId, ts, isOk, reason, gres);
 			if(isOk == true)
@@ -387,6 +395,9 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 		}
 		else if("get_ticket" in command.objects_of_value)
 		{
+			if(trace_msg[1][2] == 1)
+				log.trace("command_preparer, get_ticket");
+
 			res = get_ticket(message, sender, userId, ts, isOk, reason);
 			if(isOk)
 				local_ticket = res.edges[0].getFirstObject;
@@ -412,8 +423,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 
 	out_message.addPredicate(msg__reason, reason);
 
-	if(trace_msg[1][1] == 1)
-		printf("command_preparer end\n");
+	if(trace_msg[1][3] == 1)
+		log.trace("command_preparer end");
 }
 
 Ticket getTicket(char[] ticket_id, TripleStorage ts)
@@ -425,7 +436,7 @@ Ticket getTicket(char[] ticket_id, TripleStorage ts)
 	if((ticket_id in user_of_ticket) !is null)
 	{
 		if(trace_msg[2][0] == 1)
-			log.trace("# тикет нашли в кеше, %s", ticket_id);
+			log.trace("тикет нашли в кеше, %s", ticket_id);
 
 		tt = user_of_ticket[ticket_id];
 	}
@@ -437,7 +448,7 @@ Ticket getTicket(char[] ticket_id, TripleStorage ts)
 
 		if(trace_msg[2][1] == 1)
 		{
-			log.trace("# найдем пользователя по сессионному билету ticket=%s", ticket_id);
+			log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
 			//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
 		}
 
@@ -449,18 +460,18 @@ Ticket getTicket(char[] ticket_id, TripleStorage ts)
 
 		if(trace_msg[2][2] == 1)
 			if(iterator is null)
-				log.trace("# сессионный билет не найден");
+				log.trace("сессионный билет не найден");
 
 		while(iterator !is null)
 		{
 			if(trace_msg[2][6] == 1)
-				log.trace("# %s %s %s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
+				log.trace("%s %s %s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
 
 			if(iterator.triple.p == ticket__accessor)
 			{
 				tt.userId = iterator.triple.o;
 				if(trace_msg[2][6] == 1)
-					log.trace("# tt.userId=%s", tt.userId);
+					log.trace("tt.userId=%s", tt.userId);
 			}
 			if(iterator.triple.p == ticket__when)
 				when = iterator.triple.o;
@@ -478,20 +489,20 @@ Ticket getTicket(char[] ticket_id, TripleStorage ts)
 		if(tt.userId is null)
 		{
 			if(trace_msg[2][3] == 1)
-				log.trace("# найденный сессионный билет не полон, пользователь не найден");
+				log.trace("найденный сессионный билет не полон, пользователь не найден");
 		}
 
 		if(tt.userId !is null && (when is null || duration < 10))
 		{
 			if(trace_msg[2][4] == 1)
-				log.trace("# найденный сессионный билет не полон, считаем что пользователь не был найден");
+				log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
 			tt.userId = null;
 		}
 
 		if(when !is null)
 		{
 			if(trace_msg[2][5] == 1)
-				log.trace("# сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
+				log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
 
 			//			printf("#1 when=%s\n", when.ptr);
 			// TODO stringToTime очень медленная операция ~ 100 микросекунд
