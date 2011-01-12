@@ -137,8 +137,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
-//	trace_msg[0][3] = 1;
-//		trace_msg[0] = 1;
+	//	trace_msg[0][3] = 1;
+	//		trace_msg[0] = 1;
 
 	count++;
 
@@ -277,9 +277,14 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(trace_msg[0][15] == 1)
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
-        StopWatch sw1;
-                sw1.start();            
-                
+	StopWatch sw1;
+	sw1.start();
+
+	if(msg_format == format.JSON_LD)
+	{
+		outbuff.write(cast(char[]) "[\n");
+	}
+
 	for(int ii = 0; ii < results.length; ii++)
 	{
 		Subject out_message = results[ii];
@@ -290,15 +295,23 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			if(msg_format == format.TURTLE)
 				toTurtle(out_message, outbuff);
 			if(msg_format == format.JSON_LD)
+			{
+				if(ii > 0)
+					outbuff.write(cast(char[]) ",\n");
+
 				toJson_ld(out_message, outbuff);
+			}
 			//			printf("# серилизуем граф %X в строку 2\n", out_message);
 		}
 	}
+	if(msg_format == format.JSON_LD)
+	{
+		outbuff.write(cast(char[]) "\n]");
+	}
 	outbuff.write(0);
 
- //       sw1.stop();
- //               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
-                
+	//       sw1.stop();
+	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
 
 	if(trace_msg[0][15] == 1)
 		log.trace("send");
@@ -342,7 +355,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	out_message.subject = time;
 	//	out_message.subject = cast(char[])"msg:time";
 
-	out_message.addPredicateAsURI(rdf__type, msg__Message);
+	out_message.addPredicateAsURI(cast(char[]) "a", msg__Message);
 	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
 	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
