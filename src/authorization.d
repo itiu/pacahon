@@ -10,6 +10,15 @@ private import trioplax.TripleStorage;
 private import pacahon.graph;
 private import pacahon.know_predicates;
 
+private import trioplax.Logger;
+
+Logger log;
+
+static this()
+{
+	log = new Logger("pacahon.log", "authorization");
+}
+
 enum operation
 {
 	BROWSE = 0,
@@ -26,7 +35,7 @@ enum operation
  * op - список запрашиваемых операций
  */
 
-byte trace_msg[20]=0;
+byte trace_msg[20] = 0;
 
 bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
 {
@@ -39,25 +48,26 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 	if(trace_msg[0] == 1)
 	{
-		if(userId !is null)
-			write("# пользователь [", userId, "]");
-		else
-			write("# неизвестный пользователь");
+		char[] _user;
+		char[] _op;
 
-		printf(" запрашивает разрешение на выполнение операции ");
+		if(userId !is null)
+			_user = "пользователь [" ~ userId ~ "]";
+		else
+			_user = cast(char[])"неизвестный пользователь";
 
 		if(op & operation.BROWSE)
-			printf(" BROWSE,");
+			_op = cast(char[])"BROWSE";
 		if(op & operation.CREATE)
-			printf(" CREATE,");
+			_op = _op ~ ", CREATE";
 		if(op & operation.READ)
-			printf(" READ,");
+			_op = _op ~ ", READ";
 		if(op & operation.UPDATE)
-			printf(" UPDATE,");
+			_op = _op ~ ", UPDATE";
 		if(op & operation.DELETE)
-			printf(" DELETE,");
+			_op = _op ~ ", DELETE";
 
-		writeln("над субьектом охраны [", targetId, "]. \n");
+		log.trace("%s запрашивает разрешение на выполнение операции %s над субьектом охраны [%s]", _user, _op, targetId);
 	}
 
 	try
@@ -83,14 +93,14 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
 				if(trace_msg[1] == 1)
-					writeln("A 1. проверить, есть ли у охраняемого субьекта, предикат [", dc__creator, "] = [", userId, "]");
+					log.trace("A 1. проверить, есть ли у охраняемого субьекта, предикат [%s] = [%s]", dc__creator, userId);
 
 				triple_list_element iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
 					if(trace_msg[2] == 1)
-						printf("#dc:creator найден\n");
+						log.trace("dc:creator найден");
 
 					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
 					res = true;
@@ -98,7 +108,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				else
 				{
 					if(trace_msg[3] == 1)
-						printf("#dc:creator  не найден\n");
+						log.trace("creator  не найден");
 
 					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
 					res = false;
@@ -144,14 +154,10 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 		if(trace_msg[4] == 1)
 		{
-			printf("	результат:");
-
 			if(res == true)
-				printf("разрешено\n");
+				log.trace("результат: разрешено, причина: %s", reason);
 			else
-				printf("отказанно\n");
-
-			printf("	причина: %s\n", reason.ptr);
+				log.trace("результат: отказанно, причина: %s", reason);
 		}
 
 		sw.stop();
@@ -159,7 +165,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 
 		if(t > 300 || trace_msg[5] == 1)
 		{
-			printf("total time authorize: %d[µs]\n", t);
+			log.trace("total time authorize: %d[µs]", t);
 		}
 
 	}
