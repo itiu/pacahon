@@ -219,7 +219,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;
 
-				Ticket tt = getTicket(ticket_str, ts);
+				Ticket tt = foundTicket(ticket_str, ts);
 
 				// проверим время жизни тикета
 				if(tt !is null)
@@ -328,7 +328,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
 	sw.stop();
-	log.trace("count: %d, total time: %d [µs]\n", count, cast(long) sw.peek().microseconds);
+	log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
 
 	return;
 }
@@ -427,7 +427,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 		log.trace("command_preparer end");
 }
 
-Ticket getTicket(char[] ticket_id, TripleStorage ts)
+Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 {
 	Ticket tt;
 

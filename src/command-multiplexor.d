@@ -219,7 +219,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	sw.start();
 
 	if(trace__get_ticket)
-		printf("command get_ticket\n");
+		log.trace("command get_ticket");
 
 	isOk = false;
 
@@ -290,7 +290,6 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 			// сохраняем в хранилище
 			char[] ticket_id = "auth:" ~ generated.toString;
-			writeln(ticket_id);
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
@@ -329,20 +328,16 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 		if(trace__get_ticket)
 		{
-			printf("	результат:");
-
 			if(isOk == true)
-				printf("сессионный билет выдан\n");
+				log.trace("результат: сессионный билет выдан, причина: %s ", reason);
 			else
-				printf("отказанно\n");
-
-			printf("	причина: %s\n", reason.ptr);
+				log.trace ("результат: отказанно, причина: %s", reason);
 		}
 
 		if(timing__get_ticket)
 		{
 			sw.stop();
-			printf("total time command get_ticket: %d [µs]\n", cast(long) sw.peek().microseconds);
+			log.trace("total time command get_ticket: %d [µs]", cast(long) sw.peek().microseconds);
 		}
 
 	}
@@ -526,7 +521,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
 
 					s.count_edges = 0;
-					s.subject = null;
+					s.subject = null; 
 
 					if(trace_msg[2][18] == 1)
 						log.trace("remove from list");
