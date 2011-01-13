@@ -117,6 +117,25 @@ char[] getString(char* s, int length)
 	return s ? s[0 .. length] : null;
 }
 
+void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
+{
+	outbuff.write(cast(char[]) "[\n");
+
+	for(int ii = 0; ii < results.length; ii++)
+	{
+		Subject out_message = results[ii];
+
+		if(out_message !is null)
+		{
+			if(ii > 0)
+				outbuff.write(cast(char[]) ",\n");
+
+			toJson_ld(out_message, outbuff);
+		}
+	}
+	outbuff.write(cast(char[]) "\n]");
+}
+
 void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 {
 	// A: перевод triple-tree в json-tree, а затем серилизация с помощью метода - string toJSON(in JSONValue* root); 

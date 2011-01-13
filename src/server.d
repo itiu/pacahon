@@ -138,7 +138,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	trace_msg[0][0] = 1; // Input message
 	trace_msg[0][16] = 1; // Output message
 	//	trace_msg[0][3] = 1;
-//	trace_msg[0] = 1;
+	//	trace_msg[0] = 1;
 
 	count++;
 
@@ -272,47 +272,22 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	}
 
-	OutBuffer outbuff = new OutBuffer();
-
 	if(trace_msg[0][15] == 1)
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
 	StopWatch sw1;
 	sw1.start();
 
-	// TODO сделать серилизацию кластера фактов и убрать нижележащую частность
-	{
+	OutBuffer outbuff = new OutBuffer();
 
-		if(msg_format == format.JSON_LD)
-		{
-			outbuff.write(cast(char[]) "[\n");
-		}
+	if(msg_format == format.TURTLE)
+		toTurtle(results, outbuff);
 
-		for(int ii = 0; ii < results.length; ii++)
-		{
-			Subject out_message = results[ii];
+	if(msg_format == format.JSON_LD)
+		toJson_ld(results, outbuff);
 
-			if(out_message !is null)
-			{
-				//									printf("# серилизуем граф %X в строку 1\n", out_message);
-				if(msg_format == format.TURTLE)
-					toTurtle(out_message, outbuff);
-				if(msg_format == format.JSON_LD)
-				{
-					if(ii > 0)
-						outbuff.write(cast(char[]) ",\n");
+	outbuff.write(0);
 
-					toJson_ld(out_message, outbuff);
-				}
-				//			printf("# серилизуем граф %X в строку 2\n", out_message);
-			}
-		}
-		if(msg_format == format.JSON_LD)
-		{
-			outbuff.write(cast(char[]) "\n]");
-		}
-		outbuff.write(0);
-	}
 	//       sw1.stop();
 	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
 
@@ -335,7 +310,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
 {
-//	trace_msg[1] = 1;
+	//	trace_msg[1] = 1;
 
 	if(trace_msg[1][0] == 1)
 		log.trace("command_preparer start");
@@ -377,7 +352,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 		{
 			if(trace_msg[1][1] == 1)
 				log.trace("command_preparer, put");
-			
+
 			res = put(message, sender, userId, ts, isOk, reason);
 		}
 		else if("get" in command.objects_of_value)

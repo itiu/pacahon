@@ -609,6 +609,19 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 	return;
 }
 
+void toTurtle(Subject[] results, ref OutBuffer outbuff, int level = 0)
+{
+	for(int ii = 0; ii < results.length; ii++)
+	{
+		Subject out_message = results[ii];
+
+		if(out_message !is null)
+		{
+			toTurtle(out_message, outbuff);
+		}
+	}
+}
+
 /*
  char* toTurtle(GraphCluster gcl)
  {
