@@ -45,11 +45,6 @@ static this()
  */
 Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
-	//	trace_msg[0] = 1;
-	//	trace_msg[0][4] = 1;
-	//	trace_msg[0][5] = 1;
-	//	trace_msg[0][6] = 1;
-
 	if(trace_msg[31] == 1)
 		log.trace("command put");
 
@@ -557,6 +552,29 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 public Subject set_message_trace(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
 {
+	Predicate* args = message.getEdge(msg__args);
+
+	for(short ii; ii < args.count_objects; ii++)
+	{
+		if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+		{
+			Subject arg = args.objects[ii].subject;
+
+			Predicate* set_msgs = arg.getEdge(pacahon__on_trace_msg);
+			for(int ll = 0; ll < set_msgs.count_objects; ll++)
+			{
+				Objectz oo = set_msgs.objects[ll];
+			}			
+			
+			
+			Predicate* unset_msgs = arg.getEdge(pacahon__off_trace_msg);
+			for(int ll = 0; ll < unset_msgs.count_objects; ll++)
+			{
+				Objectz oo = unset_msgs.objects[ll];
+			}
+		}
+	}
+
 	return null;
 }
 

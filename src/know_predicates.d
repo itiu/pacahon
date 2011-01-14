@@ -24,3 +24,6 @@ public char[] ticket__duration = cast(char[]) "ticket:duration";
 public char[] auth__ticket = cast(char[]) "auth:ticket";
 public char[] auth__credential = cast(char[]) "auth:credential";
 public char[] auth__login = cast(char[]) "auth:login";
+
+public char[] pacahon__on_trace_msg = cast(char[]) "pacahon:on-trace-msg";
+public char[] pacahon__off_trace_msg = cast(char[]) "pacahon:off-trace-msg";
