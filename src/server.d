@@ -43,6 +43,8 @@ private import pacahon.know_predicates;
 private import pacahon.utils;
 private import trioplax.Logger;
 
+private import log_msg;
+
 Logger log;
 Logger io_msg;
 
@@ -52,7 +54,6 @@ static this()
 	io_msg = new Logger("pacahon.io", "server");
 }
 
-byte trace_msg[10][30];
 
 void main(char[][] args)
 {
@@ -135,14 +136,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	byte msg_format = format.UNKNOWN;
 
-	trace_msg[0][0] = 1; // Input message
-	trace_msg[0][16] = 1; // Output message
-	//	trace_msg[0][3] = 1;
-	//	trace_msg[0] = 1;
-
 	count++;
 
-	if(trace_msg[0][0] == 1)
+	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);
 
 	StopWatch sw;
@@ -152,7 +148,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	TripleStorage ts = server_thread.ts;
 	ts.release_all_lists();
 
-	if(trace_msg[0][1] == 1)
+	if(trace_msg[1] == 1)
 		log.trace("get message, [%d]", count);
 
 	Subject[] triples;
@@ -168,7 +164,25 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		triples = parse_n3_string(cast(char*) msg, message_size);
 	}
 
-	if(trace_msg[0][2] == 1)
+	if(trace_msg[2] == 1)
+	{
+		OutBuffer outbuff = new OutBuffer();
+		toTurtle(triples, outbuff);
+		outbuff.write(0);
+		ubyte[] bb = outbuff.toBytes();
+		io_msg.trace_io(true, cast(byte*) bb, bb.length);
+	}
+
+	if(trace_msg[3] == 1)
+	{
+		OutBuffer outbuff = new OutBuffer();
+		toJson_ld(triples, outbuff);
+		outbuff.write(0);
+		ubyte[] bb = outbuff.toBytes();
+		io_msg.trace_io(true, cast(byte*) bb, bb.length);
+	}
+
+	if(trace_msg[4] == 1)
 		log.trace("command.length=%d", triples.length);
 
 	Subject[] results = new Subject[triples.length];
@@ -182,7 +196,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	{
 		Subject command = triples[ii];
 
-		if(trace_msg[0][3] == 1)
+		if(trace_msg[5] == 1)
 		{
 			log.trace("get_message:subject.count_edges=%d", command.count_edges);
 			log.trace("get_message:message.subject=%s", command.subject);
@@ -205,7 +219,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			Predicate* reciever = command.getEdge(msg__reciever);
 			Predicate* sender = command.getEdge(msg__sender);
 
-			if(trace_msg[0][4] == 1)
+			if(trace_msg[6] == 1)
 				log.trace("FROM:%s", sender.getFirstObject());
 
 			Predicate* ticket = command.getEdge(msg__ticket);
@@ -229,7 +243,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					if(now > tt.end_time)
 					{
 						// тикет просрочен
-						if(trace_msg[0][10] == 1)
+						if(trace_msg[61] == 1)
 							log.trace("тикет просрочен");
 					}
 					else
@@ -238,7 +252,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					}
 				}
 
-				if(trace_msg[0][12] == 1)
+				if(trace_msg[62] == 1)
 					if(userId !is null)
 						log.trace("пользователь найден, userId=%s", userId);
 
@@ -250,7 +264,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				//				Subject* out_message = new Subject;
 				results[ii] = new Subject;
 
-				if(trace_msg[0][13] == 1)
+				if(trace_msg[6] == 1)
 				{
 					sw.stop();
 					log.trace("T count: %d, %d [µs] next: command_preparer", count, cast(long) sw.peek().microseconds);
@@ -259,7 +273,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
 
-				if(trace_msg[0][14] == 1)
+				if(trace_msg[7] == 1)
 				{
 					sw.stop();
 					log.trace("T count: %d, %d [µs] end: command_preparer", count, cast(long) sw.peek().microseconds);
@@ -272,7 +286,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	}
 
-	if(trace_msg[0][15] == 1)
+	if(trace_msg[8] == 1)
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
 	StopWatch sw1;
@@ -291,7 +305,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	//       sw1.stop();
 	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
 
-	if(trace_msg[0][15] == 1)
+	if(trace_msg[9] == 1)
 		log.trace("send");
 
 	ubyte[] msg_out = outbuff.toBytes();
@@ -299,107 +313,13 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(from_client !is null)
 		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, false);
 
-	if(trace_msg[0][16] == 1)
+	if(trace_msg[10] == 1)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
 	sw.stop();
 	log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
 
 	return;
-}
-
-void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
-{
-	//	trace_msg[1] = 1;
-
-	if(trace_msg[1][0] == 1)
-		log.trace("command_preparer start");
-
-	Predicate[] ppp = new Predicate[5];
-
-	Subject res;
-
-	Ticks m_TimeStart = systime();
-	char[] time = new char[21];
-	time[0] = 'm';
-	time[1] = 's';
-	time[2] = 'g';
-	time[3] = ':';
-	time[4] = 'M';
-	time[5] = '_';
-	time[6] = '_';
-	time[7] = '_';
-
-	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
-
-	out_message.subject = time;
-	//	out_message.subject = cast(char[])"msg:time";
-
-	out_message.addPredicateAsURI(cast(char[]) "a", msg__Message);
-	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
-	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
-	out_message.addPredicate(msg__reciever, sender.getFirstObject);
-
-	Predicate* command = message.getEdge(msg__command);
-
-	char[] reason;
-	bool isOk;
-
-	if(command !is null)
-	{
-
-		if("put" in command.objects_of_value)
-		{
-			if(trace_msg[1][1] == 1)
-				log.trace("command_preparer, put");
-
-			res = put(message, sender, userId, ts, isOk, reason);
-		}
-		else if("get" in command.objects_of_value)
-		{
-			if(trace_msg[1][2] == 1)
-				log.trace("command_preparer, get");
-
-			GraphCluster gres;
-			get(message, sender, userId, ts, isOk, reason, gres);
-			if(isOk == true)
-			{
-				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
-				out_message.addPredicate(msg__result, gres);
-			}
-		}
-		else if("get_ticket" in command.objects_of_value)
-		{
-			if(trace_msg[1][2] == 1)
-				log.trace("command_preparer, get_ticket");
-
-			res = get_ticket(message, sender, userId, ts, isOk, reason);
-			if(isOk)
-				local_ticket = res.edges[0].getFirstObject;
-		}
-
-		//		reason = cast(char[]) "запрос выполнен";
-	}
-	else
-	{
-		reason = cast(char[]) "в сообщении не указанна команда";
-	}
-	if(isOk == false)
-	{
-		out_message.addPredicate(msg__status, cast(char[]) "fail");
-	}
-	else
-	{
-		out_message.addPredicate(msg__status, cast(char[]) "ok");
-	}
-
-	if(res !is null)
-		out_message.addPredicate(msg__result, res);
-
-	out_message.addPredicate(msg__reason, reason);
-
-	if(trace_msg[1][3] == 1)
-		log.trace("command_preparer end");
 }
 
 Ticket foundTicket(char[] ticket_id, TripleStorage ts)
@@ -410,7 +330,7 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 
 	if((ticket_id in user_of_ticket) !is null)
 	{
-		if(trace_msg[2][0] == 1)
+		if(trace_msg[17] == 1)
 			log.trace("тикет нашли в кеше, %s", ticket_id);
 
 		tt = user_of_ticket[ticket_id];
@@ -421,7 +341,7 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 		tt = new Ticket;
 		tt.id = ticket_id;
 
-		if(trace_msg[2][1] == 1)
+		if(trace_msg[18] == 1)
 		{
 			log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
 			//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
@@ -433,19 +353,19 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 		char[] when = null;
 		int duration = 0;
 
-		if(trace_msg[2][2] == 1)
+		if(trace_msg[19] == 1)
 			if(iterator is null)
 				log.trace("сессионный билет не найден");
 
 		while(iterator !is null)
 		{
-			if(trace_msg[2][6] == 1)
+			if(trace_msg[20] == 1)
 				log.trace("%s %s %s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
 
 			if(iterator.triple.p == ticket__accessor)
 			{
 				tt.userId = iterator.triple.o;
-				if(trace_msg[2][6] == 1)
+				if(trace_msg[21] == 1)
 					log.trace("tt.userId=%s", tt.userId);
 			}
 			if(iterator.triple.p == ticket__when)
@@ -463,23 +383,22 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 
 		if(tt.userId is null)
 		{
-			if(trace_msg[2][3] == 1)
+			if(trace_msg[22] == 1)
 				log.trace("найденный сессионный билет не полон, пользователь не найден");
 		}
 
 		if(tt.userId !is null && (when is null || duration < 10))
 		{
-			if(trace_msg[2][4] == 1)
+			if(trace_msg[23] == 1)
 				log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
 			tt.userId = null;
 		}
 
 		if(when !is null)
 		{
-			if(trace_msg[2][5] == 1)
+			if(trace_msg[24] == 1)
 				log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
 
-			//			printf("#1 when=%s\n", when.ptr);
 			// TODO stringToTime очень медленная операция ~ 100 микросекунд
 			tt.end_time = stringToTime(when.ptr) + duration * 1000;
 
