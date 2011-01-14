@@ -19,4 +19,6 @@ static this()
 	
 //	trace_msg[64] = 1; // вложенное в команду put turtle сообщения в виде json-ld
 //	trace_msg[3] = 1; // входящее сообщение в виде json-ld
+
+	trace_msg[63] = 1; // log.trace("command_preparer, set_message_trace");
 }
