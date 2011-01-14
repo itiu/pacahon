@@ -7,6 +7,7 @@ private import core.stdc.stdlib;
 private import std.c.string;
 private import std.date;
 private import std.stdio;
+private import std.outbuffer;
 
 private import tango.util.uuid.NamespaceGenV5;
 private import tango.util.digest.Sha1;
@@ -19,7 +20,9 @@ private import trioplax.triple;
 private import trioplax.TripleStorage;
 
 private import pacahon.graph;
+
 private import pacahon.n3.parser;
+private import pacahon.json_ld.parser;
 
 private import pacahon.authorization;
 private import pacahon.know_predicates;
@@ -81,6 +84,15 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 			//		printf("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
 
 			graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
+		}
+
+		if(trace_msg[64] == 1)
+		{
+			OutBuffer outbuff = new OutBuffer();
+			toJson_ld(graphs_on_put, outbuff);
+			outbuff.write(0);
+			ubyte[] bb = outbuff.toBytes();
+			log.trace_io(true, cast(byte*) bb, bb.length);
 		}
 
 		if(trace_msg[34] == 1)
@@ -329,7 +341,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 			if(isOk == true)
 				log.trace("результат: сессионный билет выдан, причина: %s ", reason);
 			else
-				log.trace ("результат: отказанно, причина: %s", reason);
+				log.trace("результат: отказанно, причина: %s", reason);
 		}
 
 		if(trace_msg[40] == 1)
@@ -517,7 +529,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 						log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
 
 					s.count_edges = 0;
-					s.subject = null; 
+					s.subject = null;
 
 					if(trace_msg[60] == 1)
 						log.trace("remove from list");
@@ -541,6 +553,11 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 	// TODO !для пущей безопасности, факты с предикатом [auth:credential] не отдавать !
 
 	return;
+}
+
+public Subject set_message_trace(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+{
+	return null;
 }
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
@@ -610,12 +627,19 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 			if(isOk)
 				local_ticket = res.edges[0].getFirstObject;
 		}
+		else if("set_message_trace" in command.objects_of_value)
+		{
+			if(trace_msg[63] == 1)
+				log.trace("command_preparer, set_message_trace");
+
+			res = set_message_trace(message, sender, userId, ts, isOk, reason);
+		}
 
 		//		reason = cast(char[]) "запрос выполнен";
 	}
 	else
 	{
-		reason = cast(char[]) "в сообщении не указанна команда";
+		reason = cast(char[]) "в сообщении не указана команда";
 	}
 	if(isOk == false)
 	{
