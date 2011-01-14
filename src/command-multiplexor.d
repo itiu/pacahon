@@ -564,9 +564,8 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 			for(int ll = 0; ll < set_msgs.count_objects; ll++)
 			{
 				Objectz oo = set_msgs.objects[ll];
-			}			
-			
-			
+			}
+
 			Predicate* unset_msgs = arg.getEdge(pacahon__off_trace_msg);
 			for(int ll = 0; ll < unset_msgs.count_objects; ll++)
 			{
@@ -588,7 +587,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	Subject res;
 
 	Ticks m_TimeStart = systime();
-	char[] time = new char[12];
+	char[] time = new char[21];
 	time[0] = 'm';
 	time[1] = 's';
 	time[2] = 'g';

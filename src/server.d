@@ -220,7 +220,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 			Predicate* sender = command.getEdge(msg__sender);
 
 			if(trace_msg[6] == 1)
-				log.trace("FROM:%s", sender.getFirstObject());
+				log.trace("message accepted from:%s", sender.getFirstObject());
 
 			Predicate* ticket = command.getEdge(msg__ticket);
 
