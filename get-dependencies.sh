@@ -1,5 +1,5 @@
 mongo_d_driver__hash=e117e36
-trioplax__hash=fdee7b5
+trioplax__hash=f883010
 zeromq__hash=6171f9a
 
 trioplax__project_name=itiu-trioplax

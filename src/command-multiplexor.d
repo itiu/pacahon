@@ -1,4 +1,4 @@
-// TODO reasin -> exception ?
+// TODO reason -> exception ?
 
 module pacahon.command.multiplexor;
 
@@ -569,6 +569,9 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 				for(int ll = 0; ll < set_msgs.count_objects; ll++)
 				{
 					Objectz oo = set_msgs.objects[ll];
+					int idx = Integer.toInt (oo.object, 10);
+					writeln ("set idx=", idx);
+					set_message (idx);
 				}
 			}
 
@@ -579,6 +582,9 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 				for(int ll = 0; ll < unset_msgs.count_objects; ll++)
 				{
 					Objectz oo = unset_msgs.objects[ll];
+					int idx = Integer.toInt (oo.object, 10);
+					writeln ("set idx=", idx);
+					unset_message (idx);
 				}
 			}
 		}
