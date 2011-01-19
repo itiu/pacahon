@@ -570,7 +570,6 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 				{
 					Objectz oo = set_msgs.objects[ll];
 					int idx = Integer.toInt (oo.object, 10);
-					writeln ("set idx=", idx);
 					set_message (idx);
 				}
 			}
@@ -583,7 +582,6 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 				{
 					Objectz oo = unset_msgs.objects[ll];
 					int idx = Integer.toInt (oo.object, 10);
-					writeln ("set idx=", idx);
 					unset_message (idx);
 				}
 			}

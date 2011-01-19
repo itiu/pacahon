@@ -17,88 +17,100 @@ static this()
 	log = new Logger("pacahon.log", "pacahon.json_ld.parser");
 }
 
+void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
+{
+	if(node.type == JSON_TYPE.OBJECT)
+	{
+		if(ss is null)
+			ss = new Subject;
+
+		for(int i = 0; i < node.object.keys.length; i++)
+		{
+			string key = node.object.keys[i];
+
+			if(key == "#")
+				continue; // определение контекстов опустим, пока в этом нет необходимости
+
+			if(key == "@")
+			{
+				ss.subject = cast(char[]) node.object.values[i].str;
+				//										writeln("SUBJECT = ", ss.subject);
+				gcl.addSubject(ss);
+			}
+			else
+			{
+				JSONValue element = node.object.values[i];
+
+				//				writeln(element.type, ":key= ", key);
+
+				//	if(element.type == JSON_TYPE.STRING)
+				//	writeln(" element value=", element.str);
+				addElement(key, element, gcl, ss);
+			}
+		}
+	}
+	else if(JSON_TYPE.ARRAY)
+	{
+		foreach(element; node.array)
+		{
+			prepare_node(element, gcl);
+		}
+	}
+}
+
+void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = null)
+{
+	if(element.type == JSON_TYPE.OBJECT)
+	{
+		if(("@" in element.object) is null)
+		{
+			Subject ss_in = new Subject;
+			prepare_node(element, gcl, ss_in);
+			ss.addPredicate(cast(char[]) key, ss_in);
+		}
+		else
+		{
+			GraphCluster inner_gcl;
+			prepare_node(element, &inner_gcl);
+			ss.addPredicate(cast(char[]) key, inner_gcl);
+		}
+	}
+	else if(element.type == JSON_TYPE.STRING)
+	{
+		char[] val = cast(char[]) element.str;
+
+//		writeln("ss=", ss.subject, ",key=", key, ",val=", val);
+
+		if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
+		{
+			// очень вероятно что окончание строки содержит ^^xsd:string
+			val = val[0 .. val.length - 12];
+		}
+
+		ss.addPredicate(cast(char[]) key, val);
+	}
+	else if(element.type == JSON_TYPE.ARRAY)
+	{
+		foreach(element1; element.array)
+		{
+//			writeln("addElement(key, element1, gcl, ss);", key, element1, gcl, ss);
+			addElement(key, element1, gcl, ss);
+		}
+	}
+
+}
+
 public Subject[] parse_json_ld_string(char* msg, int message_size)
 {
 	// простой вариант парсинга, когда уже есть json-tree в памяти
 	// но это не оптимально по затратам памяти и производительности
 
-	void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
-	{
-		if(node.type == JSON_TYPE.OBJECT)
-		{
-			if(ss is null)
-				ss = new Subject;
-
-			for(int i = 0; i < node.object.keys.length; i++)
-			{
-				string key = node.object.keys[i];
-
-				if(key == "#")
-					continue; // определение контекстов опустим, пока в этом нет необходимости
-
-				if(key == "@")
-				{
-					ss.subject = cast(char[]) node.object.values[i].str;
-					//										writeln("SUBJECT = ", ss.subject);
-					gcl.addSubject(ss);
-				}
-				else
-				{
-					JSONValue element = node.object.values[i];
-
-					//	writeln(element.type, ":key= ", key);
-
-					//	if(element.type == JSON_TYPE.STRING)
-					//	writeln(" element value=", element.str);
-
-					if(element.type == JSON_TYPE.OBJECT)
-					{
-						if(("@" in element.object) is null)
-						{
-							Subject ss_in = new Subject;
-							prepare_node(element, gcl, ss_in);
-							ss.addPredicate(cast(char[]) key, ss_in);
-						}
-						else
-						{
-							GraphCluster inner_gcl;
-							prepare_node(element, &inner_gcl);
-							ss.addPredicate(cast(char[]) key, inner_gcl);
-						}
-					}
-
-					if(element.type == JSON_TYPE.STRING)
-					{
-						char[] val = cast(char[]) element.str;
-
-						//						writeln("ss=", ss.subject, ",key=", key, ",val=", val);
-
-						if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
-						{
-							// очень вероятно что окончание строки содержит ^^xsd:string
-							val = val[0 .. val.length - 12];
-						}
-
-						ss.addPredicate(cast(char[]) key, val);
-					}
-				}
-			}
-		}
-		else if(JSON_TYPE.ARRAY)
-		{
-			foreach(element; node.array)
-			{
-				prepare_node(element, gcl);
-			}
-		}
-	}
-
 	GraphCluster gcl;
 
 	JSONValue node;
 
-	StopWatch sw1;
-	sw1.start();
+//	StopWatch sw1;
+//	sw1.start();
 
 	char[] buff = getString(msg, message_size);
 
@@ -106,8 +118,8 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	prepare_node(node, &gcl);
 
-	//	sw1.stop();
-	//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
+//	sw1.stop();
+//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
 	return gcl.graphs_of_subject.values;
 }

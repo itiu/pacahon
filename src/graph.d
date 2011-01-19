@@ -96,19 +96,6 @@ class Subject
 		return pp;
 	}
 
-	Predicate* getEdge_brute_force(char[] pname)
-	{
-		for(int kk = 0; kk < count_edges; kk++)
-		{
-			if(edges[kk].predicate == pname)
-			{
-				return &edges[kk];
-			}
-		}
-
-		return null;
-	}
-
 	void addPredicateAsURI(char[] predicate, char[] object)
 	{
 		if(edges.length == 0)
@@ -129,20 +116,37 @@ class Subject
 
 	void addPredicate(char[] predicate, char[] object, byte lang = LITERAL_LANG.NONE)
 	{
-		if(edges.length == 0)
-			edges = new Predicate[16];
-
-		if(edges.length == count_edges)
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
 		{
-			edges.length += 16;
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
 		}
 
-		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz[1];
-		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].object = object;
-		edges[count_edges].objects[0].lang = lang;
-		count_edges++;
+		if(pp !is null)
+		{
+			pp.addLiteral(object);
+		}
+		else
+		{
+			if(edges.length == 0)
+				edges = new Predicate[16];
+
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = new Objectz[1];
+			edges[count_edges].count_objects = 1;
+			edges[count_edges].objects[0].object = object;
+			edges[count_edges].objects[0].lang = lang;
+			count_edges++;
+		}
 	}
 
 	void addPredicate(char[] predicate, GraphCluster cluster)
@@ -181,15 +185,6 @@ class Subject
 		count_edges++;
 	}
 
-//	char* toTurtle()
-//	{
-//		OutBuffer outbuff = new OutBuffer();
-//
-//		toTurtle(outbuff);
-//		outbuff.write(0);
-//
-//		return cast(char*) outbuff.toBytes();
-//	}
 }
 
 struct Predicate
@@ -206,6 +201,16 @@ struct Predicate
 			return objects[0].object;
 		return null;
 	}
+	
+
+	void addLiteral(char[] val)
+	{
+		if(objects.length == count_objects)
+			objects.length += 16;
+
+		objects[count_objects].object = val;
+		count_objects++;
+	}	
 }
 
 struct Objectz
