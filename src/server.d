@@ -244,7 +244,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					{
 						// тикет просрочен
 						if(trace_msg[61] == 1)
-							log.trace("тикет просрочен");
+							log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
 					}
 					else
 					{

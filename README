@@ -40,18 +40,10 @@ cd pacahon
 
 2.3. MongoDB
 Для приемлемой, c точки зрения времени выполнения запросов к mongodb, на базу следует установить индексы. 
-Выполить эту операцию можно с помощью клиента mondgo:
 
-cd /mongo/install/path
-./mongo
+индексы находятся в файле doc/init_mongodb.txt
 
-use pacahon;
-db.simple.ensureIndex({"auth:login":1}, {unique:true});
-db.simple.ensureIndex({"@":1}, {unique:true});
-db.simple.ensureIndex({"a":1});
-
-db.simple.ensureIndex({"gost19:active":1});
-db.simple.ensureIndex({"_keywords":1});
+Выполнить эту операцию можно с помощью оболочки ./mondgo
 
 3. ФУНКЦИОНАЛЬНЫЕ ТЕСТЫ:
 

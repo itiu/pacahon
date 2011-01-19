@@ -3,8 +3,36 @@ module pacahon.utils;
 private import std.file;
 private import std.date;
 private import std.json;
-import core.stdc.stdio;
+private import core.stdc.stdio;
 private import std.c.string;
+private import std.c.linux.linux;
+
+char[] getNowAsString()
+{
+	auto now = getUTCtime();
+
+	int tt = time(null);
+	tm* ptm = localtime(&tt);
+	int year = ptm.tm_year + 1900;
+	int month = ptm.tm_mon + 1;
+	int day = ptm.tm_mday;
+	int hour = ptm.tm_hour;
+	int minute = ptm.tm_min;
+	int second = ptm.tm_sec;
+	int milliseconds = msFromTime(now);
+
+	auto buffer = new char[25 + 7 + 1];
+
+	if(now == d_time_nan)
+		return cast(char[]) "Invalid Date";
+
+	auto len = sprintf(buffer.ptr, "%4d-%02d-%02d %02d:%02d:%02d.%03d", year, month, day, hour, minute, second, milliseconds);
+
+	// Ensure no buggy buffer overflows
+	assert(len < buffer.length);
+
+	return buffer[0 .. len];
+}
 
 char[] timeToString(d_time t)
 {
@@ -29,7 +57,7 @@ d_time stringToTime(char* str)
 	d_time t;
 
 	int year = (str[0] - 48) * 1000 + (str[1] - 48) * 100 + (str[2] - 48) * 10 + (str[3] - 48);
-	int month = (str[5] - 48) * 10 + (str[6] - 48);
+	int month = (str[5] - 48) * 10 + (str[6] - 48) - 1;
 	int dayofmonth = (str[8] - 48) * 10 + (str[9] - 48);
 	int hour = (str[11] - 48) * 10 + (str[12] - 48);
 	int minute = (str[14] - 48) * 10 + (str[15] - 48);

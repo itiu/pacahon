@@ -30,6 +30,16 @@ void set_message(int idx)
 	trace_msg[idx] = 1;
 }
 
+void set_all_messages()
+{
+	trace_msg = 1;
+}
+
+void unset_all_messages()
+{
+	trace_msg = 0;
+}
+
 void unset_message(int idx)
 {
 	trace_msg[idx] = 0;

@@ -302,9 +302,8 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 			ts.addTriple(ticket_id, ticket__accessor, iterator.triple.s);
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			auto now = UTCtoLocalTime(getUTCtime());
-
-			ts.addTriple(ticket_id, ticket__when, timeToString(now));
+			
+			ts.addTriple(ticket_id, ticket__when, getNowAsString());
 			ts.addTriple(ticket_id, ticket__duration, cast(char[]) "3600");
 
 			reason = cast(char[]) "login и password совпадают";
@@ -562,18 +561,6 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 		{
 			Subject arg = args.objects[ii].subject;
 
-			Predicate* set_msgs = arg.getEdge(pacahon__on_trace_msg);
-
-			if(set_msgs !is null)
-			{
-				for(int ll = 0; ll < set_msgs.count_objects; ll++)
-				{
-					Objectz oo = set_msgs.objects[ll];
-					int idx = Integer.toInt (oo.object, 10);
-					set_message (idx);
-				}
-			}
-
 			Predicate* unset_msgs = arg.getEdge(pacahon__off_trace_msg);
 
 			if(unset_msgs !is null)
@@ -581,10 +568,39 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 				for(int ll = 0; ll < unset_msgs.count_objects; ll++)
 				{
 					Objectz oo = unset_msgs.objects[ll];
-					int idx = Integer.toInt (oo.object, 10);
-					unset_message (idx);
+					if(oo.object.length == 1)
+					{
+						if(oo.object[0] == '*')
+							unset_all_messages();
+					}
+					else if(oo.object.length > 1)
+					{
+						int idx = Integer.toInt(oo.object, 10);
+						unset_message(idx);
+					}
 				}
 			}
+
+			Predicate* set_msgs = arg.getEdge(pacahon__on_trace_msg);
+
+			if(set_msgs !is null)
+			{
+				for(int ll = 0; ll < set_msgs.count_objects; ll++)
+				{
+					Objectz oo = set_msgs.objects[ll];
+					if(oo.object.length == 1)
+					{
+						if(oo.object[0] == '*')
+							set_all_messages();
+					}
+					else if(oo.object.length > 1)
+					{
+						int idx = Integer.toInt(oo.object, 10);
+						set_message(idx);
+					}
+				}
+			}
+			
 		}
 	}
 
