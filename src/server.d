@@ -43,7 +43,9 @@ private import pacahon.know_predicates;
 private import pacahon.utils;
 private import trioplax.Logger;
 
-private import log_msg;
+private import pacahon.log_msg;
+
+private import pacahon.load_info;
 
 Logger log;
 Logger io_msg;
@@ -53,7 +55,6 @@ static this()
 	log = new Logger("pacahon.log", "server");
 	io_msg = new Logger("pacahon.io", "server");
 }
-
 
 void main(char[][] args)
 {
@@ -67,9 +68,6 @@ void main(char[][] args)
 
 		char* bind_to = cast(char*) props.object["zmq_point"].str;
 
-		client = new libzmq_client(bind_to);
-		client.set_callback(&get_message);
-
 		string mongodb_server = props.object["mongodb_server"].str;
 		string mongodb_collection = props.object["mongodb_collection"].str;
 		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
@@ -82,10 +80,17 @@ void main(char[][] args)
 		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
 		printf("ok, connected : %X\n", ts);
 
+		client = new libzmq_client(bind_to);
+		client.set_callback(&get_message);
+
 		ServerThread thread = new ServerThread(&client.listener, ts);
+
 		thread.start();
 
 		printf("listener of zmq started\n");
+
+		LoadInfoThread load_info_thread = new LoadInfoThread(&client.get_count);
+		load_info_thread.start();
 
 		version(D1)
 		{
@@ -103,19 +108,6 @@ void main(char[][] args)
 
 }
 
-class ServerThread: Thread
-{
-	TripleStorage ts;
-
-	this(void delegate() _dd, TripleStorage _ts)
-	{
-		super(_dd);
-		ts = _ts;
-	}
-}
-
-int count = 0;
-
 class Ticket
 {
 	char[] id;
@@ -132,11 +124,23 @@ enum format: byte
 	UNKNOWN = -1
 }
 
+class ServerThread: Thread
+{
+	TripleStorage ts;
+
+	this(void delegate() _dd, TripleStorage _ts)
+	{
+		super(_dd);
+		ts = _ts;
+	}
+}
+
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	byte msg_format = format.UNKNOWN;
 
-	count++;
+	int count;
+	from_client.get_count(count);
 
 	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);

@@ -1,4 +1,4 @@
-module log_msg;
+module pacahon.log_msg;
 
 byte trace_msg[1000];
 

@@ -30,7 +30,7 @@ private import pacahon.know_predicates;
 private import pacahon.utils;
 private import trioplax.Logger;
 
-private import log_msg;
+private import pacahon.log_msg;
 
 Logger log;
 
