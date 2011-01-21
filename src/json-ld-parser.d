@@ -79,7 +79,7 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 	{
 		char[] val = cast(char[]) element.str;
 
-//		writeln("ss=", ss.subject, ",key=", key, ",val=", val);
+		//		writeln("ss=", ss.subject, ",key=", key, ",val=", val);
 
 		if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
 		{
@@ -93,7 +93,7 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 	{
 		foreach(element1; element.array)
 		{
-//			writeln("addElement(key, element1, gcl, ss);", key, element1, gcl, ss);
+			//			writeln("addElement(key, element1, gcl, ss);", key, element1, gcl, ss);
 			addElement(key, element1, gcl, ss);
 		}
 	}
@@ -109,8 +109,8 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	JSONValue node;
 
-//	StopWatch sw1;
-//	sw1.start();
+	//	StopWatch sw1;
+	//	sw1.start();
 
 	char[] buff = getString(msg, message_size);
 
@@ -118,8 +118,8 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	prepare_node(node, &gcl);
 
-//	sw1.stop();
-//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
+	//	sw1.stop();
+	//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
 	return gcl.graphs_of_subject.values;
 }
@@ -165,7 +165,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	outbuff.write(cast(char[]) "{\n");
 
 	for(int i = 0; i < level; i++)
-		outbuff.write(cast(char[]) "	");
+		outbuff.write(cast(char[]) "	 ");
 
 	if(ss.subject !is null)
 	{
@@ -182,7 +182,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 			outbuff.write(cast(char[]) ",\n");
 
 		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[]) "	");
+			outbuff.write(cast(char[]) "	 ");
 
 		outbuff.write('"');
 		outbuff.write(pp.predicate);
@@ -252,10 +252,15 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 			}
 			else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-				foreach(element; oo.cluster.graphs_of_subject.values)
+				outbuff.write('[');
+				for(int i = 0; i < oo.cluster.graphs_of_subject.values.length; i++)
 				{
-					toJson_ld(element, outbuff, level + 1);
+					if(i > 0)
+						outbuff.write(',');
+					outbuff.write('\n');
+					toJson_ld(oo.cluster.graphs_of_subject.values[i], outbuff, level + 1);
 				}
+				outbuff.write(']');
 			}
 
 		}

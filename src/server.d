@@ -153,7 +153,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	ts.release_all_lists();
 
 	if(trace_msg[1] == 1)
-		log.trace("get message, [%d]", count);
+		log.trace("get message, count:[%d]", count);
 
 	Subject[] triples;
 
