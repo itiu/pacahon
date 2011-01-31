@@ -33,7 +33,7 @@ void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
 
 			if(key == "@")
 			{
-				ss.subject = cast(char[]) node.object.values[i].str;
+				ss.subject = node.object.values[i].str;
 				//										writeln("SUBJECT = ", ss.subject);
 				gcl.addSubject(ss);
 			}
@@ -66,18 +66,18 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 		{
 			Subject ss_in = new Subject;
 			prepare_node(element, gcl, ss_in);
-			ss.addPredicate(cast(char[]) key, ss_in);
+			ss.addPredicate(key, ss_in);
 		}
 		else
 		{
 			GraphCluster inner_gcl;
 			prepare_node(element, &inner_gcl);
-			ss.addPredicate(cast(char[]) key, inner_gcl);
+			ss.addPredicate(key, inner_gcl);
 		}
 	}
 	else if(element.type == JSON_TYPE.STRING)
 	{
-		char[] val = cast(char[]) element.str;
+		string val = element.str;
 
 		//		writeln("ss=", ss.subject, ",key=", key, ",val=", val);
 
@@ -87,7 +87,7 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 			val = val[0 .. val.length - 12];
 		}
 
-		ss.addPredicate(cast(char[]) key, val);
+		ss.addPredicate(key, val);
 	}
 	else if(element.type == JSON_TYPE.ARRAY)
 	{

@@ -46,9 +46,9 @@ enum LITERAL_LANG: byte
 
 struct GraphCluster
 {
-	Subject[char[]] graphs_of_subject;
+	Subject[string] graphs_of_subject;
 
-	void addTriple(char[] s, char[] p, char[] o, byte lang)
+	void addTriple(string s, string p, string o, byte lang)
 	{
 		Subject ss = graphs_of_subject.get(s, null);
 
@@ -64,7 +64,7 @@ struct GraphCluster
 	Subject addSubject(string subject_id)
 	{
 		Subject ss = new Subject;
-		ss.subject = cast(char[]) subject_id;
+		ss.subject = subject_id;
 
 		graphs_of_subject[subject_id] = ss;
 
@@ -79,13 +79,13 @@ struct GraphCluster
 
 class Subject
 {
-	char[] subject = null;
+	string subject = null;
 	Predicate[] edges;
 	short count_edges = 0;
 
 	Predicate*[char[]] edges_of_predicate;
 
-	Predicate* getEdge(char[] pname)
+	Predicate* getEdge(string pname)
 	{
 		Predicate* pp = null;
 		Predicate** ppp = (pname in edges_of_predicate);
@@ -96,7 +96,7 @@ class Subject
 		return pp;
 	}
 
-	void addPredicateAsURI(char[] predicate, char[] object)
+	void addPredicateAsURI(string predicate, string object)
 	{
 		if(edges.length == 0)
 			edges = new Predicate[16];
@@ -114,7 +114,7 @@ class Subject
 		count_edges++;
 	}
 
-	void addPredicate(char[] predicate, char[] object, byte lang = LITERAL_LANG.NONE)
+	void addPredicate(string predicate, string object, byte lang = LITERAL_LANG.NONE)
 	{
 		Predicate* pp;
 		for(int i = 0; i < count_edges; i++)
@@ -149,7 +149,7 @@ class Subject
 		}
 	}
 
-	void addPredicate(char[] predicate, GraphCluster cluster)
+	void addPredicate(string predicate, GraphCluster cluster)
 	{
 		if(edges.length == 0)
 			edges = new Predicate[16];
@@ -167,7 +167,7 @@ class Subject
 		count_edges++;
 	}
 
-	void addPredicate(char[] predicate, Subject subject)
+	void addPredicate(string predicate, Subject subject)
 	{
 		if(edges.length == 0)
 			edges = new Predicate[16];
@@ -189,13 +189,13 @@ class Subject
 
 struct Predicate
 {
-	char[] predicate = null;
+	string predicate = null;
 	Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
 
 	Objectz*[char[]] objects_of_value;
 
-	char[] getFirstObject()
+	string getFirstObject()
 	{
 		if(count_objects > 0)
 			return objects[0].object;
@@ -203,7 +203,7 @@ struct Predicate
 	}
 	
 
-	void addLiteral(char[] val)
+	void addLiteral(string val)
 	{
 		if(objects.length == count_objects)
 			objects.length += 16;
@@ -215,7 +215,7 @@ struct Predicate
 
 struct Objectz
 {
-	char[] object; // если type == LITERAL
+	string object; // если type == LITERAL
 	Subject subject; // если type == SUBJECT
 	GraphCluster cluster; // если type == CLUSTER 
 

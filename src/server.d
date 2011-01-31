@@ -110,12 +110,12 @@ void main(char[][] args)
 
 class Ticket
 {
-	char[] id;
-	char[] userId;
+	string id;
+	string userId;
 	d_time end_time;
 }
 
-Ticket[char[]] user_of_ticket;
+Ticket[string] user_of_ticket;
 
 enum format: byte
 {
@@ -150,7 +150,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	TripleStorage ts = server_thread.ts;
-	ts.release_all_lists();
 
 	if(trace_msg[1] == 1)
 		log.trace("get message, count:[%d]", count);
@@ -194,7 +193,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	// найдем в массиве triples субьекта с типом msg
 
 	// local_ticket <- здесь может быть тикет для выполнения пакетных операций
-	char[] local_ticket;
+	string local_ticket;
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
@@ -214,7 +213,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 		set_hashed_data(command);
 
-		Predicate* type = command.getEdge(cast(char[]) "a");
+		Predicate* type = command.getEdge("a");
 		if(type is null)
 			type = command.getEdge(rdf__type);
 
@@ -228,11 +227,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 			Predicate* ticket = command.getEdge(msg__ticket);
 
-			char[] userId;
+			string userId;
 
 			if(ticket !is null && ticket.objects !is null)
 			{
-				char[] ticket_str = ticket.objects[0].object;
+				string ticket_str = ticket.objects[0].object;
 
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;
@@ -326,7 +325,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	return;
 }
 
-Ticket foundTicket(char[] ticket_id, TripleStorage ts)
+Ticket foundTicket(string ticket_id, TripleStorage ts)
 {
 	Ticket tt;
 
@@ -352,37 +351,35 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 		}
 
 		// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-		triple_list_element iterator = ts.getTriples(ticket_id, null, null);
+		List iterator = ts.getTriples(ticket_id, null, null);
 
-		char[] when = null;
+		string when = null;
 		int duration = 0;
 
 		if(trace_msg[19] == 1)
 			if(iterator is null)
 				log.trace("сессионный билет не найден");
 
-		while(iterator !is null)
+		foreach (triple; iterator.lst.data)
 		{
 			if(trace_msg[20] == 1)
-				log.trace("%s %s %s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
+				log.trace("%s %s %s", triple.S, triple.P, triple.O);
 
-			if(iterator.triple.p == ticket__accessor)
+			if(triple.P == ticket__accessor)
 			{
-				tt.userId = iterator.triple.o;
+				tt.userId = triple.O;
 				if(trace_msg[21] == 1)
 					log.trace("tt.userId=%s", tt.userId);
 			}
-			if(iterator.triple.p == ticket__when)
-				when = iterator.triple.o;
+			if(triple.P == ticket__when)
+				when = triple.O;
 
-			if(iterator.triple.p == ticket__duration)
+			if(triple.P == ticket__duration)
 			{
-				duration = Integer.toInt(iterator.triple.o);
+				duration = Integer.toInt(cast(char[])triple.O);
 			}
 			if(tt.userId !is null && when !is null && duration > 10)
 				break;
-
-			iterator = iterator.next_triple_list_element;
 		}
 
 		if(tt.userId is null)
@@ -404,7 +401,7 @@ Ticket foundTicket(char[] ticket_id, TripleStorage ts)
 				log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
 
 			// TODO stringToTime очень медленная операция ~ 100 микросекунд
-			tt.end_time = stringToTime(when.ptr) + duration * 1000;
+			tt.end_time = stringToTime(cast(char*)when) + duration * 1000;
 
 			user_of_ticket[cast(immutable) ticket_id] = tt;
 		}

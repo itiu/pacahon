@@ -7,7 +7,7 @@ private import core.stdc.stdio;
 private import std.c.string;
 private import std.c.linux.linux;
 
-char[] getNowAsString()
+string getNowAsString()
 {
 	auto now = getUTCtime();
 
@@ -24,14 +24,14 @@ char[] getNowAsString()
 	auto buffer = new char[25 + 7 + 1];
 
 	if(now == d_time_nan)
-		return cast(char[]) "Invalid Date";
+		return "Invalid Date";
 
 	auto len = sprintf(buffer.ptr, "%4d-%02d-%02d %02d:%02d:%02d.%03d", year, month, day, hour, minute, second, milliseconds);
 
 	// Ensure no buggy buffer overflows
 	assert(len < buffer.length);
 
-	return buffer[0 .. len];
+	return cast(immutable)buffer[0 .. len];
 }
 
 char[] timeToString(d_time t)
@@ -108,12 +108,12 @@ JSONValue get_props(string file_name)
 	return res;
 }
 
-char[] fromStringz(char* s)
+string fromStringz(char* s)
 {
-	return s ? s[0 .. strlen(s)] : null;
+	return cast(immutable)(s ? s[0 .. strlen(s)] : null);
 }
 
-char[] fromStringz(char* s, int len)
+string fromStringz(char* s, int len)
 {
-	return s ? s[0 .. len] : null;
+	return cast(immutable)(s ? s[0 .. len] : null);
 }

@@ -295,8 +295,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 				if(*state.P == 'a' && *(state.P + 1) == 0)
 				{
-					char[] rdf_type = cast(char[]) "rdf:type";
-					ee.predicate = rdf_type;
+					ee.predicate = "rdf:type";
 				}
 				else
 					ee.predicate = fromStringz(state.P, state.P_length);
@@ -355,7 +354,8 @@ private void next_element(char* element, int el_length, state_struct* state)
 			}
 			else
 			{
-				ee.objects[ee.count_objects].object = new char[state.O_length];
+				char[] buff = new char[state.O_length];
+				ee.objects[ee.count_objects].object = cast(immutable)buff;
 
 				char* ptr = cast(char*) state.O;
 				int idx1 = 0;
@@ -371,7 +371,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				{
 					if(*ptr == '"' && *(ptr + 1) == '"' && *(ptr + 2) == '"')
 					{
-						ee.objects[ee.count_objects].object[idx1] = 0;
+						buff[idx1] = 0;
 						break;
 					}
 
@@ -380,7 +380,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 					if(*ptr == '"' && *(ptr - 1) != '\\')
 					{
-						ee.objects[ee.count_objects].object[idx1] = 0;
+						buff[idx1] = 0;
 						break;
 					}
 
@@ -390,7 +390,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					//						break;
 					//					}
 
-					ee.objects[ee.count_objects].object[idx1] = *ptr;
+					buff[idx1] = *ptr;
 
 					ptr++;
 					idx1++;

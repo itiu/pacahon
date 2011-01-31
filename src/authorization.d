@@ -37,28 +37,27 @@ enum operation
  * op - список запрашиваемых операций
  */
 
-
-bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out char[] reason)
+bool authorize(string userId, string targetId, short op, TripleStorage ts, out string reason)
 {
 	StopWatch sw;
 	sw.start();
 
 	bool res = false;
 
-	reason = cast(char[]) "ничего разрешающего не было определено";
+	reason = "ничего разрешающего не было определено";
 
 	if(trace_msg[25] == 1)
 	{
-		char[] _user;
-		char[] _op;
+		string _user;
+		string _op;
 
 		if(userId !is null)
 			_user = "пользователь [" ~ userId ~ "]";
 		else
-			_user = cast(char[])"неизвестный пользователь";
+			_user = "неизвестный пользователь";
 
 		if(op & operation.BROWSE)
-			_op = cast(char[])"BROWSE";
+			_op = "BROWSE";
 		if(op & operation.CREATE)
 			_op = _op ~ ", CREATE";
 		if(op & operation.READ)
@@ -96,14 +95,14 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 				if(trace_msg[26] == 1)
 					log.trace("A 1. проверить, есть ли у охраняемого субьекта, предикат [%s] = [%s]", dc__creator, userId);
 
-				triple_list_element iterator = ts.getTriples(targetId, dc__creator, userId);
+				List iterator = ts.getTriples(targetId, dc__creator, userId);
 
 				if(iterator !is null)
 				{
 					if(trace_msg[27] == 1)
 						log.trace("dc:creator найден");
 
-					reason = cast(char[]) "пользователь известен, он создатель данного субьекта";
+					reason = "пользователь известен, он создатель данного субьекта";
 					res = true;
 				}
 				else
@@ -111,13 +110,13 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 					if(trace_msg[28] == 1)
 						log.trace("creator  не найден");
 
-					reason = cast(char[]) "пользователь известен, но не является создателем данного субьекта";
+					reason = "пользователь известен, но не является создателем данного субьекта";
 					res = false;
 				}
 			}
 			else
 			{
-				reason = cast(char[]) "пользователь известен, охраняемый субьект отсутствует в хранилище";
+				reason = "пользователь известен, охраняемый субьект отсутствует в хранилище";
 
 				res = true;
 			}
@@ -129,12 +128,12 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 			if(subjectIsExist == true)
 			{
 				// охраняемый субьект уже есть, все операции запрещены
-				reason = cast(char[]) "пользователь не известен, охраняемый субьект уже есть, все операции запрещены";
+				reason = "пользователь не известен, охраняемый субьект уже есть, все операции запрещены";
 				res = false;
 			}
 			else if(op & operation.CREATE)
 			{
-				reason = cast(char[]) "хотя пользователь не известен, однако операция CREATE допустима для ранее не существовавшего субьекта";
+				reason = "хотя пользователь не известен, однако операция CREATE допустима для ранее не существовавшего субьекта";
 				res = true;
 			}
 
@@ -145,7 +144,7 @@ bool authorize(char[] userId, char[] targetId, short op, TripleStorage ts, out c
 	}
 	catch(Exception ex)
 	{
-		reason = cast(char[]) "ошибка при вычислении прав :" ~ ex.msg;
+		reason = "ошибка при вычислении прав :" ~ ex.msg;
 		res = false;
 
 		return res;

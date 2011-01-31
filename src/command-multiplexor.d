@@ -43,14 +43,14 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
 
 	isOk = false;
 
-	reason = cast(char[]) "добавление фактов не возможно";
+	reason = "добавление фактов не возможно";
 
 	Subject res;
 
@@ -95,7 +95,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 
 		if(graphs_on_put is null)
 		{
-			reason = cast(char[]) "в сообщении нет фактов которые следует поместить в хранилище";
+			reason = "в сообщении нет фактов которые следует поместить в хранилище";
 		}
 
 		// фаза I, добавим основные данные
@@ -104,7 +104,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 			Subject graph = graphs_on_put[jj];
 			set_hashed_data(graph);
 
-			Predicate* type = graph.getEdge(cast(char[]) "a");
+			Predicate* type = graph.getEdge("a");
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
@@ -118,7 +118,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 				 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
 				 * или может быть вычислено разрешающее право на U данного субъекта. */
 
-				char[] authorize_reason;
+				string authorize_reason;
 
 				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
 				{
@@ -146,12 +146,12 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 
 					}
 
-					reason = cast(char[]) "добавление фактов выполнено:" ~ authorize_reason;
+					reason = "добавление фактов выполнено:" ~ authorize_reason;
 					isOk = true;
 				}
 				else
 				{
-					reason = cast(char[]) "добавление фактов не возможно: " ~ authorize_reason;
+					reason = "добавление фактов не возможно: " ~ authorize_reason;
 					if(trace_msg[36] == 1)
 						log.trace("autorize=%s", reason);
 				}
@@ -165,7 +165,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 		{
 			Subject graph = graphs_on_put[jj];
 
-			Predicate* type = graph.getEdge(cast(char[]) "a");
+			Predicate* type = graph.getEdge("a");
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
@@ -173,15 +173,15 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
 			{
 				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 				// если, да то добавить их в хранилище через метод addTripleToReifedData
-				Predicate* r_subject = graph.getEdge(cast(char[]) "rdf:subject");
-				Predicate* r_predicate = graph.getEdge(cast(char[]) "rdf:predicate");
-				Predicate* r_object = graph.getEdge(cast(char[]) "rdf:object");
+				Predicate* r_subject = graph.getEdge("rdf:subject");
+				Predicate* r_predicate = graph.getEdge("rdf:predicate");
+				Predicate* r_object = graph.getEdge("rdf:object");
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
-					char[] sr_subject = r_subject.getFirstObject();
-					char[] sr_predicate = r_predicate.getFirstObject();
-					char[] sr_object = r_object.getFirstObject();
+					string sr_subject = r_subject.getFirstObject();
+					string sr_predicate = r_predicate.getFirstObject();
+					string sr_object = r_object.getFirstObject();
 
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
@@ -218,7 +218,7 @@ Subject put(Subject message, Predicate* sender, char[] userId, TripleStorage ts,
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
 {
 	StopWatch sw;
 	sw.start();
@@ -228,7 +228,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 
 	isOk = false;
 
-	reason = cast(char[]) "нет причин для выдачи сессионного билета";
+	reason = "нет причин для выдачи сессионного билета";
 
 	Subject res = new Subject();
 
@@ -237,7 +237,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		Predicate* arg = message.getEdge(msg__args);
 		if(arg is null)
 		{
-			reason = cast(char[]) "аргументы " ~ msg__args ~ " не указаны";
+			reason = "аргументы " ~ msg__args ~ " не указаны";
 			isOk = false;
 			return null;
 		}
@@ -245,7 +245,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		Subject ss = arg.objects[0].subject;
 		if(ss is null)
 		{
-			reason = cast(char[]) msg__args ~ " найден, но не заполнен";
+			reason = msg__args ~ " найден, но не заполнен";
 			isOk = false;
 			return null;
 		}
@@ -253,7 +253,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		Predicate* login = ss.getEdge(auth__login);
 		if(login is null || login.getFirstObject() is null || login.getFirstObject.length < 2)
 		{
-			reason = cast(char[]) "login не указан";
+			reason = "login не указан";
 			isOk = false;
 			return null;
 		}
@@ -261,7 +261,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		Predicate* credential = ss.getEdge(auth__credential);
 		if(credential is null || credential.getFirstObject() is null || credential.getFirstObject.length < 2)
 		{
-			reason = cast(char[]) "credential не указан";
+			reason = "credential не указан";
 			isOk = false;
 			return null;
 		}
@@ -269,19 +269,19 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 		Triple[] search_mask = new Triple[2];
 
 		search_mask[0] = new Triple;
-		search_mask[0].s = null;
-		search_mask[0].p = auth__login;
-		search_mask[0].o = login.getFirstObject;
+		search_mask[0].S = null;
+		search_mask[0].P = auth__login;
+		search_mask[0].O = login.getFirstObject;
 
 		search_mask[1] = new Triple;
-		search_mask[1].s = null;
-		search_mask[1].p = auth__credential;
-		search_mask[1].o = credential.getFirstObject;
+		search_mask[1].S = null;
+		search_mask[1].P = auth__credential;
+		search_mask[1].O = credential.getFirstObject;
 
 		byte[char[]] readed_predicate;
 		readed_predicate[cast(immutable) auth__login] = true;
 
-		triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+		List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(iterator !is null)
 		{
@@ -294,26 +294,26 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			// сохраняем в хранилище
-			char[] ticket_id = "auth:" ~ generated.toString;
+			string ticket_id = "auth:" ~ cast(immutable) generated.toString;
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
 			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(ticket_id, ticket__accessor, iterator.triple.s);
+			ts.addTriple(ticket_id, ticket__accessor, iterator.lst.data[0].S);
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			
-			ts.addTriple(ticket_id, ticket__when, getNowAsString());
-			ts.addTriple(ticket_id, ticket__duration, cast(char[]) "3600");
 
-			reason = cast(char[]) "login и password совпадают";
+			ts.addTriple(ticket_id, ticket__when, getNowAsString());
+			ts.addTriple(ticket_id, ticket__duration, "3600");
+
+			reason = "login и password совпадают";
 			isOk = true;
 
 			res.addPredicate(auth__ticket, ticket_id);
 		}
 		else
 		{
-			reason = cast(char[]) "login и password не совпадают";
+			reason = "login и password не совпадают";
 			isOk = false;
 			return null;
 		}
@@ -322,7 +322,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	}
 	catch(Exception ex)
 	{
-		reason = cast(char[]) "ошибка при выдачи сессионного билет :" ~ ex.msg;
+		reason = "ошибка при выдачи сессионного билет :" ~ ex.msg;
 		isOk = false;
 
 		return res;
@@ -347,7 +347,7 @@ Subject get_ticket(Subject message, Predicate* sender, char[] userId, TripleStor
 	}
 }
 
-public void get(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason, ref GraphCluster res)
+public void get(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason, ref GraphCluster res)
 {
 	StopWatch sw;
 	sw.start();
@@ -361,7 +361,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 	if(trace_msg[41] == 1)
 		log.trace("command get");
 
-	reason = cast(char[]) "запрос не может быть выполнен";
+	reason = "запрос не может быть выполнен";
 
 	Predicate* args = message.getEdge(msg__args);
 
@@ -394,7 +394,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			if(graphs_as_template is null)
 			{
-				reason = cast(char[]) "в сообщении отсутствует граф-шаблон";
+				reason = "в сообщении отсутствует граф-шаблон";
 			}
 		}
 
@@ -449,15 +449,15 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 							if(statement is null)
 								statement = new Triple;
 
-							statement.p = pp.predicate;
+							statement.P = pp.predicate;
 
 							if(trace_msg[51] == 1)
-								log.trace("p=%s", statement.p);
+								log.trace("p=%s", statement.P);
 
-							statement.o = oo.object;
+							statement.O = oo.object;
 
 							if(trace_msg[52] == 1)
-								log.trace("o=%s", statement.o);
+								log.trace("o=%s", statement.O);
 						}
 
 					}
@@ -471,11 +471,11 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 					if(statement is null)
 						statement = new Triple;
 
-					statement.s = graph.subject;
+					statement.S = graph.subject;
 
 					if(trace_msg[54] == 1)
 					{
-						log.trace("s=%s", statement.s);
+						log.trace("s=%s", statement.S);
 					}
 				}
 
@@ -496,16 +496,14 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			search_mask.length = search_mask_length;
 
-			triple_list_element iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+			List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-			while(iterator !is null)
+			foreach(triple; iterator.lst.data)
 			{
 				if(trace_msg[57] == 1)
-					log.trace("GET: f.read tr... S:%s P:%s O:%s", iterator.triple.s, iterator.triple.p, iterator.triple.o);
+					log.trace("GET: f.read tr... S:%s P:%s O:%s", triple.S, triple.P, triple.O);
 
-				res.addTriple(iterator.triple.s, iterator.triple.p, iterator.triple.o, iterator.triple.lang);
-
-				iterator = iterator.next_triple_list_element;
+				res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 			}
 
 			if(trace_msg[58] == 1)
@@ -514,7 +512,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 			// авторизуем найденные субьекты
 			foreach(s; res.graphs_of_subject)
 			{
-				char[] authorize_reason;
+				string authorize_reason;
 				bool result_of_az = authorize(userId, s.subject, operation.READ, ts, authorize_reason);
 
 				if(result_of_az == false)
@@ -531,7 +529,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 
 			}
 
-			reason = cast(char[]) "запрос выполнен";
+			reason = "запрос выполнен";
 
 			isOk = true;
 
@@ -549,7 +547,7 @@ public void get(Subject message, Predicate* sender, char[] userId, TripleStorage
 	return;
 }
 
-public Subject set_message_trace(Subject message, Predicate* sender, char[] userId, TripleStorage ts, out bool isOk, out char[] reason)
+public Subject set_message_trace(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
 {
 	Subject res;
 
@@ -575,7 +573,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 					}
 					else if(oo.object.length > 1)
 					{
-						int idx = Integer.toInt(oo.object, 10);
+						int idx = Integer.toInt(cast(char[]) oo.object, 10);
 						unset_message(idx);
 					}
 				}
@@ -595,12 +593,12 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 					}
 					else if(oo.object.length > 1)
 					{
-						int idx = Integer.toInt(oo.object, 10);
+						int idx = Integer.toInt(cast(char[]) oo.object, 10);
 						set_message(idx);
 					}
 				}
 			}
-			
+
 		}
 	}
 
@@ -609,7 +607,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, char[] user
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate* sender, char[] userId, TripleStorage ts, out char[] local_ticket)
+void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, TripleStorage ts, out string local_ticket)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -629,17 +627,17 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 
 	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
 
-	out_message.subject = time;
+	out_message.subject = cast(immutable) time;
 	//	out_message.subject = cast(char[])"msg:time";
 
-	out_message.addPredicateAsURI(cast(char[]) "a", msg__Message);
+	out_message.addPredicateAsURI("a", msg__Message);
 	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
-	out_message.addPredicate(msg__sender, cast(char[]) "pacahon");
+	out_message.addPredicate(msg__sender, "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	Predicate* command = message.getEdge(msg__command);
 
-	char[] reason;
+	string reason;
 	bool isOk;
 
 	if(command !is null)
@@ -685,15 +683,15 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, c
 	}
 	else
 	{
-		reason = cast(char[]) "в сообщении не указана команда";
+		reason = "в сообщении не указана команда";
 	}
 	if(isOk == false)
 	{
-		out_message.addPredicate(msg__status, cast(char[]) "fail");
+		out_message.addPredicate(msg__status, "fail");
 	}
 	else
 	{
-		out_message.addPredicate(msg__status, cast(char[]) "ok");
+		out_message.addPredicate(msg__status, "ok");
 	}
 
 	if(res !is null)
