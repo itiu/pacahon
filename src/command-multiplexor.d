@@ -125,7 +125,7 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 					if(userId !is null)
 					{
 						// добавим признак dc:creator
-						ts.addTriple(graph.subject, dc__creator, userId);
+						ts.addTriple(new Triple(graph.subject, dc__creator, userId));
 					}
 
 					// основной цикл по добавлению фактов в хранилище из данного субьекта 
@@ -139,9 +139,9 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 							Objectz oo = pp.objects[ll];
 
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								ts.addTriple(graph.subject, pp.predicate, oo.object, oo.lang);
+								ts.addTriple(new Triple(graph.subject, pp.predicate, oo.object, oo.lang));
 							else
-								ts.addTriple(graph.subject, pp.predicate, oo.subject.subject, oo.lang);
+								ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject, oo.lang));
 						}
 
 					}
@@ -179,9 +179,7 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
-					string sr_subject = r_subject.getFirstObject();
-					string sr_predicate = r_predicate.getFirstObject();
-					string sr_object = r_object.getFirstObject();
+					Triple reif = new Triple(r_subject.getFirstObject(), r_predicate.getFirstObject(), r_object.getFirstObject());
 
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
@@ -194,9 +192,9 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 								Objectz oo = pp.objects[ll];
 
 								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.object, oo.lang);
+									ts.addTripleToReifedData(reif, pp.predicate, oo.object, oo.lang);
 								else
-									ts.addTripleToReifedData(sr_subject, sr_predicate, sr_object, pp.predicate, oo.subject.subject, oo.lang);
+									ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
 							}
 						}
 
@@ -297,14 +295,14 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 			string ticket_id = "auth:" ~ cast(immutable) generated.toString;
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
-			ts.addTriple(ticket_id, rdf__type, ticket__Ticket);
+			ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(ticket_id, ticket__accessor, iterator.lst.data[0].S);
+			ts.addTriple(new Triple(ticket_id, ticket__accessor, iterator.lst.data[0].S));
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
-			ts.addTriple(ticket_id, ticket__when, getNowAsString());
-			ts.addTriple(ticket_id, ticket__duration, "3600");
+			ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
+			ts.addTriple(new Triple(ticket_id, ticket__duration, "3600"));
 
 			reason = "login и password совпадают";
 			isOk = true;
