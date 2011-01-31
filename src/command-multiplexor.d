@@ -281,7 +281,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 
 		List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-		if(iterator !is null)
+		if(iterator !is null && iterator.lst.data.length > 0)
 		{
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			// такой логин и пароль найдены, формируем тикет
@@ -294,13 +294,11 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 			// сохраняем в хранилище
 			string ticket_id = "auth:" ~ cast(immutable) generated.toString;
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-
 			ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(new Triple(ticket_id, ticket__accessor, iterator.lst.data[0].S));
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-
 			ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
 			ts.addTriple(new Triple(ticket_id, ticket__duration, "3600"));
 
@@ -315,7 +313,6 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 			isOk = false;
 			return null;
 		}
-
 		return res;
 	}
 	catch(Exception ex)
@@ -341,7 +338,6 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 			sw.stop();
 			log.trace("total time command get_ticket: %d [µs]", cast(long) sw.peek().microseconds);
 		}
-
 	}
 }
 
@@ -667,6 +663,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				log.trace("command_preparer, get_ticket");
 
 			res = get_ticket(message, sender, userId, ts, isOk, reason);
+
 			if(isOk)
 				local_ticket = res.edges[0].getFirstObject;
 		}
