@@ -277,7 +277,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 		search_mask[1].O = credential.getFirstObject;
 
 		byte[char[]] readed_predicate;
-		readed_predicate[cast(immutable) auth__login] = true;
+		readed_predicate[auth__login] = true;
 
 		List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
