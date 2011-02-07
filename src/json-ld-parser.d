@@ -194,6 +194,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		for(int kk = 0; kk < pp.count_objects; kk++)
 		{
 			Objectz oo = pp.objects[kk];
+			
+			if(kk > 0)
+				outbuff.write(',');
 
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
@@ -236,6 +239,16 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				{
 					outbuff.write(oo.object);
 				}
+
+				if(oo.lang == LITERAL_LANG.RU)
+				{
+					outbuff.write(cast(char[]) "@ru");
+				}
+				else if(oo.lang == LITERAL_LANG.EN)
+				{
+					outbuff.write(cast(char[]) "@en");
+				}
+
 				outbuff.write('"');
 				//				log.trace ("write literal end");
 			}
