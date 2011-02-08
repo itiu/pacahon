@@ -128,7 +128,7 @@ class Subject
 
 		if(pp !is null)
 		{
-			pp.addLiteral(object);
+			pp.addLiteral(object, lang);
 		}
 		else
 		{
@@ -203,12 +203,14 @@ struct Predicate
 	}
 	
 
-	void addLiteral(string val)
+	void addLiteral(string val, byte lang = LITERAL_LANG.NONE)
 	{
 		if(objects.length == count_objects)
 			objects.length += 16;
 
 		objects[count_objects].object = val;
+		objects[count_objects].lang = lang;
+		
 		count_objects++;
 	}	
 }

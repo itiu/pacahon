@@ -495,7 +495,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 			foreach(triple; iterator.lst.data)
 			{
 				if(trace_msg[57] == 1)
-					log.trace("GET: f.read tr... S:%s P:%s O:%s", triple.S, triple.P, triple.O);
+					log.trace("GET: f.read tr... S:%s P:%s O:%s lang:%d", triple.S, triple.P, triple.O, triple.lang);
 
 				res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 			}
