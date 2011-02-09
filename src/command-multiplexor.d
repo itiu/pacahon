@@ -300,7 +300,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
-			ts.addTriple(new Triple(ticket_id, ticket__duration, "3600"));
+			ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
 
 			reason = "login и password совпадают";
 			isOk = true;
