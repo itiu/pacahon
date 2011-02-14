@@ -5,7 +5,10 @@ module pacahon.command.multiplexor;
 private import core.stdc.stdio;
 private import core.stdc.stdlib;
 private import std.c.string;
-private import std.date;
+//private import std.date;
+
+private import std.datetime; // 2.052
+
 private import std.stdio;
 private import std.outbuffer;
 
@@ -336,7 +339,13 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 		if(trace_msg[40] == 1)
 		{
 			sw.stop();
-			log.trace("total time command get_ticket: %d [µs]", cast(long) sw.peek().microseconds);
+
+			version(dmd2_052)
+				long t = cast(long) sw.peek().usecs;
+			else
+				long t = cast(long) sw.peek().microseconds;
+
+			log.trace("total time command get_ticket: %d [µs]", t);
 		}
 	}
 }
@@ -532,7 +541,12 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 		if(trace_msg[61] == 1)
 		{
 			sw.stop();
-			log.trace("total time command get: %d [µs]", cast(long) sw.peek().microseconds);
+			version(dmd2_052)
+				long t = cast(long) sw.peek().usecs;
+			else
+				long t = cast(long) sw.peek().microseconds;
+
+			log.trace("total time command get: %d [µs]", t);
 		}
 	}
 
@@ -610,7 +624,6 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 
 	Subject res;
 
-	Ticks m_TimeStart = systime();
 	char[] time = new char[21];
 	time[] = '_';
 	time[0] = 'm';
@@ -619,7 +632,16 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	time[3] = ':';
 	time[4] = 'M';
 
-	Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
+	version(dmd2_052)
+	{
+		SysTime sysTime = Clock.currTime(UTC());
+		Integer.format(time, sysTime.stdTime, cast(char[]) "X2");
+	}
+	else
+	{
+		Ticks m_TimeStart = systime();
+		Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
+	}
 
 	out_message.subject = cast(immutable) time;
 	//	out_message.subject = cast(char[])"msg:time";

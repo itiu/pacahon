@@ -10,7 +10,7 @@ bf=build/src
 
 #~/dmd/linux/bin/dmd -version=D1 -debug -g myversion.d build/src/trioplax/memory/*.d build/src/trioplax/mongodb/*.d build/src/trioplax/*.d build/src/*.d lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D1
 #-version=trace_turtle_parser
-~/dmd2/linux/bin/dmd -O -version=D2 -version=trace_turtle_parser0 myversion.d \
+~/dmd2/linux/bin/dmd -O -version=D2 -version=dmd2_051 -version=trace_turtle_parser0 myversion.d \
 $bf/trioplax/mongodb/*.d $bf/trioplax/*.d $bf/*.d \
 $bf/tango/util/uuid/*.d  $bf/tango/core/*.d $bf/tango/text/convert/*.d $bf/tango/util/digest/*.d $bf/tango/math/random/*.d \
 lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D2

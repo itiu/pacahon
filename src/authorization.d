@@ -161,7 +161,10 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 		}
 
 		sw.stop();
-		long t = cast(long) sw.peek().microseconds;
+		version(dmd2_052)
+			long t = cast(long) sw.peek().usecs;
+		else
+			long t = cast(long) sw.peek().microseconds;
 
 		if(t > 300 || trace_msg[30] == 1)
 		{

@@ -20,9 +20,17 @@ private import std.stdio;
 private import std.c.string;
 
 private import std.json;
-private import std.datetime;
 private import std.outbuffer;
-private import std.date;
+
+version(dmd2_052)
+{
+	private import std.datetime;
+}
+else
+{
+	private import std.datetime;
+	private import std.date;
+}
 
 private import libzmq_headers;
 private import libzmq_client;
@@ -112,7 +120,8 @@ class Ticket
 {
 	string id;
 	string userId;
-	d_time end_time;
+
+	long end_time;
 }
 
 Ticket[string] user_of_ticket;
@@ -241,18 +250,35 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				// проверим время жизни тикета
 				if(tt !is null)
 				{
-					auto now = UTCtoLocalTime(getUTCtime());
-
-					if(now > tt.end_time)
+					version(dmd2_052)
 					{
-						// тикет просрочен
-						if(trace_msg[61] == 1)
-							log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
+						SysTime now = Clock.currTime(UTC());
+						if(now.stdTime > tt.end_time)
+						{
+							// тикет просрочен
+							if(trace_msg[61] == 1)
+								log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
+						}
+						else
+						{
+							userId = tt.userId;
+						}
 					}
 					else
 					{
-						userId = tt.userId;
+						auto now = UTCtoLocalTime(getUTCtime());
+						if(now > tt.end_time)
+						{
+							// тикет просрочен
+							if(trace_msg[61] == 1)
+								log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
+						}
+						else
+						{
+							userId = tt.userId;
+						}
 					}
+
 				}
 
 				if(trace_msg[62] == 1)
@@ -270,7 +296,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(trace_msg[6] == 1)
 				{
 					sw.stop();
-					log.trace("T count: %d, %d [µs] next: command_preparer", count, cast(long) sw.peek().microseconds);
+					version(dmd2_052)
+						long t = cast(long) sw.peek().usecs;
+					else
+						long t = cast(long) sw.peek().microseconds;
+					log.trace("T count: %d, %d [µs] next: command_preparer", count, t);
 					sw.start();
 				}
 
@@ -279,7 +309,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(trace_msg[7] == 1)
 				{
 					sw.stop();
-					log.trace("T count: %d, %d [µs] end: command_preparer", count, cast(long) sw.peek().microseconds);
+					version(dmd2_052)
+						long t = cast(long) sw.peek().usecs;
+					else
+						long t = cast(long) sw.peek().microseconds;
+					log.trace("T count: %d, %d [µs] end: command_preparer", count, t);
 					sw.start();
 				}
 				//				results[ii] = out_message;
@@ -320,7 +354,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
 	sw.stop();
-	log.trace("count: %d, total time: %d [µs]", count, cast(long) sw.peek().microseconds);
+	version(dmd2_052)
+		long t = cast(long) sw.peek().usecs;
+	else
+		long t = cast(long) sw.peek().microseconds;
+	log.trace("count: %d, total time: %d [µs]", count, t);
 
 	return;
 }
@@ -360,7 +398,7 @@ Ticket foundTicket(string ticket_id, TripleStorage ts)
 			if(iterator is null)
 				log.trace("сессионный билет не найден");
 
-		foreach (triple; iterator.lst.data)
+		foreach(triple; iterator.lst.data)
 		{
 			if(trace_msg[20] == 1)
 				log.trace("%s %s %s", triple.S, triple.P, triple.O);
@@ -376,7 +414,7 @@ Ticket foundTicket(string ticket_id, TripleStorage ts)
 
 			if(triple.P == ticket__duration)
 			{
-				duration = Integer.toInt(cast(char[])triple.O);
+				duration = Integer.toInt(cast(char[]) triple.O);
 			}
 			if(tt.userId !is null && when !is null && duration > 10)
 				break;
@@ -401,7 +439,7 @@ Ticket foundTicket(string ticket_id, TripleStorage ts)
 				log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
 
 			// TODO stringToTime очень медленная операция ~ 100 микросекунд
-			tt.end_time = stringToTime(cast(char*)when) + duration * 1000;
+			tt.end_time = stringToTime(cast(char*) when) + duration * 1000;
 
 			user_of_ticket[cast(immutable) ticket_id] = tt;
 		}
