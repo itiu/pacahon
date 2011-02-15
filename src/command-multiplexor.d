@@ -431,7 +431,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 							if(trace_msg[47] == 1)
 								log.trace("данный предикат и реифицированные данные добавим в список возвращаемых: %s", pp.predicate);
 
-							readed_predicate[cast(immutable) pp.predicate] = _GET_REIFED;
+							readed_predicate[cast(immutable) pp.predicate] = field.GET_REIFED;
 
 							if(trace_msg[48] == 1)
 								log.trace("readed_predicate.length=%d", readed_predicate.length);
@@ -442,7 +442,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 							if(trace_msg[49] == 1)
 								log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
 
-							readed_predicate[cast(immutable) pp.predicate] = _GET;
+							readed_predicate[cast(immutable) pp.predicate] = field.GET;
 
 							if(trace_msg[50] == 1)
 								log.trace("readed_predicate.length=%d", readed_predicate.length);

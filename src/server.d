@@ -85,7 +85,7 @@ void main(char[][] args)
 		printf("	server: %s\n", cast(char*) mongodb_server);
 		printf("	collection: %s\n", cast(char*) mongodb_collection);
 
-		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, caching_type.NONE);
 		printf("ok, connected : %X\n", ts);
 
 		client = new libzmq_client(bind_to);

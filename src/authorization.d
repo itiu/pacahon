@@ -93,11 +93,11 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
 				if(trace_msg[26] == 1)
-					log.trace("A 1. проверить, есть ли у охраняемого субьекта, предикат [%s] = [%s]", dc__creator, userId);
+					log.trace("A 1. проверить, есть ли у охраняемого субьекта [%s], предикат [%s] = [%s]", targetId, dc__creator, userId);
 
 				List iterator = ts.getTriples(targetId, dc__creator, userId);
 
-				if(iterator !is null)
+				if(iterator !is null && iterator.lst.data.length == 1)
 				{
 					if(trace_msg[27] == 1)
 						log.trace("dc:creator найден");
