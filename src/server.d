@@ -78,14 +78,21 @@ void main(char[][] args)
 
 		string mongodb_server = props.object["mongodb_server"].str;
 		string mongodb_collection = props.object["mongodb_collection"].str;
+		string cache_type = props.object["cache_type"].str;
 		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
 
 		printf("connect to mongodb, \n");
 		printf("	port: %d\n", mongodb_port);
 		printf("	server: %s\n", cast(char*) mongodb_server);
 		printf("	collection: %s\n", cast(char*) mongodb_collection);
+		printf("	cache_type: %s\n", cast(char*) cache_type);
 
-		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, caching_type.NONE);
+		byte cp = caching_type.NONE;
+
+		if(cache_type == "ALL_DATA")
+			cp = caching_type.ALL_DATA;
+
+		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
 		printf("ok, connected : %X\n", ts);
 
 		client = new libzmq_client(bind_to);
@@ -136,6 +143,8 @@ enum format: byte
 class ServerThread: Thread
 {
 	TripleStorage ts;
+	int count_message;
+	int count_command;	
 
 	this(void delegate() _dd, TripleStorage _ts)
 	{
@@ -147,9 +156,8 @@ class ServerThread: Thread
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	byte msg_format = format.UNKNOWN;
-
-	int count;
-	from_client.get_count(count);
+	
+//	from_client.get_counts(count_message, count_command);
 
 	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);
@@ -161,7 +169,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	TripleStorage ts = server_thread.ts;
 
 	if(trace_msg[1] == 1)
-		log.trace("get message, count:[%d]", count);
+		log.trace("get message, count:[%d]", server_thread.count_message);
 
 	Subject[] triples;
 
@@ -206,6 +214,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
+		StopWatch sw_c;
+		sw_c.start();
+		
 		Subject command = triples[ii];
 
 		if(trace_msg[5] == 1)
@@ -300,7 +311,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
-					log.trace("T count: %d, %d [µs] next: command_preparer", count, t);
+					log.trace("messages count: %d, %d [µs] next: command_preparer", server_thread.count_message, t);
 					sw.start();
 				}
 
@@ -313,14 +324,24 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
-					log.trace("T count: %d, %d [µs] end: command_preparer", count, t);
+					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.count_message, t);
 					sw.start();
 				}
 				//				results[ii] = out_message;
 			}
 
-		}
+			Predicate* command_name = command.getEdge(msg__command);
+			server_thread.count_command++;
+			sw_c.stop();
+			version(dmd2_052)
+				long t = cast(long) sw_c.peek().usecs;
+			else
+				long t = cast(long) sw_c.peek().microseconds;
+			log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(), server_thread.count_command, t);
 
+		}
+		
+		
 	}
 
 	if(trace_msg[8] == 1)
@@ -353,12 +374,14 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(trace_msg[10] == 1)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
+	server_thread.count_message++;
+	
 	sw.stop();
 	version(dmd2_052)
 		long t = cast(long) sw.peek().usecs;
 	else
 		long t = cast(long) sw.peek().microseconds;
-	log.trace("count: %d, total time: %d [µs]", count, t);
+	log.trace("messages count: %d, total time: %d [µs]", server_thread.count_message, t);
 
 	return;
 }

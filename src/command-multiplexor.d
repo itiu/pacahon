@@ -369,7 +369,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 	Predicate* args = message.getEdge(msg__args);
 
 	if(trace_msg[42] == 1)
-		log.trace("command get, args=%X", args);
+		log.trace("command get, args=%s", args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
@@ -494,10 +494,10 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 
 			}
 
-			if(trace_msg[56] == 1)
-				log.trace("mask formed");
-
 			search_mask.length = search_mask_length;
+
+			if(trace_msg[56] == 1)
+				log.trace("mask formed: [%s]", search_mask);
 
 			List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
