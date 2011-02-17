@@ -284,7 +284,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 
 		List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-		if(iterator !is null && iterator.lst.data.length > 0)
+		if(iterator !is null && iterator.array.length > 0)
 		{
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			// такой логин и пароль найдены, формируем тикет
@@ -299,7 +299,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(new Triple(ticket_id, ticket__accessor, iterator.lst.data[0].S));
+			ts.addTriple(new Triple(ticket_id, ticket__accessor, iterator.array[0].S));
 
 			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 			ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
@@ -501,7 +501,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 
 			List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-			foreach(triple; iterator.lst.data)
+			foreach(triple; iterator.array)
 			{
 				if(trace_msg[57] == 1)
 					log.trace("GET: f.read tr... S:%s P:%s O:%s lang:%d", triple.S, triple.P, triple.O, triple.lang);

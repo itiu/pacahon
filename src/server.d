@@ -144,7 +144,7 @@ class ServerThread: Thread
 {
 	TripleStorage ts;
 	int count_message;
-	int count_command;	
+	int count_command;
 
 	this(void delegate() _dd, TripleStorage _ts)
 	{
@@ -156,8 +156,8 @@ class ServerThread: Thread
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	byte msg_format = format.UNKNOWN;
-	
-//	from_client.get_counts(count_message, count_command);
+
+	//	from_client.get_counts(count_message, count_command);
 
 	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);
@@ -216,7 +216,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	{
 		StopWatch sw_c;
 		sw_c.start();
-		
+
 		Subject command = triples[ii];
 
 		if(trace_msg[5] == 1)
@@ -337,11 +337,11 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				long t = cast(long) sw_c.peek().usecs;
 			else
 				long t = cast(long) sw_c.peek().microseconds;
-			log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(), server_thread.count_command, t);
+			log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(),
+					server_thread.count_command, t);
 
 		}
-		
-		
+
 	}
 
 	if(trace_msg[8] == 1)
@@ -375,7 +375,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
 
 	server_thread.count_message++;
-	
+
 	sw.stop();
 	version(dmd2_052)
 		long t = cast(long) sw.peek().usecs;
@@ -421,7 +421,7 @@ Ticket foundTicket(string ticket_id, TripleStorage ts)
 			if(iterator is null)
 				log.trace("сессионный билет не найден");
 
-		foreach(triple; iterator.lst.data)
+		foreach(triple; iterator.array)
 		{
 			if(trace_msg[20] == 1)
 				log.trace("%s %s %s", triple.S, triple.P, triple.O);

@@ -80,7 +80,7 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 
 		if(trace_msg[25] == 1)
 			log.trace("проверим, существует-ли охраняемый субьект [%s]", targetId);
-			
+
 		bool subjectIsExist = ts.isExistSubject(targetId);
 
 		if(userId !is null)
@@ -100,9 +100,9 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 
 				List iterator = ts.getTriples(targetId, dc__creator, userId);
 
-//				log.trace ("it.lst.data %s", iterator.lst.data);
-				
-				if(iterator !is null && iterator.lst.data.length == 1)
+				//				log.trace ("it.lst.data %s", iterator.lst.data);
+
+				if(iterator !is null && iterator.array.length == 1)
 				{
 					if(trace_msg[27] == 1)
 						log.trace("dc:creator найден");
