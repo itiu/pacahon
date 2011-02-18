@@ -269,15 +269,8 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 
 		Triple[] search_mask = new Triple[2];
 
-		search_mask[0] = new Triple;
-		search_mask[0].S = null;
-		search_mask[0].P = auth__login;
-		search_mask[0].O = login.getFirstObject;
-
-		search_mask[1] = new Triple;
-		search_mask[1].S = null;
-		search_mask[1].P = auth__credential;
-		search_mask[1].O = credential.getFirstObject;
+		search_mask[0] = new Triple (null, auth__login, login.getFirstObject);
+		search_mask[1] = new Triple (null, auth__credential, credential.getFirstObject);
 
 		byte[char[]] readed_predicate;
 		readed_predicate[auth__login] = true;
@@ -450,14 +443,10 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 						else
 						{
 							if(statement is null)
-								statement = new Triple;
-
-							statement.P = pp.predicate;
+								statement = new Triple (null, pp.predicate, oo.object);
 
 							if(trace_msg[51] == 1)
 								log.trace("p=%s", statement.P);
-
-							statement.O = oo.object;
 
 							if(trace_msg[52] == 1)
 								log.trace("o=%s", statement.O);
@@ -472,9 +461,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 						log.trace("subject=%s", graph.subject);
 
 					if(statement is null)
-						statement = new Triple;
-
-					statement.S = graph.subject;
+						statement = new Triple (graph.subject, null, null);
 
 					if(trace_msg[54] == 1)
 					{
