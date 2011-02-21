@@ -269,39 +269,43 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 
 		Triple[] search_mask = new Triple[2];
 
-		search_mask[0] = new Triple (null, auth__login, login.getFirstObject);
-		search_mask[1] = new Triple (null, auth__credential, credential.getFirstObject);
+		search_mask[0] = new Triple(null, auth__login, login.getFirstObject);
+		search_mask[1] = new Triple(null, auth__credential, credential.getFirstObject);
 
 		byte[char[]] readed_predicate;
 		readed_predicate[auth__login] = true;
 
-		List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+		// TODO определится что возвращать null или пустой итератор
+		TLIterator it = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-		if(iterator !is null && iterator.array.length > 0)
+		if(it !is null)
 		{
-			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			// такой логин и пароль найдены, формируем тикет
-			Twister rnd;
-			rnd.seed;
-			UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-			Uuid generated = rndUuid.next;
-			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+			foreach(tt; it)
+			{
+				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				// такой логин и пароль найдены, формируем тикет
+				Twister rnd;
+				rnd.seed;
+				UuidGen rndUuid = new RandomGen!(Twister)(rnd);
+				Uuid generated = rndUuid.next;
+				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 
-			// сохраняем в хранилище
-			string ticket_id = "auth:" ~ cast(immutable) generated.toString;
-			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
-			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(new Triple(ticket_id, ticket__accessor, iterator.array[0].S));
+				// сохраняем в хранилище
+				string ticket_id = "auth:" ~ cast(immutable) generated.toString;
+				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
+				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				ts.addTriple(new Triple(ticket_id, ticket__accessor, tt.S));
 
-			//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-			ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
-			ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
+				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
+				ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
 
-			reason = "login и password совпадают";
-			isOk = true;
+				reason = "login и password совпадают";
+				isOk = true;
 
-			res.addPredicate(auth__ticket, ticket_id);
+				res.addPredicate(auth__ticket, ticket_id);
+			}
 		}
 		else
 		{
@@ -443,7 +447,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 						else
 						{
 							if(statement is null)
-								statement = new Triple (null, pp.predicate, oo.object);
+								statement = new Triple(null, pp.predicate, oo.object);
 
 							if(trace_msg[51] == 1)
 								log.trace("p=%s", statement.P);
@@ -461,7 +465,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 						log.trace("subject=%s", graph.subject);
 
 					if(statement is null)
-						statement = new Triple (graph.subject, null, null);
+						statement = new Triple(graph.subject, null, null);
 
 					if(trace_msg[54] == 1)
 					{
@@ -486,9 +490,9 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 			if(trace_msg[56] == 1)
 				log.trace("mask formed: [%s]", search_mask);
 
-			List iterator = ts.getTriplesOfMask(search_mask, readed_predicate);
+			TLIterator it = ts.getTriplesOfMask(search_mask, readed_predicate);
 
-			foreach(triple; iterator.array)
+			foreach(triple; it)
 			{
 				if(trace_msg[57] == 1)
 					log.trace("GET: f.read tr... S:%s P:%s O:%s lang:%d", triple.S, triple.P, triple.O, triple.lang);

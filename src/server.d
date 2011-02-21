@@ -412,16 +412,16 @@ Ticket foundTicket(string ticket_id, TripleStorage ts)
 		}
 
 		// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-		List iterator = ts.getTriples(ticket_id, null, null);
+		TLIterator it = ts.getTriples(ticket_id, null, null);
 
 		string when = null;
 		int duration = 0;
 
 		if(trace_msg[19] == 1)
-			if(iterator is null)
+			if(it is null)
 				log.trace("сессионный билет не найден");
 
-		foreach(triple; iterator.array)
+		foreach(triple; it)
 		{
 			if(trace_msg[20] == 1)
 				log.trace("%s %s %s", triple.S, triple.P, triple.O);
