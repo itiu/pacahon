@@ -169,7 +169,7 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 		else
 			long t = cast(long) sw.peek().microseconds;
 
-		if(t > 300 || trace_msg[30] == 1)
+		if(t > 1000 || trace_msg[30] == 1)
 		{
 			log.trace("total time authorize: %d[µs]", t);
 		}

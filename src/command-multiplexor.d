@@ -282,7 +282,9 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 		{
 			foreach(tt; it)
 			{
-				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				if(trace_msg[65] == 1)
+					log.trace("read triple: %s", tt);
+				
 				// такой логин и пароль найдены, формируем тикет
 				Twister rnd;
 				rnd.seed;
@@ -495,7 +497,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 			foreach(triple; it)
 			{
 				if(trace_msg[57] == 1)
-					log.trace("GET: f.read tr... S:%s P:%s O:%s lang:%d", triple.S, triple.P, triple.O, triple.lang);
+					log.trace("GET: f.read %s", triple);
 
 				res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 			}
