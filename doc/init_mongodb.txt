@@ -6,4 +6,4 @@ db.simple.ensureIndex({"a":1});
 db.simple.ensureIndex({"gost19:active":1});
 db.simple.ensureIndex({"_keywords":1});
 db.simple.ensureIndex({"gost19:externalIdentifer":1});
-db.simple.ensureIndex({"gost19:parentDepartment":1});
+db.simple.ensureIndex({"gost19:parentUnit":1});

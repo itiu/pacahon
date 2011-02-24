@@ -5,7 +5,7 @@
 # imports: http://swrc.ontoware.org/ontology-07
 
 @prefix dc:      <http://purl.org/dc/elements/1.1/> .
-@prefix docs19:  <http://gost19.org/docs#> .
+@prefix docs:  <http://gost19.org/docs#> .
 @prefix gost19:  <http://gost19.org/base#> .
 @prefix owl:     <http://www.w3.org/2002/07/owl#> .
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -27,27 +27,27 @@ user-onto:internal_memo
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:maxCardinality "1"^^xsd:nonNegativeInteger ;
-                owl:onProperty docs19:content
+                owl:onProperty docs:content
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom swrc:Person ;
-                owl:onProperty docs19:carbon_copy
+                owl:onProperty docs:carbon_copy
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:lastName ;
-                owl:onProperty docs19:to
+                owl:onProperty docs:to
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:lastName ;
-                owl:onProperty docs19:from
+                owl:onProperty docs:from
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:minCardinality "1"^^xsd:nonNegativeInteger ;
-                owl:onProperty docs19:from
+                owl:onProperty docs:from
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
@@ -58,37 +58,37 @@ user-onto:internal_memo
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:lastName ;
-                owl:onProperty docs19:carbon_copy
+                owl:onProperty docs:carbon_copy
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:firstName ;
-                owl:onProperty docs19:carbon_copy
+                owl:onProperty docs:carbon_copy
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:minCardinality "1"^^xsd:nonNegativeInteger ;
-                owl:onProperty docs19:content
+                owl:onProperty docs:content
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:minCardinality "1"^^xsd:nonNegativeInteger ;
-                owl:onProperty docs19:to
+                owl:onProperty docs:to
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom swrc:Person ;
-                owl:onProperty docs19:to
+                owl:onProperty docs:to
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom gost19:Document ;
-                owl:onProperty docs19:link
+                owl:onProperty docs:link
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:firstName ;
-                owl:onProperty docs19:to
+                owl:onProperty docs:to
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
@@ -98,22 +98,22 @@ user-onto:internal_memo
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:hasValue swrc:firstName ;
-                owl:onProperty docs19:from
+                owl:onProperty docs:from
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom swrc:Person ;
-                owl:onProperty docs19:from
+                owl:onProperty docs:from
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
                 owl:allValuesFrom xsd:string ;
-                owl:onProperty docs19:content
+                owl:onProperty docs:content
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;
-                owl:allValuesFrom docs19:FileDescription ;
-                owl:onProperty docs19:file
+                owl:allValuesFrom docs:FileDescription ;
+                owl:onProperty docs:file
               ] ;
       rdfs:subClassOf
               [ rdf:type owl:Restriction ;

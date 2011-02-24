@@ -3,7 +3,7 @@
 # imports: http://swrc.ontoware.org/ontology-07
 
 @prefix dc:      <http://purl.org/dc/elements/1.1/> .
-@prefix docs19:   <http://gost19.org/docs#> .
+@prefix docs:   <http://gost19.org/docs#> .
 @prefix gost19:  <http://gost19.org/base#> .
 @prefix owl:     <http://www.w3.org/2002/07/owl#> .
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -74,9 +74,9 @@ gost19:dateInterval
       rdfs:label "qqq"^^xsd:string ;
       rdfs:subPropertyOf swrc:date .
 
-docs19:contractor
+docs:contractor
       rdf:type rdf:Property ;
       rdfs:label "контрагент"^^xsd:string ;
-      rdfs:subPropertyOf docs19:attributeOfDocument .
+      rdfs:subPropertyOf docs:attributeOfDocument .
 
 
