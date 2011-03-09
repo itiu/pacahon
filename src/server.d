@@ -145,16 +145,24 @@ class ServerThread: Thread
 	TripleStorage ts;
 	int count_message;
 	int count_command;
+	StopWatch sw;
 
 	this(void delegate() _dd, TripleStorage _ts)
 	{
 		super(_dd);
 		ts = _ts;
+		sw.start();
 	}
 }
 
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
+	ServerThread server_thread = cast(ServerThread) Thread.getThis();
+	server_thread.sw.stop ();
+	long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
+	if (time_from_last_call < 500)
+		printf("minutes passed from the last call: %d\n", time_from_last_call);		
+	
 	byte msg_format = format.UNKNOWN;
 
 	//	from_client.get_counts(count_message, count_command);
@@ -165,7 +173,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	StopWatch sw;
 	sw.start();
 
-	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	TripleStorage ts = server_thread.ts;
 
 	if(trace_msg[1] == 1)
@@ -383,6 +390,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		long t = cast(long) sw.peek().microseconds;
 	log.trace("messages count: %d, total time: %d [µs]", server_thread.count_message, t);
 
+	server_thread.sw.reset ();
+	server_thread.sw.start ();	
 	return;
 }
 
