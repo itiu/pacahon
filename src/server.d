@@ -158,11 +158,11 @@ class ServerThread: Thread
 void get_message(byte* msg, int message_size, mom_client from_client)
 {
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
-	server_thread.sw.stop ();
+	server_thread.sw.stop();
 	long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
-	if (time_from_last_call < 500)
-		printf("minutes passed from the last call: %d\n", time_from_last_call);		
-	
+	if(time_from_last_call < 500)
+		printf("microseconds passed from the last call: %d\n", time_from_last_call);
+
 	byte msg_format = format.UNKNOWN;
 
 	//	from_client.get_counts(count_message, count_command);
@@ -183,12 +183,26 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(*msg == '{' || *msg == '[')
 	{
 		msg_format = format.JSON_LD;
-		triples = parse_json_ld_string(cast(char*) msg, message_size);
+		try
+		{
+			triples = parse_json_ld_string(cast(char*) msg, message_size);
+		}
+		catch(Exception ex)
+		{
+			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
+		}
 	}
 	else
 	{
-		msg_format = format.TURTLE;
-		triples = parse_n3_string(cast(char*) msg, message_size);
+		try
+		{
+			msg_format = format.TURTLE;
+			triples = parse_n3_string(cast(char*) msg, message_size);
+		}
+		catch(Exception ex)
+		{
+			log.trace("Exception in parse_n3_string:[%s]", ex.msg);
+		}
 	}
 
 	if(trace_msg[2] == 1)
@@ -390,8 +404,8 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		long t = cast(long) sw.peek().microseconds;
 	log.trace("messages count: %d, total time: %d [µs]", server_thread.count_message, t);
 
-	server_thread.sw.reset ();
-	server_thread.sw.start ();	
+	server_thread.sw.reset();
+	server_thread.sw.start();
 	return;
 }
 
