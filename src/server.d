@@ -160,7 +160,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	server_thread.sw.stop();
 	long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
-	if(time_from_last_call < 500)
+	if(time_from_last_call < 10)
 		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
 	byte msg_format = format.UNKNOWN;
