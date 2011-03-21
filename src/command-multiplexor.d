@@ -29,11 +29,12 @@ private import pacahon.json_ld.parser;
 
 private import pacahon.authorization;
 private import pacahon.know_predicates;
-
+private import pacahon.log_msg;
 private import pacahon.utils;
+private import pacahon.thread_context;
+
 private import trioplax.Logger;
 
-private import pacahon.log_msg;
 
 Logger log;
 
@@ -46,7 +47,7 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
+Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
@@ -133,12 +134,12 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 
 				string authorize_reason;
 
-				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, ts, authorize_reason) == true)
+				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_thread, authorize_reason) == true)
 				{
 					if(userId !is null)
 					{
 						// добавим признак dc:creator
-						ts.addTriple(new Triple(graph.subject, dc__creator, userId));
+						server_thread.ts.addTriple(new Triple(graph.subject, dc__creator, userId));
 					}
 
 					// основной цикл по добавлению фактов в хранилище из данного субьекта 
@@ -152,9 +153,9 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 							Objectz oo = pp.objects[ll];
 
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								ts.addTriple(new Triple(graph.subject, pp.predicate, oo.object, oo.lang));
+								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.object, oo.lang));
 							else
-								ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject, oo.lang));
+								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject, oo.lang));
 						}
 
 					}
@@ -205,9 +206,9 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
 								Objectz oo = pp.objects[ll];
 
 								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-									ts.addTripleToReifedData(reif, pp.predicate, oo.object, oo.lang);
+									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.object, oo.lang);
 								else
-									ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
+									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
 							}
 						}
 
@@ -229,7 +230,7 @@ Subject put(Subject message, Predicate* sender, string userId, TripleStorage ts,
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
+Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	StopWatch sw;
 	sw.start();
@@ -286,7 +287,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 		readed_predicate[auth__login] = true;
 
 		// TODO определится что возвращать null или пустой итератор
-		TLIterator it = ts.getTriplesOfMask(search_mask, readed_predicate);
+		TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(it !is null)
 		{
@@ -305,13 +306,13 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 				// сохраняем в хранилище
 				string ticket_id = "auth:" ~ cast(immutable) generated.toString;
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
+				server_thread.ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				ts.addTriple(new Triple(ticket_id, ticket__accessor, tt.S));
+				server_thread.ts.addTriple(new Triple(ticket_id, ticket__accessor, tt.S));
 
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
-				ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
+				server_thread.ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
+				server_thread.ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
 
 				reason = "login и password совпадают";
 				isOk = true;
@@ -359,7 +360,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, TripleStor
 	}
 }
 
-public void get(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason, ref GraphCluster res)
+public void get(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason, ref GraphCluster res)
 {
 	StopWatch sw;
 	sw.start();
@@ -500,9 +501,9 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 			search_mask.length = search_mask_length;
 
 			if(trace_msg[56] == 1)
-				log.trace("mask formed: [%s]", search_mask);
+				log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
 
-			TLIterator it = ts.getTriplesOfMask(search_mask, readed_predicate);
+			TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 			foreach(triple; it)
 			{
@@ -519,7 +520,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 			foreach(s; res.graphs_of_subject)
 			{
 				string authorize_reason;
-				bool result_of_az = authorize(userId, s.subject, operation.READ, ts, authorize_reason);
+				bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason);
 
 				if(result_of_az == false)
 				{
@@ -558,7 +559,7 @@ public void get(Subject message, Predicate* sender, string userId, TripleStorage
 	return;
 }
 
-public Subject set_message_trace(Subject message, Predicate* sender, string userId, TripleStorage ts, out bool isOk, out string reason)
+public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	Subject res;
 
@@ -618,7 +619,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, TripleStorage ts, out string local_ticket)
+void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, ThreadContext server_thread, out string local_ticket)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -667,7 +668,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			if(trace_msg[13] == 1)
 				log.trace("command_preparer, put");
 
-			res = put(message, sender, userId, ts, isOk, reason);
+			res = put(message, sender, userId, server_thread, isOk, reason);
 		}
 		else if("get" in command.objects_of_value)
 		{
@@ -675,7 +676,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				log.trace("command_preparer, get");
 
 			GraphCluster gres;
-			get(message, sender, userId, ts, isOk, reason, gres);
+			get(message, sender, userId, server_thread, isOk, reason, gres);
 			if(isOk == true)
 			{
 				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
@@ -687,7 +688,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			if(trace_msg[15] == 1)
 				log.trace("command_preparer, get_ticket");
 
-			res = get_ticket(message, sender, userId, ts, isOk, reason);
+			res = get_ticket(message, sender, userId, server_thread, isOk, reason);
 
 			if(isOk)
 				local_ticket = res.edges[0].getFirstObject;
@@ -696,7 +697,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 		{
 			if(trace_msg[63] == 1)
 
-				res = set_message_trace(message, sender, userId, ts, isOk, reason);
+				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
 		}
 
 		//		reason = cast(char[]) "запрос выполнен";

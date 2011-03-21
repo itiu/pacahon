@@ -45,15 +45,15 @@ private import trioplax.triple;
 private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
 
+private import trioplax.Logger;
+
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
 
 private import pacahon.utils;
-private import trioplax.Logger;
-
 private import pacahon.log_msg;
-
 private import pacahon.load_info;
+private import pacahon.thread_context;
 
 Logger log;
 Logger io_msg;
@@ -123,36 +123,11 @@ void main(char[][] args)
 
 }
 
-class Ticket
-{
-	string id;
-	string userId;
-
-	long end_time;
-}
-
-Ticket[string] user_of_ticket;
-
 enum format: byte
 {
 	TURTLE = 0,
 	JSON_LD = 1,
 	UNKNOWN = -1
-}
-
-class ServerThread: Thread
-{
-	TripleStorage ts;
-	int count_message;
-	int count_command;
-	StopWatch sw;
-
-	this(void delegate() _dd, TripleStorage _ts)
-	{
-		super(_dd);
-		ts = _ts;
-		sw.start();
-	}
 }
 
 void get_message(byte* msg, int message_size, mom_client from_client)
@@ -173,7 +148,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	StopWatch sw;
 	sw.start();
 
-	TripleStorage ts = server_thread.ts;
+	TripleStorage ts = server_thread.resource.ts;
 
 	if(trace_msg[1] == 1)
 		log.trace("get message, count:[%d]", server_thread.count_message);
@@ -277,7 +252,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;
 
-				Ticket tt = foundTicket(ticket_str, ts);
+				Ticket tt = server_thread.foundTicket(ticket_str);
 
 				// проверим время жизни тикета
 				if(tt !is null)
@@ -336,7 +311,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 					sw.start();
 				}
 
-				command_preparer(command, results[ii], sender, userId, ts, local_ticket);
+				command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket);
 
 				if(trace_msg[7] == 1)
 				{
@@ -409,87 +384,105 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	return;
 }
 
-Ticket foundTicket(string ticket_id, TripleStorage ts)
+class ServerThread: Thread
 {
-	Ticket tt;
+	ThreadContext resource;
 
-	//	trace_msg[2] = 0;
-
-	if((ticket_id in user_of_ticket) !is null)
+	int count_message;
+	int count_command;
+	StopWatch sw;
+	
+	this(void delegate() _dd, TripleStorage _ts)
 	{
-		if(trace_msg[17] == 1)
-			log.trace("тикет нашли в кеше, %s", ticket_id);
-
-		tt = user_of_ticket[ticket_id];
+		super(_dd);
+		resource = new ThreadContext ();	
+		resource.ts = _ts;
+		sw.start();
 	}
 
-	if(tt is null)
+	Ticket foundTicket(string ticket_id)
 	{
-		tt = new Ticket;
-		tt.id = ticket_id;
+		Ticket tt;
 
-		if(trace_msg[18] == 1)
+		//	trace_msg[2] = 0;
+
+		if((ticket_id in resource.user_of_ticket) !is null)
 		{
-			log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
-			//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
+			if(trace_msg[17] == 1)
+				log.trace("тикет нашли в кеше, %s", ticket_id);
+
+			tt = resource.user_of_ticket[ticket_id];
 		}
 
-		// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-		TLIterator it = ts.getTriples(ticket_id, null, null);
-
-		string when = null;
-		int duration = 0;
-
-		if(trace_msg[19] == 1)
-			if(it is null)
-				log.trace("сессионный билет не найден");
-
-		foreach(triple; it)
+		if(tt is null)
 		{
-			if(trace_msg[20] == 1)
-				log.trace("%s %s %s", triple.S, triple.P, triple.O);
+			tt = new Ticket;
+			tt.id = ticket_id;
 
-			if(triple.P == ticket__accessor)
+			if(trace_msg[18] == 1)
 			{
-				tt.userId = triple.O;
-				if(trace_msg[21] == 1)
-					log.trace("tt.userId=%s", tt.userId);
+				log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
+				//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
 			}
-			if(triple.P == ticket__when)
-				when = triple.O;
 
-			if(triple.P == ticket__duration)
+			// найдем пользователя по сессионному билету и проверим просрочен билет или нет
+			TLIterator it = resource.ts.getTriples(ticket_id, null, null);
+
+			string when = null;
+			int duration = 0;
+	
+			if(trace_msg[19] == 1)
+				if(it is null)
+					log.trace("сессионный билет не найден");
+
+			foreach(triple; it)
 			{
-				duration = Integer.toInt(cast(char[]) triple.O);
+				if(trace_msg[20] == 1)
+					log.trace("%s %s %s", triple.S, triple.P, triple.O);
+
+				if(triple.P == ticket__accessor)
+				{
+					tt.userId = triple.O;
+					if(trace_msg[21] == 1)
+						log.trace("tt.userId=%s", tt.userId);
+				}
+				if(triple.P == ticket__when)
+					when = triple.O;
+
+				if(triple.P == ticket__duration)
+				{
+					duration = Integer.toInt(cast(char[]) triple.O);
+				}
+				if(tt.userId !is null && when !is null && duration > 10)
+					break;
 			}
-			if(tt.userId !is null && when !is null && duration > 10)
-				break;
+
+			if(tt.userId is null)
+			{
+				if(trace_msg[22] == 1)
+					log.trace("найденный сессионный билет не полон, пользователь не найден");
+			}
+
+			if(tt.userId !is null && (when is null || duration < 10))
+			{
+				if(trace_msg[23] == 1)
+					log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
+				tt.userId = null;
+			}
+
+			if(when !is null)
+			{
+				if(trace_msg[24] == 1)
+					log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
+
+				// TODO stringToTime очень медленная операция ~ 100 микросекунд
+				tt.end_time = stringToTime(cast(char*) when) + duration * 1000;
+
+				resource.user_of_ticket[cast(immutable) ticket_id] = tt;
+			}
 		}
 
-		if(tt.userId is null)
-		{
-			if(trace_msg[22] == 1)
-				log.trace("найденный сессионный билет не полон, пользователь не найден");
-		}
-
-		if(tt.userId !is null && (when is null || duration < 10))
-		{
-			if(trace_msg[23] == 1)
-				log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
-			tt.userId = null;
-		}
-
-		if(when !is null)
-		{
-			if(trace_msg[24] == 1)
-				log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
-
-			// TODO stringToTime очень медленная операция ~ 100 микросекунд
-			tt.end_time = stringToTime(cast(char*) when) + duration * 1000;
-
-			user_of_ticket[cast(immutable) ticket_id] = tt;
-		}
+		return tt;
 	}
-
-	return tt;
 }
+		

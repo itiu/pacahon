@@ -9,10 +9,10 @@ private import trioplax.TripleStorage;
 
 private import pacahon.graph;
 private import pacahon.know_predicates;
+private import pacahon.log_msg;
+private import pacahon.thread_context;
 
 private import trioplax.Logger;
-
-private import pacahon.log_msg;
 
 Logger log;
 
@@ -37,7 +37,7 @@ enum operation
  * op - список запрашиваемых операций
  */
 
-bool authorize(string userId, string targetId, short op, TripleStorage ts, out string reason)
+bool authorize(string userId, string targetId, short op, ThreadContext server_thread, out string reason)
 {
 	StopWatch sw;
 	sw.start();
@@ -72,7 +72,7 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 
 	try
 	{
-		if(ts is null)
+		if(server_thread.ts is null)
 			throw new Exception("TripleStorage ts == null");
 
 		if(targetId is null)
@@ -81,7 +81,18 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 		if(trace_msg[25] == 1)
 			log.trace("проверим, существует-ли охраняемый субьект [%s]", targetId);
 
-		bool subjectIsExist = ts.isExistSubject(targetId);
+		string subject_creator = null; 
+
+		bool subjectIsExist = false;
+		if ((targetId in server_thread.cache__subject_creator) !is null)
+		{
+			subjectIsExist = true;
+			subject_creator = server_thread.cache__subject_creator[targetId];
+		}
+		else
+		{
+			subjectIsExist = server_thread.ts.isExistSubject(targetId);
+		}
 
 		if(userId !is null)
 		{
@@ -98,23 +109,36 @@ bool authorize(string userId, string targetId, short op, TripleStorage ts, out s
 				if(trace_msg[26] == 1)
 					log.trace("A 1. проверить, есть ли у охраняемого субьекта [%s], предикат [%s] = [%s]", targetId, dc__creator, userId);
 
-				TLIterator it = ts.getTriples(targetId, dc__creator, userId);
+				if (subject_creator is null)
+				{	
+					TLIterator it = server_thread.ts.getTriples(targetId, dc__creator, userId);
 
-				if(it !is null)
-				{
-					if(trace_msg[27] == 1)
-						log.trace("dc:creator найден");
+					if(it !is null)
+					{
+						if(trace_msg[27] == 1)
+							log.trace("dc:creator найден");
 
-					reason = "пользователь известен, он создатель данного субьекта";
-					res = true;
+						reason = "пользователь известен, он создатель данного субьекта";
+
+						server_thread.cache__subject_creator[targetId] = userId;
+						res = true;
+					}
+					else
+					{
+						if(trace_msg[28] == 1)
+							log.trace("creator  не найден");
+
+						reason = "пользователь известен, но не является создателем данного субьекта";
+						res = false;
+					}
 				}
 				else
 				{
-					if(trace_msg[28] == 1)
-						log.trace("creator  не найден");
+					if(trace_msg[27] == 1)
+						log.trace("dc:creator найден в кэше");
 
-					reason = "пользователь известен, но не является создателем данного субьекта";
-					res = false;
+					reason = "пользователь известен, он создатель данного субьекта";
+					res = true;
 				}
 			}
 			else
