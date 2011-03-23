@@ -134,11 +134,22 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 				}
 				else
 				{
+					if (subject_creator == userId)
+					{
 					if(trace_msg[27] == 1)
 						log.trace("dc:creator найден в кэше");
 
 					reason = "пользователь известен, он создатель данного субьекта";
 					res = true;
+					}
+					else
+					{
+						if(trace_msg[28] == 1)
+							log.trace("в кэше creator не найден");
+
+						reason = "пользователь известен, но не является создателем данного субьекта";
+						res = false;
+					}
 				}
 			}
 			else
