@@ -111,18 +111,30 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 		{
 			reason = "в сообщении нет фактов которые следует поместить в хранилище";
 		}
+		
+		if(trace_msg[34] == 1)
+			log.trace("фаза I, добавим основные данные");
 
 		// фаза I, добавим основные данные
 		for(int jj = 0; jj < graphs_on_put.length; jj++)
 		{
+			if(trace_msg[35] == 1)
+				log.trace("jj = %d", jj);
+
 			Subject graph = graphs_on_put[jj];
 			set_hashed_data(graph);
+			
+			if(trace_msg[35] == 1)
+				log.trace("#1 jj = %d", jj);
 
 			Predicate* type = graph.getEdge("a");
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
-			if((rdf__Statement in type.objects_of_value) is null)
+				if(trace_msg[35] == 1)
+					log.trace("#2 jj = %d, type=%x", jj, type);
+
+			if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
 			{
 				if(trace_msg[35] == 1)
 					log.trace("adding subject=%s", graph.subject);
@@ -171,9 +183,17 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				}
 
 			}
+			else
+			{
+				if (type is null)
+					reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
+			}
 		}
 
-		// фаза I, добавим реифицированные данные 
+		if(trace_msg[34] == 1)
+			log.trace("фаза II, добавим основные данные");
+
+		// фаза II, добавим реифицированные данные 
 		// !TODO авторизация для реифицированных данных пока не выполняется
 		for(int jj = 0; jj < graphs_on_put.length; jj++)
 		{
@@ -183,7 +203,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
-			if((rdf__Statement in type.objects_of_value))
+			if(type !is null && (rdf__Statement in type.objects_of_value))
 			{
 				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 				// если, да то добавить их в хранилище через метод addTripleToReifedData
@@ -215,7 +235,14 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 					}
 				}
 			}
+			else
+			{
+				if (type is null)
+					reason = "добавление фактов не возможно: не указан rdf:type для субьекта " ~ graph.subject;
+			}
+			
 		}
+		
 
 		if(trace_msg[37] == 1)
 			log.trace("command put is finish");

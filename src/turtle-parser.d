@@ -219,7 +219,7 @@ public Subject[] parse_n3_string(char* src, int len)
 	else
 		long t = cast(long) sw.peek().microseconds;
 
-	if(t > 100)
+	if(t > 500)
 	{
 		printf("total time parse: %d[µs]\n", t);
 	}
@@ -288,7 +288,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 			{
 				// создаем новый предикат
 				if(ss.edges is null)
-					ss.edges = new Predicate[16];
+					ss.edges = new Predicate[32];
 
 				//				ee = &state.edges[state.count_edges];
 				ee = &ss.edges[ss.count_edges];
@@ -308,7 +308,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 					writeln("создаем новый предикат, p=", ee.predicate);
 
 				ss.edges[ss.count_edges] = *ee;
+				
 				ss.count_edges++;
+				if (ss.count_edges > ss.edges.length)
+					ss.edges.length += 32;
 
 				version(trace_turtle_parser)
 					printf("ok, ss.count_edges=%d\n", ss.count_edges);
