@@ -591,10 +591,10 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 			}
 			else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-				outbuff.write(cast(char[]) "\"\"");
+				outbuff.write(cast(char[]) " \"\"");
 				foreach(s; oo.cluster.graphs_of_subject)
 				{
-					toTurtle(s, outbuff, true);
+					toTurtle(s, outbuff, 0);
 				}
 				outbuff.write(cast(char[]) "\"\"");
 			}

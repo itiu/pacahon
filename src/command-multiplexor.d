@@ -532,13 +532,24 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 			TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
 
-			foreach(triple; it)
-			{
-				if(trace_msg[57] == 1)
-					log.trace("GET: f.read %s", triple);
+			if(trace_msg[56] == 1)
+				log.trace("server_thread.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
-				res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+			if (it !is null)
+			{
+				if(trace_msg[56] == 1)
+					log.trace("#1");
+
+				foreach(triple; it)
+				{
+					if(trace_msg[57] == 1)
+						log.trace("GET: f.read %s", triple);
+
+					res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+				}
 			}
+				if(trace_msg[56] == 1)
+					log.trace("#2");
 
 			if(trace_msg[58] == 1)
 				log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
