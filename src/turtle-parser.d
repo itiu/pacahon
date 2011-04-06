@@ -340,6 +340,9 @@ private void next_element(char* element, int el_length, state_struct* state)
 				Subject new_nodes = new Subject();
 				state.nodes[state.count_nodes] = new_nodes;
 				state.count_nodes++;
+				
+				if (state.count_nodes >= state.nodes.length)
+					state.nodes.length += 50;
 
 				version(trace_turtle_parser)
 					printf("и сохраним ее на стеке -> pos_in_stack_nodes=%X\n", state.pos_in_stack_nodes);
@@ -466,8 +469,12 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 			state.roots[state.count_roots] = new_subject;
 			state.count_roots++;
-
+			if (state.count_roots >= state.roots.length)
+				state.roots.length += 50;
+				
 			state.count_nodes++;
+			if (state.count_nodes >= state.nodes.length)
+				state.nodes.length += 50;
 		}
 		else if(state.e == 1)
 		{
@@ -602,7 +609,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 			if(jj == ss.count_edges - 1)
 			{
 				if(level == 0)
-					outbuff.write(cast(char[]) " .\n");
+					outbuff.write(cast(char[]) " .");
 			}
 			else
 			{

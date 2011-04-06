@@ -41,12 +41,12 @@ class LoadInfoThread: Thread
 				int delta_count = msg_count - prev_count;
 				//		double delta_working_time = total_time - prev_total_time;
 
-				if(delta_count > 0)
-				// || ff == false)
+				if(delta_count > 0) // || ff == false)
 				{
-					wchar[] sdc = new wchar[delta_count];
+					int d_delta_count = delta_count / 2 + 1;
+					wchar[] sdc = new wchar[d_delta_count];
 
-					for(int i = 0; i < delta_count; i++)
+					for(int i = 0; i < d_delta_count; i++)
 					{
 						sdc[i] = 'ᚙ';
 					}

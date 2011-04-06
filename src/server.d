@@ -425,37 +425,44 @@ class ServerThread: Thread
 				//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
 			}
 
-			// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-			TLIterator it = resource.ts.getTriples(ticket_id, null, null);
 
 			string when = null;
 			int duration = 0;
 	
-			if(trace_msg[19] == 1)
-				if(it is null)
-					log.trace("сессионный билет не найден");
-
-			foreach(triple; it)
-			{
-				if(trace_msg[20] == 1)
-					log.trace("%s %s %s", triple.S, triple.P, triple.O);
-
-				if(triple.P == ticket__accessor)
+			// найдем пользователя по сессионному билету и проверим просрочен билет или нет
+			if (ticket_id ! is null && ticket_id.length > 10)
+			{	
+				TLIterator it = resource.ts.getTriples(ticket_id, null, null);
+				
+				if(trace_msg[19] == 1)
+					if(it is null)
+						log.trace("сессионный билет не найден");
+				
+				foreach(triple; it)
 				{
-					tt.userId = triple.O;
-					if(trace_msg[21] == 1)
-						log.trace("tt.userId=%s", tt.userId);
-				}
-				if(triple.P == ticket__when)
-					when = triple.O;
+					if(trace_msg[20] == 1)
+						log.trace("foundTicket: %s %s %s", triple.S, triple.P, triple.O);
 
-				if(triple.P == ticket__duration)
-				{
-					duration = Integer.toInt(cast(char[]) triple.O);
+					if(triple.P == ticket__accessor)
+					{
+						tt.userId = triple.O;
+						if(trace_msg[21] == 1)
+							log.trace("tt.userId=%s", tt.userId);
+					}
+					if(triple.P == ticket__when)
+						when = triple.O;
+
+					if(triple.P == ticket__duration)
+					{
+						duration = Integer.toInt(cast(char[]) triple.O);
+					}
+					if(tt.userId !is null && when !is null && duration > 10)
+						break;
 				}
-				if(tt.userId !is null && when !is null && duration > 10)
-					break;
 			}
+			
+			if(trace_msg[20] == 1)
+				log.trace("foundTicket end");
 
 			if(tt.userId is null)
 			{
