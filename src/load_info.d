@@ -43,7 +43,7 @@ class LoadInfoThread: Thread
 
 				if(delta_count > 0) // || ff == false)
 				{
-					int d_delta_count = delta_count / 2 + 1;
+					int d_delta_count = delta_count / 3 + 1;
 					wchar[] sdc = new wchar[d_delta_count];
 
 					for(int i = 0; i < d_delta_count; i++)

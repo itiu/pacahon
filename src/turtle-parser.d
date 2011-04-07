@@ -265,12 +265,12 @@ private void next_element(char* element, int el_length, state_struct* state)
 						state.P, " ", state.O, "]");
 
 			Subject ss = state.stack_nodes[state.pos_in_stack_nodes];
-
+			
 			if(*element == ']')
 				state.pos_in_stack_nodes--;
 
 			Predicate* ee = null;
-
+			
 			// прежде чем создать новый Predicate, следует поискать у данного ss предикат с значением state.P
 			for(short jj = 0; jj < ss.count_edges; jj++)
 			{
@@ -292,10 +292,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 
 				//				ee = &state.edges[state.count_edges];
 				ee = &ss.edges[ss.count_edges];
-
+				
 				if(ee.objects is null)
 					ee.objects = new Objectz[1];
-
+					
 				if(*state.P == 'a' && *(state.P + 1) == 0)
 				{
 					ee.predicate = "rdf:type";
@@ -310,13 +310,13 @@ private void next_element(char* element, int el_length, state_struct* state)
 				ss.edges[ss.count_edges] = *ee;
 				
 				ss.count_edges++;
-				if (ss.count_edges > ss.edges.length)
+				if (ss.count_edges >= ss.edges.length)
 					ss.edges.length += 32;
 
 				version(trace_turtle_parser)
 					printf("ok, ss.count_edges=%d\n", ss.count_edges);
 			}
-
+			
 			// увеличим размер массива если это требуется
 			//			Objectz[] objects = &ee.objects;
 			if(ee.count_objects >= ee.objects.length)
