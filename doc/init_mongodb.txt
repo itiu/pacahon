@@ -7,9 +7,15 @@ db.simple.ensureIndex({"gost19:active":1});
 db.simple.ensureIndex({"gost19:actual":1});
 db.simple.ensureIndex({"_keywords":1});
 db.simple.ensureIndex({"gost19:externalIdentifer":1});
-db.simple.ensureIndex({"gost19:parentUnit":1});
 db.simple.ensureIndex({"rdfs:subClassOf":1}); 
 db.simple.ensureIndex({"gost19:isRelatedTo":1});
 db.simple.ensureIndex({"dc:hasPart":1});
 db.simple.ensureIndex({"docs:kindOf":1});
+db.simple.ensureIndex({"dc:identifier":1});
+db.simple.ensureIndex({"gost19:volatile":1});
+db.simple.ensureIndex({"swrc:firstName":1});
+db.simple.ensureIndex({"gost19:parentUnit":1});
+db.simple.ensureIndex({"docs:parentUnit":1});
+db.simple.ensureIndex({"docs:active":1});
+db.simple.ensureIndex({"docs:actual":1});
 
