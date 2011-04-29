@@ -339,7 +339,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 				server_thread.ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
-				server_thread.ts.addTriple(new Triple(ticket_id, ticket__duration, "4000"));
+				server_thread.ts.addTriple(new Triple(ticket_id, ticket__duration, "40000"));
 
 				reason = "login и password совпадают";
 				isOk = true;

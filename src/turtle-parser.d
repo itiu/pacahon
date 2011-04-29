@@ -507,7 +507,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 		printf("next element finish #2, state.e=%d\n", state.e);
 }
 
-void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
+void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster = false)
 {
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "  ");
@@ -521,6 +521,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) " ");
+			
 		outbuff.write(cast(char[]) "  ");
 		outbuff.write(pp.predicate);
 
@@ -533,7 +534,11 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
-				outbuff.write(cast(char[]) "   \"");
+				if (asCluster)
+				    outbuff.write(cast(char[]) "   \\\"");
+				else
+				    outbuff.write(cast(char[]) "   \"");
+				
 
 				// заменим все неэкранированные кавычки на [\"]
 				char prev_ch;
@@ -575,7 +580,11 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 				outbuff.write(new_str);
 
-				outbuff.write(cast(char[]) "\"");
+				if (asCluster)
+   				    outbuff.write(cast(char[]) "\\\"");
+				else
+				    outbuff.write(cast(char[]) "\"");
+				    
 				if(oo.lang == LITERAL_LANG.RU)
 				{
 					outbuff.write(cast(char[]) "@ru");
@@ -601,7 +610,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0)
 				outbuff.write(cast(char[]) " \"\"");
 				foreach(s; oo.cluster.graphs_of_subject)
 				{
-					toTurtle(s, outbuff, 0);
+					toTurtle(s, outbuff, 0, true);
 				}
 				outbuff.write(cast(char[]) "\"\"");
 			}
