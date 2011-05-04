@@ -555,9 +555,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
 
 			// авторизуем найденные субьекты
+			int count_found_subjects = 0;
+			int count_authorized_subjects = 0;
+			
+			string authorize_reason;
+
 			foreach(s; res.graphs_of_subject)
 			{
-				string authorize_reason;
+				count_found_subjects++;
+										
 				bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason);
 
 				if(result_of_az == false)
@@ -571,10 +577,25 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					if(trace_msg[60] == 1)
 						log.trace("remove from list");
 				}
+				else
+				{
+					count_authorized_subjects++;
+				}
 
 			}
 
-			reason = "запрос выполнен";
+			if (count_found_subjects == count_authorized_subjects)
+			{
+			    reason = "запрос выполнен: авторизованны все найденные субьекты";
+			}
+			else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
+			{
+			    reason = "запрос выполнен: не все найденные субьекты успешно авторизованны";
+			}
+			else if (count_authorized_subjects == 0 && count_found_subjects > 0)
+			{
+			    reason = "запрос выполнен: ни один из найденных субьектов, не был успешно авторизован:" ~ authorize_reason;
+			}
 
 			isOk = true;
 
