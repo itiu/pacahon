@@ -33,7 +33,8 @@ else
 }
 
 private import libzmq_headers;
-private import libzmq_client;
+private import zmq_point_to_poin_client;
+private import zmq_pp_broker_client;
 
 private import Integer = tango.text.convert.Integer;
 
@@ -72,7 +73,7 @@ void main(char[][] args)
 
 		log.trace_log_and_console("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
 
-		mom_client client = null;
+		mq_client client = null;
 
 		char* bind_to = cast(char*) props.object["zmq_point"].str;
 
@@ -95,25 +96,44 @@ void main(char[][] args)
 		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
 		printf("ok, connected : %X\n", ts);
 
-		client = new libzmq_client(bind_to);
-		client.set_callback(&get_message);
-
-		ServerThread thread = new ServerThread(&client.listener, ts);
-
-		thread.start();
-
-		printf("listener of zmq started\n");
-
-		LoadInfoThread load_info_thread = new LoadInfoThread(&client.get_count);
-		load_info_thread.start();
-
-		version(D1)
+		
+		try
 		{
-			thread.wait();
+			client = new zmq_point_to_poin_client(bind_to);
+			printf("point to point zmq listener started\n");
+		}
+		catch (Exception ex)
+		{
 		}
 
-		while(true)
-			Thread.getThis().sleep(100_000_000);
+		if (client is null)
+		{
+			client = new zmq_pp_broker_client(bind_to);
+			printf("zmq PPP broker listener started\n");
+		}
+		else
+		{
+		}
+		
+		if (client !is null)
+		{
+			client.set_callback(&get_message);
+
+			ServerThread thread = new ServerThread(&client.listener, ts);
+
+			thread.start();
+		
+			LoadInfoThread load_info_thread = new LoadInfoThread(&client.get_count);
+			load_info_thread.start();
+
+			version(D1)
+			{
+				thread.wait();
+			}
+
+			while(true)
+				Thread.getThis().sleep(100_000_000);
+		}
 
 	}
 	catch(Exception ex)
@@ -130,7 +150,7 @@ enum format: byte
 	UNKNOWN = -1
 }
 
-void get_message(byte* msg, int message_size, mom_client from_client)
+void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
 {
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	server_thread.sw.stop();
@@ -139,6 +159,9 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
 	byte msg_format = format.UNKNOWN;
+
+	if(trace_msg[1] == 1)
+		log.trace("get message, count:[%d], message_size:[%d]", server_thread.count_message, message_size);
 
 	//	from_client.get_counts(count_message, count_command);
 
@@ -149,9 +172,6 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	sw.start();
 
 	TripleStorage ts = server_thread.resource.ts;
-
-	if(trace_msg[1] == 1)
-		log.trace("get message, count:[%d]", server_thread.count_message);
 
 	Subject[] triples;
 
@@ -354,7 +374,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(msg_format == format.JSON_LD)
 		toJson_ld(results, outbuff);
 
-	outbuff.write(0);
+//	outbuff.write(0);
 
 	//       sw1.stop();
 	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
@@ -362,13 +382,16 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 	if(trace_msg[9] == 1)
 		log.trace("send");
 
-	ubyte[] msg_out = outbuff.toBytes();
+	out_data = outbuff.toBytes();
 
-	if(from_client !is null)
-		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, false);
+//	if(from_client !is null)
+//	{
+//		out_data = msg_out;		
+//		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, msg_out.length, false);
+//	}
 
 	if(trace_msg[10] == 1)
-		io_msg.trace_io(false, cast(byte*) msg_out, msg_out.length);
+		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
 
 	server_thread.count_message++;
 
@@ -377,6 +400,7 @@ void get_message(byte* msg, int message_size, mom_client from_client)
 		long t = cast(long) sw.peek().usecs;
 	else
 		long t = cast(long) sw.peek().microseconds;
+	
 	log.trace("messages count: %d, total time: %d [µs]", server_thread.count_message, t);
 
 	server_thread.sw.reset();

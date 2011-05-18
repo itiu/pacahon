@@ -13,7 +13,7 @@ bf=build/src
 ~/dmd2/linux/bin/dmd -O -version=D2 -version=dmd2_051 -version=trace_turtle_parser0 myversion.d \
 $bf/trioplax/mongodb/*.d $bf/trioplax/memory/*.d $bf/rt/util/*.d $bf/trioplax/*.d $bf/*.d \
 $bf/tango/util/uuid/*.d  $bf/tango/core/*.d $bf/tango/text/convert/*.d $bf/tango/util/digest/*.d $bf/tango/math/random/*.d \
-lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D2
+lib/libzmq.a lib/libczmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D2
 rm *.o
 
  
