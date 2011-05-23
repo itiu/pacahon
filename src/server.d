@@ -515,10 +515,8 @@ class ServerThread: Thread
 				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
 
 				resource.user_of_ticket[cast(immutable) ticket_id] = tt;
-				log.trace("сессионный билет %s Ok, user=%s when=%s", ticket_id, tt.userId, when);
 			}
 		}
-		log.trace("#3");
 
 		return tt;
 	}

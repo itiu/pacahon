@@ -13,9 +13,9 @@ int m_get[] = [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 5
 
 static this()
 {
-	trace_msg = 1;
-	trace_msg[2] = 0;
-   	trace_msg[3] = 0;
+//	trace_msg = 1;
+//	trace_msg[2] = 0;
+// 	trace_msg[3] = 0;
 	
 	trace_msg[0] = 1;
 	trace_msg[10] = 1;
