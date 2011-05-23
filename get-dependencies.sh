@@ -1,6 +1,6 @@
-mongo_d_driver__hash=3d80b4f
-trioplax__hash=136b48d
-zeromq__hash=c18936c
+mongo_d_driver__hash=01eeaad
+trioplax__hash=4898e38
+zeromq__hash=3ec9e69
 
 trioplax__project_name=itiu-trioplax
 mongo_d_driver__project_name=itiu-mongo-d-driver

@@ -19,10 +19,10 @@ private import std.stdio;
 
 private import std.c.string;
 
-private import std.json;
+private import std.json_str;
 private import std.outbuffer;
 
-version(dmd2_052)
+version(dmd2_053)
 {
 	private import std.datetime;
 }
@@ -82,11 +82,11 @@ void main(char[][] args)
 		string cache_type = props.object["cache_type"].str;
 		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
 
-		printf("connect to mongodb, \n");
-		printf("	port: %d\n", mongodb_port);
-		printf("	server: %s\n", cast(char*) mongodb_server);
-		printf("	collection: %s\n", cast(char*) mongodb_collection);
-		printf("	cache_type: %s\n", cast(char*) cache_type);
+		writeln("connect to mongodb, \n");
+		writeln("	port:", mongodb_port);
+		writeln("	server:", mongodb_server);
+		writeln("	collection:",  mongodb_collection);
+		writeln("	cache_type:",  cache_type);
 
 		byte cp = caching_type.NONE;
 
@@ -154,7 +154,12 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 {
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	server_thread.sw.stop();
-	long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
+
+	version(dmd2_053)
+	    long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
+	else
+	    long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
+
 	if(time_from_last_call < 10)
 		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
@@ -277,14 +282,14 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				// проверим время жизни тикета
 				if(tt !is null)
 				{
-					version(dmd2_052)
+					version(dmd2_053)
 					{
-						SysTime now = Clock.currTime(UTC());
+						SysTime now = Clock.currTime();
 						if(now.stdTime > tt.end_time)
 						{
 							// тикет просрочен
 							if(trace_msg[61] == 1)
-								log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
+								log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime, tt.end_time);
 						}
 						else
 						{
@@ -323,7 +328,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				if(trace_msg[6] == 1)
 				{
 					sw.stop();
-					version(dmd2_052)
+					version(dmd2_053)
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
@@ -336,7 +341,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				if(trace_msg[7] == 1)
 				{
 					sw.stop();
-					version(dmd2_052)
+					version(dmd2_053)
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
@@ -349,7 +354,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			Predicate* command_name = command.getEdge(msg__command);
 			server_thread.count_command++;
 			sw_c.stop();
-			version(dmd2_052)
+			version(dmd2_053)
 				long t = cast(long) sw_c.peek().usecs;
 			else
 				long t = cast(long) sw_c.peek().microseconds;
@@ -378,7 +383,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	//       sw1.stop();
 	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
-
+	
 	if(trace_msg[9] == 1)
 		log.trace("send");
 
@@ -392,11 +397,11 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	if(trace_msg[10] == 1)
 		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
-
+		
 	server_thread.count_message++;
 
 	sw.stop();
-	version(dmd2_052)
+	version(dmd2_053)
 		long t = cast(long) sw.peek().usecs;
 	else
 		long t = cast(long) sw.peek().microseconds;
@@ -504,14 +509,16 @@ class ServerThread: Thread
 			if(when !is null)
 			{
 				if(trace_msg[24] == 1)
-					log.trace("сессионный билет %s Ok, user=%s", ticket_id, tt.userId);
+					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when, duration);
 
 				// TODO stringToTime очень медленная операция ~ 100 микросекунд
-				tt.end_time = stringToTime(cast(char*) when) + duration * 1000;
+				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
 
 				resource.user_of_ticket[cast(immutable) ticket_id] = tt;
+				log.trace("сессионный билет %s Ok, user=%s when=%s", ticket_id, tt.userId, when);
 			}
 		}
+		log.trace("#3");
 
 		return tt;
 	}

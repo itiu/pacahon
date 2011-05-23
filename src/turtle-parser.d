@@ -214,7 +214,7 @@ public Subject[] parse_n3_string(char* src, int len)
 		printf("parse finish\n");
 
 	sw.stop();
-	version(dmd2_052)
+	version(dmd2_053)
 		long t = cast(long) sw.peek().usecs;
 	else
 		long t = cast(long) sw.peek().microseconds;

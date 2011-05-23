@@ -2,7 +2,7 @@ module pacahon.utils;
 
 private import std.file;
 
-version(dmd2_052)
+version(dmd2_053)
 {
 	private import std.datetime;
 }
@@ -11,16 +11,18 @@ else
 	private import std.date;
 }
 
-private import std.json;
+private import std.json_str;
 private import core.stdc.stdio;
 private import std.c.string;
 private import std.c.linux.linux;
 
 string getNowAsString()
 {
-	version(dmd2_052)
+	version(dmd2_053)
 	{
-		SysTime sysTime = Clock.currTime(UTC());
+		SysTime sysTime = Clock.currTime();
+		return sysTime.toISOExtString();
+/*		
 		immutable dt = cast(DateTime) sysTime;
 
 		int year = dt.year;
@@ -30,6 +32,7 @@ string getNowAsString()
 		int minute = dt.minute;
 		int second = dt.second;
 		int milliseconds = cast(ushort) sysTime.fracSec.msecs;
+*/		
 	}
 	else
 	{
@@ -48,22 +51,25 @@ string getNowAsString()
 
 		if(now == d_time_nan)
 			return "Invalid Date";
+		
+		auto buffer = new char[25 + 7 + 1];
+		auto len = sprintf(buffer.ptr, "%4d-%02d-%02d %02d:%02d:%02d.%03d", year, month, day, hour, minute, second, milliseconds);
+
+		// Ensure no buggy buffer overflows
+		assert(len < buffer.length);
+
+		return cast(immutable) buffer[0 .. len];
 	}
 
-	auto buffer = new char[25 + 7 + 1];
-	auto len = sprintf(buffer.ptr, "%4d-%02d-%02d %02d:%02d:%02d.%03d", year, month, day, hour, minute, second, milliseconds);
-
-	// Ensure no buggy buffer overflows
-	assert(len < buffer.length);
-
-	return cast(immutable) buffer[0 .. len];
 }
 
-version(dmd2_052)
+version(dmd2_053)
 {
 	string timeToString(SysTime sysTime)
 	{
-		immutable dt = cast(DateTime) sysTime;
+		return sysTime.toISOExtString();
+/*		
+		immutable DateTime dt = cast(DateTime) sysTime;
 
 		int year = dt.year;
 		int month = dt.month;
@@ -80,10 +86,14 @@ version(dmd2_052)
 		assert(len < buffer.length);
 
 		return cast(immutable) buffer[0 .. len];
+*/		
 	}
 	
-	long stringToTime(char* str)
+	long stringToTime(string str)
 	{
+		SysTime st = SysTime.fromISOExtString(str);
+		return st.stdTime;
+/*		
 		long t;
 
 		int year = (str[0] - 48) * 1000 + (str[1] - 48) * 100 + (str[2] - 48) * 10 + (str[3] - 48);
@@ -94,9 +104,10 @@ version(dmd2_052)
 		int second = (str[17] - 48) * 10 + (str[18] - 48);
 		int mseconds = (str[20] - 48) * 100 + (str[21] - 48) * 10 + (str[22] - 48);
 
-//		t = std.date.makeDate(std.date.makeDay(year, month, dayofmonth), std.date.makeTime(hour, minute, second, mseconds));
-
-		return t;
+		t = std.date.makeDate(std.date.makeDay(year, month, dayofmonth), std.date.makeTime(hour, minute, second, mseconds));
+		
+		return t;	
+*/
 	}
 	
 }
@@ -146,7 +157,7 @@ JSONValue get_props(string file_name)
 
 	if(exists(file_name))
 	{
-		string buff = cast(string) read(file_name);
+		char[] buff = cast(char[]) read(file_name);
 
 		res = parseJSON(buff);
 	}

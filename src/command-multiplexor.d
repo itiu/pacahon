@@ -377,7 +377,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		{
 			sw.stop();
 
-			version(dmd2_052)
+			version(dmd2_053)
 				long t = cast(long) sw.peek().usecs;
 			else
 				long t = cast(long) sw.peek().microseconds;
@@ -604,7 +604,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 		if(trace_msg[61] == 1)
 		{
 			sw.stop();
-			version(dmd2_052)
+			version(dmd2_053)
 				long t = cast(long) sw.peek().usecs;
 			else
 				long t = cast(long) sw.peek().microseconds;
@@ -695,7 +695,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	time[3] = ':';
 	time[4] = 'M';
 
-	version(dmd2_052)
+	version(dmd2_053)
 	{
 		SysTime sysTime = Clock.currTime(UTC());
 		Integer.format(time, sysTime.stdTime, cast(char[]) "X2");

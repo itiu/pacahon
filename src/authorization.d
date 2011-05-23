@@ -199,7 +199,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 		}
 
 		sw.stop();
-		version(dmd2_052)
+		version(dmd2_053)
 			long t = cast(long) sw.peek().usecs;
 		else
 			long t = cast(long) sw.peek().microseconds;
