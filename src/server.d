@@ -165,6 +165,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	
 	server_thread.stat.idle_time += time_from_last_call;
 
+	StopWatch sw;
+	sw.start();
+
 	byte msg_format = format.UNKNOWN;
 
 	if(trace_msg[1] == 1)
@@ -174,9 +177,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);
-
-	StopWatch sw;
-	sw.start();
 
 	TripleStorage ts = server_thread.resource.ts;
 
@@ -370,9 +370,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(trace_msg[8] == 1)
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
-	StopWatch sw1;
-	sw1.start();
-
 	OutBuffer outbuff = new OutBuffer();
 
 	if(msg_format == format.TURTLE)
@@ -381,11 +378,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(msg_format == format.JSON_LD)
 		toJson_ld(results, outbuff);
 
-//	outbuff.write(0);
+	//	outbuff.write(0);
 
-	//       sw1.stop();
-	//               log.trace("json msg serilize %d [µs]", cast(long) sw1.peek().microseconds);
-	
 	if(trace_msg[9] == 1)
 		log.trace("send");
 
@@ -408,10 +402,13 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	else
 		long t = cast(long) sw.peek().microseconds;
 	
+	server_thread.stat.worked_time += t;
+	
 	log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
+	
 	return;
 }
 
@@ -420,6 +417,7 @@ synchronized class Statistic
 	int count_message = 0;
 	int count_command = 0;
 	int idle_time = 0;
+	int worked_time = 0;
 }
 
 class ServerThread: Thread
