@@ -123,7 +123,7 @@ void main(char[][] args)
 
 			thread.start();
 		
-			LoadInfoThread load_info_thread = new LoadInfoThread(&client.get_count);
+			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 			load_info_thread.start();
 
 			version(D1)
@@ -162,11 +162,13 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	if(time_from_last_call < 10)
 		printf("microseconds passed from the last call: %d\n", time_from_last_call);
+	
+	server_thread.stat.idle_time += time_from_last_call;
 
 	byte msg_format = format.UNKNOWN;
 
 	if(trace_msg[1] == 1)
-		log.trace("get message, count:[%d], message_size:[%d]", server_thread.count_message, message_size);
+		log.trace("get message, count:[%d], message_size:[%d]", server_thread.stat.count_message, message_size);
 
 	//	from_client.get_counts(count_message, count_command);
 
@@ -332,7 +334,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
-					log.trace("messages count: %d, %d [µs] next: command_preparer", server_thread.count_message, t);
+					log.trace("messages count: %d, %d [µs] next: command_preparer", server_thread.stat.count_message, t);
 					sw.start();
 				}
 
@@ -345,21 +347,21 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 						long t = cast(long) sw.peek().usecs;
 					else
 						long t = cast(long) sw.peek().microseconds;
-					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.count_message, t);
+					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.stat.count_message, t);
 					sw.start();
 				}
 				//				results[ii] = out_message;
 			}
 
 			Predicate* command_name = command.getEdge(msg__command);
-			server_thread.count_command++;
+			server_thread.stat.count_command++;
 			sw_c.stop();
 			version(dmd2_053)
 				long t = cast(long) sw_c.peek().usecs;
 			else
 				long t = cast(long) sw_c.peek().microseconds;
 			log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(),
-					server_thread.count_command, t);
+					server_thread.stat.count_command, t);
 
 		}
 
@@ -398,7 +400,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(trace_msg[10] == 1)
 		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
 		
-	server_thread.count_message++;
+	server_thread.stat.count_message++;
 
 	sw.stop();
 	version(dmd2_053)
@@ -406,24 +408,36 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	else
 		long t = cast(long) sw.peek().microseconds;
 	
-	log.trace("messages count: %d, total time: %d [µs]", server_thread.count_message, t);
+	log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
 	return;
 }
 
+synchronized class Statistic
+{
+	int count_message = 0;
+	int count_command = 0;
+	int idle_time = 0;
+}
+
 class ServerThread: Thread
 {
 	ThreadContext resource;
 
-	int count_message;
-	int count_command;
 	StopWatch sw;
+	Statistic stat;
+	
+	Statistic getStatistic ()
+	{
+		return stat;
+	}
 	
 	this(void delegate() _dd, TripleStorage _ts)
 	{
 		super(_dd);
+		stat = new Statistic (); 
 		resource = new ThreadContext ();	
 		resource.ts = _ts;
 		sw.start();

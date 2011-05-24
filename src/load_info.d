@@ -6,15 +6,26 @@ private import std.stdio;
 private import pacahon.server;
 private import pacahon.utils;
 
+version(dmd2_053)
+{
+	private import std.datetime;
+}
+else
+{
+	private import std.datetime;
+	private import std.date;
+}
+
 public bool cinfo_exit = false;
 
 class LoadInfoThread: Thread
 {
-	void delegate(out int cnt) get_count;
+	Statistic delegate() get_statistic;
+	StopWatch sw;
 
-	this(void delegate(out int cnt) _get_count)
+	this(Statistic delegate() _get_statistic)
 	{
-		get_count = _get_count;
+		get_statistic = _get_statistic;
 		super(&run);
 	}
 
@@ -22,27 +33,44 @@ class LoadInfoThread: Thread
 
 		void run()
 		{
+			long sleep_time = 1;
+			Thread.getThis().sleep(sleep_time * 10_000_000);
 			//	layout = new Locale;
 
 			int prev_count = 0;
-			double prev_total_time = 0;
-			long sleep_time = 1;
-			bool ff = false;
+			int prev_idle_time = 0;
+			
+			
+//			bool ff = false;
+			sw.start;
 
 			while(!cinfo_exit)
 			{
-				Thread.getThis().sleep(sleep_time * 10_000_000);
+				Statistic stat = get_statistic();
 
-				int msg_count = 0;
-				get_count(msg_count);
+				int msg_count = stat.count_message;
+				int cmd_count = stat.count_command;
+				int idle_time = stat.idle_time;
 
-				//		auto tm = WallClock.now;
 
 				int delta_count = msg_count - prev_count;
-				//		double delta_working_time = total_time - prev_total_time;
 
-				if(delta_count > 0) // || ff == false)
+				if(delta_count > 0)
+				// || ff == false)
 				{
+					sw.stop;
+					
+					version(dmd2_053)
+				    	long time_from_last_call = cast(long) sw.peek().usecs;
+					else
+						long time_from_last_call = cast(long) sw.peek().microseconds;
+
+					sw.reset;
+					sw.start;
+					
+					int delta_idle = idle_time - prev_idle_time;
+					prev_idle_time = idle_time;
+
 					int d_delta_count = delta_count / 3 + 1;
 					wchar[] sdc = new wchar[d_delta_count];
 
@@ -51,16 +79,21 @@ class LoadInfoThread: Thread
 						sdc[i] = 'ᚙ';
 					}
 
-					writeln(getNowAsString(), " ", sdc, " ", msg_count, " ", delta_count);
+					char[] now = cast(char[]) getNowAsString();
+					now[10] = ' ';
+					now.length = 19;
+					writeln(now, " ", sdc, " ", msg_count, "/", cmd_count, " ", delta_count, " idle:", delta_idle/1000, " total time:", time_from_last_call/1000);
+					
 				}
 
-				if(delta_count > 0)
-					ff = false;
-				else
-					ff = true;
+//				if(delta_count > 0)
+//					ff = false;
+//				else
+//					ff = true;
 
 				prev_count = msg_count;
 				//		prev_total_time = total_time;
+				Thread.getThis().sleep(sleep_time * 10_000_000);
 			}
 			writeln("exit form thread cinfo");
 
