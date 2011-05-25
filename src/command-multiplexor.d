@@ -43,6 +43,7 @@ static this()
 	log = new Logger("pacahon.log", "multiplexor");
 }
 
+
 /*
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
@@ -290,7 +291,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		}
 
 		Predicate* login = ss.getEdge(auth__login);
-		if(login is null || login.getFirstObject() is null || login.getFirstObject.length < 2)
+		if(login is null || login.getFirstObject is null || login.getFirstObject.length < 2)
 		{
 			reason = "login не указан";
 			isOk = false;
@@ -508,19 +509,16 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						statement = new Triple(graph.subject, null, null);
 
 					if(trace_msg[54] == 1)
-					{
 						log.trace("s=%s", statement.S);
-					}
 				}
 
 				if(statement !is null)
 				{
 					search_mask[search_mask_length] = statement;
 					search_mask_length++;
+					
 					if(trace_msg[55] == 1)
-					{
 						log.trace("search_mask_length=%d", search_mask_length);
-					}
 				}
 
 			}
@@ -537,9 +535,6 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 			if (it !is null)
 			{
-				if(trace_msg[56] == 1)
-					log.trace("#1");
-
 				foreach(triple; it)
 				{
 					if(trace_msg[57] == 1)
@@ -548,8 +543,6 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 				}
 			}
-				if(trace_msg[56] == 1)
-					log.trace("#2");
 
 			if(trace_msg[58] == 1)
 				log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
@@ -613,10 +606,76 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 		}
 	}
 
-	// TODO !для пущей безопасности, факты с предикатом [auth:credential] не отдавать !
+	// TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
 
 	return;
 }
+
+Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
+{
+	if(trace_msg[38] == 1)
+		log.trace("command remove");
+
+	isOk = false;
+
+	reason = "нет причин для выдачи сессионного билета";
+
+	Subject res = new Subject();
+
+	try
+	{
+		Predicate* arg = message.getEdge(msg__args);
+		if(arg is null)
+		{
+			reason = "аргументы " ~ msg__args ~ " не указаны";
+			isOk = false;
+			return null;
+		}
+
+		Subject ss = arg.objects[0].subject;
+		if(ss is null)
+		{
+			reason = msg__args ~ " найден, но не заполнен";
+			isOk = false;
+			return null;
+		}
+
+		Predicate* subj_id = ss.getEdge(rdf__subject);
+		if(subj_id is null || subj_id.getFirstObject is null || subj_id.getFirstObject.length < 2)
+		{
+			reason = "rdf:subject не указан";
+			isOk = false;
+			return null;
+		}
+		
+		string authorize_reason;		
+
+		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_thread, authorize_reason);
+		
+		if (result_of_az)
+		{
+			server_thread.ts.removeSubject (subj_id.getFirstObject);
+		}
+		else
+		{
+			reason = "нет прав на удаление субьекта:" ~ authorize_reason;
+			isOk = false;
+			return null;			
+		}
+		
+		return res;
+	}
+	catch(Exception ex)
+	{
+		reason = "ошибка удаления субьекта :" ~ ex.msg;
+		isOk = false;
+
+		return res;
+	}
+	
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
@@ -741,6 +800,16 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
 				out_message.addPredicate(msg__result, gres);
 			}
+		}
+		else if("remove" in command.objects_of_value)
+		{
+			if(trace_msg[14] == 1)
+				log.trace("command_preparer, remove");
+
+			res = remove(message, sender, userId, server_thread, isOk, reason);
+
+			if(isOk)
+				local_ticket = res.edges[0].getFirstObject;
 		}
 		else if("get_ticket" in command.objects_of_value)
 		{

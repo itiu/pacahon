@@ -2,7 +2,7 @@ cp -v -r src/* build/src
 
 git log -1 --pretty=format:"module myversion; public static char[] author=cast(char[])\"%an\"; public static char[] date=cast(char[])\"%ad\"; public static char[] hash=cast(char[])\"%h\";">myversion.d
 
-rm Pacahon-D2111
+rm Pacahon-D2-1
 rm *.log
 rm *.io
 
@@ -13,7 +13,7 @@ bf=build/src
 ~/dmd2-053/linux/bin32/dmd -O -version=D2 -version=dmd2_053 -version=trace_turtle_parser0 myversion.d \
 $bf/trioplax/mongodb/*.d $bf/trioplax/memory/*.d $bf/rt/util/*.d $bf/trioplax/*.d $bf/*.d \
 $bf/tango/util/uuid/*.d  $bf/tango/core/*.d $bf/tango/text/convert/*.d $bf/tango/util/digest/*.d $bf/tango/math/random/*.d \
-lib/libzmq.a lib/libczmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D2111
+lib/libzmq.a lib/libczmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D2-1
 rm *.o
 
  
