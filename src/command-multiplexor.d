@@ -40,7 +40,7 @@ Logger log;
 
 static this()
 {
-	log = new Logger("pacahon.log", "multiplexor");
+	log = new Logger("pacahon", "log", "multiplexor");
 }
 
 

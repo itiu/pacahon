@@ -14,7 +14,7 @@ Logger log;
 
 static this()
 {
-	log = new Logger("pacahon.log", "pacahon.json_ld.parser");
+	log = new Logger("pacahon", "log", "pacahon.json_ld.parser");
 }
 
 void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)

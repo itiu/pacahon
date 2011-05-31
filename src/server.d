@@ -61,8 +61,8 @@ Logger io_msg;
 
 static this()
 {
-	log = new Logger("pacahon.log", "server");
-	io_msg = new Logger("pacahon.io", "server");
+	log = new Logger("pacahon", "log", "server");
+	io_msg = new Logger("pacahon", "io", "server");
 }
 
 void main(char[][] args)
@@ -75,7 +75,7 @@ void main(char[][] args)
 
 		mq_client client = null;
 
-		char* bind_to = cast(char*) props.object["zmq_point"].str;
+		string bind_to = props.object["zmq_point"].str;
 
 		string mongodb_server = props.object["mongodb_server"].str;
 		string mongodb_collection = props.object["mongodb_collection"].str;

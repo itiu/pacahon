@@ -18,7 +18,7 @@ Logger log;
 
 static this()
 {
-	log = new Logger("pacahon.log", "authorization");
+	log = new Logger("pacahon", "log", "authorization");
 }
 
 enum operation
