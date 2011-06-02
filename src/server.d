@@ -395,7 +395,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
 		
 	server_thread.stat.count_message++;
+	server_thread.stat.size__user_of_ticket = server_thread.resource.user_of_ticket.length;
+	server_thread.stat.size__cache__subject_creator = server_thread.resource.cache__subject_creator.length;	
 
+	
 	sw.stop();
 	version(dmd2_053)
 		long t = cast(long) sw.peek().usecs;
@@ -418,6 +421,8 @@ synchronized class Statistic
 	int count_command = 0;
 	int idle_time = 0;
 	int worked_time = 0;
+	int size__user_of_ticket;
+	int size__cache__subject_creator;	
 }
 
 class ServerThread: Thread

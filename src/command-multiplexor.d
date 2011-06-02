@@ -618,9 +618,9 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 
 	isOk = false;
 
-	reason = "нет причин для выдачи сессионного билета";
+	reason = "нет причин для выполнения комманды remove";
 
-	Subject res = new Subject();
+	Subject res;
 
 	try
 	{
@@ -655,12 +655,13 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 		if (result_of_az)
 		{
 			server_thread.ts.removeSubject (subj_id.getFirstObject);
+			reason = "команда remove выполнена успешно";
+			isOk = true;
 		}
 		else
 		{
 			reason = "нет прав на удаление субьекта:" ~ authorize_reason;
 			isOk = false;
-			return null;			
 		}
 		
 		return res;
@@ -807,9 +808,6 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				log.trace("command_preparer, remove");
 
 			res = remove(message, sender, userId, server_thread, isOk, reason);
-
-			if(isOk)
-				local_ticket = res.edges[0].getFirstObject;
 		}
 		else if("get_ticket" in command.objects_of_value)
 		{
@@ -823,9 +821,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 		}
 		else if("set_message_trace" in command.objects_of_value)
 		{
-			if(trace_msg[63] == 1)
-
-				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
+//			if(trace_msg[63] == 1)
+			res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
 		}
 
 		//		reason = cast(char[]) "запрос выполнен";

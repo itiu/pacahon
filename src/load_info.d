@@ -60,7 +60,7 @@ class LoadInfoThread: Thread
 					int delta_worked_time = worked_time - prev_worked_time;
 					prev_worked_time = worked_time;
 
-					int d_delta_count = delta_count / 3 + 1;
+					int d_delta_count = delta_count / 4 + 1;
 					wchar[] sdc = new wchar[d_delta_count];
 
 					for(int i = 0; i < d_delta_count; i++)
@@ -71,9 +71,12 @@ class LoadInfoThread: Thread
 					char[] now = cast(char[]) getNowAsString();
 					now[10] = ' ';
 					now.length = 19;
-
-					writeln(now, " ", sdc, " ", msg_count, "/", cmd_count, " ", delta_count, " idle:",
-							delta_idle_time / 1000, " worked time:", delta_worked_time / 1000);
+					
+					writeln(now, " ", msg_count, "/", cmd_count, " ", delta_count,
+							" user_of_ticket=", stat.size__user_of_ticket,
+							" cache__subject_creator=", stat.size__cache__subject_creator,	
+							" idle:", delta_idle_time / 1000, " worked time:", delta_worked_time / 1000);
+					writeln(sdc);
 				}
 
 				//				if(delta_count > 0)
