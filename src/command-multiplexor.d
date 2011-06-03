@@ -62,7 +62,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 	Predicate* args = message.getEdge(msg__args);
 
 	if(trace_msg[32] == 1)
-		log.trace("command put, args=%X ", args);
+		log.trace("command put, args.count_objects=%d ", args.count_objects);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{

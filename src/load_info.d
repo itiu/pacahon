@@ -60,7 +60,7 @@ class LoadInfoThread: Thread
 					int delta_worked_time = worked_time - prev_worked_time;
 					prev_worked_time = worked_time;
 
-					int d_delta_count = delta_count / 4 + 1;
+					int d_delta_count = delta_count / 5 + 1;
 					wchar[] sdc = new wchar[d_delta_count];
 
 					for(int i = 0; i < d_delta_count; i++)

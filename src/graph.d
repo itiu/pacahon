@@ -151,24 +151,43 @@ class Subject
 
 	void addPredicate(string predicate, GraphCluster cluster)
 	{
-		if(edges.length == 0)
-			edges = new Predicate[16];
-
-		if(edges.length == count_edges)
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
 		{
-			edges.length += 16;
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
 		}
 
-		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz[1];
-		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].cluster = cluster;
-		edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
-		count_edges++;
+		if(pp !is null)
+		{
+			pp.addCluster(cluster);
+		}
+		else
+		{
+			if(edges.length == 0)
+				edges = new Predicate[16];
+
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = new Objectz[1];
+			edges[count_edges].count_objects = 1;
+			edges[count_edges].objects[0].cluster = cluster;
+			edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
+			count_edges++;
+		}
 	}
 
 	void addPredicate(string predicate, Subject subject)
 	{
+		// TODO adding multitype subject
+		
 		if(edges.length == 0)
 			edges = new Predicate[16];
 
@@ -202,7 +221,6 @@ struct Predicate
 		return null;
 	}
 	
-
 	void addLiteral(string val, byte lang = LITERAL_LANG.NONE)
 	{
 		if(objects.length == count_objects)
@@ -210,6 +228,17 @@ struct Predicate
 
 		objects[count_objects].object = val;
 		objects[count_objects].lang = lang;
+		
+		count_objects++;
+	}	
+
+	void addCluster(GraphCluster cl)
+	{
+		if(objects.length == count_objects)
+			objects.length += 16;
+
+		objects[count_objects].cluster = cl;
+		objects[count_objects].type = OBJECT_TYPE.CLUSTER;
 		
 		count_objects++;
 	}	
