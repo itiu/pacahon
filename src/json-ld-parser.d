@@ -17,7 +17,7 @@ static this()
 	log = new Logger("pacahon", "log", "pacahon.json_ld.parser");
 }
 
-void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
+void prepare_node(JSONValue node, GraphCluster gcl, Subject ss = null)
 {
 	if(node.type == JSON_TYPE.OBJECT)
 	{
@@ -58,7 +58,7 @@ void prepare_node(JSONValue node, GraphCluster* gcl, Subject ss = null)
 	}
 }
 
-void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = null)
+void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = null)
 {
 	if(element.type == JSON_TYPE.OBJECT)
 	{
@@ -70,8 +70,8 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 		}
 		else
 		{
-			GraphCluster inner_gcl;
-			prepare_node(element, &inner_gcl);
+			GraphCluster inner_gcl = new GraphCluster; 
+			prepare_node(element, inner_gcl);
 			ss.addPredicate(key, inner_gcl);
 		}
 	}
@@ -101,11 +101,11 @@ void addElement(string key, JSONValue element, GraphCluster* gcl, Subject ss = n
 }
 
 public Subject[] parse_json_ld_string(char* msg, int message_size)
-{
+{	
 	// простой вариант парсинга, когда уже есть json-tree в памяти
 	// но это не оптимально по затратам памяти и производительности
 
-	GraphCluster gcl;
+	GraphCluster gcl = new GraphCluster;
 
 	JSONValue node;
 
@@ -116,7 +116,7 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 
 	node = parseJSON(buff);
 
-	prepare_node(node, &gcl);
+	prepare_node(node, gcl);
 
 	//	sw1.stop();
 	//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);

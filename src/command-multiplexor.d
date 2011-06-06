@@ -208,9 +208,9 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			{
 				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 				// если, да то добавить их в хранилище через метод addTripleToReifedData
-				Predicate* r_subject = graph.getEdge("rdf:subject");
-				Predicate* r_predicate = graph.getEdge("rdf:predicate");
-				Predicate* r_object = graph.getEdge("rdf:object");
+				Predicate* r_subject = graph.getEdge(rdf__subject);
+				Predicate* r_predicate = graph.getEdge(rdf__predicate);
+				Predicate* r_object = graph.getEdge(rdf__object);
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
@@ -243,12 +243,13 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			}
 			
 		}
+		writeln ("%7 ii=", ii);
 		
 
 		if(trace_msg[37] == 1)
 			log.trace("command put is finish");
 
-		return res;
+//		return res;
 	}
 
 	return res;
@@ -408,7 +409,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 	if(trace_msg[42] == 1)
 		log.trace("command get, args=%s", args);
-
+	
+	if (args !is null)
+	{
 	for(short ii; ii < args.count_objects; ii++)
 	{
 		if(trace_msg[43] == 1)
@@ -605,6 +608,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			log.trace("total time command get: %d [µs]", t);
 		}
 	}
+	}
 
 	// TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
 
@@ -794,7 +798,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			if(trace_msg[14] == 1)
 				log.trace("command_preparer, get");
 
-			GraphCluster gres;
+			GraphCluster gres = new GraphCluster;
 			get(message, sender, userId, server_thread, isOk, reason, gres);
 			if(isOk == true)
 			{

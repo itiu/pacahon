@@ -2,6 +2,8 @@ module pacahon.know_predicates;
 
 public string rdf__type = "rdf:type";
 public string rdf__subject = "rdf:subject";
+public string rdf__predicate = "rdf:predicate";
+public string rdf__object = "rdf:object";
 public string rdf__Statement = "rdf:Statement";
 
 public string dc__creator = "dc:creator";

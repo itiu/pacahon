@@ -44,7 +44,7 @@ enum LITERAL_LANG: byte
 	EN = 2
 }
 
-struct GraphCluster
+class GraphCluster
 {
 	Subject[string] graphs_of_subject;
 
@@ -73,7 +73,10 @@ struct GraphCluster
 
 	void addSubject(Subject ss)
 	{
-		graphs_of_subject[cast(immutable) ss.subject] = ss;
+		if (ss.subject !is null)
+		{
+			graphs_of_subject[cast(immutable) ss.subject] = ss;
+		}
 	}
 }
 
@@ -186,22 +189,36 @@ class Subject
 
 	void addPredicate(string predicate, Subject subject)
 	{
-		// TODO adding multitype subject
-		
-		if(edges.length == 0)
-			edges = new Predicate[16];
-
-		if(edges.length == count_edges)
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
 		{
-			edges.length += 16;
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
 		}
+		if(pp !is null)
+		{
+			pp.addSubject(subject);
+		}
+		else
+		{				
+			if(edges.length == 0)
+				edges = new Predicate[16];
 
-		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz[1];
-		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].subject = subject;
-		edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
-		count_edges++;
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = new Objectz[1];
+			edges[count_edges].count_objects = 1;
+			edges[count_edges].objects[0].subject = subject;
+			edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
+			count_edges++;
+		}
 	}
 
 }
@@ -239,6 +256,17 @@ struct Predicate
 
 		objects[count_objects].cluster = cl;
 		objects[count_objects].type = OBJECT_TYPE.CLUSTER;
+		
+		count_objects++;
+	}	
+
+	void addSubject(Subject ss)
+	{
+		if(objects.length == count_objects)
+			objects.length += 16;
+
+		objects[count_objects].subject = ss;
+		objects[count_objects].type = OBJECT_TYPE.SUBJECT;
 		
 		count_objects++;
 	}	
