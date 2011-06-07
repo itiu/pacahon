@@ -36,8 +36,7 @@ void prepare_node(JSONValue node, GraphCluster gcl, Subject ss = null)
 				ss.subject = node.object.values[i].str;
 				//										writeln("SUBJECT = ", ss.subject);
 				gcl.addSubject(ss);
-			}
-			else
+			} else
 			{
 				JSONValue element = node.object.values[i];
 
@@ -48,8 +47,7 @@ void prepare_node(JSONValue node, GraphCluster gcl, Subject ss = null)
 				addElement(key, element, gcl, ss);
 			}
 		}
-	}
-	else if(JSON_TYPE.ARRAY)
+	} else if(JSON_TYPE.ARRAY)
 	{
 		foreach(element; node.array)
 		{
@@ -67,15 +65,13 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 			Subject ss_in = new Subject;
 			prepare_node(element, gcl, ss_in);
 			ss.addPredicate(key, ss_in);
-		}
-		else
+		} else
 		{
-			GraphCluster inner_gcl = new GraphCluster; 
+			GraphCluster inner_gcl = new GraphCluster;
 			prepare_node(element, inner_gcl);
 			ss.addPredicate(key, inner_gcl);
 		}
-	}
-	else if(element.type == JSON_TYPE.STRING)
+	} else if(element.type == JSON_TYPE.STRING)
 	{
 		string val = element.str;
 
@@ -87,9 +83,17 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 			val = val[0 .. val.length - 12];
 		}
 
-		ss.addPredicate(key, val);
-	}
-	else if(element.type == JSON_TYPE.ARRAY)
+//		writeln("val=", val, "-");
+		if(val[val.length - 3] == '@')
+		{
+			if(val[val.length - 2] == 'r' && val[val.length - 1] == 'u')
+				ss.addPredicate(key, val, LITERAL_LANG.RU);
+			else if(val[val.length - 2] == 'e' && val[val.length - 1] == 'n')
+				ss.addPredicate(key, val, LITERAL_LANG.EN);
+		} else
+			ss.addPredicate(key, val);
+
+	} else if(element.type == JSON_TYPE.ARRAY)
 	{
 		foreach(element1; element.array)
 		{
@@ -101,7 +105,7 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 }
 
 public Subject[] parse_json_ld_string(char* msg, int message_size)
-{	
+{
 	// простой вариант парсинга, когда уже есть json-tree в памяти
 	// но это не оптимально по затратам памяти и производительности
 
@@ -194,7 +198,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		for(int kk = 0; kk < pp.count_objects; kk++)
 		{
 			Objectz oo = pp.objects[kk];
-			
+
 			if(kk > 0)
 				outbuff.write(',');
 
@@ -243,27 +247,23 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				if(oo.lang == LITERAL_LANG.RU)
 				{
 					outbuff.write(cast(char[]) "@ru");
-				}
-				else if(oo.lang == LITERAL_LANG.EN)
+				} else if(oo.lang == LITERAL_LANG.EN)
 				{
 					outbuff.write(cast(char[]) "@en");
 				}
 
 				outbuff.write('"');
 				//				log.trace ("write literal end");
-			}
-			else if(oo.type == OBJECT_TYPE.URI)
+			} else if(oo.type == OBJECT_TYPE.URI)
 			{
 				outbuff.write('"');
 				outbuff.write(oo.object);
 				outbuff.write('"');
-			}
-			else if(oo.type == OBJECT_TYPE.SUBJECT)
+			} else if(oo.type == OBJECT_TYPE.SUBJECT)
 			{
 				outbuff.write('\n');
 				toJson_ld(oo.subject, outbuff, level + 1);
-			}
-			else if(oo.type == OBJECT_TYPE.CLUSTER)
+			} else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
 				outbuff.write('[');
 				for(int i = 0; i < oo.cluster.graphs_of_subject.values.length; i++)

@@ -243,7 +243,6 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			}
 			
 		}
-		writeln ("%7 ii=", ii);
 		
 
 		if(trace_msg[37] == 1)
