@@ -86,9 +86,9 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 			if(val.length > 3 && val[val.length - 3] == '@')
 			{
 				if(val[val.length - 2] == 'r' && val[val.length - 1] == 'u')
-					ss.addPredicate(key, val, LITERAL_LANG.RU);
+					ss.addPredicate(key, val[0..val.length - 3], LITERAL_LANG.RU);
 				else if(val[val.length - 2] == 'e' && val[val.length - 1] == 'n')
-					ss.addPredicate(key, val, LITERAL_LANG.EN);
+					ss.addPredicate(key, val[0..val.length - 3], LITERAL_LANG.EN);
 			} else
 			{
 				ss.addPredicate(key, val);
