@@ -44,7 +44,7 @@ enum LITERAL_LANG: byte
 	EN = 2
 }
 
-class GraphCluster
+final class GraphCluster
 {
 	Subject[string] graphs_of_subject;
 
@@ -80,7 +80,7 @@ class GraphCluster
 	}
 }
 
-class Subject
+final class Subject
 {
 	string subject = null;
 	Predicate[] edges;
