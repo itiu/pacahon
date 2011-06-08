@@ -1,7 +1,7 @@
 module pacahon.log_msg;
 private import trioplax.Logger;
 
-// last id = 65
+// last id = 67
 
 int m_get_message[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 61, 62];
 int m_command_preparer[] = [11, 12, 13, 14, 15, 16, 63];
@@ -13,9 +13,9 @@ int m_get[] = [41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 5
 
 static this()
 {
-//	trace_msg = 1;
-//	trace_msg[2] = 0;
-// 	trace_msg[3] = 0;
+	trace_msg = 1;
+	trace_msg[2] = 0;
+ 	trace_msg[3] = 0;
 	
 	trace_msg[0] = 1;
 	trace_msg[10] = 1;

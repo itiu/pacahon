@@ -184,10 +184,16 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	if(*msg == '{' || *msg == '[')
 	{
-		msg_format = format.JSON_LD;
 		try
 		{
+			if(trace_msg[66] == 1)
+				log.trace("parse from json");
+
+			msg_format = format.JSON_LD;
 			triples = parse_json_ld_string(cast(char*) msg, message_size);
+
+			if(trace_msg[67] == 1)
+				log.trace("parse from json, ok");
 		}
 		catch(Exception ex)
 		{
@@ -198,8 +204,14 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	{
 		try
 		{
+			if(trace_msg[66] == 1)
+				log.trace("parse from turtle");
+
 			msg_format = format.TURTLE;
 			triples = parse_n3_string(cast(char*) msg, message_size);
+
+			if(trace_msg[67] == 1)
+				log.trace("parse from turtle, ok");
 		}
 		catch(Exception ex)
 		{
