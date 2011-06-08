@@ -75,16 +75,13 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 	{
 		string val = element.str;
 
-		//		writeln("ss=", ss.subject, ",key=", key, ",val=", val);
-
 		if(val !is null && val.length > 12 && val[val.length - 12] == '^' && val[val.length - 7] == ':' && val[val.length - 6] == 's')
 		{
 			// очень вероятно что окончание строки содержит ^^xsd:string
 			val = val[0 .. val.length - 12];
 		}
 
-//		writeln("val=", val, "-");
-		if(val[val.length - 3] == '@')
+		if(val.length > 3 && val[val.length - 3] == '@')
 		{
 			if(val[val.length - 2] == 'r' && val[val.length - 1] == 'u')
 				ss.addPredicate(key, val, LITERAL_LANG.RU);
