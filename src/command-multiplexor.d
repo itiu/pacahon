@@ -535,16 +535,23 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			if(trace_msg[56] == 1)
 				log.trace("server_thread.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
+
+			if(trace_msg[57] == 1)
+				log.trace("формируем граф содержащий результаты {");
+			
 			if (it !is null)
 			{
 				foreach(triple; it)
 				{
 					if(trace_msg[57] == 1)
-						log.trace("GET: f.read %s", triple);
+						log.trace("GET: triple %s", triple);
 
 					res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 				}
 			}
+
+			if(trace_msg[57] == 1)
+				log.trace("}");
 
 			if(trace_msg[58] == 1)
 				log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
