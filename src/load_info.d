@@ -1,10 +1,14 @@
 module pacahon.load_info;
 
+private import std.array: appender;
+private import std.format;
+
 private import core.thread;
 private import std.stdio;
 
 private import pacahon.server;
 private import pacahon.utils;
+
 
 version(dmd2_053)
 {
@@ -16,6 +20,13 @@ version(dmd2_053)
 }
 
 public bool cinfo_exit = false;
+
+//private string set_bar_color = "\x1B[31m"; //"\x1B[41m";
+private string set_bar_color = "\x1B[41m";
+private string set_text_color_green = "\x1B[32m";
+private string set_text_color_blue = "\x1B[34m";
+private string set_all_attribute_off = "\x1B[0m";
+private string set_cursor_in_begin_string = "\x1B[0E";
 
 class LoadInfoThread: Thread
 {
@@ -60,23 +71,23 @@ class LoadInfoThread: Thread
 					int delta_worked_time = worked_time - prev_worked_time;
 					prev_worked_time = worked_time;
 
-					int d_delta_count = delta_count / 5 + 1;
-					wchar[] sdc = new wchar[d_delta_count];
-
-					for(int i = 0; i < d_delta_count; i++)
-					{
-						sdc[i] = 'ᚙ';
-					}
+//					int d_delta_count = delta_count / 5 + 1;
+//					wchar[] sdc = new wchar[d_delta_count];
+//					for(int i = 0; i < d_delta_count; i++)
+//					{
+//						sdc[i] = ' ';
+//					}
 
 					char[] now = cast(char[]) getNowAsString();
 					now[10] = ' ';
 					now.length = 19;
 					
-					writeln(now, " ", msg_count, "/", cmd_count, " ", delta_count,
-							" user_of_ticket=", stat.size__user_of_ticket,
-							" cache__subject_creator=", stat.size__cache__subject_creator,	
-							" idle:", delta_idle_time / 1000, " worked time:", delta_worked_time / 1000);
-					writeln(sdc);
+            				auto writer = appender!string();
+			                formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
+			                now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
+//			                writer.put(cast(char) 0);
+					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)1000) * delta_count + 1);
+					writeln(set_bar_color, writer.data[0..d_delta_count], set_all_attribute_off, writer.data[d_delta_count..$]);
 				}
 
 				//				if(delta_count > 0)
