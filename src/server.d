@@ -93,8 +93,17 @@ void main(char[][] args)
 		if(cache_type == "ALL_DATA")
 			cp = caching_type.ALL_DATA;
 
-		TripleStorage ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
-		printf("ok, connected : %X\n", ts);
+		TripleStorage ts;
+		try
+		{
+		    ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
+		    printf("ok, connected : %X\n", ts);
+		}
+		catch (Exception ex)
+		{
+		    printf("fail connect to mongo");
+		    throw ex;
+		}
 
 		
 		try
