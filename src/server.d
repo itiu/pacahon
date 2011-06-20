@@ -84,12 +84,25 @@ void main(char[][] args)
 
 		mq_client client = null;
 
-		string bind_to = props.object["zmq_point"].str;
+		string bind_to = "tcp://*:5555";
+		if (("zmq_point" in props.object) !is null)
+			bind_to = props.object["zmq_point"].str;
 
-		string mongodb_server = props.object["mongodb_server"].str;
-		string mongodb_collection = props.object["mongodb_collection"].str;
-		string cache_type = props.object["cache_type"].str;
-		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
+		string mongodb_server = "localhost";
+		if (("mongodb_server" in props.object) !is null)
+			mongodb_server = props.object["mongodb_server"].str;
+
+		string mongodb_collection = "pacahon";
+		if (("mongodb_collection" in props.object) !is null)
+			mongodb_collection = props.object["mongodb_collection"].str;
+
+		string cache_type = "NONE";
+		if (("cache_type" in props.object) !is null)
+			cache_type = props.object["cache_type"].str;
+
+		int mongodb_port = 27017;
+		if (("mongodb_port" in props.object) !is null)
+			mongodb_port = cast(int) props.object["mongodb_port"].integer;
 		
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
@@ -110,7 +123,7 @@ void main(char[][] args)
 		}
 		catch (Exception ex)
 		{
-		    printf("fail connect to mongo");
+		    printf("fail connect to mongo\n");
 		    throw ex;
 		}
 
@@ -143,7 +156,9 @@ void main(char[][] args)
 			
 			// TODO времянка, переделать!
 			{
-				string reply_to_n1 = props.object["reply_to_n1"].str;
+				string reply_to_n1;
+				if (("reply_to_n1" in props.object) !is null)
+				    reply_to_n1 = props.object["reply_to_n1"].str;
 			
 				if (reply_to_n1 !is null)
 				{
