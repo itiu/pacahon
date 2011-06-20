@@ -269,7 +269,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 			if(*element == ']')
 				state.pos_in_stack_nodes--;
 
-			Predicate ee = null;
+			Predicate* ee = null;
 			
 			// прежде чем создать новый Predicate, следует поискать у данного ss предикат с значением state.P
 			for(short jj = 0; jj < ss.count_edges; jj++)
@@ -277,7 +277,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				if(strcmp(ss.edges[jj].predicate.ptr, state.P) == 0)
 				{
 					// такой уже найден
-					ee = ss.edges[jj];
+					ee = &ss.edges[jj];
 					//					printf("такой уже найден %s\n", state.P);
 				}
 
@@ -291,7 +291,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 					ss.edges = new Predicate[32];
 
 				//				ee = &state.edges[state.count_edges];
-				ee = ss.edges[ss.count_edges];
+				ee = &ss.edges[ss.count_edges];
 				
 				if(ee.objects is null)
 					ee.objects = new Objectz[1];
@@ -307,7 +307,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 				version(trace_turtle_parser)
 					writeln("создаем новый предикат, p=", ee.predicate);
 
-				ss.edges[ss.count_edges] = ee;
+				ss.edges[ss.count_edges] = *ee;
 				
 				ss.count_edges++;
 				if (ss.count_edges >= ss.edges.length)
@@ -517,7 +517,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
-		Predicate pp = (ss.edges[jj]);
+		Predicate* pp = &(ss.edges[jj]);
 
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) " ");

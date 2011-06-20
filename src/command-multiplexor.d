@@ -48,7 +48,7 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
+Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
@@ -59,7 +59,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 
 	Subject res;
 
-	Predicate args = message.getEdge(msg__args);
+	Predicate* args = message.getEdge(msg__args);
 
 	if(trace_msg[32] == 1)
 		log.trace("command put, args.count_objects=%d ", args.count_objects);
@@ -128,7 +128,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 			if(trace_msg[35] == 1)
 				log.trace("#1 jj = %d", jj);
 
-			Predicate type = graph.getEdge("a");
+			Predicate* type = graph.getEdge("a");
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
@@ -200,7 +200,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 		{
 			Subject graph = graphs_on_put[jj];
 
-			Predicate type = graph.getEdge("a");
+			Predicate* type = graph.getEdge("a");
 			if(type is null)
 				type = graph.getEdge(rdf__type);
 
@@ -208,9 +208,9 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 			{
 				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 				// если, да то добавить их в хранилище через метод addTripleToReifedData
-				Predicate r_subject = graph.getEdge(rdf__subject);
-				Predicate r_predicate = graph.getEdge(rdf__predicate);
-				Predicate r_object = graph.getEdge(rdf__object);
+				Predicate* r_subject = graph.getEdge(rdf__subject);
+				Predicate* r_predicate = graph.getEdge(rdf__predicate);
+				Predicate* r_object = graph.getEdge(rdf__object);
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
@@ -218,7 +218,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
-						Predicate pp = graph.edges[kk];
+						Predicate* pp = &graph.edges[kk];
 
 						if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
 						{
@@ -258,7 +258,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
+Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	StopWatch sw;
 	sw.start();
@@ -274,7 +274,7 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 
 	try
 	{
-		Predicate arg = message.getEdge(msg__args);
+		Predicate* arg = message.getEdge(msg__args);
 		if(arg is null)
 		{
 			reason = "аргументы " ~ msg__args ~ " не указаны";
@@ -290,7 +290,7 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 			return null;
 		}
 
-		Predicate login = ss.getEdge(auth__login);
+		Predicate* login = ss.getEdge(auth__login);
 		if(login is null || login.getFirstObject is null || login.getFirstObject.length < 2)
 		{
 			reason = "login не указан";
@@ -298,7 +298,7 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 			return null;
 		}
 
-		Predicate credential = ss.getEdge(auth__credential);
+		Predicate* credential = ss.getEdge(auth__credential);
 		if(credential is null || credential.getFirstObject() is null || credential.getFirstObject.length < 2)
 		{
 			reason = "credential не указан";
@@ -388,7 +388,7 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 	}
 }
 
-public void get(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk, out string reason, ref GraphCluster res)
+public void get(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason, ref GraphCluster res)
 {
 	StopWatch sw;
 	sw.start();
@@ -404,7 +404,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 
 	reason = "запрос не может быть выполнен";
 
-	Predicate args = message.getEdge(msg__args);
+	Predicate* args = message.getEdge(msg__args);
 
 	if(trace_msg[42] == 1)
 		log.trace("command get, args=%s", args);
@@ -621,7 +621,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 	return;
 }
 
-Subject remove(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
+Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	if(trace_msg[38] == 1)
 		log.trace("command remove");
@@ -634,7 +634,7 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext s
 
 	try
 	{
-		Predicate arg = message.getEdge(msg__args);
+		Predicate* arg = message.getEdge(msg__args);
 		if(arg is null)
 		{
 			reason = "аргументы " ~ msg__args ~ " не указаны";
@@ -650,7 +650,7 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext s
 			return null;
 		}
 
-		Predicate subj_id = ss.getEdge(rdf__subject);
+		Predicate* subj_id = ss.getEdge(rdf__subject);
 		if(subj_id is null || subj_id.getFirstObject is null || subj_id.getFirstObject.length < 2)
 		{
 			reason = "rdf:subject не указан";
@@ -688,11 +688,11 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext s
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-public Subject set_message_trace(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
+public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk, out string reason)
 {
 	Subject res;
 
-	Predicate args = message.getEdge(msg__args);
+	Predicate* args = message.getEdge(msg__args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
@@ -700,7 +700,7 @@ public Subject set_message_trace(Subject message, Predicate sender, string userI
 		{
 			Subject arg = args.objects[ii].subject;
 
-			Predicate unset_msgs = arg.getEdge(pacahon__off_trace_msg);
+			Predicate* unset_msgs = arg.getEdge(pacahon__off_trace_msg);
 
 			if(unset_msgs !is null)
 			{
@@ -720,7 +720,7 @@ public Subject set_message_trace(Subject message, Predicate sender, string userI
 				}
 			}
 
-			Predicate set_msgs = arg.getEdge(pacahon__on_trace_msg);
+			Predicate* set_msgs = arg.getEdge(pacahon__on_trace_msg);
 
 			if(set_msgs !is null)
 			{
@@ -748,7 +748,7 @@ public Subject set_message_trace(Subject message, Predicate sender, string userI
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate sender, string userId, ThreadContext server_thread, out string local_ticket)
+void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, ThreadContext server_thread, out string local_ticket)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -784,7 +784,7 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 	out_message.addPredicate(msg__sender, "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
-	Predicate command = message.getEdge(msg__command);
+	Predicate* command = message.getEdge(msg__command);
 
 	string reason;
 	bool isOk;
