@@ -69,7 +69,16 @@ void main(char[][] args)
 {
 	try
 	{
-		JSONValue props = get_props("pacahon-properties.json");
+		JSONValue props;
+		
+		try
+		{
+			props = get_props("pacahon-properties.json");		
+		}
+		catch (Exception ex1)
+		{
+			throw new Exception ("ex! parse params", ex1);
+		}
 
 		log.trace_log_and_console("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
 
@@ -81,7 +90,7 @@ void main(char[][] args)
 		string mongodb_collection = props.object["mongodb_collection"].str;
 		string cache_type = props.object["cache_type"].str;
 		int mongodb_port = cast(int) props.object["mongodb_port"].integer;
-
+		
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
 		writeln("	server:", mongodb_server);
@@ -125,14 +134,27 @@ void main(char[][] args)
 		}
 		
 		if (client !is null)
-		{
+		{			
 			client.set_callback(&get_message);
 
 			ServerThread thread = new ServerThread(&client.listener, ts);
-
+			
+			thread.resource.client = client;
+			
+			// TODO времянка, переделать!
+			{
+				string reply_to_n1 = props.object["reply_to_n1"].str;
+			
+				if (reply_to_n1 !is null)
+				{
+					thread.resource.soc__reply_to_n1 = client.connect_as_req (reply_to_n1);
+					log.trace("connect to %s is Ok", reply_to_n1);
+				}
+			}
+			
 			thread.start();
-		
-			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
+			
+			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);			
 			load_info_thread.start();
 
 			version(D1)
