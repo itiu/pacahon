@@ -81,22 +81,28 @@ final class GraphCluster
 }
 
 final class Subject
-{
+{	
 	string subject = null;
 	Predicate[] edges;
 	short count_edges = 0;
 
-	Predicate*[char[]] edges_of_predicate;
+	Predicate[char[]] edges_of_predicate;
 
-	Predicate* getEdge(string pname)
+	Predicate getEdge(string pname)
 	{
-		Predicate* pp = null;
-		Predicate** ppp = (pname in edges_of_predicate);
+//		Predicate pp = null;
+		
+		if (pname in edges_of_predicate)
+		{
+		Predicate ppp = edges_of_predicate[pname];
 
-		if(ppp !is null)
-			pp = *ppp;
+//		if(ppp !is null)
+//			pp = *ppp;
 
-		return pp;
+		return ppp;
+		}
+		
+		return null;
 	}
 
 	void addPredicateAsURI(string predicate, string object)
@@ -109,6 +115,7 @@ final class Subject
 			edges.length += 16;
 		}
 
+		edges[count_edges] = new Predicate;
 		edges[count_edges].predicate = predicate;
 		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
@@ -119,12 +126,12 @@ final class Subject
 
 	void addPredicate(string predicate, string object, byte lang = LITERAL_LANG.NONE)
 	{
-		Predicate* pp;
+		Predicate pp;
 		for(int i = 0; i < count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
-				pp = &edges[i];
+				pp = edges[i];
 				break;
 			}
 		}
@@ -143,6 +150,7 @@ final class Subject
 				edges.length += 16;
 			}
 
+			edges[count_edges] = new Predicate;
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
@@ -154,12 +162,12 @@ final class Subject
 
 	void addPredicate(string predicate, GraphCluster cluster)
 	{
-		Predicate* pp;
+		Predicate pp;
 		for(int i = 0; i < count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
-				pp = &edges[i];
+				pp = edges[i];
 				break;
 			}
 		}
@@ -178,6 +186,7 @@ final class Subject
 				edges.length += 16;
 			}
 
+			edges[count_edges] = new Predicate;
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
@@ -189,12 +198,12 @@ final class Subject
 
 	void addPredicate(string predicate, Subject subject)
 	{
-		Predicate* pp;
+		Predicate pp;
 		for(int i = 0; i < count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
-				pp = &edges[i];
+				pp = edges[i];
 				break;
 			}
 		}
@@ -212,6 +221,7 @@ final class Subject
 				edges.length += 16;
 			}
 
+			edges[count_edges] = new Predicate;
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
@@ -223,8 +233,21 @@ final class Subject
 
 }
 
-struct Predicate
+int count_of_object = 0;
+
+class Predicate
 {
+	this ()
+	{
+		count_of_object ++;
+		printf ("count_of_object %d\n", count_of_object);
+	}
+	
+	~this()
+	{
+		count_of_object --;			
+	}
+	
 	string predicate = null;
 	Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
@@ -286,7 +309,7 @@ void set_hashed_data(Subject ss)
 {
 	for(short jj = 0; jj < ss.count_edges; jj++)
 	{
-		Predicate* pp = &ss.edges[jj];
+		Predicate pp = ss.edges[jj];
 
 		ss.edges_of_predicate[cast(immutable) pp.predicate] = pp;
 
