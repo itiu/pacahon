@@ -2,10 +2,6 @@ module pacahon.server;
 
 private import myversion;
 
-private import dmdscript.program;
-private import dmdscript.script;
-private import dmdscript.extending;
-
 version(D1)
 {
 	private import std.c.stdlib;
@@ -127,18 +123,6 @@ void main(char[][] args)
 		else
 		{
 		}
-		
-	    if(args.length > 0)
-	    {
-	            for(int i = 0; i < args.length; i++)
-	            {
-	                    if(args[i] == "--trace")
-	                    {
-	                    	trace_msg = 1;
-	            			printf("set trace on\n");
-	                    }
-	            }
-	    }            
 		
 		if (client !is null)
 		{
@@ -293,19 +277,19 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 		set_hashed_data(command);
 
-		Predicate type = command.getEdge("a");
+		Predicate* type = command.getEdge("a");
 		if(type is null)
 			type = command.getEdge(rdf__type);
 
 		if((msg__Message in type.objects_of_value) !is null)
 		{
-			Predicate reciever = command.getEdge(msg__reciever);
-			Predicate sender = command.getEdge(msg__sender);
+			Predicate* reciever = command.getEdge(msg__reciever);
+			Predicate* sender = command.getEdge(msg__sender);
 
 			if(trace_msg[6] == 1)
 				log.trace("message accepted from:%s", sender.getFirstObject());
 
-			Predicate ticket = command.getEdge(msg__ticket);
+			Predicate* ticket = command.getEdge(msg__ticket);
 
 			string userId;
 
@@ -390,7 +374,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				//				results[ii] = out_message;
 			}
 
-			Predicate command_name = command.getEdge(msg__command);
+			Predicate* command_name = command.getEdge(msg__command);
 			server_thread.stat.count_command++;
 			sw_c.stop();
 			version(dmd2_053)
