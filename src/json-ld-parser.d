@@ -143,7 +143,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 	{
 		Subject out_message = results[ii];
 
-		if(out_message !is null)
+		if(out_message !is null && out_message.subject !is null)
 		{
 			if(ii > 0)
 				outbuff.write(cast(char[]) ",\n");
@@ -151,7 +151,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 			toJson_ld(out_message, outbuff);
 		}
 	}
-	outbuff.write(cast(char[]) "\n]");
+	outbuff.write(cast(char[]) "\n] ");
 }
 
 void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
@@ -164,7 +164,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	// (+) быстрое по сравнением с вариантом A
 
 	// вариант В
-
+	if (ss.subject is null && ss.count_edges == 0)
+		return;
+	
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
