@@ -37,9 +37,13 @@ private import trioplax.Logger;
 
 
 Logger log;
-
+char[] buff;
+char[] buff1;
+            
 static this()
 {
+	buff = new char[21];
+	buff1 = new char[6];
 	log = new Logger("pacahon", "log", "multiplexor");
 }
 
@@ -505,35 +509,35 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 	
 	if (args !is null)
 	{
-	for(short ii; ii < args.count_objects; ii++)
-	{
-		if(trace_msg[43] == 1)
-			log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
-
-		Subject[] graphs_as_template;
-
-		if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
+		for(short ii; ii < args.count_objects; ii++)
 		{
-			graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
-		}
-		else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
-		{
-			char* args_text = cast(char*) args.objects[ii].object;
-			int arg_size = strlen(args_text);
+			if(trace_msg[43] == 1)
+				log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
 
-			if(trace_msg[44] == 1)
-				log.trace("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
+			Subject[] graphs_as_template;
 
-			graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
-
-			if(trace_msg[45] == 1)
-				log.trace("arguments has been read");
-
-			if(graphs_as_template is null)
+			if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
 			{
-				reason = "в сообщении отсутствует граф-шаблон";
+				graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
 			}
-		}
+			else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
+			{
+				char* args_text = cast(char*) args.objects[ii].object;
+				int arg_size = strlen(args_text);
+
+				if(trace_msg[44] == 1)
+					log.trace("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
+
+				graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
+
+				if(trace_msg[45] == 1)
+					log.trace("arguments has been read");
+
+				if(graphs_as_template is null)
+				{
+					reason = "в сообщении отсутствует граф-шаблон";
+				}
+			}
 
 		for(int jj = 0; jj < graphs_as_template.length; jj++)
 		{
@@ -680,17 +684,20 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 			}
 
+			buff1[] = ' ';
+			Integer.format(buff1, count_found_subjects, cast(char[]) "");
+
 			if (count_found_subjects == count_authorized_subjects)
 			{
-			    reason = "запрос выполнен: авторизованны все найденные субьекты";
+			    reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(immutable)buff1;
 			}
 			else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
 			{
-			    reason = "запрос выполнен: не все найденные субьекты успешно авторизованны";
+			    reason = "запрос выполнен: не все найденные субьекты " ~ cast(immutable)buff1 ~ " успешно авторизованны";
 			}
 			else if (count_authorized_subjects == 0 && count_found_subjects > 0)
 			{
-			    reason = "запрос выполнен: ни один из найденных субьектов, не был успешно авторизован:" ~ authorize_reason;
+			    reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(immutable)buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
 			}
 
 			isOk = true;
@@ -847,30 +854,29 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
 
-	Predicate[] ppp = new Predicate[5];
+//	Predicate[] ppp = new Predicate[5];
 
 	Subject res;
 
-	char[] time = new char[21];
-	time[] = '_';
-	time[0] = 'm';
-	time[1] = 's';
-	time[2] = 'g';
-	time[3] = ':';
-	time[4] = 'M';
+	buff[] = '_';
+	buff[0] = 'm';
+	buff[1] = 's';
+	buff[2] = 'g';
+	buff[3] = ':';
+	buff[4] = 'M';
 
 	version(dmd2_053)
 	{
 		SysTime sysTime = Clock.currTime(UTC());
-		Integer.format(time, sysTime.stdTime, cast(char[]) "X2");
+		Integer.format(buff, sysTime.stdTime, cast(char[]) "X2");
 	}
 	else
 	{
 		Ticks m_TimeStart = systime();
-		Integer.format(time, m_TimeStart.value, cast(char[]) "X2");
+		Integer.format(buff, m_TimeStart.value, cast(char[]) "X2");
 	}
 
-	out_message.subject = cast(immutable) time;
+	out_message.subject = cast(immutable) buff;
 	//	out_message.subject = cast(char[])"msg:time";
 
 	out_message.addPredicateAsURI("a", msg__Message);
