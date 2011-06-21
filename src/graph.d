@@ -274,9 +274,12 @@ struct Predicate
 
 struct Objectz
 {
-	string object; // если type == LITERAL
-	Subject subject; // если type == SUBJECT
-	GraphCluster cluster; // если type == CLUSTER 
+//	union 
+//	{
+		string object; // если type == LITERAL
+		Subject subject; // если type == SUBJECT
+		GraphCluster cluster; // если type == CLUSTER
+//	}
 
 	byte type = OBJECT_TYPE.LITERAL;
 	byte lang;
@@ -296,7 +299,7 @@ void set_hashed_data(Subject ss)
 			{
 				set_hashed_data(pp.objects[kk].subject);
 			}
-			else
+			else if (pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
 			{
 				pp.objects_of_value[cast(immutable) pp.objects[kk].object] = &pp.objects[kk];
 			}
