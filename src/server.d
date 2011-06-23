@@ -32,6 +32,8 @@ else
 	private import std.date;
 }
 
+// import core.memory;
+
 private import libzmq_headers;
 private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
@@ -317,7 +319,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		Predicate* type = command.getEdge("a");
 		if(type is null)
 			type = command.getEdge(rdf__type);
-
+		
 		if((msg__Message in type.objects_of_value) !is null)
 		{
 			Predicate* reciever = command.getEdge(msg__reciever);
@@ -418,7 +420,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				long t = cast(long) sw_c.peek().usecs;
 			else
 				long t = cast(long) sw_c.peek().microseconds;
-			log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(),
+				
+			if(trace_msg[68] == 1)
+				log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(),
 					server_thread.stat.count_command, t);
 
 		}
@@ -465,10 +469,13 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	
 	server_thread.stat.worked_time += t;
 	
-	log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
+	if(trace_msg[69] == 1)
+	    log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
+	
+//	GC.minimize();
 	
 	return;
 }
