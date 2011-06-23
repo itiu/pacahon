@@ -86,7 +86,7 @@ class LoadInfoThread: Thread
 			                formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
 			                now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
 //			                writer.put(cast(char) 0);
-					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)1000) * delta_count + 1);
+					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)3000) * delta_count + 1);
 					writeln(set_bar_color, writer.data[0..d_delta_count], set_all_attribute_off, writer.data[d_delta_count..$]);
 				}
 
