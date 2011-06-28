@@ -78,20 +78,35 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 		if(targetId is null)
 			throw new Exception("char[] targetId == null");
 
+		if (targetId[0] == '_' && targetId[1] == ':' && targetId[2] == 'R' && operation.READ)
+		{
+			// TODO для доп части у реифицированных фактов следует сделать нормальную проверку
+			return true;
+		}
+		
 		if(trace_msg[25] == 1)
 			log.trace("проверим, существует-ли охраняемый субьект [%s]", targetId);
 
-		string subject_creator = null; 
+		string subject_creator = null;
 
 		bool subjectIsExist = false;
-		if ((targetId in server_thread.cache__subject_creator) !is null)
+		if((targetId in server_thread.cache__subject_creator) !is null)
 		{
 			subjectIsExist = true;
 			subject_creator = server_thread.cache__subject_creator[targetId];
-		}
-		else
+			if(trace_msg[25] == 1)
+				log.trace("субьект найден в кэше");
+		} else
 		{
 			subjectIsExist = server_thread.ts.isExistSubject(targetId);
+
+			if(trace_msg[25] == 1)
+			{
+				if(subjectIsExist == true)
+					log.trace("субьект найден в хранилище");
+				else
+					log.trace("субьект не найден в хранилище");
+			}
 		}
 
 		if(userId !is null)
@@ -107,10 +122,11 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 				// A 1. проверить, есть ли у охраняемого субьекта, предикат [dc:creator] = [userId]
 				if(trace_msg[26] == 1)
-					log.trace("A 1. проверить, есть ли у охраняемого субьекта [%s], предикат [%s] = [%s]", targetId, dc__creator, userId);
+					log.trace("A 1. проверить, есть ли у охраняемого субьекта [%s], предикат [%s] = [%s]", targetId,
+							dc__creator, userId);
 
-				if (subject_creator is null)
-				{	
+				if(subject_creator is null)
+				{
 					TLIterator it = server_thread.ts.getTriples(targetId, dc__creator, userId);
 
 					if(it !is null)
@@ -122,8 +138,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 						server_thread.cache__subject_creator[targetId] = userId;
 						res = true;
-					}
-					else
+					} else
 					{
 						if(trace_msg[28] == 1)
 							log.trace("creator  не найден");
@@ -131,18 +146,16 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 						reason = "пользователь известен, но не является создателем данного субьекта";
 						res = false;
 					}
-				}
-				else
+				} else
 				{
-					if (subject_creator == userId)
+					if(subject_creator == userId)
 					{
-					if(trace_msg[27] == 1)
-						log.trace("dc:creator найден в кэше");
+						if(trace_msg[27] == 1)
+							log.trace("dc:creator найден в кэше");
 
-					reason = "пользователь известен, он создатель данного субьекта";
-					res = true;
-					}
-					else
+						reason = "пользователь известен, он создатель данного субьекта";
+						res = true;
+					} else
 					{
 						if(trace_msg[28] == 1)
 							log.trace("в кэше creator не найден");
@@ -151,15 +164,16 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 						res = false;
 					}
 				}
-			}
-			else
+			} else
 			{
 				reason = "пользователь известен, охраняемый субьект отсутствует в хранилище";
 
+				if(op & operation.READ)
+					return false;
+				
 				res = true;
 			}
-		}
-		else
+		} else
 		{
 			// если пользователь не указан, то можно только добавление ранее не существовавшего субьекта
 
@@ -168,8 +182,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 				// охраняемый субьект уже есть, все операции запрещены
 				reason = "пользователь не известен, охраняемый субьект уже есть, все операции запрещены";
 				res = false;
-			}
-			else if(op & operation.CREATE)
+			} else if(op & operation.CREATE)
 			{
 				reason = "хотя пользователь не известен, однако операция CREATE допустима для ранее не существовавшего субьекта";
 				res = true;
@@ -179,15 +192,13 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 		}
 
 		return res;
-	}
-	catch(Exception ex)
+	} catch(Exception ex)
 	{
 		reason = "ошибка при вычислении прав :" ~ ex.msg;
 		res = false;
 
 		return res;
-	}
-	finally
+	} finally
 	{
 
 		if(trace_msg[29] == 1)
