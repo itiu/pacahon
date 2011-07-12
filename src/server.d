@@ -106,6 +106,10 @@ void main(char[][] args)
 		if (("mongodb_port" in props.object) !is null)
 			mongodb_port = cast(int) props.object["mongodb_port"].integer;
 		
+		string zmq_connect_type = "server";
+		if (("zmq_connect_type" in props.object) !is null)
+			zmq_connect_type = props.object["zmq_connect_type"].str;
+		
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
 		writeln("	server:", mongodb_server);
@@ -130,22 +134,28 @@ void main(char[][] args)
 		}
 
 		
-		try
+		if (zmq_connect_type == "server")
 		{
-			client = new zmq_point_to_poin_client(bind_to);
-			printf("point to point zmq listener started\n");
-		}
-		catch (Exception ex)
-		{
+			try
+			{
+				client = new zmq_point_to_poin_client(bind_to);
+				writeln("point to point zmq listener started:", bind_to);
+			}
+			catch (Exception ex)
+			{
+			}
 		}
 
-		if (client is null)
+		if (zmq_connect_type == "broker")
 		{
-			client = new zmq_pp_broker_client(bind_to);
-			printf("zmq PPP broker listener started\n");
-		}
-		else
-		{
+			if (client is null)
+			{
+				client = new zmq_pp_broker_client(bind_to);
+				writeln("zmq PPP broker listener started:", bind_to);
+			}
+			else
+			{
+			}
 		}
 		
 		if (client !is null)
