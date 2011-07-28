@@ -165,7 +165,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 	// вариант В
 	if(ss.subject is null && ss.count_edges == 0)
+	{
 		return;
+	}
 
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
@@ -210,9 +212,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
 				//				log.trace ("write literal");
-				if(oo.object is null)
-					outbuff.write(cast(char[]) "null");
-				else
+//				if(oo.object is null)
+//					outbuff.write(cast(char[]) "null");
+//				else
 				{
 					outbuff.write('"');
 					// заменим все неэкранированные кавычки на [\"]
@@ -274,7 +276,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.SUBJECT)
 			{
-				if(oo.subject.subject is null)
+				if(oo.subject !is null && oo.subject.count_edges == 0)
 				{
 					outbuff.write(cast(char[]) "null");
 				} else
@@ -284,12 +286,12 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-				if(oo.cluster.graphs_of_subject.values.length == 0)
+//				if(oo.cluster.graphs_of_subject.values.length == 0)
+//				{
+//					outbuff.write(cast(char[]) "null");
+//				} else
 				{
-					outbuff.write(cast(char[]) "null");
-				} else
-				{
-					if(oo.cluster.graphs_of_subject.values.length > 1)
+//					if(oo.cluster.graphs_of_subject.values.length > 1)
 						outbuff.write('[');
 
 					for(int i = 0; i < oo.cluster.graphs_of_subject.values.length; i++)
@@ -300,7 +302,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						toJson_ld(oo.cluster.graphs_of_subject.values[i], outbuff, level + 1);
 					}
 
-					if(oo.cluster.graphs_of_subject.values.length > 1)
+//					if(oo.cluster.graphs_of_subject.values.length > 1)
 						outbuff.write(']');
 				}
 			}
