@@ -106,9 +106,27 @@ void main(char[][] args)
 		if (("mongodb_port" in props.object) !is null)
 			mongodb_port = cast(int) props.object["mongodb_port"].integer;
 		
+		// поведение:
+		//	all - выполняет все операции
+		//  writer - только операции записи
+		//  reader - только операции чтения
+		//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
 		string zmq_connect_type = "server";
 		if (("zmq_connect_type" in props.object) !is null)
 			zmq_connect_type = props.object["zmq_connect_type"].str;
+
+		// логгирование
+		// gebug - все отладочные сообщения, внимание! при включении будут жуткие тормоза! 
+		// off - выключено
+		// info - краткая информация о выполненных командах 
+		// info_and_io - краткая информация о выполненных командах и входящие и исходящие сообщения 
+		string logging = "info_and_io";
+		if (("logging" in props.object) !is null)
+			logging = props.object["logging"].str;
+
+		string behavior = "all";
+		if (("behavior" in props.object) !is null)
+			behavior = props.object["behavior"].str;		
 		
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
