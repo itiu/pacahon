@@ -137,7 +137,8 @@ char[] getString(char* s, int length)
 
 void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 {
-	outbuff.write(cast(char[]) "[\n");
+	if (results.length > 1)
+		outbuff.write(cast(char[]) "[\n");
 
 	for(int ii = 0; ii < results.length; ii++)
 	{
@@ -151,7 +152,11 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 			toJson_ld(out_message, outbuff);
 		}
 	}
-	outbuff.write(cast(char[]) "\n] ");
+
+	if (results.length > 1)
+		outbuff.write(cast(char[]) "\n] ");
+	else
+		outbuff.write(' ');
 }
 
 void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
