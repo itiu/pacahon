@@ -413,14 +413,20 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		readed_predicate[auth__login] = true;
 
 		// TODO определится что возвращать null или пустой итератор
+		if(trace_msg[65] == 1)
+			log.trace("get_ticket: start getTriplesOfMask");
+
 		TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
+		
+		if(trace_msg[65] == 1)
+			log.trace("get_ticket: iterator %x" , it);
 
 		if(it !is null)
-		{
+		{			
 			foreach(tt; it)
 			{
 				if(trace_msg[65] == 1)
-					log.trace("read triple: %s", tt);
+					log.trace("get_ticket: read triple: %s", tt);
 				
 				// такой логин и пароль найдены, формируем тикет
 				Twister rnd;
@@ -456,14 +462,15 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 	}
 	catch(Exception ex)
 	{
-		reason = "ошибка при выдачи сессионного билет :" ~ ex.msg;
+		log.trace("ошибка при выдачи сессионного билетa");
+
+		reason = "ошибка при выдачи сессионного билетa :" ~ ex.msg;
 		isOk = false;
 
 		return res;
 	}
 	finally
 	{
-
 		if(trace_msg[39] == 1)
 		{
 			if(isOk == true)
