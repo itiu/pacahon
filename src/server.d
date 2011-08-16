@@ -143,6 +143,28 @@ void main(char[][] args)
 		try
 		{
 		    ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
+		    
+		    ts.define_predicate_as_multiple ("a");	
+		    ts.define_predicate_as_multiple ("rdf:type");	
+		    ts.define_predicate_as_multiple ("rdfs:subClassOf");	
+		    ts.define_predicate_as_multiple ("gost19:take");	
+		    
+		    ts.define_predicate_as_multilang ("swrc:name");
+		    ts.define_predicate_as_multilang ("swrc:firstName");
+		    ts.define_predicate_as_multilang ("swrc:lastName");
+		    ts.define_predicate_as_multilang ("gost19:middleName");
+		    ts.define_predicate_as_multilang ("docs:position");
+
+			ts.set_fulltext_indexed_predicates ("swrc:name");
+			ts.set_fulltext_indexed_predicates ("swrc:firstName");
+			ts.set_fulltext_indexed_predicates ("swrc:lastName");
+			ts.set_fulltext_indexed_predicates ("gost19:middleName");
+			ts.set_fulltext_indexed_predicates ("docs:position");
+			ts.set_fulltext_indexed_predicates ("rdfs:label");		
+			ts.set_fulltext_indexed_predicates ("swrc:email");
+			ts.set_fulltext_indexed_predicates ("swrc:phone");
+			ts.set_fulltext_indexed_predicates ("gost19:internal_phone");		    
+		    
 		    printf("ok, connected : %X\n", ts);
 		}
 		catch (Exception ex)
