@@ -155,22 +155,21 @@ void main(char[][] args)
 		    ts.define_predicate_as_multilang ("gost19:middleName");
 		    ts.define_predicate_as_multilang ("docs:position");
 
-			ts.set_fulltext_indexed_predicates ("swrc:name");
-			ts.set_fulltext_indexed_predicates ("swrc:firstName");
-			ts.set_fulltext_indexed_predicates ("swrc:lastName");
-			ts.set_fulltext_indexed_predicates ("gost19:middleName");
-			ts.set_fulltext_indexed_predicates ("docs:position");
-			ts.set_fulltext_indexed_predicates ("rdfs:label");		
-			ts.set_fulltext_indexed_predicates ("swrc:email");
-			ts.set_fulltext_indexed_predicates ("swrc:phone");
-			ts.set_fulltext_indexed_predicates ("gost19:internal_phone");		    
+		    ts.set_fulltext_indexed_predicates ("swrc:name");
+		    ts.set_fulltext_indexed_predicates ("swrc:firstName");
+		    ts.set_fulltext_indexed_predicates ("swrc:lastName");
+		    ts.set_fulltext_indexed_predicates ("gost19:middleName");
+		    ts.set_fulltext_indexed_predicates ("docs:position");
+		    ts.set_fulltext_indexed_predicates ("rdfs:label");		
+		    ts.set_fulltext_indexed_predicates ("swrc:email");
+		    ts.set_fulltext_indexed_predicates ("swrc:phone");
+		    ts.set_fulltext_indexed_predicates ("gost19:internal_phone");		    
 		    
 		    printf("ok, connected : %X\n", ts);
 		}
 		catch (Exception ex)
 		{
-		    printf("fail connect to mongo\n");
-		    throw ex;
+		    throw new Exception ("Connect to mongodb: " ~ ex.msg, ex);
 		}
 
 		
@@ -236,7 +235,7 @@ void main(char[][] args)
 	}
 	catch(Exception ex)
 	{
-		printf("Exception: %s", ex.msg);
+		writeln("Exception: ", ex.msg);
 	}
 
 }
