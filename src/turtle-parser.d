@@ -214,10 +214,7 @@ public Subject[] parse_n3_string(char* src, int len)
 		printf("parse finish\n");
 
 	sw.stop();
-	version(dmd2_053)
-		long t = cast(long) sw.peek().usecs;
-	else
-		long t = cast(long) sw.peek().microseconds;
+	long t = cast(long) sw.peek().usecs;
 
 	if(t > 500)
 	{
@@ -364,7 +361,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 			else
 			{
 				char[] buff = new char[state.O_length];
-				ee.objects[ee.count_objects].object = cast(immutable) buff;
+				ee.objects[ee.count_objects].object = cast(string) buff;
 
 				char* ptr = cast(char*) state.O;
 				int idx1 = 0;

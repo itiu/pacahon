@@ -1,4 +1,4 @@
-DMD=~/dmd2-053/linux/bin32/dmd
+DMD=~/dmd2-054/linux/bin32/dmd
 
 cp -v -r src/* build/src
 

@@ -15,7 +15,7 @@ class IllegalArgumentException : Exception
 {
     this( char[] msg )
     {
-        super( cast (immutable) msg );
+        super( cast (string) msg );
     }
     this( string msg )
     {

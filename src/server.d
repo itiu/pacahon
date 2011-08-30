@@ -22,15 +22,7 @@ private import std.c.string;
 private import std.json_str;
 private import std.outbuffer;
 
-version(dmd2_053)
-{
-	private import std.datetime;
-}
-else
-{
-	private import std.datetime;
-	private import std.date;
-}
+private import std.datetime;
 
 // import core.memory;
 
@@ -72,14 +64,13 @@ void main(char[][] args)
 	try
 	{
 		JSONValue props;
-		
+
 		try
 		{
-			props = get_props("pacahon-properties.json");		
-		}
-		catch (Exception ex1)
+			props = get_props("pacahon-properties.json");
+		} catch(Exception ex1)
 		{
-			throw new Exception ("ex! parse params", ex1);
+			throw new Exception("ex! parse params", ex1);
 		}
 
 		log.trace_log_and_console("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
@@ -87,27 +78,31 @@ void main(char[][] args)
 		mq_client client = null;
 
 		string bind_to = "tcp://*:5555";
-		if (("zmq_point" in props.object) !is null)
+		if(("zmq_point" in props.object) !is null)
 			bind_to = props.object["zmq_point"].str;
 
 		string mongodb_server = "localhost";
-		if (("mongodb_server" in props.object) !is null)
+		if(("mongodb_server" in props.object) !is null)
 			mongodb_server = props.object["mongodb_server"].str;
 
 		string mongodb_collection = "pacahon";
-		if (("mongodb_collection" in props.object) !is null)
+		if(("mongodb_collection" in props.object) !is null)
 			mongodb_collection = props.object["mongodb_collection"].str;
 
+		// кеширование
+		// NONE
+		// ALL_DATA
+		// QUERY_RESULT		
 		string cache_type = "NONE";
-		if (("cache_type" in props.object) !is null)
+		if(("cache_type" in props.object) !is null)
 			cache_type = props.object["cache_type"].str;
 
 		int mongodb_port = 27017;
-		if (("mongodb_port" in props.object) !is null)
+		if(("mongodb_port" in props.object) !is null)
 			mongodb_port = cast(int) props.object["mongodb_port"].integer;
-		
+
 		string zmq_connect_type = "server";
-		if (("zmq_connect_type" in props.object) !is null)
+		if(("zmq_connect_type" in props.object) !is null)
 			zmq_connect_type = props.object["zmq_connect_type"].str;
 
 		// логгирование
@@ -116,7 +111,7 @@ void main(char[][] args)
 		// info - краткая информация о выполненных командах 
 		// info_and_io - краткая информация о выполненных командах и входящие и исходящие сообщения 
 		string logging = "info_and_io";
-		if (("logging" in props.object) !is null)
+		if(("logging" in props.object) !is null)
 			logging = props.object["logging"].str;
 
 		// поведение:
@@ -125,102 +120,101 @@ void main(char[][] args)
 		//  reader - только операции чтения
 		//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
 		string behavior = "all";
-		if (("behavior" in props.object) !is null)
-			behavior = props.object["behavior"].str;		
-		
+		if(("behavior" in props.object) !is null)
+			behavior = props.object["behavior"].str;
+
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
 		writeln("	server:", mongodb_server);
-		writeln("	collection:",  mongodb_collection);
-		writeln("	cache_type:",  cache_type);
+		writeln("	collection:", mongodb_collection);
+		writeln("	cache_type:", cache_type);
 
 		byte cp = caching_type.NONE;
 
 		if(cache_type == "ALL_DATA")
 			cp = caching_type.ALL_DATA;
 
+		if(cache_type == "QUERY_RESULT")
+			cp = caching_type.QUERY_RESULT;
+
 		TripleStorage ts;
 		try
 		{
-		    ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
-		    
-		    ts.define_predicate_as_multiple ("a");	
-		    ts.define_predicate_as_multiple ("rdf:type");	
-		    ts.define_predicate_as_multiple ("rdfs:subClassOf");	
-		    ts.define_predicate_as_multiple ("gost19:take");	
-		    
-		    ts.define_predicate_as_multilang ("swrc:name");
-		    ts.define_predicate_as_multilang ("swrc:firstName");
-		    ts.define_predicate_as_multilang ("swrc:lastName");
-		    ts.define_predicate_as_multilang ("gost19:middleName");
-		    ts.define_predicate_as_multilang ("docs:position");
+			ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
 
-		    ts.set_fulltext_indexed_predicates ("swrc:name");
-		    ts.set_fulltext_indexed_predicates ("swrc:firstName");
-		    ts.set_fulltext_indexed_predicates ("swrc:lastName");
-		    ts.set_fulltext_indexed_predicates ("gost19:middleName");
-		    ts.set_fulltext_indexed_predicates ("docs:position");
-		    ts.set_fulltext_indexed_predicates ("rdfs:label");		
-		    ts.set_fulltext_indexed_predicates ("swrc:email");
-		    ts.set_fulltext_indexed_predicates ("swrc:phone");
-		    ts.set_fulltext_indexed_predicates ("gost19:internal_phone");		    
-		    
-		    printf("ok, connected : %X\n", ts);
-		}
-		catch (Exception ex)
+			ts.define_predicate_as_multiple("a");
+			ts.define_predicate_as_multiple("rdf:type");
+			ts.define_predicate_as_multiple("rdfs:subClassOf");
+			ts.define_predicate_as_multiple("gost19:take");
+
+			ts.define_predicate_as_multilang("swrc:name");
+			ts.define_predicate_as_multilang("swrc:firstName");
+			ts.define_predicate_as_multilang("swrc:lastName");
+			ts.define_predicate_as_multilang("gost19:middleName");
+			ts.define_predicate_as_multilang("docs:position");
+
+			ts.set_fulltext_indexed_predicates("swrc:name");
+			ts.set_fulltext_indexed_predicates("swrc:firstName");
+			ts.set_fulltext_indexed_predicates("swrc:lastName");
+			ts.set_fulltext_indexed_predicates("gost19:middleName");
+			ts.set_fulltext_indexed_predicates("docs:position");
+			ts.set_fulltext_indexed_predicates("rdfs:label");
+			ts.set_fulltext_indexed_predicates("swrc:email");
+			ts.set_fulltext_indexed_predicates("swrc:phone");
+			ts.set_fulltext_indexed_predicates("gost19:internal_phone");
+
+			printf("ok, connected : %X\n", ts);
+		} catch(Exception ex)
 		{
-		    throw new Exception ("Connect to mongodb: " ~ ex.msg, ex);
+			throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
 		}
 
-		
-		if (zmq_connect_type == "server")
+		if(zmq_connect_type == "server")
 		{
 			try
 			{
 				client = new zmq_point_to_poin_client(bind_to);
 				writeln("point to point zmq listener started:", bind_to);
-			}
-			catch (Exception ex)
+			} catch(Exception ex)
 			{
 			}
 		}
 
-		if (zmq_connect_type == "broker")
+		if(zmq_connect_type == "broker")
 		{
-			if (client is null)
+			if(client is null)
 			{
 				client = new zmq_pp_broker_client(bind_to, behavior);
 				writeln("zmq PPP broker listener started:", bind_to);
-			}
-			else
+			} else
 			{
 			}
 		}
-		
-		if (client !is null)
-		{			
+
+		if(client !is null)
+		{
 			client.set_callback(&get_message);
 
 			ServerThread thread = new ServerThread(&client.listener, ts);
-			
+
 			thread.resource.client = client;
-			
+
 			// TODO времянка, переделать!
 			{
 				string reply_to_n1;
-				if (("reply_to_n1" in props.object) !is null)
-				    reply_to_n1 = props.object["reply_to_n1"].str;
-			
-				if (reply_to_n1 !is null)
+				if(("reply_to_n1" in props.object) !is null)
+					reply_to_n1 = props.object["reply_to_n1"].str;
+
+				if(reply_to_n1 !is null)
 				{
-					thread.resource.soc__reply_to_n1 = client.connect_as_req (reply_to_n1);
+					thread.resource.soc__reply_to_n1 = client.connect_as_req(reply_to_n1);
 					log.trace("connect to %s is Ok", reply_to_n1);
 				}
 			}
-			
+
 			thread.start();
-			
-			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);			
+
+			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 			load_info_thread.start();
 
 			version(D1)
@@ -232,8 +226,7 @@ void main(char[][] args)
 				Thread.getThis().sleep(100_000_000);
 		}
 
-	}
-	catch(Exception ex)
+	} catch(Exception ex)
 	{
 		writeln("Exception: ", ex.msg);
 	}
@@ -252,14 +245,11 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	ServerThread server_thread = cast(ServerThread) Thread.getThis();
 	server_thread.sw.stop();
 
-	version(dmd2_053)
-	    long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
-	else
-	    long time_from_last_call = cast(long) server_thread.sw.peek().microseconds;
+	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
 
 	if(time_from_last_call < 10)
 		printf("microseconds passed from the last call: %d\n", time_from_last_call);
-	
+
 	server_thread.stat.idle_time += time_from_last_call;
 
 	StopWatch sw;
@@ -291,13 +281,11 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from json, ok");
-		}
-		catch(Exception ex)
+		} catch(Exception ex)
 		{
 			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
 		}
-	}
-	else
+	} else
 	{
 		try
 		{
@@ -309,8 +297,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from turtle, ok");
-		}
-		catch(Exception ex)
+		} catch(Exception ex)
 		{
 			log.trace("Exception in parse_n3_string:[%s]", ex.msg);
 		}
@@ -368,7 +355,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		Predicate* type = command.getEdge("a");
 		if(type is null)
 			type = command.getEdge(rdf__type);
-		
+
 		if((msg__Message in type.objects_of_value) !is null)
 		{
 			Predicate* reciever = command.getEdge(msg__reciever);
@@ -393,35 +380,17 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				// проверим время жизни тикета
 				if(tt !is null)
 				{
-					version(dmd2_053)
+					SysTime now = Clock.currTime();
+					if(now.stdTime > tt.end_time)
 					{
-						SysTime now = Clock.currTime();
-						if(now.stdTime > tt.end_time)
-						{
-							// тикет просрочен
-							if(trace_msg[61] == 1)
-								log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime, tt.end_time);
-						}
-						else
-						{
-							userId = tt.userId;
-						}
-					}
-					else
+						// тикет просрочен
+						if(trace_msg[61] == 1)
+							log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime,
+									tt.end_time);
+					} else
 					{
-						auto now = UTCtoLocalTime(getUTCtime());
-						if(now > tt.end_time)
-						{
-							// тикет просрочен
-							if(trace_msg[61] == 1)
-								log.trace("тикет просрочен, now=%s > tt.end_time=%s", timeToString(now), tt.end_time);
-						}
-						else
-						{
-							userId = tt.userId;
-						}
+						userId = tt.userId;
 					}
-
 				}
 
 				if(trace_msg[62] == 1)
@@ -439,10 +408,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				if(trace_msg[6] == 1)
 				{
 					sw.stop();
-					version(dmd2_053)
-						long t = cast(long) sw.peek().usecs;
-					else
-						long t = cast(long) sw.peek().microseconds;
+					long t = cast(long) sw.peek().usecs;
+
 					log.trace("messages count: %d, %d [µs] next: command_preparer", server_thread.stat.count_message, t);
 					sw.start();
 				}
@@ -452,10 +419,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				if(trace_msg[7] == 1)
 				{
 					sw.stop();
-					version(dmd2_053)
-						long t = cast(long) sw.peek().usecs;
-					else
-						long t = cast(long) sw.peek().microseconds;
+					long t = cast(long) sw.peek().usecs;
 					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.stat.count_message, t);
 					sw.start();
 				}
@@ -465,14 +429,21 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			Predicate* command_name = command.getEdge(msg__command);
 			server_thread.stat.count_command++;
 			sw_c.stop();
-			version(dmd2_053)
-				long t = cast(long) sw_c.peek().usecs;
-			else
-				long t = cast(long) sw_c.peek().microseconds;
-				
+			long t = cast(long) sw_c.peek().usecs;
+
 			if(trace_msg[68] == 1)
-				log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), sender.getFirstObject(),
-					server_thread.stat.count_command, t);
+			{
+				log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(),
+						sender.getFirstObject(), server_thread.stat.count_command, t);
+				if(t > 60_000_000)
+					log.trace("command [%s] %s, time > 1 min", command_name.getFirstObject(), sender.getFirstObject());
+				else if(t > 10_000_000)
+					log.trace("command [%s] %s, time > 10 s", command_name.getFirstObject(), sender.getFirstObject());
+				else if(t > 1_000_000)
+					log.trace("command [%s] %s, time > 1 s", command_name.getFirstObject(), sender.getFirstObject());
+				else if(t > 100_000)
+					log.trace("command [%s] %s, time > 100 ms", command_name.getFirstObject(), sender.getFirstObject());
+			}
 
 		}
 
@@ -496,36 +467,32 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	out_data = outbuff.toBytes();
 
-//	if(from_client !is null)
-//	{
-//		out_data = msg_out;		
-//		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, msg_out.length, false);
-//	}
+	//	if(from_client !is null)
+	//	{
+	//		out_data = msg_out;		
+	//		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, msg_out.length, false);
+	//	}
 
 	if(trace_msg[10] == 1)
 		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
-		
+
 	server_thread.stat.count_message++;
 	server_thread.stat.size__user_of_ticket = server_thread.resource.user_of_ticket.length;
-	server_thread.stat.size__cache__subject_creator = server_thread.resource.cache__subject_creator.length;	
+	server_thread.stat.size__cache__subject_creator = server_thread.resource.cache__subject_creator.length;
 
-	
 	sw.stop();
-	version(dmd2_053)
-		long t = cast(long) sw.peek().usecs;
-	else
-		long t = cast(long) sw.peek().microseconds;
-	
+	long t = cast(long) sw.peek().usecs;
+
 	server_thread.stat.worked_time += t;
-	
+
 	if(trace_msg[69] == 1)
-	    log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
+		log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
-	
-//	GC.minimize();
-	
+
+	//	GC.minimize();
+
 	return;
 }
 
@@ -536,7 +503,7 @@ synchronized class Statistic
 	int idle_time = 0;
 	int worked_time = 0;
 	int size__user_of_ticket;
-	int size__cache__subject_creator;	
+	int size__cache__subject_creator;
 }
 
 class ServerThread: Thread
@@ -545,17 +512,17 @@ class ServerThread: Thread
 
 	StopWatch sw;
 	Statistic stat;
-	
-	Statistic getStatistic ()
+
+	Statistic getStatistic()
 	{
 		return stat;
 	}
-	
+
 	this(void delegate() _dd, TripleStorage _ts)
 	{
 		super(_dd);
-		stat = new Statistic (); 
-		resource = new ThreadContext ();	
+		stat = new Statistic();
+		resource = new ThreadContext();
 		resource.ts = _ts;
 		sw.start();
 	}
@@ -585,19 +552,18 @@ class ServerThread: Thread
 				//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
 			}
 
-
 			string when = null;
 			int duration = 0;
-	
+
 			// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-			if (ticket_id ! is null && ticket_id.length > 10)
-			{	
+			if(ticket_id !is null && ticket_id.length > 10)
+			{
 				TLIterator it = resource.ts.getTriples(ticket_id, null, null);
-				
+
 				if(trace_msg[19] == 1)
 					if(it is null)
 						log.trace("сессионный билет не найден");
-				
+
 				foreach(triple; it)
 				{
 					if(trace_msg[20] == 1)
@@ -620,7 +586,7 @@ class ServerThread: Thread
 						break;
 				}
 			}
-			
+
 			if(trace_msg[20] == 1)
 				log.trace("foundTicket end");
 
@@ -640,16 +606,16 @@ class ServerThread: Thread
 			if(when !is null)
 			{
 				if(trace_msg[24] == 1)
-					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when, duration);
+					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when,
+							duration);
 
 				// TODO stringToTime очень медленная операция ~ 100 микросекунд
 				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
 
-				resource.user_of_ticket[cast(immutable) ticket_id] = tt;
+				resource.user_of_ticket[cast(string) ticket_id] = tt;
 			}
 		}
 
 		return tt;
 	}
 }
-		

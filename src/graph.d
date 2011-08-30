@@ -57,7 +57,7 @@ final class GraphCluster
 			ss = new Subject;
 			ss.subject = s;
 		}
-		graphs_of_subject[cast(immutable) s] = ss;
+		graphs_of_subject[cast(string) s] = ss;
 		ss.addPredicate(p, o, lang);
 	}
 
@@ -73,9 +73,9 @@ final class GraphCluster
 
 	void addSubject(Subject ss)
 	{
-		if (ss.subject !is null)
+		if(ss.subject !is null)
 		{
-			graphs_of_subject[cast(immutable) ss.subject] = ss;
+			graphs_of_subject[cast(string) ss.subject] = ss;
 		}
 	}
 }
@@ -132,8 +132,7 @@ final class Subject
 		if(pp !is null)
 		{
 			pp.addLiteral(object, lang);
-		}
-		else
+		} else
 		{
 			if(edges.length == 0)
 				edges = new Predicate[16];
@@ -167,8 +166,7 @@ final class Subject
 		if(pp !is null)
 		{
 			pp.addCluster(cluster);
-		}
-		else
+		} else
 		{
 			if(edges.length == 0)
 				edges = new Predicate[16];
@@ -201,9 +199,8 @@ final class Subject
 		if(pp !is null)
 		{
 			pp.addSubject(subject);
-		}
-		else
-		{				
+		} else
+		{
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
@@ -237,7 +234,7 @@ struct Predicate
 			return objects[0].object;
 		return null;
 	}
-	
+
 	void addLiteral(string val, byte lang = LITERAL_LANG.NONE)
 	{
 		if(objects.length == count_objects)
@@ -245,9 +242,9 @@ struct Predicate
 
 		objects[count_objects].object = val;
 		objects[count_objects].lang = lang;
-		
+
 		count_objects++;
-	}	
+	}
 
 	void addCluster(GraphCluster cl)
 	{
@@ -256,9 +253,9 @@ struct Predicate
 
 		objects[count_objects].cluster = cl;
 		objects[count_objects].type = OBJECT_TYPE.CLUSTER;
-		
+
 		count_objects++;
-	}	
+	}
 
 	void addSubject(Subject ss)
 	{
@@ -267,19 +264,19 @@ struct Predicate
 
 		objects[count_objects].subject = ss;
 		objects[count_objects].type = OBJECT_TYPE.SUBJECT;
-		
+
 		count_objects++;
-	}	
+	}
 }
 
 struct Objectz
 {
-//	union 
-//	{
-		string object; // если type == LITERAL
-		Subject subject; // если type == SUBJECT
-		GraphCluster cluster; // если type == CLUSTER
-//	}
+	//	union 
+	//	{
+	string object; // если type == LITERAL
+	Subject subject; // если type == SUBJECT
+	GraphCluster cluster; // если type == CLUSTER
+	//	}
 
 	byte type = OBJECT_TYPE.LITERAL;
 	byte lang;
@@ -291,17 +288,16 @@ void set_hashed_data(Subject ss)
 	{
 		Predicate* pp = &ss.edges[jj];
 
-		ss.edges_of_predicate[cast(immutable) pp.predicate] = pp;
+		ss.edges_of_predicate[cast(string) pp.predicate] = pp;
 
 		for(short kk = 0; kk < pp.count_objects; kk++)
 		{
 			if(pp.objects[kk].type == OBJECT_TYPE.SUBJECT)
 			{
 				set_hashed_data(pp.objects[kk].subject);
-			}
-			else if (pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
+			} else if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
 			{
-				pp.objects_of_value[cast(immutable) pp.objects[kk].object] = &pp.objects[kk];
+				pp.objects_of_value[cast(string) pp.objects[kk].object] = &pp.objects[kk];
 			}
 		}
 

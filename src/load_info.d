@@ -10,14 +10,7 @@ private import pacahon.server;
 private import pacahon.utils;
 
 
-version(dmd2_053)
-{
-	private import std.datetime;
-} else
-{
-	private import std.datetime;
-	private import std.date;
-}
+private import std.datetime;
 
 public bool cinfo_exit = false;
 

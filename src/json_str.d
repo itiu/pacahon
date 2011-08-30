@@ -17,9 +17,9 @@ Distributed under the Boost Software License, Version 1.0.
 */
 module std.json_str;
 
+import std.ascii;
 import std.conv;
 import std.range;
-import std.ctype;
 import std.utf;
 
 private {
@@ -59,8 +59,7 @@ struct JSONValue {
 /**
  Parses a serialized string and returns a tree of JSON values.
 */
-JSONValue parseJSON(char[] json, int maxDepth = -1)
- {
+JSONValue parseJSON(T)(T json, int maxDepth = -1) if(isInputRange!T) {
         JSONValue root = void;
         root.type = JSON_TYPE.NULL;
 
@@ -84,7 +83,7 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
         }
 
         void skipWhitespace() {
-                while(isspace(peekChar())) next = 0;
+                while(isWhite(peekChar())) next = 0;
         }
 
         dchar getChar(bool SkipWhitespace = false)() {
@@ -115,7 +114,7 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
         void checkChar(bool SkipWhitespace = true, bool CaseSensitive = true)(char c) {
                 static if(SkipWhitespace) skipWhitespace();
                 auto c2 = getChar();
-                static if(!CaseSensitive) c2 = tolower(c2);
+                static if(!CaseSensitive) c2 = toLower(c2);
 
                 if(c2 != c) error(text("Found '", c2, "' when expecting '", c, "'."));
         }
@@ -124,7 +123,7 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
     {
                 static if(SkipWhitespace) skipWhitespace();
                 auto c2 = peekChar();
-                static if (!CaseSensitive) c2 = tolower(c2);
+                static if (!CaseSensitive) c2 = toLower(c2);
 
                 if(c2 != c) return false;
 
@@ -156,9 +155,9 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
                         case 'u':
                                 dchar val = 0;
                                 foreach_reverse(i; 0 .. 4) {
-                                        auto hex = toupper(getChar());
-                                        if(!isxdigit(hex)) error("Expecting hex character");
-                                        val += (isdigit(hex) ? hex - '0' : hex - ('A' - 10)) << (4 * i);
+                                        auto hex = toUpper(getChar());
+                                        if(!isHexDigit(hex)) error("Expecting hex character");
+                                        val += (isDigit(hex) ? hex - '0' : hex - ('A' - 10)) << (4 * i);
                                 }
                                 char[4] buf = void;
                                 str.put(toUTF8(buf, val));
@@ -230,11 +229,11 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
                         bool isFloat;
 
                         void readInteger() {
-                                if(!isdigit(c)) error("Digit expected");
+                                if(!isDigit(c)) error("Digit expected");
 
                                 Next: number.put(c);
 
-                                if(isdigit(peekChar())) {
+                                if(isDigit(peekChar())) {
                                         c = getChar();
                                         goto Next;
                                 }
@@ -265,7 +264,7 @@ JSONValue parseJSON(char[] json, int maxDepth = -1)
                         string data = number.data;
                         if(isFloat) {
                                 value.type = JSON_TYPE.FLOAT;
-//                                value.floating = parse!double(data);
+//                                value.floating = parse!real(data);
                         }
                         else {
                                 value.type = JSON_TYPE.INTEGER;
@@ -395,11 +394,11 @@ string toJSON(in JSONValue* root) {
 private void appendJSONChar(Appender!string* dst, dchar c,
         scope void delegate(string) error)
 {
-    if(iscntrl(c)) error("Illegal control character.");
+    if(isControl(c)) error("Illegal control character.");
     dst.put(c);
 //      int stride = UTFStride((&c)[0 .. 1], 0);
 //      if(stride == 1) {
-//              if(iscntrl(c)) error("Illegal control character.");
+//              if(isControl(c)) error("Illegal control character.");
 //              dst.put(c);
 //      }
 //      else {
@@ -407,7 +406,7 @@ private void appendJSONChar(Appender!string* dst, dchar c,
 //              utf[0] = c;
 //              foreach(i; 1 .. stride) utf[i] = next;
 //              size_t index = 0;
-//              if(iscntrl(toUnicode(utf[0 .. stride], index)))
+//              if(isControl(toUnicode(utf[0 .. stride], index)))
 //                      error("Illegal control character");
 //              dst.put(utf[0 .. stride]);
 //      }
