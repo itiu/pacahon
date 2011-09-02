@@ -150,7 +150,7 @@ void main(char[][] args)
 			ts.define_predicate_as_multilang("swrc:name");
 			ts.define_predicate_as_multilang("swrc:firstName");
 			ts.define_predicate_as_multilang("swrc:lastName");
-			ts.define_predicate_as_multilang("gost19:middleName");
+//			ts.define_predicate_as_multilang("gost19:middleName");
 			ts.define_predicate_as_multilang("docs:position");
 
 			ts.set_fulltext_indexed_predicates("swrc:name");
