@@ -73,7 +73,7 @@ void main(char[][] args)
 			throw new Exception("ex! parse params", ex1);
 		}
 
-		log.trace_log_and_console("agent Pacahon, source: commit=%s date=%s", myversion.hash, myversion.date);
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor, myversion.patch, myversion.hash, myversion.date);
 
 		mq_client client = null;
 

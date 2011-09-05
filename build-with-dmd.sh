@@ -1,8 +1,12 @@
 DMD=~/dmd2-054/linux/bin32/dmd
 
+VERSION_MAJOR=1
+VERSION_MINOR=14
+VERSION_PATCH=0   
+
 cp -v -r src/* build/src
 
-git log -1 --pretty=format:"module myversion; public static char[] author=cast(char[])\"%an\"; public static char[] date=cast(char[])\"%ad\"; public static char[] hash=cast(char[])\"%h\";">myversion.d
+git log -1 --pretty=format:"module myversion; public static string major=\"$VERSION_MAJOR\"; public static string minor=\"$VERSION_MINOR\"; public static string patch=\"$VERSION_PATCH\"; public static string author=\"%an\"; public static string date=\"%ad\"; public static string hash=\"%h\";">myversion.d
 
 rm Pacahon-D2-1
 rm *.log
