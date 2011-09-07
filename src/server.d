@@ -247,8 +247,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
 
-	if(time_from_last_call < 10)
-		printf("microseconds passed from the last call: %d\n", time_from_last_call);
+//	if(time_from_last_call < 10)
+//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
 	server_thread.stat.idle_time += time_from_last_call;
 
