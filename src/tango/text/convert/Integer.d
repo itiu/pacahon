@@ -25,6 +25,16 @@ module tango.text.convert.Integer;
 
 import tango.core.Exception;
 
+version (X86_64)
+{
+    alias ulong length_t;
+}
+else
+{
+    alias int length_t;
+}
+        
+
 /******************************************************************************
 
         Parse an integer value from the provided 'digits' string. 
@@ -208,7 +218,7 @@ private struct _FormatterInfo(T)
 		T[]     numbers;
 }
 
-T[] formatter(T) (T[] dst, long i, char type, char pre, int width)
+T[] formatter(T) (T[] dst, long i, char type, char pre, length_t width)
 {
         T[] lower = cast(T[])"0123456789abcdef";
         T[] upper = cast(T[])"0123456789ABCDEF";
@@ -228,7 +238,7 @@ T[] formatter(T) (T[] dst, long i, char type, char pre, int width)
                 ];
 
         ubyte index;
-        int len = dst.length;
+        length_t len = dst.length;
 
         if (len)
            {
