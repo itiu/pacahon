@@ -2,13 +2,13 @@ DMD=~/dmd2-055/linux/bin32/dmd
 
 VERSION_MAJOR=1
 VERSION_MINOR=14
-VERSION_PATCH=2   
+VERSION_PATCH=3   
 
 cp -v -r src/* build/src
 
 git log -1 --pretty=format:"module myversion; public static string major=\"$VERSION_MAJOR\"; public static string minor=\"$VERSION_MINOR\"; public static string patch=\"$VERSION_PATCH\"; public static string author=\"%an\"; public static string date=\"%ad\"; public static string hash=\"%h\";">myversion.d
 
-rm Pacahon-D2-1
+rm Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH
 rm *.log
 rm *.io
 
@@ -22,5 +22,5 @@ lib/dmdscriptlib.a lib/libzmq.a lib/libstdc++.a lib/libuuid.a  \
 myversion.d \
 $bf/trioplax/mongodb/*.d $bf/trioplax/memory/*.d $bf/rt/util/*.d $bf/trioplax/*.d $bf/*.d \
 $bf/tango/util/uuid/*.d  $bf/tango/core/*.d $bf/tango/text/convert/*.d $bf/tango/util/digest/*.d $bf/tango/math/random/*.d \
--ofPacahon-D2-1
+-ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH
 rm *.o
