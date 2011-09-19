@@ -83,7 +83,7 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 
 		if(val !is null)
 		{
-			if(val.length > 3 && val[val.length - 3] == '@')
+			if(val.length >= 3 && val[val.length - 3] == '@')
 			{
 				if(val[val.length - 2] == 'r' && val[val.length - 1] == 'u')
 					ss.addPredicate(key, val[0 .. val.length - 3], LITERAL_LANG.RU);
