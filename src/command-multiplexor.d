@@ -10,7 +10,7 @@ private import core.stdc.stdlib;
 private import std.c.string;
 private import std.string;
 
-private import std.datetime; 
+private import std.datetime;
 
 private import std.stdio;
 private import std.outbuffer;
@@ -131,7 +131,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 				if(trace_msg[65] == 1)
 					log.trace("get_ticket: store ticket in DB");
-				
+
 				// сохраняем в хранилище
 				string ticket_id = "auth:" ~ cast(string) generated.toString;
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
@@ -183,7 +183,6 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		}
 	}
 }
-
 
 public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
 		out bool isOk, out string reason)
@@ -316,16 +315,16 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				if(trace_msg[15] == 1)
 					log.trace("command_preparer, get_ticket is Ok");
 				local_ticket = res.edges[0].getFirstObject;
-			}
-			else
+			} else
 			{
 				if(trace_msg[15] == 1)
-					log.trace("command_preparer, get_ticket is False");				
+					log.trace("command_preparer, get_ticket is False");
 			}
-		} else if ("yawl:announceItemEnabled")
+		} else if("yawl:announceItemEnabled")
 		{
-			
-		}	else if("set_message_trace" in command.objects_of_value)
+			res = yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
+
+		} else if("set_message_trace" in command.objects_of_value)
 		{
 			//			if(trace_msg[63] == 1)
 			res = set_message_trace(message, sender, userId, server_thread, isOk, reason);

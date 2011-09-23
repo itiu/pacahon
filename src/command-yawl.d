@@ -5,7 +5,7 @@ private import core.stdc.stdlib;
 private import std.c.string;
 private import std.string;
 
-private import std.datetime; 
+private import std.datetime;
 
 private import std.stdio;
 private import std.outbuffer;
@@ -40,3 +40,19 @@ static this()
 	log = new Logger("pacahon", "log", "command-yawl");
 }
 
+/*
+ * комманда получения уведомление от движка jawl о том что элемент запущенного процесса выбран 
+ */
+Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
+		out bool isOk, out string reason)
+{
+	isOk = true;
+
+	log.trace("yawl_announceItemEnabled");
+	
+	reason = "ok";
+
+	Subject res;
+
+	return res;
+}
