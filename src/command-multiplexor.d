@@ -320,9 +320,15 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				if(trace_msg[15] == 1)
 					log.trace("command_preparer, get_ticket is False");
 			}
-		} else if("yawl:announceItemEnabled")
+		} else if("yawl:announceItemEnabled" in command.objects_of_value)
 		{
 			res = yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
+
+		} else if("yawl:ParameterInfoRequest" in command.objects_of_value)
+		{
+			GraphCluster gres = new GraphCluster;
+			yawl_ParameterInfoRequest(message, sender, userId, server_thread, isOk, reason, gres);
+			out_message.addPredicate(msg__result, gres);
 
 		} else if("set_message_trace" in command.objects_of_value)
 		{

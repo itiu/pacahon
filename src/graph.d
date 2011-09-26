@@ -48,7 +48,7 @@ final class GraphCluster
 {
 	Subject[string] graphs_of_subject;
 
-	void addTriple(string s, string p, string o, byte lang)
+	void addTriple(string s, string p, string o, byte lang = 0)
 	{
 		Subject ss = graphs_of_subject.get(s, null);
 

@@ -41,18 +41,40 @@ static this()
 }
 
 /*
- * комманда получения уведомление от движка jawl о том что элемент запущенного процесса выбран 
+ * получение уведомление от движка jawl, о том что элемент запущенного процесса выбран 
  */
 Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
 		out bool isOk, out string reason)
 {
 	isOk = true;
 
-	log.trace("yawl_announceItemEnabled");
-	
+//	log.trace("yawl_announceItemEnabled");
+
 	reason = "ok";
 
-	Subject res;
+	Subject res = new Subject();
 
 	return res;
+}
+
+/*
+ * запрос переменных сервиса 
+ */
+void yawl_ParameterInfoRequest(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
+		out bool isOk, out string reason, ref GraphCluster res)
+{
+	isOk = true;
+
+//	log.trace("yawl_ParameterInfoRequest");
+
+	reason = "ok";
+
+	res.addTriple("command", rdf__type, process__Input);
+	res.addTriple("command", process__parameterType, xsd__string);
+
+	res.addTriple("args", rdf__type, process__Input);
+	res.addTriple("args", process__parameterType, xsd__string);
+
+	res.addTriple("result", rdf__type, process__Output);
+	res.addTriple("result", process__parameterType, xsd__string);
 }

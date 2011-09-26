@@ -5,6 +5,16 @@ public string rdf__subject = "rdf:subject";
 public string rdf__predicate = "rdf:predicate";
 public string rdf__object = "rdf:object";
 public string rdf__Statement = "rdf:Statement";
+public string rdf__datatype = "rdf:datatype";
+
+public string rdfs__label = "rdfs:label";
+
+public string xsd__string = "xsd:string";
+
+// http://www.daml.org/services/owl-s/1.0/Process.owl
+public string process__Input = "process:Input";
+public string process__Output = "process:Output";
+public string process__parameterType = "process:parameterType";
 
 public string dc__creator = "dc:creator";
 
