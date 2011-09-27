@@ -33,6 +33,10 @@ private import pacahon.thread_context;
 
 private import trioplax.Logger;
 
+//import dmdscript.program;
+//import dmdscript.script;
+//import dmdscript.extending;
+
 Logger log;
 
 static this()
@@ -77,4 +81,5 @@ void yawl_ParameterInfoRequest(Subject message, Predicate* sender, string userId
 
 	res.addTriple("result", rdf__type, process__Output);
 	res.addTriple("result", process__parameterType, xsd__string);
+
 }

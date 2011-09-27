@@ -11,6 +11,8 @@
  * For a C++ implementation of DMDScript, including COM support, see
  * http://www.digitalmars.com/dscript/cppscript.html
  */
+module dmdscript.extending;
+
 import dmdscript.script;
 import dmdscript.value;
 import dmdscript.dobject;

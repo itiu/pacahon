@@ -137,6 +137,10 @@ void main(char[][] args)
 		if(cache_type == "QUERY_RESULT")
 			cp = caching_type.QUERY_RESULT;
 
+		string yawl_engine = null;
+		if(("yawl_engine" in props.object) !is null)
+			 yawl_engine = props.object["yawl_engine"].str;
+
 		TripleStorage ts;
 		try
 		{
@@ -198,6 +202,8 @@ void main(char[][] args)
 			ServerThread thread = new ServerThread(&client.listener, ts);
 
 			thread.resource.client = client;
+			thread.resource.yawl_engine_pont = yawl_engine;
+			thread.resource.reconnect ();
 
 			// TODO времянка, переделать!
 			{

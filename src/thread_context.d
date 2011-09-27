@@ -21,4 +21,16 @@ class ThreadContext
 
 	// TODO времянка, переделать!
 	void* soc__reply_to_n1 = null;
+		
+	string yawl_engine_pont = null;
+	void* yawl_engine_context = null;
+
+
+	public void reconnect ()
+	{
+	    if (yawl_engine_pont !is null)
+	    {
+		yawl_engine_context = client.connect_as_req(yawl_engine_pont);	
+    	    }	
+    	}    
 }
