@@ -91,7 +91,7 @@ class OutBuffer
     void write(const(ubyte)[] bytes)
         {
             reserve(bytes.length);
-            data[offset .. offset + bytes.length] = bytes;
+            (cast(ubyte[])data)[offset .. offset + bytes.length] = bytes[0..$];
             offset += bytes.length;
         }
 

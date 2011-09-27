@@ -18,11 +18,11 @@
 module dmdscript.value;
 
 import std.math;
-import std.date;
 import std.string;
 import std.stdio;
 import std.c.string;
 
+import std.date;
 import dmdscript.script;
 import dmdscript.dobject;
 import dmdscript.iterator;

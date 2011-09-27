@@ -33,9 +33,9 @@ private import pacahon.thread_context;
 
 private import trioplax.Logger;
 
-//import dmdscript.program;
-//import dmdscript.script;
-//import dmdscript.extending;
+import dmdscript.program;
+import dmdscript.script;
+import dmdscript.extending;
 
 Logger log;
 

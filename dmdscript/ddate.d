@@ -18,11 +18,12 @@
 module dmdscript.ddate;
 
 import std.math;
-import std.date;
+
 debug
 {
     import std.stdio;
 }
+import std.date;
 import dmdscript.script;
 import dmdscript.dobject;
 import dmdscript.value;
@@ -319,6 +320,7 @@ int getThisLocalTime(Value* ret, Dobject othis, out d_time n)
 
     n = cast(d_time)othis.value.number;
     if(n != d_time_nan)
+
     {
         isn = 0;
         n = std.date.UTCtoLocalTime(n);
