@@ -18,7 +18,7 @@ bf=build/src
 
 #~/dmd/linux/bin/dmd -version=D1 -debug -g myversion.d build/src/trioplax/memory/*.d build/src/trioplax/mongodb/*.d build/src/trioplax/*.d build/src/*.d lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D1
 #-version=trace_turtle_parser
-$DMD -O -version=D2 -version=dmd2_053 -version=trace_turtle_parser0 -inline -d \
+$DMD -O -Iimport -version=D2 -version=dmd2_053 -version=trace_turtle_parser0 -inline -d \
 lib/dmdscriptlib.a \
 lib/libzmq.a lib/libstdc++.a lib/libuuid.a  \
 myversion.d \
