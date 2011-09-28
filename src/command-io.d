@@ -34,7 +34,7 @@ private import pacahon.thread_context;
 private import trioplax.Logger;
 
 Logger log;
-char[] buff;
+//char[] buff;
 char[] buff1;
                 
 static this()
@@ -122,7 +122,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				log.trace("jj = %d", jj);
 
 			Subject graph = graphs_on_put[jj];
-			set_hashed_data(graph);
+			graph.reindex_predicate();
 
 			if(trace_msg[35] == 1)
 				log.trace("#1 jj = %d", jj);

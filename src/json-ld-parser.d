@@ -60,6 +60,7 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 {
 	if(element.type == JSON_TYPE.OBJECT)
 	{
+		// TODO переделать: неверное определение, будет это кластер или единичный субьект
 		if(("@" in element.object) is null)
 		{
 			Subject ss_in = new Subject;

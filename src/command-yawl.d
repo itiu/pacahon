@@ -50,12 +50,36 @@ static this()
 Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
 		out bool isOk, out string reason)
 {
+	assert(message !is null);
 	isOk = true;
 
-//	log.trace("yawl_announceItemEnabled");
+	Predicate* args = message.getEdge(msg__args);
+	if(args !is null)
+	{
+		Subject sargs = args.getFirstSubject();
 
-	reason = "ok";
+		if(sargs !is null)
+		{
+			sargs.reindex_predicate();
 
+			string taskId = sargs.getObject("yawl:taskId");
+
+			log.trace("yawl_announceItemEnabled %s", taskId);
+
+			// получить тикет [connect(_engineUser,_enginePassword)]
+			string ticket = yawl_engine_connect("TestCaseLauncher", "DrBPdG8BEdiaTv9hsGfcO18zRlk=",
+					"pacahon:yawl_announceItemEnabled", server_thread);
+
+			// забрать задачу на обработку [checkOut(taskId, ticket)]
+			yawl_checkOut(taskId, ticket);
+
+			// установить переменные задачи
+
+			// вернуть задачу движку [checkInWorkItem]
+
+			reason = "ok";
+		}
+	}
 	Subject res = new Subject();
 
 	return res;
@@ -69,7 +93,7 @@ void yawl_ParameterInfoRequest(Subject message, Predicate* sender, string userId
 {
 	isOk = true;
 
-//	log.trace("yawl_ParameterInfoRequest");
+	//	log.trace("yawl_ParameterInfoRequest");
 
 	reason = "ok";
 
@@ -82,4 +106,58 @@ void yawl_ParameterInfoRequest(Subject message, Predicate* sender, string userId
 	res.addTriple("result", rdf__type, process__Output);
 	res.addTriple("result", process__parameterType, xsd__string);
 
+}
+
+string yawl_engine_connect(string login, string credential, string from, ThreadContext server_thread)
+{
+	server_thread.yawl_check_connect();
+
+	string msg = create_message(from, "yawl-engine", "get_ticket",
+			"\"auth:login\" : \"" ~ login ~ "\",\n\"auth:credential\" : \"" ~ credential ~ "\"");
+
+	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
+	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
+
+	//	writeln("res=", res);
+
+	Subject[] triples;
+
+	triples = parse_json_ld_string(cast(char*) res, res.length);
+
+	if(triples.length > 0)
+	{
+		triples[0].reindex_predicate();
+		//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
+		Predicate* pp = triples[0].getEdge(msg__result);
+
+		if(pp !is null)
+		{
+			Subject aa = pp.objects[0].subject;
+
+			if(aa.edges[0].predicate == auth__ticket)
+			{
+				return aa.edges[0].getFirstObject();
+			}
+		}
+	}
+
+	return null;
+}
+
+GraphCluster yawl_checkOut(string taskId, string ticket)
+{
+	writeln ("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
+	
+	return null;
+
+}
+
+string create_message(string from, string reciever, string command, string args)
+{
+	string msg_id = generateMsgId();
+	string msg = "{\n\"@\" : \"" ~ msg_id ~ "\", \n\"a\" : \"msg:Message\",\n" ~ "\"msg:sender\" : \"" ~ // 
+			from ~ "\",\n\"msg:reciever\" : \"" ~ reciever ~ "\",\n" ~ //
+			"\"msg:command\" : \"" ~ command ~ "\",\n\"msg:args\" :\n{\n" ~ args ~ "\n}\n}";
+
+	return msg;
 }

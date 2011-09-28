@@ -138,8 +138,8 @@ void main(char[][] args)
 			cp = caching_type.QUERY_RESULT;
 
 		string yawl_engine = null;
-		if(("yawl_engine" in props.object) !is null)
-			 yawl_engine = props.object["yawl_engine"].str;
+		if(("yawl-engine" in props.object) !is null)
+			 yawl_engine = props.object["yawl-engine"].str;
 
 		TripleStorage ts;
 		try
@@ -203,7 +203,6 @@ void main(char[][] args)
 
 			thread.resource.client = client;
 			thread.resource.yawl_engine_pont = yawl_engine;
-			thread.resource.reconnect ();
 
 			// TODO времянка, переделать!
 			{
@@ -356,7 +355,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			continue;
 		}
 
-		set_hashed_data(command);
+		command.reindex_predicate();
 
 		Predicate* type = command.getEdge("a");
 		if(type is null)

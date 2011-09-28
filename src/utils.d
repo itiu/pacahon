@@ -8,6 +8,8 @@ private import std.json_str;
 private import core.stdc.stdio;
 private import std.c.string;
 private import std.c.linux.linux;
+private import Integer = tango.text.convert.Integer;
+
 
 string getNowAsString()
 {
@@ -72,4 +74,21 @@ string fromStringz(char* s)
 string fromStringz(char* s, int len)
 {
 	return cast(string) (s ? s[0 .. len] : null);
+}
+
+char[] buff;
+
+public string generateMsgId ()
+{
+	buff[] = '_';
+	buff[0] = 'm';
+	buff[1] = 's';
+	buff[2] = 'g';
+	buff[3] = ':';
+	buff[4] = 'M';
+
+	SysTime sysTime = Clock.currTime(UTC());
+	Integer.format(buff, sysTime.stdTime, cast(char[]) "X2");
+	
+	return cast(string) buff;
 }

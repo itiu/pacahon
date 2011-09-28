@@ -88,6 +88,17 @@ final class Subject
 
 	Predicate*[char[]] edges_of_predicate;
 
+	string getObject(string pname)
+	{
+		Predicate* pp = null;
+		Predicate** ppp = (pname in edges_of_predicate);
+
+		if(ppp !is null)
+			pp = *ppp;
+
+		return pp.getFirstObject();
+	}
+
 	Predicate* getEdge(string pname)
 	{
 		Predicate* pp = null;
@@ -218,6 +229,27 @@ final class Subject
 		}
 	}
 
+	void reindex_predicate()
+	{
+		for(short jj = 0; jj < this.count_edges; jj++)
+		{
+			Predicate* pp = &this.edges[jj];
+
+			this.edges_of_predicate[cast(string) pp.predicate] = pp;
+
+			for(short kk = 0; kk < pp.count_objects; kk++)
+			{
+				if(pp.objects[kk].type == OBJECT_TYPE.SUBJECT)
+				{
+					pp.objects[kk].subject.reindex_predicate();
+				} else if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
+				{
+					pp.objects_of_value[cast(string) pp.objects[kk].object] = &pp.objects[kk];
+				}
+			}
+
+		}
+	}
 }
 
 struct Predicate
@@ -232,6 +264,20 @@ struct Predicate
 	{
 		if(count_objects > 0)
 			return objects[0].object;
+		return null;
+	}
+
+	Subject getFirstSubject()
+	{
+		if(count_objects > 0)
+		{
+			if(objects[0].type == OBJECT_TYPE.CLUSTER && objects[0].cluster.graphs_of_subject.length == 1)
+			{
+				return objects[0].cluster.graphs_of_subject.values[0];
+			}
+
+			return objects[0].subject;
+		}
 		return null;
 	}
 
@@ -280,26 +326,4 @@ struct Objectz
 
 	byte type = OBJECT_TYPE.LITERAL;
 	byte lang;
-}
-
-void set_hashed_data(Subject ss)
-{
-	for(short jj = 0; jj < ss.count_edges; jj++)
-	{
-		Predicate* pp = &ss.edges[jj];
-
-		ss.edges_of_predicate[cast(string) pp.predicate] = pp;
-
-		for(short kk = 0; kk < pp.count_objects; kk++)
-		{
-			if(pp.objects[kk].type == OBJECT_TYPE.SUBJECT)
-			{
-				set_hashed_data(pp.objects[kk].subject);
-			} else if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
-			{
-				pp.objects_of_value[cast(string) pp.objects[kk].object] = &pp.objects[kk];
-			}
-		}
-
-	}
 }

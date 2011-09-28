@@ -249,22 +249,9 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
 
-	//	Predicate[] ppp = new Predicate[5];
-
 	Subject res;
 
-	buff[] = '_';
-	buff[0] = 'm';
-	buff[1] = 's';
-	buff[2] = 'g';
-	buff[3] = ':';
-	buff[4] = 'M';
-
-	SysTime sysTime = Clock.currTime(UTC());
-	Integer.format(buff, sysTime.stdTime, cast(char[]) "X2");
-
-	out_message.subject = cast(string) buff;
-	//	out_message.subject = cast(char[])"msg:time";
+	out_message.subject = generateMsgId ();
 
 	out_message.addPredicateAsURI("a", msg__Message);
 	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
