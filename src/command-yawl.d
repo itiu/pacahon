@@ -60,9 +60,9 @@ Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string user
 
 		if(sargs !is null)
 		{
-			sargs.reindex_predicate();
+//			sargs.reindex_predicate();
 
-			string taskId = sargs.getObject("yawl:taskId");
+			string taskId = sargs.subject;
 
 			log.trace("yawl_announceItemEnabled %s", taskId);
 
@@ -71,7 +71,7 @@ Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string user
 					"pacahon:yawl_announceItemEnabled", server_thread);
 
 			// забрать задачу на обработку [checkOut(taskId, ticket)]
-			yawl_checkOut(taskId, ticket);
+			yawl_checkOut(taskId, ticket, "pacahon:yawl_announceItemEnabled", server_thread);
 
 			// установить переменные задачи
 
@@ -144,10 +144,18 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 	return null;
 }
 
-GraphCluster yawl_checkOut(string taskId, string ticket)
+GraphCluster yawl_checkOut(string taskId, string ticket, string from, ThreadContext server_thread)
 {
-	writeln ("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
-	
+	writeln("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
+
+	string msg = create_message(from, "yawl-engine", "checkout",
+			"\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" ~ taskId ~ "\"");
+
+	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
+	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
+
+	writeln("res=", res);
+
 	return null;
 
 }
