@@ -355,7 +355,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			continue;
 		}
 
-		command.reindex_predicate();
+//		command.reindex_predicate();
 
 		Predicate* type = command.getEdge("a");
 		if(type is null)

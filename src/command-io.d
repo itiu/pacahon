@@ -122,7 +122,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				log.trace("jj = %d", jj);
 
 			Subject graph = graphs_on_put[jj];
-			graph.reindex_predicate();
+//			graph.reindex_predicate();
 
 			if(trace_msg[35] == 1)
 				log.trace("#1 jj = %d", jj);

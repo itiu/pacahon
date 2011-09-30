@@ -309,7 +309,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			}
 		} else if("yawl:announceItemEnabled" in command.objects_of_value)
 		{
-			res = yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
+			yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
 
 		} else if("yawl:ParameterInfoRequest" in command.objects_of_value)
 		{

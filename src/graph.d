@@ -7,8 +7,8 @@ module pacahon.graph;
  * 
  * GraphCluster 
  * 	└─Subject[]
- * 		└─Predicates[]
- * 			└─Objects[]	
+ * 		└─Predicate[]
+ * 			└─Objectz[]	
  * 
  * доступные возможности: 
  * - сборка графа из фактов или их частей
@@ -82,6 +82,7 @@ final class GraphCluster
 
 final class Subject
 {
+	bool needReidex = false;
 	string subject = null;
 	Predicate[] edges;
 	short count_edges = 0;
@@ -90,6 +91,9 @@ final class Subject
 
 	string getObject(string pname)
 	{
+		if (needReidex == true)
+			reindex_predicate();
+		
 		Predicate* pp = null;
 		Predicate** ppp = (pname in edges_of_predicate);
 
@@ -101,6 +105,9 @@ final class Subject
 
 	Predicate* getEdge(string pname)
 	{
+		if (needReidex == true)
+			reindex_predicate();
+
 		Predicate* pp = null;
 		Predicate** ppp = (pname in edges_of_predicate);
 
@@ -126,6 +133,8 @@ final class Subject
 		edges[count_edges].objects[0].object = object;
 		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
 		count_edges++;
+		
+		needReidex = true;		
 	}
 
 	void addPredicate(string predicate, string object, byte lang = LITERAL_LANG.NONE)
@@ -160,6 +169,7 @@ final class Subject
 			edges[count_edges].objects[0].lang = lang;
 			count_edges++;
 		}
+		needReidex = true;		
 	}
 
 	void addPredicate(string predicate, GraphCluster cluster)
@@ -194,6 +204,7 @@ final class Subject
 			edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
 			count_edges++;
 		}
+		needReidex = true;		
 	}
 
 	void addPredicate(string predicate, Subject subject)
@@ -227,9 +238,10 @@ final class Subject
 			edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
 			count_edges++;
 		}
+		needReidex = true;		
 	}
 
-	void reindex_predicate()
+	private void reindex_predicate()
 	{
 		for(short jj = 0; jj < this.count_edges; jj++)
 		{
@@ -249,6 +261,7 @@ final class Subject
 			}
 
 		}
+		needReidex = false;
 	}
 }
 

@@ -45,11 +45,14 @@ static this()
 }
 
 /*
- * получение уведомление от движка jawl, о том что элемент запущенного процесса выбран 
+ * Получение уведомление от движка jawl, о том что элемент запущенного процесса выбран.
+ * Определение внешнего скрипта для запуска и его выполнение. 
  */
-Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
+void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
 		out bool isOk, out string reason)
 {
+	string result;
+
 	assert(message !is null);
 	isOk = true;
 
@@ -60,29 +63,44 @@ Subject yawl_announceItemEnabled(Subject message, Predicate* sender, string user
 
 		if(sargs !is null)
 		{
-//			sargs.reindex_predicate();
+			//			sargs.reindex_predicate();
 
-			string taskId = sargs.subject;
+			string caseTaskId = sargs.subject;
 
-			log.trace("yawl_announceItemEnabled %s", taskId);
+			log.trace("yawl_announceItemEnabled %s", caseTaskId);
 
 			// получить тикет [connect(_engineUser,_enginePassword)]
 			string ticket = yawl_engine_connect("TestCaseLauncher", "DrBPdG8BEdiaTv9hsGfcO18zRlk=",
 					"pacahon:yawl_announceItemEnabled", server_thread);
 
 			// забрать задачу на обработку [checkOut(taskId, ticket)]
-			yawl_checkOut(taskId, ticket, "pacahon:yawl_announceItemEnabled", server_thread);
+			Subject task = yawl_checkOut(caseTaskId, ticket, "pacahon:yawl_announceItemEnabled", server_thread);
+
+			string caseId = task.getObject("yawl:caseId");
+			string taskId = task.getObject("yawl:taskId");
+
+			string command;
+			Predicate* data_of_task = task.getEdge("yawl:data");
+			if(data_of_task !is null)
+			{
+				Subject aa1 = data_of_task.objects[0].subject;
+
+				command = aa1.getObject("command");
+			}
+			writeln("command:", command);
 
 			// установить переменные задачи
+			result = "done +";
 
 			// вернуть задачу движку [checkInWorkItem]
+			yawl_checkInWorkItem(taskId, caseId, result, command ~ ", is Ok", "pacahon:yawl_announceItemEnabled",
+					ticket, server_thread);
 
 			reason = "ok";
 		}
 	}
-	Subject res = new Subject();
 
-	return res;
+	return;
 }
 
 /*
@@ -126,7 +144,7 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 
 	if(triples.length > 0)
 	{
-		triples[0].reindex_predicate();
+		//		triples[0].reindex_predicate();
 		//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
 		Predicate* pp = triples[0].getEdge(msg__result);
 
@@ -144,7 +162,7 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 	return null;
 }
 
-GraphCluster yawl_checkOut(string taskId, string ticket, string from, ThreadContext server_thread)
+Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext server_thread)
 {
 	writeln("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
 
@@ -155,6 +173,76 @@ GraphCluster yawl_checkOut(string taskId, string ticket, string from, ThreadCont
 	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
 
 	writeln("res=", res);
+
+	Subject[] triples;
+
+	//	writeln("parse...");
+	triples = parse_json_ld_string(cast(char*) res, res.length);
+
+	if(triples.length > 0)
+	{
+		writeln("parse is  Ok");
+		Predicate* pp = triples[0].getEdge(msg__result);
+
+		if(pp !is null)
+		{
+			writeln("seek result");
+			GraphCluster aa = pp.objects[0].cluster;
+
+			//		aa.reindex_predicate();
+			//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
+			if(aa !is null)
+			{
+				return aa.graphs_of_subject.values[0];
+			}
+		}
+
+	}
+
+	return null;
+
+}
+
+Subject yawl_checkInWorkItem(string taskId, string caseId, string result, string reason, string ticket, string from,
+		ThreadContext server_thread)
+{
+	writeln("checkInWorkItem(taskId=", taskId, ", ticket=", ticket);
+
+	string args = "\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" //
+			~ taskId ~ "\",\n\"yawl:caseId\" : \"" ~ caseId ~ "\", \"yawl:data\":{\"result\" : \"" ~ result ~ //
+			"\"}, \"yawl:reason\" : \"" ~ reason ~ "\"";
+
+	string msg = create_message(from, "yawl-engine", "checkin", args);
+
+	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
+	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
+
+	writeln("res=", res);
+
+	Subject[] triples;
+
+	//	writeln("parse...");
+	triples = parse_json_ld_string(cast(char*) res, res.length);
+
+	if(triples.length > 0)
+	{
+		writeln("parse is  Ok");
+		Predicate* pp = triples[0].getEdge(msg__result);
+
+		if(pp !is null)
+		{
+			writeln("seek result");
+			GraphCluster aa = pp.objects[0].cluster;
+
+			//		aa.reindex_predicate();
+			//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
+			if(aa !is null)
+			{
+				return aa.graphs_of_subject.values[0];
+			}
+		}
+
+	}
 
 	return null;
 
