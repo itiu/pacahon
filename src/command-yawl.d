@@ -17,6 +17,8 @@ private import tango.math.random.Twister;
 
 private import std.datetime;
 
+import luad.all;
+
 private import trioplax.triple;
 private import trioplax.TripleStorage;
 
@@ -33,15 +35,16 @@ private import pacahon.thread_context;
 
 private import trioplax.Logger;
 
-import dmdscript.program;
-import dmdscript.script;
-import dmdscript.extending;
-
 Logger log;
+LuaState lua;
+LuaFunction l_f;
 
 static this()
 {
 	log = new Logger("pacahon", "log", "command-yawl");
+	lua = new LuaState;
+	lua.doString (`function ask(question) return 39 end`);
+	l_f = lua.get!LuaFunction ("ask");
 }
 
 /*
@@ -67,7 +70,7 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 
 			string caseTaskId = sargs.subject;
 
-			log.trace("yawl_announceItemEnabled %s", caseTaskId);
+			//			log.trace("yawl_announceItemEnabled %s", caseTaskId);
 
 			// получить тикет [connect(_engineUser,_enginePassword)]
 			string ticket = yawl_engine_connect("TestCaseLauncher", "DrBPdG8BEdiaTv9hsGfcO18zRlk=",
@@ -79,22 +82,42 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 			string caseId = task.getObject("yawl:caseId");
 			string taskId = task.getObject("yawl:taskId");
 
+			string section_name;
 			string command;
 			Predicate* data_of_task = task.getEdge("yawl:data");
 			if(data_of_task !is null)
 			{
-				Subject aa1 = data_of_task.objects[0].subject;
+				//				writeln("found yawl:data ");
 
-				command = aa1.getObject("command");
+				Subject s_section = data_of_task.getFirstSubject();
+				//				writeln("s_section.edges=", s_section.edges);
+
+				Predicate p_section = s_section.edges[0];
+				section_name = p_section.predicate;
+
+				//				writeln("section_name=", section_name);
+
+				//				Subject s_section = p_section.getFirstSubject ();
+				Subject vars = p_section.getFirstSubject();
+
+				if(vars !is null)
+				{
+					command = vars.getObject("command");
+				}
 			}
-			writeln("command:", command);
-
+		
+			//			writeln("command:", command);
+			
+			// выполним скрипт связанный с коммандой в переменной [command]
+			auto aa = l_f.call!int("sddsgyuyujh vrr");			
+//			writeln ("aa=", aa);
+			
 			// установить переменные задачи
 			result = "done +";
 
 			// вернуть задачу движку [checkInWorkItem]
-			yawl_checkInWorkItem(taskId, caseId, result, command ~ ", is Ok", "pacahon:yawl_announceItemEnabled",
-					ticket, server_thread);
+			yawl_checkInWorkItem(taskId, caseId, section_name, result, command ~ ", is Ok",
+					"pacahon:yawl_announceItemEnabled", ticket, server_thread);
 
 			reason = "ok";
 		}
@@ -164,7 +187,7 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 
 Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext server_thread)
 {
-	writeln("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
+	//	writeln("yawl_checkOut(taskId=", taskId, ", ticket=", ticket);
 
 	string msg = create_message(from, "yawl-engine", "checkout",
 			"\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" ~ taskId ~ "\"");
@@ -172,7 +195,7 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
 	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
 
-	writeln("res=", res);
+	//	writeln("res=", res);
 
 	Subject[] triples;
 
@@ -181,18 +204,19 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 
 	if(triples.length > 0)
 	{
-		writeln("parse is  Ok");
+		//		writeln("parse is  Ok");
 		Predicate* pp = triples[0].getEdge(msg__result);
 
 		if(pp !is null)
 		{
-			writeln("seek result");
+			//			writeln("seek result");
 			GraphCluster aa = pp.objects[0].cluster;
 
 			//		aa.reindex_predicate();
 			//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
 			if(aa !is null)
 			{
+				//				writeln("ok");
 				return aa.graphs_of_subject.values[0];
 			}
 		}
@@ -203,21 +227,21 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 
 }
 
-Subject yawl_checkInWorkItem(string taskId, string caseId, string result, string reason, string ticket, string from,
-		ThreadContext server_thread)
+Subject yawl_checkInWorkItem(string taskId, string caseId, string section_name, string result, string reason,
+		string ticket, string from, ThreadContext server_thread)
 {
-	writeln("checkInWorkItem(taskId=", taskId, ", ticket=", ticket);
+	//	writeln("checkInWorkItem(taskId=", taskId, ", ticket=", ticket);
 
 	string args = "\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" //
-			~ taskId ~ "\",\n\"yawl:caseId\" : \"" ~ caseId ~ "\", \"yawl:data\":{\"result\" : \"" ~ result ~ //
-			"\"}, \"yawl:reason\" : \"" ~ reason ~ "\"";
+			~ taskId ~ "\",\n\"yawl:caseId\" : \"" ~ caseId ~ "\", \"yawl:data\":{\"" ~ section_name ~ "\": \n {\"result\" : \"" ~ result ~ //
+			"\"}\n}, \"yawl:reason\" : \"" ~ reason ~ "\"";
 
 	string msg = create_message(from, "yawl-engine", "checkin", args);
 
 	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
 	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
 
-	writeln("res=", res);
+	//	writeln("res=", res);
 
 	Subject[] triples;
 
@@ -226,12 +250,12 @@ Subject yawl_checkInWorkItem(string taskId, string caseId, string result, string
 
 	if(triples.length > 0)
 	{
-		writeln("parse is  Ok");
+		//		writeln("parse is  Ok");
 		Predicate* pp = triples[0].getEdge(msg__result);
 
 		if(pp !is null)
 		{
-			writeln("seek result");
+			//			writeln("seek result");
 			GraphCluster aa = pp.objects[0].cluster;
 
 			//		aa.reindex_predicate();
