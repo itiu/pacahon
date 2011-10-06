@@ -40,3 +40,5 @@ public string auth__login = "auth:login";
 
 public string pacahon__on_trace_msg = "pacahon:on-trace-msg";
 public string pacahon__off_trace_msg = "pacahon:off-trace-msg";
+
+public string event__Event = "event:Event";

@@ -33,6 +33,8 @@ private import pacahon.thread_context;
 
 private import trioplax.Logger;
 
+private import pacahon.command.event_filter;
+
 Logger log;
 //char[] buff;
 char[] buff1;
@@ -187,6 +189,16 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			{
 				if(type is null)
 					reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
+			}
+
+			if (type.isExistLiteral (event__Event))
+			{
+				// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+				server_thread.event_filter[graph.subject] = graph; 
+			}
+			else
+			{
+				processed_events (graph);				
 			}
 		}
 

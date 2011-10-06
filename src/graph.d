@@ -91,9 +91,9 @@ final class Subject
 
 	string getObject(string pname)
 	{
-		if (needReidex == true)
+		if(needReidex == true)
 			reindex_predicate();
-		
+
 		Predicate* pp = null;
 		Predicate** ppp = (pname in edges_of_predicate);
 
@@ -105,7 +105,7 @@ final class Subject
 
 	Predicate* getEdge(string pname)
 	{
-		if (needReidex == true)
+		if(needReidex == true)
 			reindex_predicate();
 
 		Predicate* pp = null;
@@ -133,8 +133,8 @@ final class Subject
 		edges[count_edges].objects[0].object = object;
 		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
 		count_edges++;
-		
-		needReidex = true;		
+
+		needReidex = true;
 	}
 
 	void addPredicate(string predicate, string object, byte lang = LITERAL_LANG.NONE)
@@ -169,7 +169,7 @@ final class Subject
 			edges[count_edges].objects[0].lang = lang;
 			count_edges++;
 		}
-		needReidex = true;		
+		needReidex = true;
 	}
 
 	void addPredicate(string predicate, GraphCluster cluster)
@@ -204,7 +204,7 @@ final class Subject
 			edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
 			count_edges++;
 		}
-		needReidex = true;		
+		needReidex = true;
 	}
 
 	void addPredicate(string predicate, Subject subject)
@@ -238,7 +238,7 @@ final class Subject
 			edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
 			count_edges++;
 		}
-		needReidex = true;		
+		needReidex = true;
 	}
 
 	private void reindex_predicate()
@@ -278,6 +278,15 @@ struct Predicate
 		if(count_objects > 0)
 			return objects[0].object;
 		return null;
+	}
+
+	bool isExistLiteral(string value)
+	{
+		Objectz** ooo = (value in objects_of_value);
+
+		if(ooo !is null)
+			return true;
+		return false;
 	}
 
 	Subject getFirstSubject()

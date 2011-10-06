@@ -3,6 +3,7 @@ module pacahon.thread_context;
 private import trioplax.TripleStorage;
 private import mq_client;
 private import trioplax.Logger;
+private import pacahon.graph;
 
 Logger log;
 
@@ -21,6 +22,7 @@ class Ticket
 
 class ThreadContext
 {
+	Subject[string] event_filter;
 	Ticket[string] user_of_ticket;
 	string[string] cache__subject_creator;
 	TripleStorage ts;

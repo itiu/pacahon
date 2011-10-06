@@ -4,6 +4,7 @@ module pacahon.command.multiplexor;
 
 private import pacahon.command.io;
 private import pacahon.command.yawl;
+private import pacahon.command.event_filter;
 
 private import core.stdc.stdio;
 private import core.stdc.stdlib;
@@ -251,7 +252,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 
 	Subject res;
 
-	out_message.subject = generateMsgId ();
+	out_message.subject = generateMsgId();
 
 	out_message.addPredicateAsURI("a", msg__Message);
 	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
@@ -265,14 +266,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 
 	if(command !is null)
 	{
-
-		if("put" in command.objects_of_value)
-		{
-			if(trace_msg[13] == 1)
-				log.trace("command_preparer, put");
-
-			res = put(message, sender, userId, server_thread, isOk, reason);
-		} else if("get" in command.objects_of_value)
+		if("get" in command.objects_of_value)
 		{
 			if(trace_msg[14] == 1)
 				log.trace("command_preparer, get");
@@ -284,6 +278,12 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
 				out_message.addPredicate(msg__result, gres);
 			}
+		} else if("put" in command.objects_of_value)
+		{
+			if(trace_msg[13] == 1)
+				log.trace("command_preparer, put");
+
+			res = put(message, sender, userId, server_thread, isOk, reason);
 		} else if("remove" in command.objects_of_value)
 		{
 			if(trace_msg[14] == 1)
@@ -321,8 +321,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 		{
 			//			if(trace_msg[63] == 1)
 			res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
-		}
-
+		} 
 		//		reason = cast(char[]) "запрос выполнен";
 	} else
 	{
