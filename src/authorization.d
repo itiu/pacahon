@@ -32,12 +32,22 @@ enum operation
 
 /*
  * вычисление прав
- * userId - запросивший права
- * targetId - обьект охраны
- * op - список запрашиваемых операций
+ * in 
+ * {
+ * 	userId - запросивший права
+ * 	targetId - обьект охраны
+ * 	op - список запрашиваемых операций
+ *	server_thread - контекст приложения
+ * }
+ * out
+ * {
+ * 	return bool - разрешено/не разрешено
+	reason - причина (доп описание результата)
+	bool subjectIsExist - авторизуемый субьект существует 
+ * }    
  */
 
-bool authorize(string userId, string targetId, short op, ThreadContext server_thread, out string reason)
+bool authorize(string userId, string targetId, short op, ThreadContext server_thread, out string reason, out bool subjectIsExist)
 {
 	StopWatch sw;
 	sw.start();
@@ -89,7 +99,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 		string subject_creator = null;
 
-		bool subjectIsExist = false;
+		subjectIsExist = false;
 		if((targetId in server_thread.cache__subject_creator) !is null)
 		{
 			subjectIsExist = true;

@@ -18,9 +18,9 @@ static this()
 	log = new Logger("pacahon", "log", "event-filter");
 }
 
-void processed_events(Subject data)
+void processed_events(Subject subject, string type)
 {
-	writeln("info:processed_events", data);
+	writeln("info:processed_events ", type, ":", subject);
 
 }
 

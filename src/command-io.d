@@ -142,14 +142,16 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 					log.trace("adding subject=%s", graph.subject);
 
 				// цикл по всем добавляемым субьектам
-				/* Doc 2. если создается новый субъект, то ограничений по умолчанию нет
-				 * Doc 3. если добавляются факты на уже созданного субъекта, то разрешено добавлять если добавляющий автор субъекта 
+				/* 2. если создается новый субъект, то ограничений по умолчанию нет
+				 * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять 
+				 * если добавляющий автор субъекта 
 				 * или может быть вычислено разрешающее право на U данного субъекта. */
 
 				string authorize_reason;
+				bool subjectIsExist;
 
 				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_thread,
-						authorize_reason) == true)
+						authorize_reason, subjectIsExist) == true)
 				{
 					if(userId !is null)
 					{
@@ -176,6 +178,25 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 
 					}
 
+					if (type.isExistLiteral (event__Event))
+					{
+					    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+					    server_thread.event_filter[graph.subject] = graph; 
+					}
+					else
+					{
+					    string event_type;
+			
+					    if (subjectIsExist == true)
+			    			event_type = "update subject";
+					    else    
+			    			event_type = "create subject";
+			        
+					    processed_events (graph, event_type);				
+					}
+
+
+
 					reason = "добавление фактов выполнено:" ~ authorize_reason;
 					isOk = true;
 				} else
@@ -189,16 +210,6 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			{
 				if(type is null)
 					reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
-			}
-
-			if (type.isExistLiteral (event__Event))
-			{
-				// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-				server_thread.event_filter[graph.subject] = graph; 
-			}
-			else
-			{
-				processed_events (graph);				
 			}
 		}
 
@@ -536,8 +547,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				foreach(s; res.graphs_of_subject)
 				{
 					count_found_subjects++;
-
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason);
+					
+					bool isExistSubject;
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason, isExistSubject);
 
 					if(result_of_az == false)
 					{
@@ -628,10 +640,9 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 		}
 
 		string authorize_reason;
-
-		bool
-				result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_thread,
-						authorize_reason);
+		bool isExistSubject;
+		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_thread,
+						authorize_reason, isExistSubject);
 
 		if(result_of_az)
 		{
