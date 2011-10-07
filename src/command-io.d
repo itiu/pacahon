@@ -5,7 +5,7 @@ private import core.stdc.stdlib;
 private import std.c.string;
 private import std.string;
 
-private import std.datetime; 
+private import std.datetime;
 
 private import std.stdio;
 private import std.outbuffer;
@@ -38,12 +38,12 @@ private import pacahon.command.event_filter;
 Logger log;
 //char[] buff;
 char[] buff1;
-                
+
 static this()
 {
-        buff = new char[21];
-        buff1 = new char[6];
-        log = new Logger("pacahon", "log", "command-io");
+	buff = new char[21];
+	buff1 = new char[6];
+	log = new Logger("pacahon", "log", "command-io");
 }
 
 /*
@@ -124,7 +124,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				log.trace("jj = %d", jj);
 
 			Subject graph = graphs_on_put[jj];
-//			graph.reindex_predicate();
+			//			graph.reindex_predicate();
 
 			if(trace_msg[35] == 1)
 				log.trace("#1 jj = %d", jj);
@@ -148,7 +148,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				 * или может быть вычислено разрешающее право на U данного субъекта. */
 
 				string authorize_reason;
-				bool subjectIsExist;
+				bool subjectIsExist = false;
 
 				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_thread,
 						authorize_reason, subjectIsExist) == true)
@@ -178,24 +178,23 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 
 					}
 
-					if (type.isExistLiteral (event__Event))
+					if(type.isExistLiteral(event__Event))
 					{
-					    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-					    server_thread.event_filter[graph.subject] = graph; 
-					}
-					else
+						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+						server_thread.event_filters.addSubject (graph);
+
+						writeln("add new event_filter");
+					} else
 					{
-					    string event_type;
-			
-					    if (subjectIsExist == true)
-			    			event_type = "update subject";
-					    else    
-			    			event_type = "create subject";
-			        
-					    processed_events (graph, event_type);				
+						string event_type;
+
+						if(subjectIsExist == true)
+							event_type = "update subject";
+						else
+							event_type = "create subject";
+
+						processed_events(graph, event_type, server_thread);
 					}
-
-
 
 					reason = "добавление фактов выполнено:" ~ authorize_reason;
 					isOk = true;
@@ -547,9 +546,10 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				foreach(s; res.graphs_of_subject)
 				{
 					count_found_subjects++;
-					
+
 					bool isExistSubject;
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason, isExistSubject);
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason,
+							isExistSubject);
 
 					if(result_of_az == false)
 					{
@@ -642,7 +642,7 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 		string authorize_reason;
 		bool isExistSubject;
 		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_thread,
-						authorize_reason, isExistSubject);
+				authorize_reason, isExistSubject);
 
 		if(result_of_az)
 		{
@@ -665,4 +665,3 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 	}
 
 }
-

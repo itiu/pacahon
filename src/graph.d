@@ -78,6 +78,12 @@ final class GraphCluster
 			graphs_of_subject[cast(string) ss.subject] = ss;
 		}
 	}
+
+	int length ()
+	{
+		return graphs_of_subject.length;
+	}
+	
 }
 
 final class Subject
@@ -98,9 +104,12 @@ final class Subject
 		Predicate** ppp = (pname in edges_of_predicate);
 
 		if(ppp !is null)
+		{
 			pp = *ppp;
 
-		return pp.getFirstObject();
+			return pp.getFirstObject();
+		}
+		return null;
 	}
 
 	Predicate* getEdge(string pname)
@@ -112,9 +121,12 @@ final class Subject
 		Predicate** ppp = (pname in edges_of_predicate);
 
 		if(ppp !is null)
+		{
 			pp = *ppp;
 
-		return pp;
+			return pp;
+		}
+		return null;
 	}
 
 	void addPredicateAsURI(string predicate, string object)

@@ -50,6 +50,8 @@ private import pacahon.log_msg;
 private import pacahon.load_info;
 private import pacahon.thread_context;
 
+private import pacahon.command.event_filter;
+
 Logger log;
 Logger io_msg;
 
@@ -200,7 +202,7 @@ void main(char[][] args)
 			client.set_callback(&get_message);
 
 			ServerThread thread = new ServerThread(&client.listener, ts);
-
+						
 			thread.resource.client = client;
 			thread.resource.yawl_engine_pont = yawl_engine;
 
@@ -216,6 +218,8 @@ void main(char[][] args)
 					log.trace("connect to %s is Ok", reply_to_n1);
 				}
 			}
+			
+			load_events (thread.resource);
 
 			thread.start();
 
