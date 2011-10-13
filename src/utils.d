@@ -10,6 +10,7 @@ private import std.c.string;
 private import std.c.linux.linux;
 private import Integer = tango.text.convert.Integer;
 
+private import std.format;
 
 string getNowAsString()
 {
@@ -32,9 +33,9 @@ JSONValue get_props(string file_name)
 {
 	JSONValue res;
 
-	if(exists(file_name))
+	if(std.file.exists(file_name))
 	{
-		char[] buff = cast(char[]) read(file_name);
+		char[] buff = cast(char[]) std.file.read(file_name);
 
 		res = parseJSON(buff);
 	} else
@@ -60,7 +61,7 @@ JSONValue get_props(string file_name)
 
 		string buff = toJSON(&res);
 
-		write(file_name, buff);
+		std.file.write(file_name, buff);
 	}
 
 	return res;
@@ -78,7 +79,7 @@ string fromStringz(char* s, int len)
 
 char[] buff;
 
-public string generateMsgId ()
+public string generateMsgId()
 {
 	buff[] = '_';
 	buff[0] = 'm';
@@ -89,6 +90,86 @@ public string generateMsgId ()
 
 	SysTime sysTime = Clock.currTime(UTC());
 	Integer.format(buff, sysTime.stdTime, cast(char[]) "X2");
-	
+
 	return cast(string) buff;
+}
+
+// !!! stupid, but quickly
+void formattedWrite(Writer, Char, A)(Writer w, in Char[] fmt, A[] args)
+{
+	if(args.length == 1)
+	{
+		std.format.formattedWrite(w, fmt, args[0]);
+		return;
+	} else if(args.length == 2)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1]);
+		return;
+	} else if(args.length == 3)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2]);
+		return;
+	} else if(args.length == 4)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3]);
+		return;
+	} else if(args.length == 5)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4]);
+		return;
+	} else if(args.length == 6)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5]);
+		return;
+	} else if(args.length == 7)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+		return;
+	} else if(args.length == 8)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]);
+		return;
+	} else if(args.length == 9)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8]);
+		return;
+	} else if(args.length == 10)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9]);
+		return;
+	} else if(args.length == 11)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10]);
+		return;
+	} else if(args.length == 12)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10], args[11]);
+		return;
+	} else if(args.length == 13)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10], args[11], args[12]);
+		return;
+	} else if(args.length == 14)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10], args[11], args[12], args[13]);
+		return;
+	} else if(args.length == 15)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10], args[11], args[12], args[13], args[14]);
+		return;
+	} else if(args.length == 16)
+	{
+		std.format.formattedWrite(w, fmt, args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7],
+				args[8], args[9], args[10], args[11], args[12], args[13], args[14], args[15]);
+		return;
+	}
+
+	throw new Exception("util.formattedWrite (), count args > 16");
 }

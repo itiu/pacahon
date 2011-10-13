@@ -2,7 +2,7 @@ DMD=dmd
 #~/dmd2-055/linux/bin32/dmd
 
 VERSION_MAJOR=1
-VERSION_MINOR=19
+VERSION_MINOR=20
 VERSION_PATCH=0   
 
 cp -v -r src/* build/src
@@ -22,6 +22,7 @@ $DMD -ignore -m32 -O -Iimport -version=D2 -version=dmd2_053 -version=trace_turtl
 lib/libluad.a \
 lib/libzmq.a lib/libstdc++.a lib/libuuid.a  \
 myversion.d \
+$bf/fred/*.d \
 $bf/trioplax/mongodb/*.d $bf/trioplax/memory/*.d $bf/rt/util/*.d $bf/trioplax/*.d $bf/*.d \
 $bf/tango/util/uuid/*.d  $bf/tango/core/*.d $bf/tango/text/convert/*.d $bf/tango/util/digest/*.d $bf/tango/math/random/*.d \
 -ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH

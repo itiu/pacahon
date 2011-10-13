@@ -41,10 +41,10 @@ public string auth__login = "auth:login";
 public string pacahon__on_trace_msg = "pacahon:on-trace-msg";
 public string pacahon__off_trace_msg = "pacahon:off-trace-msg";
 
-public string event__Event = "event:Event"; // субьект типа Событие
-public string event__autoremove = "event:autoremove"; // если == "yes", фильтр должен будет удален после исполнения
-public string event__subject_type = "event:subject_type"; // тип отслеживаемого субьекта 
-public string event__when = "event:when"; // after/before
-public string event__condition = "event:condition"; // условие связанное с содержимым отслеживаемого субьекта
-public string event__to = "event:to"; // кому отсылать сообщение - алиас для адреса сервиса - получателя сообщений
-public string event__msg_template = "event:msg_template"; // шаблон для сборки отправляемого сообщения
+public string event__Event = "event:Event"; 				// субьект типа Событие
+public string event__autoremove = "event:autoremove"; 		// если == "yes", фильтр должен будет удален после исполнения
+public string event__subject_type = "event:subject_type"; 	// тип отслеживаемого субьекта 
+public string event__when = "event:when"; 					// after/before
+public string event__condition = "event:condition"; 		// условие связанное с содержимым отслеживаемого субьекта
+public string event__to = "event:to"; 						// кому отсылать сообщение - алиас для адреса сервиса - получателя сообщений
+public string event__msg_template = "event:msg_template"; 	// шаблон для сборки отправляемого сообщения

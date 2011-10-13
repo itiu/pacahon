@@ -232,7 +232,7 @@ void main(char[][] args)
 			}
 
 			while(true)
-				Thread.getThis().sleep(100_000_000);
+				core.thread.Thread.getThis().sleep(100_000_000);
 		}
 
 	} catch(Exception ex)
@@ -251,7 +251,7 @@ enum format: byte
 
 void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
 {
-	ServerThread server_thread = cast(ServerThread) Thread.getThis();
+	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
 	server_thread.sw.stop();
 
 	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
@@ -515,7 +515,7 @@ synchronized class Statistic
 	int size__cache__subject_creator;
 }
 
-class ServerThread: Thread
+class ServerThread: core.thread.Thread
 {
 	ThreadContext resource;
 
