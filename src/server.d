@@ -52,6 +52,8 @@ private import pacahon.thread_context;
 
 private import pacahon.command.event_filter;
 
+private import pacahon.zmq_connection;
+
 Logger log;
 Logger io_msg;
 
@@ -75,7 +77,8 @@ void main(char[][] args)
 			throw new Exception("ex! parse params", ex1);
 		}
 
-		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor, myversion.patch, myversion.hash, myversion.date);
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
+				myversion.patch, myversion.hash, myversion.date);
 
 		mq_client client = null;
 
@@ -141,7 +144,7 @@ void main(char[][] args)
 
 		string yawl_engine = null;
 		if(("yawl-engine" in props.object) !is null)
-			 yawl_engine = props.object["yawl-engine"].str;
+			yawl_engine = props.object["yawl-engine"].str;
 
 		TripleStorage ts;
 		try
@@ -156,7 +159,7 @@ void main(char[][] args)
 			ts.define_predicate_as_multilang("swrc:name");
 			ts.define_predicate_as_multilang("swrc:firstName");
 			ts.define_predicate_as_multilang("swrc:lastName");
-//			ts.define_predicate_as_multilang("gost19:middleName");
+			//			ts.define_predicate_as_multilang("gost19:middleName");
 			ts.define_predicate_as_multilang("docs:position");
 
 			ts.set_fulltext_indexed_predicates("swrc:name");
@@ -202,9 +205,26 @@ void main(char[][] args)
 			client.set_callback(&get_message);
 
 			ServerThread thread = new ServerThread(&client.listener, ts);
-						
+
 			thread.resource.client = client;
-			thread.resource.yawl_engine_pont = yawl_engine;
+
+			JSONValue[] gateways;
+
+			//TODO			thread.resource.yawl_engine_connect = new ZmqConnection (client);
+			if(("gateways" in props.object) !is null)
+			{
+				gateways = props.object["gateways"].array;
+				foreach(gateway; gateways)
+				{
+					if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
+					{
+						thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client,
+								gateway.object["point"].str);
+					}
+				}
+			}
+
+			writeln(thread.resource.gateways);
 
 			// TODO времянка, переделать!
 			{
@@ -218,8 +238,8 @@ void main(char[][] args)
 					log.trace("connect to %s is Ok", reply_to_n1);
 				}
 			}
-			
-			load_events (thread.resource);
+
+			load_events(thread.resource);
 
 			thread.start();
 
@@ -256,8 +276,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
 
-//	if(time_from_last_call < 10)
-//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
+	//	if(time_from_last_call < 10)
+	//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
 	server_thread.stat.idle_time += time_from_last_call;
 
@@ -359,7 +379,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			continue;
 		}
 
-//		command.reindex_predicate();
+		//		command.reindex_predicate();
 
 		Predicate* type = command.getEdge("a");
 		if(type is null)

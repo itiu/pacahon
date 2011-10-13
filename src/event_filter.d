@@ -52,9 +52,13 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
 	{
+		string to = ef.getObject(event__to);
+		
+//		if ()
+		
 		string subject_type = subject.getObject("a");
 
-		if(ef.getObject(event__subject_type) == subject.getObject("a"))
+		if(ef.getObject(event__subject_type) == subject_type)
 		{
 			if(ef.getObject(event__when) == "after")
 			{
@@ -151,7 +155,8 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 						auto writer = appender!string(); // --format
 						formattedWrite(writer, r, list_vars);
 													writeln(writer.data);
-
+							
+//	сообщение сформированно, отправляем согласно event:to													
 						//						sw.stop();
 						//						long t = cast(long) sw.peek().usecs;
 						//						writeln("regex time:", t, ", d:", t / count, ", cps:", 1_000_000 / (t / count));

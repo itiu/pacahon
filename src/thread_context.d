@@ -4,6 +4,7 @@ private import trioplax.TripleStorage;
 private import mq_client;
 private import trioplax.Logger;
 private import pacahon.graph;
+private import pacahon.zmq_connection;
 
 Logger log;
 
@@ -32,21 +33,18 @@ class ThreadContext
 	// TODO времянка, переделать!
 	void* soc__reply_to_n1 = null;
 
-	string yawl_engine_pont = null;
-	void* yawl_engine_context = null;
+	ZmqConnection[string] gateways;
 
 	this()
 	{
 		event_filters = new GraphCluster();
 	}
 
-	public void yawl_check_connect()
+	ZmqConnection getGateway(string _alias)
 	{
-		if(yawl_engine_context is null && yawl_engine_pont !is null)
-		{
-			log.trace("connect to %s", yawl_engine_pont);
-			yawl_engine_context = client.connect_as_req(yawl_engine_pont);
-			log.trace("zmq context = %X", yawl_engine_context);
-		}
+		if((_alias in gateways) !is null)
+			return gateways[_alias];
+		return null;
 	}
+
 }

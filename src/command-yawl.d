@@ -34,6 +34,7 @@ private import pacahon.utils;
 private import pacahon.thread_context;
 
 private import trioplax.Logger;
+private import pacahon.zmq_connection;
 
 Logger log;
 LuaState lua;
@@ -151,14 +152,15 @@ void yawl_ParameterInfoRequest(Subject message, Predicate* sender, string userId
 
 string yawl_engine_connect(string login, string credential, string from, ThreadContext server_thread)
 {
-	server_thread.yawl_check_connect();
-
 	string msg = create_message(from, "yawl-engine", "get_ticket",
 			"\"auth:login\" : \"" ~ login ~ "\",\n\"auth:credential\" : \"" ~ credential ~ "\"");
 
-	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
-	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
-
+	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
+	gateway.check_connect();
+	
+	gateway.send (msg);
+	string res = gateway.reciev ();
+	
 	//	writeln("res=", res);
 
 	Subject[] triples;
@@ -192,8 +194,11 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 	string msg = create_message(from, "yawl-engine", "checkout",
 			"\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" ~ taskId ~ "\"");
 
-	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
-	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
+	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
+	gateway.check_connect();
+	
+	gateway.send (msg);
+	string res = gateway.reciev ();
 
 	//	writeln("res=", res);
 
@@ -238,8 +243,12 @@ Subject yawl_checkInWorkItem(string taskId, string caseId, string section_name, 
 
 	string msg = create_message(from, "yawl-engine", "checkin", args);
 
-	server_thread.client.send(server_thread.yawl_engine_context, cast(char*) msg, msg.length, false);
-	string res = server_thread.client.reciev(server_thread.yawl_engine_context);
+	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
+	gateway.check_connect();
+	
+	gateway.send (msg);
+	string res = gateway.reciev ();
+
 
 	//	writeln("res=", res);
 
