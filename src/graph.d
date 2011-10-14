@@ -142,7 +142,7 @@ final class Subject
 		edges[count_edges].predicate = predicate;
 		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0].object = object;
+		edges[count_edges].objects[0].literal = object;
 		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
 		count_edges++;
 
@@ -177,7 +177,7 @@ final class Subject
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0].object = object;
+			edges[count_edges].objects[0].literal = object;
 			edges[count_edges].objects[0].lang = lang;
 			count_edges++;
 		}
@@ -268,7 +268,7 @@ final class Subject
 					pp.objects[kk].subject.reindex_predicate();
 				} else if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
 				{
-					pp.objects_of_value[cast(string) pp.objects[kk].object] = &pp.objects[kk];
+					pp.objects_of_value[cast(string) pp.objects[kk].literal] = &pp.objects[kk];
 				}
 			}
 
@@ -288,7 +288,7 @@ struct Predicate
 	string getFirstObject()
 	{
 		if(count_objects > 0)
-			return objects[0].object;
+			return objects[0].literal;
 		return null;
 	}
 
@@ -298,6 +298,7 @@ struct Predicate
 
 		if(ooo !is null)
 			return true;
+		
 		return false;
 	}
 
@@ -320,7 +321,7 @@ struct Predicate
 		if(objects.length == count_objects)
 			objects.length += 16;
 
-		objects[count_objects].object = val;
+		objects[count_objects].literal = val;
 		objects[count_objects].lang = lang;
 
 		count_objects++;
@@ -353,7 +354,7 @@ struct Objectz
 {
 	//	union 
 	//	{
-	string object; // если type == LITERAL
+	string literal; // если type == LITERAL
 	Subject subject; // если type == SUBJECT
 	GraphCluster cluster; // если type == CLUSTER
 	//	}

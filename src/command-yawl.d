@@ -156,7 +156,6 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 			"\"auth:login\" : \"" ~ login ~ "\",\n\"auth:credential\" : \"" ~ credential ~ "\"");
 
 	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
-	gateway.check_connect();
 	
 	gateway.send (msg);
 	string res = gateway.reciev ();
@@ -195,7 +194,6 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 			"\"auth:ticket\" : \"" ~ ticket ~ "\",\n\"yawl:taskId\" : \"" ~ taskId ~ "\"");
 
 	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
-	gateway.check_connect();
 	
 	gateway.send (msg);
 	string res = gateway.reciev ();
@@ -244,7 +242,6 @@ Subject yawl_checkInWorkItem(string taskId, string caseId, string section_name, 
 	string msg = create_message(from, "yawl-engine", "checkin", args);
 
 	ZmqConnection gateway = server_thread.getGateway ("yawl-engine"); 	
-	gateway.check_connect();
 	
 	gateway.send (msg);
 	string res = gateway.reciev ();

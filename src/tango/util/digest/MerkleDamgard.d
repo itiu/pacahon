@@ -214,7 +214,7 @@ package class MerkleDamgard : Digest
 
         ***********************************************************************/
 
-        MerkleDamgard update (void[] input)
+        override MerkleDamgard update (void[] input)
         {
                 auto block = blockSize();
                 uint i = bytes & (block-1);
@@ -249,7 +249,7 @@ package class MerkleDamgard : Digest
 
         ***********************************************************************/
 
-        ubyte[] binaryDigest (ubyte[] buf = null)
+        override ubyte[] binaryDigest (ubyte[] buf = null)
         {
                 auto block = blockSize();
                 uint i = bytes & (block-1);

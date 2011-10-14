@@ -30,6 +30,8 @@ private import tango.util.digest.Sha1;
 private import tango.util.uuid.RandomGen;
 private import tango.math.random.Twister;
 
+private import pacahon.zmq_connection;
+
 Logger log;
 
 static this()
@@ -53,9 +55,13 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
 	{
 		string to = ef.getObject(event__to);
-		
-//		if ()
-		
+
+		if(to is null || to.length < 2)
+		{
+			log.trace("filter [%s] skipped, invalis gateway [%s]", ef.subject, to);
+			continue;
+		}
+
 		string subject_type = subject.getObject("a");
 
 		if(ef.getObject(event__subject_type) == subject_type)
@@ -77,90 +83,110 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 				{
 					writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ", subject_type);
 
-					string msg_template = ef.getObject(event__msg_template);
+					Predicate* p_template = ef.getEdge(event__msg_template);
 
-					if(msg_template !is null)
+					if(p_template !is null)
 					{
-						writeln(msg_template);
-
-						string r;
-
-						auto rg = regex("`[^`]+`", "g");
-
-						StopWatch sw;
-						sw.start();
-
-						auto m2 = match(msg_template, rg);
-
-						string[string] vars;
-						string[] list_vars = new string[16];
-
-						int i = 0;
-						foreach(c; m2)
+						for(int i = 0; i < p_template.count_objects; i++)
 						{
-							string rrr = c.hit[1 .. $ - 1];
+							Objectz p_object = p_template.objects[i];
 
-							list_vars[i] = "?";
+							string msg_template = p_object.literal;
 
-							if(rrr[0] == '@')
+							if(msg_template !is null)
 							{
-								if((rrr in vars) is null)
+								string r;
+
+								auto rg = regex("`[^`]+`", "g");
+
+								StopWatch sw;
+								sw.start();
+
+								auto m2 = match(msg_template, rg);
+
+								string[string] vars;
+								string[] list_vars = new string[16];
+
+								int i = 0;
+								foreach(c; m2)
 								{
-									Twister rnd;
-									rnd.seed;
-									UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-									Uuid generated = rndUuid.next;
-									list_vars[i] = cast(string) generated.toString;
-									vars[rrr] = list_vars[i];
+									string rrr = c.hit[1 .. $ - 1];
+
+									list_vars[i] = "?";
+
+									if(rrr[0] == '@')
+									{
+										if((rrr in vars) is null)
+										{
+											Twister rnd;
+											rnd.seed;
+											UuidGen rndUuid = new RandomGen!(Twister)(rnd);
+											Uuid generated = rndUuid.next;
+											list_vars[i] = cast(string) generated.toString;
+											vars[rrr] = list_vars[i];
+										} else
+										{
+											list_vars[i] = vars[rrr];
+										}
+									} else
+									{
+										// это предикат из изменяемого субьекта
+										string predicat_name;
+										string predicat_value;
+										string regex0;
+
+										// проверим, есть ли для него фильтр
+										int start_pos_regex = std.string.indexOf(rrr, '/');
+										if(start_pos_regex > 0)
+										{
+											predicat_name = rrr[0 .. start_pos_regex];
+											regex0 = rrr[start_pos_regex + 1 .. $ - 1];
+
+											auto rg1 = regex(regex0);
+											predicat_value = subject.getObject(predicat_name);
+											auto m3 = match(predicat_value, rg1);
+
+											auto c = m3.captures;
+											predicat_value = c["var"];
+										} else
+										{
+											predicat_name = rrr;
+											predicat_value = subject.getObject(predicat_name);
+										}
+
+										list_vars[i] = predicat_value;
+									}
+
+									i++;
+								}
+								list_vars.length = i;
+
+								r = replace(msg_template, rg, "%s");
+								//							writeln (r);
+
+								auto writer = appender!string(); // --format
+								formattedWrite(writer, r, list_vars);
+								//						writeln(writer.data);
+
+								//	сообщение сформированно, отправляем согласно event:to	
+
+								ZmqConnection gateway = server_thread.getGateway(to);
+
+								if(gateway !is null)
+								{
+									gateway.send(writer.data);
+									string res = gateway.reciev();
 								} else
 								{
-									list_vars[i] = vars[rrr];
-								}
-							} else
-							{
-								// это предикат из изменяемого субьекта
-								string predicat_name;
-								string predicat_value;
-								string regex0;
-
-								// проверим, есть ли для него фильтр
-								int start_pos_regex = std.string.indexOf(rrr, '/');
-								if(start_pos_regex > 0)
-								{
-									predicat_name = rrr[0 .. start_pos_regex];
-									regex0 = rrr[start_pos_regex + 1 .. $ - 1];
-
-									auto rg1 = regex(regex0);
-									predicat_value = subject.getObject(predicat_name);
-									auto m3 = match(predicat_value, rg1);
-
-									auto c = m3.captures;
-									predicat_value = c["var"];
-								} else
-								{
-									predicat_name = rrr;
-									predicat_value = subject.getObject(predicat_name);
+									log.trace("filter [%s] skipped, for gateway [%s] not found config", ef.subject, to);
 								}
 
-								list_vars[i] = predicat_value;
+								//						sw.stop();
+								//						long t = cast(long) sw.peek().usecs;
+								//						writeln("regex time:", t, ", d:", t / count, ", cps:", 1_000_000 / (t / count));
+
 							}
-
-							i++;
 						}
-						list_vars.length = i;
-
-						r = replace(msg_template, rg, "%s");
-						//							writeln (r);
-
-						auto writer = appender!string(); // --format
-						formattedWrite(writer, r, list_vars);
-													writeln(writer.data);
-							
-//	сообщение сформированно, отправляем согласно event:to													
-						//						sw.stop();
-						//						long t = cast(long) sw.peek().usecs;
-						//						writeln("regex time:", t, ", d:", t / count, ", cps:", 1_000_000 / (t / count));
-
 					}
 
 					string autoremove = ef.getObject(event__autoremove);

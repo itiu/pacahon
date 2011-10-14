@@ -81,7 +81,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				graphs_on_put = args.objects[ii].cluster.graphs_of_subject.values;
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
-				char* args_text = cast(char*) args.objects[ii].object;
+				char* args_text = cast(char*) args.objects[ii].literal;
 				int arg_size = strlen(args_text);
 
 				if(trace_msg[33] == 1)
@@ -170,7 +170,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 							Objectz oo = pp.objects[ll];
 
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.object, oo.lang));
+								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
 							else
 								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject,
 										oo.lang));
@@ -249,7 +249,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 								Objectz oo = pp.objects[ll];
 
 								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.object, oo.lang);
+									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 								else
 									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject,
 											oo.lang);
@@ -404,11 +404,11 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
-				char* args_text = cast(char*) args.objects[ii].object;
+				char* args_text = cast(char*) args.objects[ii].literal;
 				int arg_size = strlen(args_text);
 
 				if(trace_msg[44] == 1)
-					log.trace("arg [%s], arg_size=%d", args.objects[ii].object, arg_size);
+					log.trace("arg [%s], arg_size=%d", args.objects[ii].literal, arg_size);
 
 				graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
 
@@ -444,9 +444,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						Objectz oo = pp.objects[ll];
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 						{
-							if(oo.object.length > 0)
+							if(oo.literal.length > 0)
 							{
-								if(oo.object == "query:get_reifed")
+								if(oo.literal == "query:get_reifed")
 								{
 									// требуются так-же реифицированные данные по этому полю
 									// данный предикат добавить в список возвращаемых
@@ -459,7 +459,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 									if(trace_msg[48] == 1)
 										log.trace("readed_predicate.length=%d", readed_predicate.length);
-								} else if(oo.object == "query:get")
+								} else if(oo.literal == "query:get")
 								{
 									// данный предикат добавить в список возвращаемых
 									if(trace_msg[49] == 1)
@@ -472,7 +472,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 								} else
 								{
 									if(statement is null)
-										statement = new Triple(null, pp.predicate, oo.object);
+										statement = new Triple(null, pp.predicate, oo.literal);
 
 									if(trace_msg[51] == 1)
 									{

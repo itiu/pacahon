@@ -361,7 +361,7 @@ private void next_element(char* element, int el_length, state_struct* state)
 			else
 			{
 				char[] buff = new char[state.O_length];
-				ee.objects[ee.count_objects].object = cast(string) buff;
+				ee.objects[ee.count_objects].literal = cast(string) buff;
 
 				char* ptr = cast(char*) state.O;
 				int idx1 = 0;
@@ -415,10 +415,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 				//				printf("!!! 7\n");
 
 				//				ee.objects[ee.count_objects].object.length = ptr1 - ee.objects[ee.count_objects].object.ptr;
-				ee.objects[ee.count_objects].object.length = idx1;
+				ee.objects[ee.count_objects].literal.length = idx1;
 
 				version(trace_turtle_parser)
-					writeln("set object=", ee.objects[ee.count_objects].object, " lang=", ee.objects[ee.count_objects].lang);
+					writeln("set object=", ee.objects[ee.count_objects].literal, " lang=", ee.objects[ee.count_objects].lang);
 
 				//				ee.objects[ee.count_objects].subject = state.ptr_buff;
 				ee.count_objects++;
@@ -539,18 +539,18 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 
 				// заменим все неэкранированные кавычки на [\"]
 				char prev_ch;
-				char[] new_str = new char[oo.object.length * 2];
+				char[] new_str = new char[oo.literal.length * 2];
 				int pos_in_new_str = 0;
-				int len = oo.object.length;
+				int len = oo.literal.length;
 
 				for(int i = 0; i < len; i++)
 				{
 					// если подрят идут "", то пропустим их
-					if(len > 4 && (i == 0 || i == len - 2) && oo.object[i] == '"' && oo.object[i + 1] == '"')
+					if(len > 4 && (i == 0 || i == len - 2) && oo.literal[i] == '"' && oo.literal[i + 1] == '"')
 					{
 						for(byte hh = 0; hh < 2; hh++)
 						{
-							new_str[pos_in_new_str] = oo.object[i];
+							new_str[pos_in_new_str] = oo.literal[i];
 							pos_in_new_str++;
 							i++;
 						}
@@ -560,7 +560,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 					if(i >= len)
 						break;
 
-					char ch = oo.object[i];
+					char ch = oo.literal[i];
 
 					if(ch == '"' && len > 4)
 					{
@@ -594,7 +594,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 			else if(oo.type == OBJECT_TYPE.URI)
 			{
 				outbuff.write(cast(char[]) "   ");
-				outbuff.write(oo.object);
+				outbuff.write(oo.literal);
 			}
 			else if(oo.type == OBJECT_TYPE.SUBJECT)
 			{

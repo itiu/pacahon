@@ -4,17 +4,19 @@ private import mq_client;
 private import trioplax.Logger;
 
 Logger log;
+Logger oi_msg;
 
 static this()
 {
 	log = new Logger("pacahon", "log", "server");
+	oi_msg = new Logger("pacahon", "oi", "server");
 }
 
 class ZmqConnection
 {
-	string point;
-	void* context;
-	mq_client client;
+	private string point;
+	private void* context;
+	private mq_client client;
 
 	this(mq_client _client, string _point)
 	{
@@ -34,12 +36,28 @@ class ZmqConnection
 
 	void send(string msg)
 	{
-		client.send(context, cast(char*) msg, msg.length, false);
+		check_connect();
+
+		int length = msg.length;
+		char* data = cast(char*) msg;
+
+		if(*(data + length - 1) == ' ')
+			*(data + length - 1) = 0;
+
+		client.send(context, data, length, false);
+
+		oi_msg.trace_io(false, cast(byte*) msg, msg.length);
 	}
 
 	string reciev()
 	{
-		return client.reciev(context);
+		check_connect();
 
+		string msg;
+		msg = client.reciev(context);
+
+		oi_msg.trace_io(true, cast(byte*) msg, msg.length);
+
+		return msg;
 	}
 }

@@ -249,16 +249,18 @@ T[] formatter(T) (T[] dst, long i, char type, char pre, length_t width)
                   case 'g':
                   case 'G':
                        if (i < 0)
-                          {
+                       {
                           index = 1;
                           i = -i;
-                          }
+                       }
                        else
+                       {
                           if (pre is ' ')
                               index = 2;
                           else
                              if (pre is '+')
                                  index = 3;
+                       }         
                   case 'u':
                   case 'U':
                        pre = '#';
@@ -488,10 +490,12 @@ uint trim(T) (T[] digits, ref bool sign, ref uint radix)
            else
               // explicit radix must match (optional) prefix
               if (radix != r)
+              {
                   if (radix)
                       p -= 2;
                   else
                      radix = r;
+              }         
            }
 
         // return number of characters eaten

@@ -155,6 +155,7 @@ void main(char[][] args)
 			ts.define_predicate_as_multiple("rdf:type");
 			ts.define_predicate_as_multiple("rdfs:subClassOf");
 			ts.define_predicate_as_multiple("gost19:take");
+			ts.define_predicate_as_multiple("event:msg_template");			
 
 			ts.define_predicate_as_multilang("swrc:name");
 			ts.define_predicate_as_multilang("swrc:firstName");
@@ -399,7 +400,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(ticket !is null && ticket.objects !is null)
 			{
-				string ticket_str = ticket.objects[0].object;
+				string ticket_str = ticket.objects[0].literal;
 
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;

@@ -205,13 +205,13 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 				for(int ll = 0; ll < unset_msgs.count_objects; ll++)
 				{
 					Objectz oo = unset_msgs.objects[ll];
-					if(oo.object.length == 1)
+					if(oo.literal.length == 1)
 					{
-						if(oo.object[0] == '*')
+						if(oo.literal[0] == '*')
 							unset_all_messages();
-					} else if(oo.object.length > 1)
+					} else if(oo.literal.length > 1)
 					{
-						int idx = Integer.toInt(cast(char[]) oo.object, 10);
+						int idx = Integer.toInt(cast(char[]) oo.literal, 10);
 						unset_message(idx);
 					}
 				}
@@ -224,13 +224,13 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 				for(int ll = 0; ll < set_msgs.count_objects; ll++)
 				{
 					Objectz oo = set_msgs.objects[ll];
-					if(oo.object.length == 1)
+					if(oo.literal.length == 1)
 					{
-						if(oo.object[0] == '*')
+						if(oo.literal[0] == '*')
 							set_all_messages();
-					} else if(oo.object.length > 1)
+					} else if(oo.literal.length > 1)
 					{
-						int idx = Integer.toInt(cast(char[]) oo.object, 10);
+						int idx = Integer.toInt(cast(char[]) oo.literal, 10);
 						set_message(idx);
 					}
 				}

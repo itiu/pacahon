@@ -100,7 +100,7 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 	{
 		foreach(element1; element.array)
 		{
-			//			writeln("addElement(key, element1, gcl, ss);", key, element1, gcl, ss);
+			// writeln("addElement(key, element1, gcl, ss);", key, element1, gcl, ss);
 			addElement(key, element1, gcl, ss);
 		}
 	}
@@ -225,7 +225,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 					outbuff.write('"');
 					// заменим все неэкранированные кавычки на [\"]
 					bool is_exist_quotes = false;
-					foreach(ch; oo.object)
+					foreach(ch; oo.literal)
 					{
 						if(ch == '"')
 						{
@@ -237,14 +237,14 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 					if(is_exist_quotes)
 					{
-						int len = oo.object.length;
+						int len = oo.literal.length;
 
 						for(int i = 0; i < len; i++)
 						{
 							if(i >= len)
 								break;
 
-							char ch = oo.object[i];
+							char ch = oo.literal[i];
 
 							if(ch == '"' && len > 4)
 							{
@@ -255,7 +255,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						}
 					} else
 					{
-						outbuff.write(oo.object);
+						outbuff.write(oo.literal);
 					}
 
 					if(oo.lang == LITERAL_LANG.RU)
@@ -271,13 +271,13 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				//				log.trace ("write literal end");
 			} else if(oo.type == OBJECT_TYPE.URI)
 			{
-				if(oo.object is null)
+				if(oo.literal is null)
 				{
 					outbuff.write(cast(char[]) "null");
 				} else
 				{
 					outbuff.write('"');
-					outbuff.write(oo.object);
+					outbuff.write(oo.literal);
 					outbuff.write('"');
 				}
 			} else if(oo.type == OBJECT_TYPE.SUBJECT)

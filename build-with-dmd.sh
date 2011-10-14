@@ -2,7 +2,7 @@ DMD=dmd
 #~/dmd2-055/linux/bin32/dmd
 
 VERSION_MAJOR=1
-VERSION_MINOR=20
+VERSION_MINOR=21
 VERSION_PATCH=0   
 
 cp -v -r src/* build/src
@@ -12,13 +12,14 @@ git log -1 --pretty=format:"module myversion; public static string major=\"$VERS
 rm Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH
 rm *.log
 rm *.io
+rm *.oi
 
 bf=build/src
 
 
 #~/dmd/linux/bin/dmd -version=D1 -debug -g myversion.d build/src/trioplax/memory/*.d build/src/trioplax/mongodb/*.d build/src/trioplax/*.d build/src/*.d lib/libzmq.a lib/libstdc++.a lib/libuuid.a -ofPacahon-D1
 #-version=trace_turtle_parser
-$DMD -ignore -m32 -O -Iimport -version=D2 -version=dmd2_053 -version=trace_turtle_parser0 -inline -d -L-Llib -L-lluad -L-llua -L-ldl \
+$DMD -m32 -O -Iimport -version=D2 -version=dmd2_053 -version=trace_turtle_parser0 -inline -d -L-Llib -L-lluad -L-llua -L-ldl \
 lib/libluad.a \
 lib/libzmq.a lib/libstdc++.a lib/libuuid.a  \
 myversion.d \
