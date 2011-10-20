@@ -114,9 +114,9 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 									list_vars[i] = "?";
 
-									if(rrr[0] == '@')
+									if((rrr in vars) is null)
 									{
-										if((rrr in vars) is null)
+										if(rrr[0] == '$')
 										{
 											Twister rnd;
 											rnd.seed;
@@ -126,35 +126,39 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 											vars[rrr] = list_vars[i];
 										} else
 										{
-											list_vars[i] = vars[rrr];
+											// это предикат или субьект из изменяемого субьекта
+											string predicat_name;
+											string predicat_value;
+											string regex0;
+
+											// проверим, есть ли для него фильтр
+											int start_pos_regex = std.string.indexOf(rrr, '/');
+											if(start_pos_regex > 0)
+											{
+												predicat_name = rrr[0 .. start_pos_regex];
+												regex0 = rrr[start_pos_regex + 1 .. $ - 1];
+
+												if(predicat_name == "@")
+													predicat_value = subject.subject;
+												else
+													predicat_value = subject.getObject(predicat_name);
+
+												auto rg1 = regex(regex0);
+												auto m3 = match(predicat_value, rg1);
+
+												auto c = m3.captures;
+												predicat_value = c["var"];
+											} else
+											{
+												predicat_name = rrr;
+												predicat_value = subject.getObject(predicat_name);
+											}
+
+											list_vars[i] = predicat_value;
 										}
 									} else
 									{
-										// это предикат из изменяемого субьекта
-										string predicat_name;
-										string predicat_value;
-										string regex0;
-
-										// проверим, есть ли для него фильтр
-										int start_pos_regex = std.string.indexOf(rrr, '/');
-										if(start_pos_regex > 0)
-										{
-											predicat_name = rrr[0 .. start_pos_regex];
-											regex0 = rrr[start_pos_regex + 1 .. $ - 1];
-
-											auto rg1 = regex(regex0);
-											predicat_value = subject.getObject(predicat_name);
-											auto m3 = match(predicat_value, rg1);
-
-											auto c = m3.captures;
-											predicat_value = c["var"];
-										} else
-										{
-											predicat_name = rrr;
-											predicat_value = subject.getObject(predicat_name);
-										}
-
-										list_vars[i] = predicat_value;
+										list_vars[i] = vars[rrr];
 									}
 
 									i++;
