@@ -95,7 +95,7 @@ final class Subject
 
 	Predicate*[char[]] edges_of_predicate;
 
-	string getObject(string pname)
+	string getFirstObject(string pname)
 	{
 		if(needReidex == true)
 			reindex_predicate();
@@ -112,7 +112,7 @@ final class Subject
 		return null;
 	}
 
-	Predicate* getEdge(string pname)
+	Predicate* getPredicate(string pname)
 	{
 		if(needReidex == true)
 			reindex_predicate();

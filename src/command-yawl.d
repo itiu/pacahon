@@ -60,7 +60,7 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 	assert(message !is null);
 	isOk = true;
 
-	Predicate* args = message.getEdge(msg__args);
+	Predicate* args = message.getPredicate(msg__args);
 	if(args !is null)
 	{
 		Subject sargs = args.getFirstSubject();
@@ -80,12 +80,12 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 			// забрать задачу на обработку [checkOut(taskId, ticket)]
 			Subject task = yawl_checkOut(caseTaskId, ticket, "pacahon:yawl_announceItemEnabled", server_thread);
 
-			string caseId = task.getObject("yawl:caseId");
-			string taskId = task.getObject("yawl:taskId");
+			string caseId = task.getFirstObject("yawl:caseId");
+			string taskId = task.getFirstObject("yawl:taskId");
 
 			string section_name;
 			string command;
-			Predicate* data_of_task = task.getEdge("yawl:data");
+			Predicate* data_of_task = task.getPredicate("yawl:data");
 			if(data_of_task !is null)
 			{
 				//				writeln("found yawl:data ");
@@ -103,7 +103,7 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 
 				if(vars !is null)
 				{
-					command = vars.getObject("command");
+					command = vars.getFirstObject("command");
 				}
 			}
 		
@@ -170,7 +170,7 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 	{
 		//		triples[0].reindex_predicate();
 		//		writeln("edges_of_predicate=", triples[0].edges_of_predicate);
-		Predicate* pp = triples[0].getEdge(msg__result);
+		Predicate* pp = triples[0].getPredicate(msg__result);
 
 		if(pp !is null)
 		{
@@ -208,7 +208,7 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 	if(triples.length > 0)
 	{
 		//		writeln("parse is  Ok");
-		Predicate* pp = triples[0].getEdge(msg__result);
+		Predicate* pp = triples[0].getPredicate(msg__result);
 
 		if(pp !is null)
 		{
@@ -257,7 +257,7 @@ Subject yawl_checkInWorkItem(string taskId, string caseId, string section_name, 
 	if(triples.length > 0)
 	{
 		//		writeln("parse is  Ok");
-		Predicate* pp = triples[0].getEdge(msg__result);
+		Predicate* pp = triples[0].getPredicate(msg__result);
 
 		if(pp !is null)
 		{

@@ -54,7 +54,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
 	{
-		string to = ef.getObject(event__to);
+		string to = ef.getFirstObject(event__to);
 
 		if(to is null || to.length < 2)
 		{
@@ -62,13 +62,16 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 			continue;
 		}
 
-		string subject_type = subject.getObject("a");
-
-		if(ef.getObject(event__subject_type) == subject_type)
+		Predicate* subject_types = subject.getPredicate("a");
+//		writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
+		
+		string filter_type = ef.getFirstObject(event__subject_type);
+		
+		if(subject_types.isExistLiteral (filter_type))
 		{
-			if(ef.getObject(event__when) == "after")
+			if(ef.getFirstObject(event__when) == "after")
 			{
-				string condition = ef.getObject(event__condition);
+				string condition = ef.getFirstObject(event__condition);
 
 				//				writeln("condition= ", condition);
 
@@ -81,9 +84,9 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 				try
 				{
-					writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ", subject_type);
+//					writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ", subject_types.objects_of_value);
 
-					Predicate* p_template = ef.getEdge(event__msg_template);
+					Predicate* p_template = ef.getPredicate(event__msg_template);
 
 					if(p_template !is null)
 					{
@@ -141,7 +144,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 												if(predicat_name == "@")
 													predicat_value = subject.subject;
 												else
-													predicat_value = subject.getObject(predicat_name);
+													predicat_value = subject.getFirstObject(predicat_name);
 
 												auto rg1 = regex(regex0);
 												auto m3 = match(predicat_value, rg1);
@@ -151,7 +154,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 											} else
 											{
 												predicat_name = rrr;
-												predicat_value = subject.getObject(predicat_name);
+												predicat_value = subject.getFirstObject(predicat_name);
 											}
 
 											list_vars[i] = predicat_value;
@@ -193,7 +196,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 						}
 					}
 
-					string autoremove = ef.getObject(event__autoremove);
+					string autoremove = ef.getFirstObject(event__autoremove);
 
 					if(autoremove !is null && autoremove == "yes")
 					{
@@ -269,7 +272,7 @@ bool eval(string expr, Subject data)
 		} else
 		{
 			// нужно найти данный предикат tokens[0] в data и взять его значение
-			A = data.getObject(tokens[0]);
+			A = data.getFirstObject(tokens[0]);
 		}
 
 		if(tokens[2][0] == '\'' || tokens[2][0] == '"')
@@ -279,7 +282,7 @@ bool eval(string expr, Subject data)
 		} else
 		{
 			// нужно найти данный предикат tokens[1] в data и взять его значение
-			B = data.getObject(tokens[2]);
+			B = data.getFirstObject(tokens[2]);
 		}
 
 		//		writeln("[", A, tokens[1], B, "]");

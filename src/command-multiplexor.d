@@ -67,7 +67,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 	try
 	{
-		Predicate* arg = message.getEdge(msg__args);
+		Predicate* arg = message.getPredicate(msg__args);
 		if(arg is null)
 		{
 			reason = "аргументы " ~ msg__args ~ " не указаны";
@@ -83,7 +83,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 			return null;
 		}
 
-		Predicate* login = ss.getEdge(auth__login);
+		Predicate* login = ss.getPredicate(auth__login);
 		if(login is null || login.getFirstObject is null || login.getFirstObject.length < 2)
 		{
 			reason = "login не указан";
@@ -91,7 +91,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 			return null;
 		}
 
-		Predicate* credential = ss.getEdge(auth__credential);
+		Predicate* credential = ss.getPredicate(auth__credential);
 		if(credential is null || credential.getFirstObject() is null || credential.getFirstObject.length < 2)
 		{
 			reason = "credential не указан";
@@ -190,7 +190,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 {
 	Subject res;
 
-	Predicate* args = message.getEdge(msg__args);
+	Predicate* args = message.getPredicate(msg__args);
 
 	for(short ii; ii < args.count_objects; ii++)
 	{
@@ -198,7 +198,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 		{
 			Subject arg = args.objects[ii].subject;
 
-			Predicate* unset_msgs = arg.getEdge(pacahon__off_trace_msg);
+			Predicate* unset_msgs = arg.getPredicate(pacahon__off_trace_msg);
 
 			if(unset_msgs !is null)
 			{
@@ -217,7 +217,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 				}
 			}
 
-			Predicate* set_msgs = arg.getEdge(pacahon__on_trace_msg);
+			Predicate* set_msgs = arg.getPredicate(pacahon__on_trace_msg);
 
 			if(set_msgs !is null)
 			{
@@ -259,7 +259,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	out_message.addPredicate(msg__sender, "pacahon");
 	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
-	Predicate* command = message.getEdge(msg__command);
+	Predicate* command = message.getPredicate(msg__command);
 
 	string reason;
 	bool isOk;
@@ -321,7 +321,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 		{
 			//			if(trace_msg[63] == 1)
 			res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
-		} 
+		}
 		//		reason = cast(char[]) "запрос выполнен";
 	} else
 	{

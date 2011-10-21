@@ -155,7 +155,7 @@ void main(char[][] args)
 			ts.define_predicate_as_multiple("rdf:type");
 			ts.define_predicate_as_multiple("rdfs:subClassOf");
 			ts.define_predicate_as_multiple("gost19:take");
-			ts.define_predicate_as_multiple("event:msg_template");			
+			ts.define_predicate_as_multiple("event:msg_template");
 
 			ts.define_predicate_as_multilang("swrc:name");
 			ts.define_predicate_as_multilang("swrc:firstName");
@@ -226,19 +226,6 @@ void main(char[][] args)
 			}
 
 			writeln(thread.resource.gateways);
-
-			// TODO времянка, переделать!
-			{
-				string reply_to_n1;
-				if(("reply_to_n1" in props.object) !is null)
-					reply_to_n1 = props.object["reply_to_n1"].str;
-
-				if(reply_to_n1 !is null)
-				{
-					thread.resource.soc__reply_to_n1 = client.connect_as_req(reply_to_n1);
-					log.trace("connect to %s is Ok", reply_to_n1);
-				}
-			}
 
 			load_events(thread.resource);
 
@@ -382,19 +369,19 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 		//		command.reindex_predicate();
 
-		Predicate* type = command.getEdge("a");
+		Predicate* type = command.getPredicate("a");
 		if(type is null)
-			type = command.getEdge(rdf__type);
+			type = command.getPredicate(rdf__type);
 
 		if((msg__Message in type.objects_of_value) !is null)
 		{
-			Predicate* reciever = command.getEdge(msg__reciever);
-			Predicate* sender = command.getEdge(msg__sender);
+			Predicate* reciever = command.getPredicate(msg__reciever);
+			Predicate* sender = command.getPredicate(msg__sender);
 
 			if(trace_msg[6] == 1)
 				log.trace("message accepted from:%s", sender.getFirstObject());
 
-			Predicate* ticket = command.getEdge(msg__ticket);
+			Predicate* ticket = command.getPredicate(msg__ticket);
 
 			string userId;
 
@@ -456,7 +443,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				//				results[ii] = out_message;
 			}
 
-			Predicate* command_name = command.getEdge(msg__command);
+			Predicate* command_name = command.getPredicate(msg__command);
 			server_thread.stat.count_command++;
 			sw_c.stop();
 			long t = cast(long) sw_c.peek().usecs;

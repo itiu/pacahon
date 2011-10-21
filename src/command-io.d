@@ -62,7 +62,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 
 	Subject res;
 
-	Predicate* args = message.getEdge(msg__args);
+	Predicate* args = message.getPredicate(msg__args);
 
 	if(trace_msg[32] == 1)
 		log.trace("command put, args.count_objects=%d ", args.count_objects);
@@ -129,9 +129,9 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			if(trace_msg[35] == 1)
 				log.trace("#1 jj = %d", jj);
 
-			Predicate* type = graph.getEdge("a");
+			Predicate* type = graph.getPredicate("a");
 			if(type is null)
-				type = graph.getEdge(rdf__type);
+				type = graph.getPredicate(rdf__type);
 
 			if(trace_msg[35] == 1)
 				log.trace("#2 jj = %d, type=%x", jj, type);
@@ -181,9 +181,9 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 					if(type.isExistLiteral(event__Event))
 					{
 						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-						server_thread.event_filters.addSubject (graph);
+						server_thread.event_filters.addSubject(graph);
 
-						writeln("add new event_filter");
+						writeln("add new event_filter [", graph.subject, "]");
 					} else
 					{
 						string event_type;
@@ -221,17 +221,17 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 		{
 			Subject graph = graphs_on_put[jj];
 
-			Predicate* type = graph.getEdge("a");
+			Predicate* type = graph.getPredicate("a");
 			if(type is null)
-				type = graph.getEdge(rdf__type);
+				type = graph.getPredicate(rdf__type);
 
 			if(type !is null && (rdf__Statement in type.objects_of_value))
 			{
 				// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
 				// если, да то добавить их в хранилище через метод addTripleToReifedData
-				Predicate* r_subject = graph.getEdge(rdf__subject);
-				Predicate* r_predicate = graph.getEdge(rdf__predicate);
-				Predicate* r_object = graph.getEdge(rdf__object);
+				Predicate* r_subject = graph.getPredicate(rdf__subject);
+				Predicate* r_predicate = graph.getPredicate(rdf__predicate);
+				Predicate* r_object = graph.getPredicate(rdf__object);
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
@@ -266,99 +266,6 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 
 		}
 
-		// TODO времянка, переделать!
-		try
-		{
-			//  так выглядит пакет для semargl:			
-			//	<ac4cc25e-b0f0-4567-aaf6-f4f60cdc2d40><mo#sj><mo#p>.
-			//	<ac4cc25e-b0f0-4567-aaf6-f4f60cdc2d40><mo/ts#arg>
-			//	{<8ff16ede-b60f-4196-9a54-6cc674a50f44><mo#mmbOf>"7eb20abe-0ce8-46d3-b3ee-035a05f4ffe7".}.
-			//	<d043a822-9877-486c-960f-ec3fbf87bb99><mo#sj><mo/ts#sf>.
-			//	<d043a822-9877-486c-960f-ec3fbf87bb99><mo/ts#arg>"request-queue-9e715fdb-50dd-4dc2-b911-609660822ec5".
-			//	<ac4cc25e-b0f0-4567-aaf6-f4f60cdc2d40><mo/ts/msg#r_t>"request-queue-9e715fdb-50dd-4dc2-b911-609660822ec5".
-
-			if(server_thread.soc__reply_to_n1 !is null)
-			{
-				for(int jj = 0; jj < graphs_on_put.length; jj++)
-				{
-					Subject graph = graphs_on_put[jj];
-
-					Predicate* type = graph.getEdge("a");
-
-					if(type is null)
-						type = graph.getEdge(rdf__type);
-
-					if(type !is null)
-					{
-						byte none_unit_person = 0;
-
-						if(("docs:unit_card" in type.objects_of_value) !is null)
-							none_unit_person = 1;
-						else if(("docs:employee_card" in type.objects_of_value) !is null)
-							none_unit_person = 2;
-
-						if(none_unit_person > 0)
-						{
-							Predicate* p_docs_parentUnit = graph.getEdge("docs:parentUnit");
-
-							if(p_docs_parentUnit !is null)
-							{
-								string s_p_docs_unit = graph.subject;
-								log.trace("p_docs_unit=%s", s_p_docs_unit);
-								log.trace("p_docs_parentUnit=%s", p_docs_parentUnit.getFirstObject);
-
-								//								string s_p_docs_unit = p_docs_unit.getFirstObject;
-								s_p_docs_unit = s_p_docs_unit[(indexOf(s_p_docs_unit, '_') + 1) .. $];
-
-								string s_p_docs_parentUnit = p_docs_parentUnit.getFirstObject;
-								s_p_docs_parentUnit = s_p_docs_parentUnit[(indexOf(s_p_docs_parentUnit, '_') + 1) .. $];
-
-								Twister rnd;
-								rnd.seed;
-								UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-								Uuid generated = rndUuid.next;
-
-								string cmd_id = "<" ~ cast(string) generated.toString ~ ">";
-								rnd.seed;
-								rndUuid = new RandomGen!(Twister)(rnd);
-								generated = rndUuid.next;
-								string from_id = "<" ~ cast(string) generated.toString ~ ">";
-
-								string data;
-
-								if(none_unit_person == 2)
-								{
-									string
-											del_msg = cmd_id ~ "<mo#sj><mo#ds>." ~ cmd_id ~ "<mo/ts#arg>\"" ~ s_p_docs_unit ~ "\"." ~ from_id ~ "<mo#sj><mo/ts#sf>." ~ from_id ~ "<mo/ts#arg>\"request-queue-0000000-0000-0000-0000-000000000000\"." ~ cmd_id ~ "<mo/ts/msg#r_t>\"request-queue-0000000-0000-0000-0000-000000000000\".\0";
-
-									data = "<" ~ s_p_docs_unit ~ "><mo#mmbOf>\"" ~ s_p_docs_parentUnit ~ "\".";
-
-									server_thread.client.send(server_thread.soc__reply_to_n1, cast(char*) del_msg,
-											del_msg.length, false);
-									server_thread.client.reciev(server_thread.soc__reply_to_n1);
-								} else if(none_unit_person == 1)
-								{
-									data = "<" ~ s_p_docs_parentUnit ~ "><mo#hsPt>\"" ~ s_p_docs_unit ~ "\".";
-								}
-
-								string
-										put_msg = cmd_id ~ "<mo#sj><mo#p>." ~ cmd_id ~ "<mo/ts#arg>{" ~ data ~ "}." ~ from_id ~ "<mo#sj><mo/ts#sf>." ~ from_id ~ "<mo/ts#arg>\"request-queue-0000000-0000-0000-0000-000000000000\"." ~ cmd_id ~ "<mo/ts/msg#r_t>\"request-queue-0000000-0000-0000-0000-000000000000\".\0";
-
-								server_thread.client.send(server_thread.soc__reply_to_n1, cast(char*) put_msg,
-										put_msg.length, false);
-								server_thread.client.reciev(server_thread.soc__reply_to_n1);
-
-								log.trace("reply_to_n1, send to [reply_to_n1] is ok");
-							}
-						}
-					}
-				}
-			}
-		} catch(Exception ex)
-		{
-			log.trace("reply_to_n1, send to [reply_to_n1 is fail] " ~ ex.msg);
-		}
-
 		if(trace_msg[37] == 1)
 			log.trace("command put is finish");
 
@@ -385,7 +292,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 	reason = "запрос не может быть выполнен";
 
-	Predicate* args = message.getEdge(msg__args);
+	Predicate* args = message.getPredicate(msg__args);
 
 	if(trace_msg[42] == 1)
 		log.trace("command get, args=%s", args);
@@ -615,7 +522,7 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 
 	try
 	{
-		Predicate* arg = message.getEdge(msg__args);
+		Predicate* arg = message.getPredicate(msg__args);
 		if(arg is null)
 		{
 			reason = "аргументы " ~ msg__args ~ " не указаны";
@@ -631,7 +538,7 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 			return null;
 		}
 
-		Predicate* subj_id = ss.getEdge(rdf__subject);
+		Predicate* subj_id = ss.getPredicate(rdf__subject);
 		if(subj_id is null || subj_id.getFirstObject is null || subj_id.getFirstObject.length < 2)
 		{
 			reason = "rdf:subject не указан";
