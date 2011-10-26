@@ -193,7 +193,16 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 						else
 							event_type = "create subject";
 
+						//						int count = 90_000;
+						//						StopWatch sw;
+						//						sw.start();
+						//						for(int i = 0; i < count; i++)
 						processed_events(graph, event_type, server_thread);
+
+						//						sw.stop();
+						//						long t = cast(long) sw.peek().usecs;
+						//						writeln("processed filters ", count, ", time=", t);
+
 					}
 
 					reason = "добавление фактов выполнено:" ~ authorize_reason;

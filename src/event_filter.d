@@ -50,7 +50,7 @@ void load_events(ThreadContext server_thread)
 
 void processed_events(Subject subject, string type, ThreadContext server_thread)
 {
-	//	writeln("info:processed_events ", type, ":", subject);
+	//		writeln("info:processed_events ", type, ":", subject);
 
 	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
 	{
@@ -63,11 +63,11 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 		}
 
 		Predicate* subject_types = subject.getPredicate("a");
-//		writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
-		
+		//		writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
+
 		string filter_type = ef.getFirstObject(event__subject_type);
-		
-		if(subject_types.isExistLiteral (filter_type))
+
+		if(subject_types.isExistLiteral(filter_type))
 		{
 			if(ef.getFirstObject(event__when) == "after")
 			{
@@ -75,136 +75,141 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 				//				writeln("condition= ", condition);
 
-				bool res_cond = true;
+				bool res_cond = false;
 
 				if(condition !is null)
 				{
 					res_cond = eval(condition, subject);
 				}
 
-				try
+				if(res_cond == true)
 				{
-//					writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ", subject_types.objects_of_value);
-
-					Predicate* p_template = ef.getPredicate(event__msg_template);
-
-					if(p_template !is null)
+					try
 					{
-						for(int i = 0; i < p_template.count_objects; i++)
+//						writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ",
+//								subject_types.objects_of_value);
+
+						Predicate* p_template = ef.getPredicate(event__msg_template);
+
+						if(p_template !is null)
 						{
-							Objectz p_object = p_template.objects[i];
-
-							string msg_template = p_object.literal;
-
-							if(msg_template !is null)
+							for(int i = 0; i < p_template.count_objects; i++)
 							{
-								string r;
+								Objectz p_object = p_template.objects[i];
 
-								auto rg = regex("`[^`]+`", "g");
+								string msg_template = p_object.literal;
 
-								StopWatch sw;
-								sw.start();
-
-								auto m2 = match(msg_template, rg);
-
-								string[string] vars;
-								string[] list_vars = new string[16];
-
-								int i = 0;
-								foreach(c; m2)
+								if(msg_template !is null)
 								{
-									string rrr = c.hit[1 .. $ - 1];
+									string r;
 
-									list_vars[i] = "?";
+									auto rg = regex("`[^`]+`", "g");
 
-									if((rrr in vars) is null)
+									StopWatch sw;
+									sw.start();
+
+									auto m2 = match(msg_template, rg);
+
+									string[string] vars;
+									string[] list_vars = new string[16];
+
+									int i = 0;
+									foreach(c; m2)
 									{
-										if(rrr[0] == '$')
-										{
-											Twister rnd;
-											rnd.seed;
-											UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-											Uuid generated = rndUuid.next;
-											list_vars[i] = cast(string) generated.toString;
-											vars[rrr] = list_vars[i];
-										} else
-										{
-											// это предикат или субьект из изменяемого субьекта
-											string predicat_name;
-											string predicat_value;
-											string regex0;
+										string rrr = c.hit[1 .. $ - 1];
 
-											// проверим, есть ли для него фильтр
-											int start_pos_regex = std.string.indexOf(rrr, '/');
-											if(start_pos_regex > 0)
+										list_vars[i] = "?";
+
+										if((rrr in vars) is null)
+										{
+											if(rrr[0] == '$')
 											{
-												predicat_name = rrr[0 .. start_pos_regex];
-												regex0 = rrr[start_pos_regex + 1 .. $ - 1];
-
-												if(predicat_name == "@")
-													predicat_value = subject.subject;
-												else
-													predicat_value = subject.getFirstObject(predicat_name);
-
-												auto rg1 = regex(regex0);
-												auto m3 = match(predicat_value, rg1);
-
-												auto c = m3.captures;
-												predicat_value = c["var"];
+												Twister rnd;
+												rnd.seed;
+												UuidGen rndUuid = new RandomGen!(Twister)(rnd);
+												Uuid generated = rndUuid.next;
+												list_vars[i] = cast(string) generated.toString;
+												vars[rrr] = list_vars[i];
 											} else
 											{
-												predicat_name = rrr;
-												predicat_value = subject.getFirstObject(predicat_name);
-											}
+												// это предикат или субьект из изменяемого субьекта
+												string predicat_name;
+												string predicat_value;
+												string regex0;
 
-											list_vars[i] = predicat_value;
+												// проверим, есть ли для него фильтр
+												int start_pos_regex = std.string.indexOf(rrr, '/');
+												if(start_pos_regex > 0)
+												{
+													predicat_name = rrr[0 .. start_pos_regex];
+													regex0 = rrr[start_pos_regex + 1 .. $ - 1];
+
+													if(predicat_name == "@")
+														predicat_value = subject.subject;
+													else
+														predicat_value = subject.getFirstObject(predicat_name);
+
+													auto rg1 = regex(regex0);
+													auto m3 = match(predicat_value, rg1);
+
+													auto c = m3.captures;
+													predicat_value = c["var"];
+												} else
+												{
+													predicat_name = rrr;
+													predicat_value = subject.getFirstObject(predicat_name);
+												}
+
+												list_vars[i] = predicat_value;
+											}
+										} else
+										{
+											list_vars[i] = vars[rrr];
 										}
+
+										i++;
+									}
+									list_vars.length = i;
+
+									r = replace(msg_template, rg, "%s");
+									//							writeln (r);
+
+									auto writer = appender!string(); // --format
+									formattedWrite(writer, r, list_vars);
+									//						writeln(writer.data);
+
+									//	сообщение сформированно, отправляем согласно event:to	
+
+									ZmqConnection gateway = server_thread.getGateway(to);
+
+									if(gateway !is null)
+									{
+										gateway.send(writer.data);
+										string res = gateway.reciev();
 									} else
 									{
-										list_vars[i] = vars[rrr];
+										log.trace("filter [%s] skipped, for gateway [%s] not found config", ef.subject,
+												to);
 									}
 
-									i++;
+									//						sw.stop();
+									//						long t = cast(long) sw.peek().usecs;
+									//						writeln("regex time:", t, ", d:", t / count, ", cps:", 1_000_000 / (t / count));
+
 								}
-								list_vars.length = i;
-
-								r = replace(msg_template, rg, "%s");
-								//							writeln (r);
-
-								auto writer = appender!string(); // --format
-								formattedWrite(writer, r, list_vars);
-								//						writeln(writer.data);
-
-								//	сообщение сформированно, отправляем согласно event:to	
-
-								ZmqConnection gateway = server_thread.getGateway(to);
-
-								if(gateway !is null)
-								{
-									gateway.send(writer.data);
-									string res = gateway.reciev();
-								} else
-								{
-									log.trace("filter [%s] skipped, for gateway [%s] not found config", ef.subject, to);
-								}
-
-								//						sw.stop();
-								//						long t = cast(long) sw.peek().usecs;
-								//						writeln("regex time:", t, ", d:", t / count, ", cps:", 1_000_000 / (t / count));
-
 							}
 						}
-					}
 
-					string autoremove = ef.getFirstObject(event__autoremove);
+						string autoremove = ef.getFirstObject(event__autoremove);
 
-					if(autoremove !is null && autoremove == "yes")
+						if(autoremove !is null && autoremove == "yes")
+						{
+							// удалить фильтр из базы и из памяти
+						}
+					} catch(Exception ex)
 					{
-						// удалить фильтр из базы и из памяти
+						log.trace("ex! processed_events: %s, info %s", ef.subject, ex.msg);
 					}
-				} catch(Exception ex)
-				{
-					log.trace("ex! processed_events: %s, info %s", ef.subject, ex.msg);
 				}
 			}
 		}
