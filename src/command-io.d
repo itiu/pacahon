@@ -304,7 +304,11 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 	Predicate* args = message.getPredicate(msg__args);
 
 	if(trace_msg[42] == 1)
-		log.trace("command get, args=%s", args);
+	{
+                OutBuffer outbuff = new OutBuffer();
+                toJson_ld(message, outbuff);
+		log.trace("command get, args=%s",  outbuff.toString);		                                
+	}
 
 	if(args !is null)
 	{
@@ -360,7 +364,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						Objectz oo = pp.objects[ll];
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 						{
-							if(oo.literal.length > 0)
+							// if(oo.literal.length > 0)
 							{
 								if(oo.literal == "query:get_reifed")
 								{
@@ -392,8 +396,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 									if(trace_msg[51] == 1)
 									{
-										log.trace("p=%s", statement.P);
-										log.trace("o=%s", statement.O);
+										log.trace("p=%s o=%s", statement.P, statement.O);
 									}
 								}
 							}

@@ -95,6 +95,10 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 				ss.addPredicate(key, val);
 			}
 		}
+		else
+		{
+			ss.addPredicate(key, "");
+		}
 
 	} else if(element.type == JSON_TYPE.ARRAY)
 	{
