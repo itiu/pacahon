@@ -173,3 +173,4 @@ void formattedWrite(Writer, Char, A)(Writer w, in Char[] fmt, A[] args)
 
 	throw new Exception("util.formattedWrite (), count args > 16");
 }
+

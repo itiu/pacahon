@@ -25,7 +25,7 @@ private import trioplax.TripleStorage;
 private import pacahon.graph;
 
 private import pacahon.n3.parser;
-private import pacahon.json_ld.parser;
+private import pacahon.json_ld.parser1;
 
 private import pacahon.authorization;
 private import pacahon.know_predicates;

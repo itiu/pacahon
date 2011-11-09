@@ -20,9 +20,9 @@ NB: Описание сборки / установки приведено для
 
 2.1. Требуемое ПО:
 - Клиент системы контроля версий GIT.
-- mongodb v2.0.0 ( http://www.mongodb.com )
+- mongodb v2.0.1 ( http://www.mongodb.com )
 - zeromq v2.1.10 ( http://www.zeromq.com )
-- Digital mars D2 compiler dmd 2.055 ( http://www.digitalmars.com/d )
+- Digital mars D2 compiler dmd 2.056 ( http://www.digitalmars.com/d )
 - phobos (D2 runtime library включен в dmd) ( http://www.digitalmars.com/d/2.0/phobos/phobos.html )
 
 2.2. Процедура сборки / установки:

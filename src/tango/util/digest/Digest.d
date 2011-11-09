@@ -14,7 +14,7 @@
 
 module tango.util.digest.Digest;
 
-private import std.c.stdlib : alloca;
+//private import std.c.stdlib : alloca;
 
 /*******************************************************************************
 
@@ -121,11 +121,11 @@ abstract class Digest
                 if (buffer.length < ds * 2)
                     buffer.length = ds * 2;
                 
-                version(darwin){
+//                version(darwin){
                     ubyte[] buf = new ubyte[ds]; // the whole alloca mess needs to be adressed better
-                } else {
-                    ubyte[] buf = (cast(ubyte *) alloca(ds))[0..ds];
-                }
+//                } else {
+//                    ubyte[] buf = (cast(ubyte *) alloca(ds))[0..ds];
+//                }
                 ubyte[] ret = binaryDigest(buf);
                 assert(ret.ptr == buf.ptr);
             

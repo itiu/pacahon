@@ -2,8 +2,8 @@ DMD=dmd
 #~/dmd2-055/linux/bin32/dmd
 
 VERSION_MAJOR=1
-VERSION_MINOR=24
-VERSION_PATCH=6   
+VERSION_MINOR=25
+VERSION_PATCH=0   
 
 cp -v -r src/* build/src
 

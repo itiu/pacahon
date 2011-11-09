@@ -34,7 +34,7 @@ private import Integer = tango.text.convert.Integer;
 
 private import pacahon.graph;
 private import pacahon.n3.parser;
-private import pacahon.json_ld.parser;
+private import pacahon.json_ld.parser1;
 
 private import trioplax.triple;
 private import trioplax.TripleStorage;
@@ -233,7 +233,7 @@ void main(char[][] args)
 
 			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 			load_info_thread.start();
-
+			
 			version(D1)
 			{
 				thread.wait();

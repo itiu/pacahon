@@ -4,6 +4,7 @@ private import core.stdc.stdio;
 private import core.stdc.stdlib;
 private import std.c.string;
 private import std.string;
+import std.conv;
 
 private import std.datetime;
 
@@ -72,13 +73,17 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 		Subject[] graphs_on_put = null;
 
 		if(trace_msg[33] == 1)
-			log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
+			log.trace("args.objects[%d].type = %s", ii, text(args.objects[ii].type));
 
 		try
 		{
 			if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
 			{
 				graphs_on_put = args.objects[ii].cluster.graphs_of_subject.values;
+			} else if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+			{
+				graphs_on_put = new Subject[1];
+				graphs_on_put[0] = args.objects[ii].subject;
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
@@ -305,9 +310,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 	if(trace_msg[42] == 1)
 	{
-                OutBuffer outbuff = new OutBuffer();
-                toJson_ld(message, outbuff);
-		log.trace("command get, args=%s",  outbuff.toString);		                                
+		OutBuffer outbuff = new OutBuffer();
+		toJson_ld(message, outbuff);
+		log.trace("command get, cmd=%s", outbuff.toString);
 	}
 
 	if(args !is null)
@@ -315,13 +320,17 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 		for(short ii; ii < args.count_objects; ii++)
 		{
 			if(trace_msg[43] == 1)
-				log.trace("args.objects[%d].type = %d", ii, args.objects[ii].type);
+				log.trace("args.objects[%d].type = %s", ii, text(args.objects[ii].type));
 
 			Subject[] graphs_as_template;
 
 			if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
 			{
 				graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
+			} else if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+			{
+				graphs_as_template = new Subject[1];
+				graphs_as_template[0] = args.objects[ii].subject;
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
@@ -331,14 +340,14 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					log.trace("arg [%s], arg_size=%d", args.objects[ii].literal, arg_size);
 
 				graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
+			}
 
-				if(trace_msg[45] == 1)
-					log.trace("arguments has been read");
+			if(trace_msg[45] == 1)
+				log.trace("arguments has been read");
 
-				if(graphs_as_template is null)
-				{
-					reason = "в сообщении отсутствует граф-шаблон";
-				}
+			if(graphs_as_template is null)
+			{
+				reason = "в сообщении отсутствует граф-шаблон";
 			}
 
 			for(int jj = 0; jj < graphs_as_template.length; jj++)
@@ -357,6 +366,10 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				for(int kk = 0; kk < graph.count_edges; kk++)
 				{
 					Predicate pp = graph.edges[kk];
+
+					if(trace_msg[46] == 1)
+						log.trace("pp0=%s", pp.predicate);
+
 					Triple statement = null;
 
 					for(int ll = 0; ll < pp.count_objects; ll++)
@@ -364,6 +377,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						Objectz oo = pp.objects[ll];
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 						{
+							if(trace_msg[46] == 1)
+								log.trace("pp1=%s", pp.predicate);
+
 							// if(oo.literal.length > 0)
 							{
 								if(oo.literal == "query:get_reifed")
@@ -396,7 +412,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 									if(trace_msg[51] == 1)
 									{
-										log.trace("p=%s o=%s", statement.P, statement.O);
+										log.trace("statement: p=%s o=%s", statement.P, statement.O);
 									}
 								}
 							}
@@ -406,10 +422,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					if((graph.subject != "query:any" && statement !is null) || (graph.subject != "query:any" && search_mask_length == 0))
 					{
 						if(trace_msg[53] == 1)
+						{
 							log.trace("subject=%s", graph.subject);
+							log.trace("statement=%X", statement);
+						}
 
 						if(statement is null)
 							statement = new Triple(graph.subject, null, null);
+						else
+							statement.S = graph.subject;
 
 						if(trace_msg[54] == 1)
 							log.trace("s=%s", statement.S);

@@ -79,11 +79,11 @@ final class GraphCluster
 		}
 	}
 
-	int length ()
+	int length()
 	{
 		return graphs_of_subject.length;
 	}
-	
+
 }
 
 final class Subject
@@ -253,6 +253,56 @@ final class Subject
 		needReidex = true;
 	}
 
+	void addPredicate(string predicate, Objectz oo)
+	{
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
+		{
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
+		}
+		if(pp !is null)
+		{
+			pp.addObjectz(oo);
+		} else
+		{
+			if(edges.length == 0)
+				edges = new Predicate[16];
+
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = new Objectz[1];
+			edges[count_edges].objects[0] = oo;
+			edges[count_edges].count_objects = 1;
+			count_edges++;
+		}
+		needReidex = true;
+	}
+
+	Predicate* addPredicate()
+	{
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == count_edges)
+		{
+			edges.length += 16;
+		}
+
+		count_edges++;
+
+		needReidex = true;
+		
+		return &edges[count_edges - 1];
+	}
+
 	private void reindex_predicate()
 	{
 		for(short jj = 0; jj < this.count_edges; jj++)
@@ -298,7 +348,7 @@ struct Predicate
 
 		if(ooo !is null)
 			return true;
-		
+
 		return false;
 	}
 
@@ -345,6 +395,16 @@ struct Predicate
 
 		objects[count_objects].subject = ss;
 		objects[count_objects].type = OBJECT_TYPE.SUBJECT;
+
+		count_objects++;
+	}
+
+	void addObjectz(Objectz oo)
+	{
+		if(objects.length == count_objects)
+			objects.length += 16;
+
+		objects[count_objects] = oo;
 
 		count_objects++;
 	}
