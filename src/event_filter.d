@@ -45,6 +45,7 @@ void load_events(ThreadContext server_thread)
 	foreach(triple; it)
 		server_thread.event_filters.addTriple(triple.S, triple.P, triple.O, triple.lang);
 
+	delete (it);
 	log.trace("loaded (%d) filter(s)", server_thread.event_filters.length);
 }
 

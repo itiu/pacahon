@@ -469,6 +469,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 						res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 					}
+					delete it;
 				}
 
 				if(trace_msg[57] == 1)

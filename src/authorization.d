@@ -148,6 +148,8 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 						server_thread.cache__subject_creator[targetId] = userId;
 						res = true;
+
+						delete (it);
 					} else
 					{
 						if(trace_msg[28] == 1)

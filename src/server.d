@@ -24,7 +24,7 @@ private import std.outbuffer;
 
 private import std.datetime;
 
-// import core.memory;
+import core.memory;
 
 private import libzmq_headers;
 private import zmq_point_to_poin_client;
@@ -507,9 +507,14 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
-
-	//	GC.minimize();
-
+/*
+	if ((server_thread.stat.count_message % 10_000) == 0)
+	{
+	    writeln ("start GC");
+    	    GC.collect();
+    	    GC.minimize();
+    	}
+*/
 	return;
 }
 
@@ -602,6 +607,8 @@ class ServerThread: core.thread.Thread
 					if(tt.userId !is null && when !is null && duration > 10)
 						break;
 				}
+				
+				delete (it);
 			}
 
 			if(trace_msg[20] == 1)

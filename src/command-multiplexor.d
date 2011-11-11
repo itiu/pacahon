@@ -149,6 +149,8 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 				reason = "login и password совпадают";
 				isOk = true;
 			}
+			
+			delete (it);
 		} else
 		{
 			reason = "login и password не совпадают";
