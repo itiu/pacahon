@@ -97,7 +97,7 @@ final class Subject
 
 	string getFirstObject(string pname)
 	{
-		if(needReidex == true)
+		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
 		Predicate* pp = null;
@@ -114,19 +114,24 @@ final class Subject
 
 	Predicate* getPredicate(string pname)
 	{
-		if(needReidex == true)
+		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate* pp = null;
-		Predicate** ppp = (pname in edges_of_predicate);
+		//		writeln ("edges_of_predicate=", edges_of_predicate, ", edges=", edges);
 
-		if(ppp !is null)
-		{
-			pp = *ppp;
+		return edges_of_predicate.get(pname, null);
+		/*		
+		 Predicate* pp = null;
+		 Predicate** ppp = (pname in edges_of_predicate);
 
-			return pp;
-		}
-		return null;
+		 if(ppp !is null)
+		 {
+		 pp = *ppp;
+
+		 return pp;
+		 }
+		 return null;
+		 */
 	}
 
 	void addPredicateAsURI(string predicate, string object)
@@ -299,7 +304,7 @@ final class Subject
 		count_edges++;
 
 		needReidex = true;
-		
+
 		return &edges[count_edges - 1];
 	}
 

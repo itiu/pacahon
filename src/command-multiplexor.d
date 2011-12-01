@@ -149,7 +149,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 				reason = "login и password совпадают";
 				isOk = true;
 			}
-			
+
 			delete (it);
 		} else
 		{
@@ -257,84 +257,89 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	out_message.subject = generateMsgId();
 
 	out_message.addPredicateAsURI("a", msg__Message);
-	out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
 	out_message.addPredicate(msg__sender, "pacahon");
-	out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
-	Predicate* command = message.getPredicate(msg__command);
+	if(sender !is null)
+		out_message.addPredicate(msg__reciever, sender.getFirstObject);
 
 	string reason;
 	bool isOk;
 
-	if(command !is null)
+	if(message !is null)
 	{
-		if("get" in command.objects_of_value)
-		{
-			if(trace_msg[14] == 1)
-				log.trace("command_preparer, get");
+		out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
+		Predicate* command = message.getPredicate(msg__command);
 
-			GraphCluster gres = new GraphCluster;
-			get(message, sender, userId, server_thread, isOk, reason, gres);
-			if(isOk == true)
+		if(command !is null)
+		{
+			if("get" in command.objects_of_value)
 			{
-				//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
+				if(trace_msg[14] == 1)
+					log.trace("command_preparer, get");
+
+				GraphCluster gres = new GraphCluster;
+				get(message, sender, userId, server_thread, isOk, reason, gres);
+				if(isOk == true)
+				{
+					//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
+					out_message.addPredicate(msg__result, gres);
+				}
+			} else if("put" in command.objects_of_value)
+			{
+				if(trace_msg[13] == 1)
+					log.trace("command_preparer, put");
+
+				res = put(message, sender, userId, server_thread, isOk, reason);
+			} else if("remove" in command.objects_of_value)
+			{
+				if(trace_msg[14] == 1)
+					log.trace("command_preparer, remove");
+
+				res = remove(message, sender, userId, server_thread, isOk, reason);
+			} else if("get_ticket" in command.objects_of_value)
+			{
+				if(trace_msg[15] == 1)
+					log.trace("command_preparer, get_ticket");
+
+				res = get_ticket(message, sender, userId, server_thread, isOk, reason);
+
+				if(isOk)
+				{
+					if(trace_msg[15] == 1)
+						log.trace("command_preparer, get_ticket is Ok");
+					local_ticket = res.edges[0].getFirstObject;
+				} else
+				{
+					if(trace_msg[15] == 1)
+						log.trace("command_preparer, get_ticket is False");
+				}
+			} else if("yawl:announceItemEnabled" in command.objects_of_value)
+			{
+				yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
+
+			} else if("yawl:ParameterInfoRequest" in command.objects_of_value)
+			{
+				GraphCluster gres = new GraphCluster;
+				yawl_ParameterInfoRequest(message, sender, userId, server_thread, isOk, reason, gres);
 				out_message.addPredicate(msg__result, gres);
-			}
-		} else if("put" in command.objects_of_value)
-		{
-			if(trace_msg[13] == 1)
-				log.trace("command_preparer, put");
 
-			res = put(message, sender, userId, server_thread, isOk, reason);
-		} else if("remove" in command.objects_of_value)
-		{
-			if(trace_msg[14] == 1)
-				log.trace("command_preparer, remove");
-
-			res = remove(message, sender, userId, server_thread, isOk, reason);
-		} else if("get_ticket" in command.objects_of_value)
-		{
-			if(trace_msg[15] == 1)
-				log.trace("command_preparer, get_ticket");
-
-			res = get_ticket(message, sender, userId, server_thread, isOk, reason);
-
-			if(isOk)
+			} else if("set_message_trace" in command.objects_of_value)
 			{
-				if(trace_msg[15] == 1)
-					log.trace("command_preparer, get_ticket is Ok");
-				local_ticket = res.edges[0].getFirstObject;
-			} else
-			{
-				if(trace_msg[15] == 1)
-					log.trace("command_preparer, get_ticket is False");
+				//			if(trace_msg[63] == 1)
+				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
 			}
-		} else if("yawl:announceItemEnabled" in command.objects_of_value)
+			//		reason = cast(char[]) "запрос выполнен";
+		} else
 		{
-			yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
-
-		} else if("yawl:ParameterInfoRequest" in command.objects_of_value)
-		{
-			GraphCluster gres = new GraphCluster;
-			yawl_ParameterInfoRequest(message, sender, userId, server_thread, isOk, reason, gres);
-			out_message.addPredicate(msg__result, gres);
-
-		} else if("set_message_trace" in command.objects_of_value)
-		{
-			//			if(trace_msg[63] == 1)
-			res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
+			reason = "в сообщении не указана команда";
 		}
-		//		reason = cast(char[]) "запрос выполнен";
-	} else
-	{
-		reason = "в сообщении не указана команда";
-	}
-	if(isOk == false)
-	{
-		out_message.addPredicate(msg__status, "fail");
-	} else
-	{
-		out_message.addPredicate(msg__status, "ok");
+		if(isOk == false)
+		{
+			out_message.addPredicate(msg__status, "fail");
+		} else
+		{
+			out_message.addPredicate(msg__status, "ok");
+		}
 	}
 
 	if(res !is null)

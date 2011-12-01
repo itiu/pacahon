@@ -233,7 +233,7 @@ void main(char[][] args)
 
 			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 			load_info_thread.start();
-			
+
 			version(D1)
 			{
 				thread.wait();
@@ -373,7 +373,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		if(type is null)
 			type = command.getPredicate(rdf__type);
 
-		if((msg__Message in type.objects_of_value) !is null)
+		if(trace_msg[6] == 1)
+			log.trace("command type:%X", type);
+
+		if(type !is null && (msg__Message in type.objects_of_value) !is null)
 		{
 			Predicate* reciever = command.getPredicate(msg__reciever);
 			Predicate* sender = command.getPredicate(msg__sender);
@@ -462,6 +465,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					log.trace("command [%s] %s, time > 100 ms", command_name.getFirstObject(), sender.getFirstObject());
 			}
 
+		} else
+		{
+			results[ii] = new Subject;
+			command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket);
 		}
 
 	}
@@ -479,10 +486,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	//	outbuff.write(0);
 
-	if(trace_msg[9] == 1)
-		log.trace("send");
-
 	out_data = outbuff.toBytes();
+
+	if(trace_msg[9] == 1)
+		log.trace("данные для отправки сформированны, out_data=%s", cast(char[]) out_data);
 
 	//	if(from_client !is null)
 	//	{
@@ -491,7 +498,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	//	}
 
 	if(trace_msg[10] == 1)
-		io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
+	{
+		if(out_data !is null)
+			io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
+	}
 
 	server_thread.stat.count_message++;
 	server_thread.stat.size__user_of_ticket = server_thread.resource.user_of_ticket.length;
@@ -507,14 +517,14 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
-/*
-	if ((server_thread.stat.count_message % 10_000) == 0)
-	{
-	    writeln ("start GC");
-    	    GC.collect();
-    	    GC.minimize();
-    	}
-*/
+	/*
+	 if ((server_thread.stat.count_message % 10_000) == 0)
+	 {
+	 writeln ("start GC");
+	 GC.collect();
+	 GC.minimize();
+	 }
+	 */
 	return;
 }
 
@@ -607,7 +617,7 @@ class ServerThread: core.thread.Thread
 					if(tt.userId !is null && when !is null && duration > 10)
 						break;
 				}
-				
+
 				delete (it);
 			}
 
