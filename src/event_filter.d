@@ -139,7 +139,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 												string regex0;
 
 												// проверим, есть ли для него фильтр
-												int start_pos_regex = std.string.indexOf(rrr, '/');
+												int start_pos_regex = cast(uint)std.string.indexOf(rrr, '/');
 												if(start_pos_regex > 0)
 												{
 													predicat_name = rrr[0 .. start_pos_regex];
@@ -235,7 +235,7 @@ bool eval(string expr, Subject data)
 				c2 = s[p - 1];
 
 			if((c == op1[1] && c2 == op1[0]) && parens == 0)
-				return p - 1;
+				return cast(uint)(p - 1);
 
 			else if(c == ')')
 				parens++;

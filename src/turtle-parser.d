@@ -192,7 +192,7 @@ public Subject[] parse_n3_string(char* src, int len)
 				if(*element == 0)
 					break;
 
-				next_element(element, ptr - element, &state);
+				next_element(element, cast(uint)(ptr - element), &state);
 
 				ptr++;
 
@@ -541,7 +541,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 				char prev_ch;
 				char[] new_str = new char[oo.literal.length * 2];
 				int pos_in_new_str = 0;
-				int len = oo.literal.length;
+				int len = cast(uint)oo.literal.length;
 
 				for(int i = 0; i < len; i++)
 				{

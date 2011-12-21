@@ -81,7 +81,7 @@ final class GraphCluster
 
 	int length()
 	{
-		return graphs_of_subject.length;
+		return cast(uint)graphs_of_subject.length;
 	}
 
 }

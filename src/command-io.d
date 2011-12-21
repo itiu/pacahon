@@ -87,7 +87,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = strlen(args_text);
+				int arg_size = cast(uint)strlen(args_text);
 
 				if(trace_msg[33] == 1)
 					log.trace("start parse arg");
@@ -334,7 +334,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = strlen(args_text);
+				int arg_size = cast(uint)strlen(args_text);
 
 				if(trace_msg[44] == 1)
 					log.trace("arg [%s], arg_size=%d", args.objects[ii].literal, arg_size);

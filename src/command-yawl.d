@@ -17,7 +17,7 @@ private import tango.math.random.Twister;
 
 private import std.datetime;
 
-import luad.all;
+//import luad.all;
 
 private import trioplax.triple;
 private import trioplax.TripleStorage;
@@ -37,15 +37,15 @@ private import trioplax.Logger;
 private import pacahon.zmq_connection;
 
 Logger log;
-LuaState lua;
-LuaFunction l_f;
+//LuaState lua;
+//LuaFunction l_f;
 
 static this()
 {
 	log = new Logger("pacahon", "log", "command-yawl");
-	lua = new LuaState;
-	lua.doString (`function ask(question) return 39 end`);
-	l_f = lua.get!LuaFunction ("ask");
+//	lua = new LuaState;
+//	lua.doString (`function ask(question) return 39 end`);
+//	l_f = lua.get!LuaFunction ("ask");
 }
 
 /*
@@ -110,7 +110,7 @@ void yawl_announceItemEnabled(Subject message, Predicate* sender, string userId,
 			//			writeln("command:", command);
 			
 			// выполним скрипт связанный с коммандой в переменной [command]
-			auto aa = l_f.call!int("sddsgyuyujh vrr");			
+//			auto aa = l_f.call!int("sddsgyuyujh vrr");			
 //			writeln ("aa=", aa);
 			
 			// установить переменные задачи
@@ -164,7 +164,7 @@ string yawl_engine_connect(string login, string credential, string from, ThreadC
 
 	Subject[] triples;
 
-	triples = parse_json_ld_string(cast(char*) res, res.length);
+	triples = parse_json_ld_string(cast(char*) res, cast(uint)res.length);
 
 	if(triples.length > 0)
 	{
@@ -203,7 +203,7 @@ Subject yawl_checkOut(string taskId, string ticket, string from, ThreadContext s
 	Subject[] triples;
 
 	//	writeln("parse...");
-	triples = parse_json_ld_string(cast(char*) res, res.length);
+	triples = parse_json_ld_string(cast(char*) res, cast(uint)res.length);
 
 	if(triples.length > 0)
 	{
@@ -252,7 +252,7 @@ Subject yawl_checkInWorkItem(string taskId, string caseId, string section_name, 
 	Subject[] triples;
 
 	//	writeln("parse...");
-	triples = parse_json_ld_string(cast(char*) res, res.length);
+	triples = parse_json_ld_string(cast(char*) res, cast(uint)res.length);
 
 	if(triples.length > 0)
 	{

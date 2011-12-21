@@ -38,7 +38,7 @@ class ZmqConnection
 	{
 		check_connect();
 
-		int length = msg.length;
+		int length = cast(uint)msg.length;
 		char* data = cast(char*) msg;
 
 		if(*(data + length - 1) == ' ')

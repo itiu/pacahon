@@ -470,7 +470,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 					if(is_exist_quotes)
 					{
-						int len = oo.literal.length;
+						int len = cast(uint)oo.literal.length;
 
 						for(int i = 0; i < len; i++)
 						{
