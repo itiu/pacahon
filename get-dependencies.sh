@@ -1,5 +1,5 @@
-mongo_d_driver__hash=33c38ee
-trioplax__hash=b36bec1
+mongo_d_driver__hash=70c2de6
+trioplax__hash=1d5b40a
 zeromq__hash=27b7b4c
 fred_hash=f20ef0709c
 
