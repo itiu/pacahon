@@ -545,7 +545,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 
 				for(int i = 0; i < len; i++)
 				{
-					// если подрят идут "", то пропустим их
+					// если подряд идут "", то пропустим их
 					if(len > 4 && (i == 0 || i == len - 2) && oo.literal[i] == '"' && oo.literal[i + 1] == '"')
 					{
 						for(byte hh = 0; hh < 2; hh++)
@@ -554,7 +554,6 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 							pos_in_new_str++;
 							i++;
 						}
-
 					}
 
 					if(i >= len)
@@ -564,6 +563,8 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 
 					if(ch == '"' && len > 4)
 					{
+						new_str[pos_in_new_str] = '\\';
+						pos_in_new_str++;
 						new_str[pos_in_new_str] = '\\';
 						pos_in_new_str++;
 					}
@@ -604,12 +605,12 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 			}
 			else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-				outbuff.write(cast(char[]) " \"\"");
+				outbuff.write(cast(char[]) " \"\"\"");
 				foreach(s; oo.cluster.graphs_of_subject)
 				{
 					toTurtle(s, outbuff, 0, true);
 				}
-				outbuff.write(cast(char[]) "\"\"");
+				outbuff.write(cast(char[]) "\"\"\"");
 			}
 
 			if(jj == ss.count_edges - 1)
