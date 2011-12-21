@@ -259,7 +259,7 @@ struct Twister
                 j=0;
                 
                 seed (19650218U, pAddEntropy);
-                for (k = (mt.length > init_key.length ? mt.length : init_key.length); k; k--)   {
+                for (k = cast(uint)(mt.length > init_key.length ? mt.length : init_key.length); k; k--)   {
                         mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1664525U))+ init_key[j] + j; 
                         mt[i] &=  0xffffffffU; 
                         i++;

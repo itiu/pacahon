@@ -499,7 +499,7 @@ uint trim(T) (T[] digits, ref bool sign, ref uint radix)
            }
 
         // return number of characters eaten
-        return (p - digits.ptr);
+        return cast(uint)(p - digits.ptr);
 }
 
 

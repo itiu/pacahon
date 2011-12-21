@@ -177,7 +177,13 @@ else version( LDC )
 }
 else
 {
-    public import std.intrinsic;
+version (X86_64)
+{
+	public import core.bitop;
+}
+else
+{
+	public import std.intrinsic;
 }
 
 
