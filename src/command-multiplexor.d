@@ -109,10 +109,10 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 		// TODO определится что возвращать null или пустой итератор
 		if(trace_msg[65] == 1)
-			log.trace("get_ticket: start getTriplesOfMask");
-
+			log.trace("get_ticket: start getTriplesOfMask search_mask");
+		
 		TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
-
+		
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: iterator %x", it);
 

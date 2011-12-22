@@ -1,6 +1,6 @@
-mongo_d_driver__hash=70c2de6
-trioplax__hash=1d5b40a
-zeromq__hash=27b7b4c
+mongo_d_driver__hash=ddbedad
+trioplax__hash=1104ab0
+zeromq__hash=619c4c0
 fred_hash=f20ef0709c
 
 trioplax__project_name=itiu-trioplax
