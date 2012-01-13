@@ -299,6 +299,12 @@ GraphCluster parse_JSON_LD(T)(T json, int maxDepth = -1) if(isInputRange!T)
 
 			break;
 
+			case 'n':
+				checkChar('u');
+				checkChar('l');
+				checkChar('l');
+			break;
+
 			default:
 				error(text("Unexpected character '", c, "'."));
 		}
