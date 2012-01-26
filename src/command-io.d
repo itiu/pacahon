@@ -87,7 +87,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = cast(uint)strlen(args_text);
+				int arg_size = cast(uint) strlen(args_text);
 
 				if(trace_msg[33] == 1)
 					log.trace("start parse arg");
@@ -334,7 +334,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
 			{
 				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = cast(uint)strlen(args_text);
+				int arg_size = cast(uint) strlen(args_text);
 
 				if(trace_msg[44] == 1)
 					log.trace("arg [%s], arg_size=%d", args.objects[ii].literal, arg_size);
@@ -419,7 +419,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						}
 
 					}
-					if((graph.subject != "query:any" && statement !is null) || (graph.subject != "query:any" && search_mask_length == 0))
+					if((graph.subject != "query:any" && (statement !is null || search_mask_length == 0)))
 					{
 						if(trace_msg[53] == 1)
 						{
@@ -427,13 +427,21 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 							log.trace("statement=%X", statement);
 						}
 
-						if(statement is null)
-							statement = new Triple(graph.subject, null, null);
-						else
-							statement.S = graph.subject;
+						if(server_thread.useMMF)
+						{
+							// TODO чтение из mmile	
+						} else
+						{
+							if(statement is null)
+								statement = new Triple(graph.subject, null, null);
+							else
+								statement.S = graph.subject;
 
-						if(trace_msg[54] == 1)
-							log.trace("s=%s", statement.S);
+							if(trace_msg[54] == 1)
+								log.trace("s=%s", statement.S);
+
+							log.trace("get:%s", statement.S);
+						}
 					}
 
 					if(statement !is null)

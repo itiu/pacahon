@@ -48,3 +48,5 @@ build/src/zmq_pp_broker_client.d
 build/src/std/json_str.d
 build/src/myversion.d
 build/src/server.d 
+build/src/libchash_h.d
+build/src/mmf/graph.d

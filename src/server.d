@@ -58,6 +58,9 @@ void main(char[][] args)
 {
 	try
 	{
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
+				myversion.patch, myversion.hash, myversion.date);
+
 		JSONValue props;
 
 		try
@@ -68,19 +71,21 @@ void main(char[][] args)
 			throw new Exception("ex! parse params", ex1);
 		}
 
-		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
-				myversion.patch, myversion.hash, myversion.date);
-
 		mq_client client = null;
 
-		string bind_to = "tcp://*:5555";
-		if(("zmq_point" in props.object) !is null)
-			bind_to = props.object["zmq_point"].str;
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+		// адрес базы данных mongodb
 		string mongodb_server = "localhost";
 		if(("mongodb_server" in props.object) !is null)
 			mongodb_server = props.object["mongodb_server"].str;
 
+		// порт базы данных mongodb
+		int mongodb_port = 27017;
+		if(("mongodb_port" in props.object) !is null)
+			mongodb_port = cast(int) props.object["mongodb_port"].integer;
+
+		// имя коллекции
 		string mongodb_collection = "pacahon";
 		if(("mongodb_collection" in props.object) !is null)
 			mongodb_collection = props.object["mongodb_collection"].str;
@@ -93,9 +98,16 @@ void main(char[][] args)
 		if(("cache_type" in props.object) !is null)
 			cache_type = props.object["cache_type"].str;
 
-		int mongodb_port = 27017;
-		if(("mongodb_port" in props.object) !is null)
-			mongodb_port = cast(int) props.object["mongodb_port"].integer;
+		// использование графа на memory map file
+		// NO
+		// YES				
+		string use_mmfile = "NO";
+		if(("use_mmfile" in props.object) !is null)
+			use_mmfile = props.object["use_mmfile"].str;
+
+		string bind_to = "tcp://*:5555";
+		if(("zmq_point" in props.object) !is null)
+			bind_to = props.object["zmq_point"].str;
 
 		string zmq_connect_type = "server";
 		if(("zmq_connect_type" in props.object) !is null)
@@ -119,11 +131,18 @@ void main(char[][] args)
 		if(("behavior" in props.object) !is null)
 			behavior = props.object["behavior"].str;
 
+		string yawl_engine = null;
+		if(("yawl-engine" in props.object) !is null)
+			yawl_engine = props.object["yawl-engine"].str;
+
+		/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 		writeln("connect to mongodb, \n");
 		writeln("	port:", mongodb_port);
 		writeln("	server:", mongodb_server);
 		writeln("	collection:", mongodb_collection);
-		writeln("	cache_type:", cache_type);
+		writeln("cache_type:", cache_type);
+		writeln("use_mmfile:", use_mmfile);
 
 		byte cp = caching_type.NONE;
 
@@ -132,10 +151,6 @@ void main(char[][] args)
 
 		if(cache_type == "QUERY_RESULT")
 			cp = caching_type.QUERY_RESULT;
-
-		string yawl_engine = null;
-		if(("yawl-engine" in props.object) !is null)
-			yawl_engine = props.object["yawl-engine"].str;
 
 		TripleStorage ts;
 		try
@@ -191,7 +206,7 @@ void main(char[][] args)
 			{
 			}
 		}
-
+		
 		if(client !is null)
 		{
 			client.set_callback(&get_message);
@@ -219,6 +234,16 @@ void main(char[][] args)
 			writeln(thread.resource.gateways);
 
 			load_events(thread.resource);
+			
+			
+			if (use_mmfile == "YES")
+			{            
+	            writeln("open mmf...");
+	            thread.resource.mmf.open_mmfiles("HA1");
+	            thread.resource.useMMF = true;
+	            writeln("ok");			
+			}
+			
 
 			thread.start();
 
@@ -444,16 +469,20 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(trace_msg[68] == 1)
 			{
-				log.trace("command [%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(),
-						sender.getFirstObject(), server_thread.stat.count_command, t);
+				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(),
+						command.subject, sender.getFirstObject(), server_thread.stat.count_command, t);
 				if(t > 60_000_000)
-					log.trace("command [%s] %s, time > 1 min", command_name.getFirstObject(), sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 10_000_000)
-					log.trace("command [%s] %s, time > 10 s", command_name.getFirstObject(), sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 1_000_000)
-					log.trace("command [%s] %s, time > 1 s", command_name.getFirstObject(), sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 100_000)
-					log.trace("command [%s] %s, time > 100 ms", command_name.getFirstObject(), sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 			}
 
 		} else
@@ -495,8 +524,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	}
 
 	server_thread.stat.count_message++;
-	server_thread.stat.size__user_of_ticket = cast(uint)server_thread.resource.user_of_ticket.length;
-	server_thread.stat.size__cache__subject_creator = cast(uint)server_thread.resource.cache__subject_creator.length;
+	server_thread.stat.size__user_of_ticket = cast(uint) server_thread.resource.user_of_ticket.length;
+	server_thread.stat.size__cache__subject_creator = cast(uint) server_thread.resource.cache__subject_creator.length;
 
 	sw.stop();
 	long t = cast(long) sw.peek().usecs;

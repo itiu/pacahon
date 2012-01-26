@@ -5,6 +5,7 @@ private import mq_client;
 private import trioplax.Logger;
 private import pacahon.graph;
 private import pacahon.zmq_connection;
+import mmf.graph;
 
 Logger log;
 
@@ -23,6 +24,9 @@ class Ticket
 
 class ThreadContext
 {
+	GraphIO mmf;
+	bool useMMF = false;
+	
 	GraphCluster event_filters;
 	Ticket[string] user_of_ticket;
 	string[string] cache__subject_creator;
