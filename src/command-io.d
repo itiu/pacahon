@@ -427,21 +427,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 							log.trace("statement=%X", statement);
 						}
 
-						if(server_thread.useMMF)
-						{
-							// TODO чтение из mmile	
-						} else
-						{
-							if(statement is null)
-								statement = new Triple(graph.subject, null, null);
-							else
-								statement.S = graph.subject;
+						if(statement is null)
+							statement = new Triple(graph.subject, null, null);
+						else
+							statement.S = graph.subject;
 
-							if(trace_msg[54] == 1)
-								log.trace("s=%s", statement.S);
+						if(trace_msg[54] == 1)
+							log.trace("s=%s", statement.S);
 
-							log.trace("get:%s", statement.S);
-						}
+						log.trace("get:%s", statement.S);
 					}
 
 					if(statement !is null)
@@ -460,7 +454,17 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				if(trace_msg[56] == 1)
 					log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
 
-				TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
+				TLIterator it;
+
+				if(server_thread.useMMF)
+				{
+					// TODO чтение из mmile	следует делать после формирования search_mask
+					// читаем только те запросы которые содержать указания на конкретные subject
+					// после исполнения убераем их из search_mask
+
+				}
+
+				it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 				if(trace_msg[56] == 1)
 					log.trace("server_thread.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
