@@ -2,13 +2,13 @@ DMD=dmd
 
 VERSION_MAJOR=1
 VERSION_MINOR=26
-VERSION_PATCH=5
+VERSION_PATCH=6
 
 cp -v -r src/* build/src
 
 git log -1 --pretty=format:"module myversion; public static string major=\"$VERSION_MAJOR\"; public static string minor=\"$VERSION_MINOR\"; public static string patch=\"$VERSION_PATCH\"; public static string author=\"%an\"; public static string date=\"%ad\"; public static string hash=\"%h\";">src/myversion.d
 
-rm Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH
+rm Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
 rm *.log
 rm *.io
 rm *.oi

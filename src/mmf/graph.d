@@ -149,7 +149,6 @@ struct GraphIO
 				{
 					if(count > 2_100_000)
 						break;
-											
 
 					if(it1.count % 100_000 == 0)
 					{
@@ -158,9 +157,9 @@ struct GraphIO
 
 					Vertex_vmm* vv = getNext(it1);
 					string label = vv.getLabel;
-					
-//					log.trace ("count: %d label: [%s]", count, label);
-					
+
+					//					log.trace ("count: %d label: [%s]", count, label);
+
 					if(label.length > 256)
 					{
 						log.trace("count=%d, label.length(%d):%s", count, label.length, label);
@@ -174,7 +173,7 @@ struct GraphIO
 					strncpy(keys[count], cast(char*) label, label.length);
 
 					HashInsert(ht, cast(uint) cast(char*) keys[count], vv.getOffset);
-					
+
 					count++;
 				}
 			} catch(Exception ex)
@@ -287,18 +286,29 @@ struct GraphIO
 		return vv;
 	}
 
-	bool findVertex(string label, ref Vertex_vmm* vv)
+	bool findVertex(ref string label, ref Vertex_vmm* vv)
 	{
+		printf("#1\n");
+		
 		HTItem* bck;
+		writeln("#2, label=", label);
 
 		bck = HashFind1(ht, cast(uint) cast(char*) label, cast(uint) label.length);
+		printf("#3\n");
 
 		if(bck !is null)
 		{
+			printf("#4\n");
 			byte file_number = bck.data & 0x000000FF >> 24;
 			uint pos_in_file = bck.data & 0xFFFFFF00;
 
+			printf("#5\n");
+			if(vv is null)
+				vv = new Vertex_vmm;
+
+			printf("#6\n");
 			bind_vertex(vv, file_number, pos_in_file);
+			printf("#7\n");
 			return true;
 		}
 		return false;
@@ -574,13 +584,8 @@ struct Vertex_vmm
 		return ptr;
 	}
 
-	string[] getProperty(string _label)
+	bool init_Properties_values_cache()
 	{
-		string[] res;
-		if(length_properties > 0 && properties.length == 0)
-		{
-			//			printf("length_properties=%X\n", length_properties);
-
 			// init
 			uint i_ptr = offset + offset_properties;
 			//			printf("i_ptr=%X\n", i_ptr);
@@ -602,7 +607,7 @@ struct Vertex_vmm
 				if(i_ptr > offset + offset_out_edges)
 				{
 					writeln("#1 i_ptr > offset_out_edges");
-					return [];
+					return false;
 				}
 
 				string[] values = new string[count_values];
@@ -619,7 +624,7 @@ struct Vertex_vmm
 					if(i_ptr > offset + offset_out_edges)
 					{
 						writeln("#2 i_ptr > offset_out_edges");
-						return [];
+						return false;
 					}
 
 					values[jj] = value;
@@ -627,19 +632,25 @@ struct Vertex_vmm
 
 				properties[label] = values;
 			}
+		return true;
+	}
 
+	string[] getProperty_value_use_cache(ref string _label)
+	{
+		string[] res;
+		if(length_properties > 0 && properties.length == 0)
+		{
+			//			printf("length_properties=%X\n", length_properties);
+			if (init_Properties_values_cache == false)
+				return [];
 		}
 
 		res = properties.get(_label, []);
 		return res;
 	}
 
-	string[] get_OutEdge_values_use_cache(string _label)
+	bool init_OutEdges_values_cache()
 	{
-		string[] res;
-		if(length_out_edges > 0 && out_edges.length == 0)
-		{
-			// init
 			uint i_ptr = offset + offset_out_edges;
 
 			for(int ii = 0; ii < length_out_edges; ii++)
@@ -654,7 +665,7 @@ struct Vertex_vmm
 				i_ptr += uint.sizeof;
 
 				if(i_ptr > offset + size)
-					return [];
+					return false;
 
 				string[] values = new string[count_values];
 				for(int jj = 0; jj < count_values; jj++)
@@ -666,7 +677,7 @@ struct Vertex_vmm
 					i_ptr += length;
 
 					if(i_ptr > offset + size)
-						return [];
+						return false;
 
 					values[jj] = value;
 				}
@@ -674,13 +685,23 @@ struct Vertex_vmm
 				out_edges[label] = values;
 			}
 
+		return true;
+	}
+
+	string[] get_OutEdge_values_use_cache(ref string _label)
+	{
+		string[] res;
+		if(length_out_edges > 0 && out_edges.length == 0)
+		{
+			if (init_OutEdges_values_cache() == false) 
+				return [];
 		}
 
 		res = out_edges.get(_label, []);
 		return res;
 	}
 
-	string[] get_OutEdge_values(string _label)
+	string[] get_OutEdge_values(ref string _label)
 	{
 		if(length_out_edges > 0)
 		{
@@ -725,7 +746,7 @@ struct Vertex_vmm
 		return [];
 	}
 
-	string get_OutEdge_value(string _label)
+	string get_OutEdge_value(ref string _label)
 	{
 		if(length_out_edges > 0 && out_edges.length == 0)
 		{

@@ -36,6 +36,8 @@ private import trioplax.Logger;
 
 private import pacahon.command.event_filter;
 
+import mmf.graph;
+
 Logger log;
 //char[] buff;
 char[] buff1;
@@ -51,7 +53,7 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
 		out string reason)
 {
 	if(trace_msg[31] == 1)
@@ -155,13 +157,13 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				string authorize_reason;
 				bool subjectIsExist = false;
 
-				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_thread,
+				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context,
 						authorize_reason, subjectIsExist) == true)
 				{
 					if(userId !is null)
 					{
 						// добавим признак dc:creator
-						server_thread.ts.addTriple(new Triple(graph.subject, dc__creator, userId));
+						server_context.ts.addTriple(new Triple(graph.subject, dc__creator, userId));
 					}
 
 					// основной цикл по добавлению фактов в хранилище из данного субьекта 
@@ -175,9 +177,10 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 							Objectz oo = pp.objects[ll];
 
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
+								server_context.ts.addTriple(
+										new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
 							else
-								server_thread.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject,
+								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject,
 										oo.lang));
 						}
 
@@ -186,7 +189,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 					if(type.isExistLiteral(event__Event))
 					{
 						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-						server_thread.event_filters.addSubject(graph);
+						server_context.event_filters.addSubject(graph);
 
 						writeln("add new event_filter [", graph.subject, "]");
 					} else
@@ -202,7 +205,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 						//						StopWatch sw;
 						//						sw.start();
 						//						for(int i = 0; i < count; i++)
-						processed_events(graph, event_type, server_thread);
+						processed_events(graph, event_type, server_context);
 
 						//						sw.stop();
 						//						long t = cast(long) sw.peek().usecs;
@@ -263,9 +266,9 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 								Objectz oo = pp.objects[ll];
 
 								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
+									server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 								else
-									server_thread.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject,
+									server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject,
 											oo.lang);
 							}
 						}
@@ -289,7 +292,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 	return res;
 }
 
-public void get(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
 		out string reason, ref GraphCluster res)
 {
 	StopWatch sw;
@@ -354,13 +357,29 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			{
 				Subject graph = graphs_as_template[jj];
 
-				if(trace_msg[46] == 1)
-					log.trace("graph.subject=%s", graph.subject);
-
 				byte[char[]] readed_predicate;
 
 				Triple[] search_mask = new Triple[graph.count_edges];
 				int search_mask_length = 0;
+				Vertex_vmm* vv;
+
+				//				if(trace_msg[46] == 1)
+				log.trace("graph.subject=%s", graph.subject);
+
+				if(graph.subject != "query:any" && server_context.useMMF == true)
+				{
+					log.trace("#1");
+					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
+					string from = graph.subject;
+					if(server_context.mmf.findVertex(from, vv) == true)
+					{
+					} else
+					{
+						vv = null; // TODO убрать, если #34 работает 
+					}
+					log.trace("#2");
+
+				}
 
 				// найдем предикаты, которые следует вернуть
 				for(int kk = 0; kk < graph.count_edges; kk++)
@@ -401,7 +420,37 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 									if(trace_msg[49] == 1)
 										log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
 
-									readed_predicate[cast(string) pp.predicate] = field.GET;
+									if(vv !is null)
+									{
+										if(pp.predicate == "query:all_predicates")
+										{
+											log.trace("#3.1 pp.predicate=%s", pp.predicate);
+
+											// нужно взять все предикаты у данного субьекта
+
+											bool res = vv.init_OutEdges_values_cache();
+											bool res1 = vv.init_Properties_values_cache();
+											
+//											res.addTriple(graph.subject, cast(string) pp.predicate, val);
+											log.trace("#4 vv.out_edges=%s", vv.out_edges);
+											log.trace("#4 vv.out_properties=%s", vv.properties);
+
+										} else
+										{
+											log.trace("#3 pp.predicate=%s", pp.predicate);
+
+											// нашли то что нужно
+											// теперь добавим в результаты, предикаты помеченые как get
+
+											string val = vv.get_OutEdge_value(cast(string) pp.predicate);
+											res.addTriple(graph.subject, cast(string) pp.predicate, val);
+											log.trace("#4 val=%s", val);
+										}
+
+									} else
+									{
+										readed_predicate[cast(string) pp.predicate] = field.GET;
+									}
 
 									if(trace_msg[50] == 1)
 										log.trace("readed_predicate.length=%d", readed_predicate.length);
@@ -419,6 +468,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						}
 
 					}
+
 					if((graph.subject != "query:any" && (statement !is null || search_mask_length == 0)))
 					{
 						if(trace_msg[53] == 1)
@@ -434,8 +484,6 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 						if(trace_msg[54] == 1)
 							log.trace("s=%s", statement.S);
-
-						log.trace("get:%s", statement.S);
 					}
 
 					if(statement !is null)
@@ -456,18 +504,10 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				TLIterator it;
 
-				if(server_thread.useMMF)
-				{
-					// TODO чтение из mmile	следует делать после формирования search_mask
-					// читаем только те запросы которые содержать указания на конкретные subject
-					// после исполнения убераем их из search_mask
-
-				}
-
-				it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
+				it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 				if(trace_msg[56] == 1)
-					log.trace("server_thread.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
+					log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
 				if(trace_msg[57] == 1)
 					log.trace("формируем граф содержащий результаты {");
@@ -501,7 +541,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					count_found_subjects++;
 
 					bool isExistSubject;
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_thread, authorize_reason,
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
 							isExistSubject);
 
 					if(result_of_az == false)
@@ -554,7 +594,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 	return;
 }
 
-Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
 		out string reason)
 {
 	if(trace_msg[38] == 1)
@@ -594,12 +634,12 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_thread,
+		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_context,
 				authorize_reason, isExistSubject);
 
 		if(result_of_az)
 		{
-			server_thread.ts.removeSubject(subj_id.getFirstObject);
+			server_context.ts.removeSubject(subj_id.getFirstObject);
 			reason = "команда remove выполнена успешно";
 			isOk = true;
 		} else
