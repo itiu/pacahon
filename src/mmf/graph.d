@@ -58,6 +58,8 @@ struct GraphIO
 	private MmFileInfo chunk[256];
 	HashTable* ht;
 
+	char*[] keys;
+
 	private bool allocate_new_file()
 	{
 		if(last_alloc_mmfile + 1 < 256)
@@ -139,8 +141,6 @@ struct GraphIO
 				if(trace)
 					writeln("@6");
 
-				char*[] keys;
-
 				keys = new char*[total_count_vertex + 1];
 
 				Iterator it1;
@@ -152,7 +152,7 @@ struct GraphIO
 
 					if(it1.count % 100_000 == 0)
 					{
-						log.trace("load %d", it1.count);
+						log.trace("load index into memory%d", it1.count);
 					}
 
 					Vertex_vmm* vv = getNext(it1);
@@ -166,7 +166,8 @@ struct GraphIO
 						break;
 					}
 
-					keys[count] = cast(char*) GC.malloc(label.length + 1);
+					//					keys[count] = cast(char*) GC.malloc(label.length + 1);
+					keys[count] = cast(char*) core.sys.posix.stdlib.malloc(label.length + 1);
 
 					*(keys[count] + label.length) = 0;
 
@@ -288,29 +289,30 @@ struct GraphIO
 
 	bool findVertex(ref string label, ref Vertex_vmm* vv)
 	{
-		printf("#1\n");
-		
+		//		printf("#1\n");
+
 		HTItem* bck;
-		writeln("#2, label=", label);
+		//		writeln("#2, label=", label);
 
 		bck = HashFind1(ht, cast(uint) cast(char*) label, cast(uint) label.length);
-		printf("#3\n");
+		//		printf("#3\n");
 
 		if(bck !is null)
 		{
-			printf("#4\n");
+			//			printf("#4\n");
 			byte file_number = bck.data & 0x000000FF >> 24;
 			uint pos_in_file = bck.data & 0xFFFFFF00;
 
-			printf("#5\n");
+			//			printf("#5\n");
 			if(vv is null)
 				vv = new Vertex_vmm;
 
-			printf("#6\n");
+			//			printf("#6\n");
 			bind_vertex(vv, file_number, pos_in_file);
-			printf("#7\n");
+			//			printf("#7\n");
 			return true;
 		}
+		printf("#8\n");
 		return false;
 	}
 
@@ -586,52 +588,52 @@ struct Vertex_vmm
 
 	bool init_Properties_values_cache()
 	{
-			// init
-			uint i_ptr = offset + offset_properties;
-			//			printf("i_ptr=%X\n", i_ptr);
+		// init
+		uint i_ptr = offset + offset_properties;
+		//			printf("i_ptr=%X\n", i_ptr);
 
-			for(int ii = 0; ii < length_properties; ii++)
+		for(int ii = 0; ii < length_properties; ii++)
+		{
+			uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+			//				printf("length element of property=%X\n", length);
+			i_ptr += uint.sizeof;
+
+			string label = cast(string) ch.array[i_ptr .. i_ptr + length];
+			i_ptr += length;
+			//				writeln("label element of property=", label);
+
+			uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+			i_ptr += uint.sizeof;
+			//				printf("count_values element of property=%X\n", count_values);
+
+			if(i_ptr > offset + offset_out_edges)
 			{
-				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				//				printf("length element of property=%X\n", length);
+				writeln("#1 i_ptr > offset_out_edges");
+				return false;
+			}
+
+			string[] values = new string[count_values];
+			for(int jj = 0; jj < count_values; jj++)
+			{
+				length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+				//					printf("length value of element of property[%X]=%X\n", i_ptr, length);
 				i_ptr += uint.sizeof;
 
-				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
+				string value = cast(string) ch.array[i_ptr .. i_ptr + length];
 				i_ptr += length;
-				//				writeln("label element of property=", label);
-
-				uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
-				//				printf("count_values element of property=%X\n", count_values);
+				//					writeln("value element of property=", value);
 
 				if(i_ptr > offset + offset_out_edges)
 				{
-					writeln("#1 i_ptr > offset_out_edges");
+					writeln("#2 i_ptr > offset_out_edges");
 					return false;
 				}
 
-				string[] values = new string[count_values];
-				for(int jj = 0; jj < count_values; jj++)
-				{
-					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-					//					printf("length value of element of property[%X]=%X\n", i_ptr, length);
-					i_ptr += uint.sizeof;
-
-					string value = cast(string) ch.array[i_ptr .. i_ptr + length];
-					i_ptr += length;
-					//					writeln("value element of property=", value);
-
-					if(i_ptr > offset + offset_out_edges)
-					{
-						writeln("#2 i_ptr > offset_out_edges");
-						return false;
-					}
-
-					values[jj] = value;
-				}
-
-				properties[label] = values;
+				values[jj] = value;
 			}
+
+			properties[label] = values;
+		}
 		return true;
 	}
 
@@ -641,7 +643,7 @@ struct Vertex_vmm
 		if(length_properties > 0 && properties.length == 0)
 		{
 			//			printf("length_properties=%X\n", length_properties);
-			if (init_Properties_values_cache == false)
+			if(init_Properties_values_cache == false)
 				return [];
 		}
 
@@ -651,39 +653,39 @@ struct Vertex_vmm
 
 	bool init_OutEdges_values_cache()
 	{
-			uint i_ptr = offset + offset_out_edges;
+		uint i_ptr = offset + offset_out_edges;
 
-			for(int ii = 0; ii < length_out_edges; ii++)
+		for(int ii = 0; ii < length_out_edges; ii++)
+		{
+			uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+			i_ptr += uint.sizeof;
+
+			string label = cast(string) ch.array[i_ptr .. i_ptr + length];
+			i_ptr += length;
+
+			uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+			i_ptr += uint.sizeof;
+
+			if(i_ptr > offset + size)
+				return false;
+
+			string[] values = new string[count_values];
+			for(int jj = 0; jj < count_values; jj++)
 			{
-				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+				length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 				i_ptr += uint.sizeof;
 
-				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
+				string value = cast(string) ch.array[i_ptr .. i_ptr + length];
 				i_ptr += length;
-
-				uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
 
 				if(i_ptr > offset + size)
 					return false;
 
-				string[] values = new string[count_values];
-				for(int jj = 0; jj < count_values; jj++)
-				{
-					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-					i_ptr += uint.sizeof;
-
-					string value = cast(string) ch.array[i_ptr .. i_ptr + length];
-					i_ptr += length;
-
-					if(i_ptr > offset + size)
-						return false;
-
-					values[jj] = value;
-				}
-
-				out_edges[label] = values;
+				values[jj] = value;
 			}
+
+			out_edges[label] = values;
+		}
 
 		return true;
 	}
@@ -693,7 +695,7 @@ struct Vertex_vmm
 		string[] res;
 		if(length_out_edges > 0 && out_edges.length == 0)
 		{
-			if (init_OutEdges_values_cache() == false) 
+			if(init_OutEdges_values_cache() == false)
 				return [];
 		}
 

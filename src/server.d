@@ -45,6 +45,8 @@ private import pacahon.command.event_filter;
 
 private import pacahon.zmq_connection;
 
+private import mmf.graph;
+
 Logger log;
 Logger io_msg;
 
@@ -206,7 +208,7 @@ void main(char[][] args)
 			{
 			}
 		}
-		
+
 		if(client !is null)
 		{
 			client.set_callback(&get_message);
@@ -234,16 +236,15 @@ void main(char[][] args)
 			writeln(thread.resource.gateways);
 
 			load_events(thread.resource);
-			
-			
-			if (use_mmfile == "YES")
-			{            
-	            writeln("open mmf...");
-	            thread.resource.mmf.open_mmfiles("HA1");
-	            thread.resource.useMMF = true;
-	            writeln("ok");			
+
+			if(use_mmfile == "YES")
+			{
+				writeln("open mmf...");
+				thread.resource.mmf = new GraphIO;
+				thread.resource.mmf.open_mmfiles("HA1");
+				thread.resource.useMMF = true;
+				writeln("ok");
 			}
-			
 
 			thread.start();
 

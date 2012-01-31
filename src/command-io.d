@@ -36,7 +36,7 @@ private import trioplax.Logger;
 
 private import pacahon.command.event_filter;
 
-import mmf.graph;
+private import mmf.graph;
 
 Logger log;
 //char[] buff;
@@ -364,21 +364,27 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				Vertex_vmm* vv;
 
 				//				if(trace_msg[46] == 1)
-				log.trace("graph.subject=%s", graph.subject);
+				//				log.trace("graph.subject=%s", graph.subject);
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
-					log.trace("#1");
+					//					log.trace("#1");
 					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
 					string from = graph.subject;
+					
+					from = graph.subject;
+					
 					if(server_context.mmf.findVertex(from, vv) == true)
 					{
+						log.trace("[%X] found [%s]", server_context.mmf, from);
 					} else
 					{
+						// неверно, считаем что mmfile.data == mongodb.data
+						log.trace("[%X] not found [%s]", server_context.mmf, from);
 						vv = null; // TODO убрать, если #34 работает 
 					}
-					log.trace("#2");
-
+					//					log.trace("#2");
+					
 				}
 
 				// найдем предикаты, которые следует вернуть
@@ -424,27 +430,41 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 									{
 										if(pp.predicate == "query:all_predicates")
 										{
-											log.trace("#3.1 pp.predicate=%s", pp.predicate);
+											//	log.trace("#3.1 pp.predicate=%s", pp.predicate);
 
 											// нужно взять все предикаты у данного субьекта
 
-											bool res = vv.init_OutEdges_values_cache();
-											bool res1 = vv.init_Properties_values_cache();
-											
-//											res.addTriple(graph.subject, cast(string) pp.predicate, val);
-											log.trace("#4 vv.out_edges=%s", vv.out_edges);
-											log.trace("#4 vv.out_properties=%s", vv.properties);
+											bool isOutEdges = vv.init_OutEdges_values_cache();
+											bool isProperties = vv.init_Properties_values_cache();
+
+											foreach(string key; vv.out_edges.keys)
+											{
+												foreach(string val; vv.out_edges[key])
+												{
+													res.addTriple(graph.subject, cast(string) key, cast(string) val);
+												}
+												//												log.trace("#4 vv.out_edges=%s", qq);												
+											}
+
+											foreach(string key; vv.properties.keys)
+											{
+												foreach(string val; vv.properties[key])
+												{
+													res.addTriple(graph.subject, cast(string) key, cast(string) val);
+												}
+											}
+											//											res.addTriple(graph.subject, cast(string) pp.predicate, val);
 
 										} else
 										{
-											log.trace("#3 pp.predicate=%s", pp.predicate);
+											//	log.trace("#3 pp.predicate=%s", pp.predicate);
 
 											// нашли то что нужно
 											// теперь добавим в результаты, предикаты помеченые как get
 
 											string val = vv.get_OutEdge_value(cast(string) pp.predicate);
 											res.addTriple(graph.subject, cast(string) pp.predicate, val);
-											log.trace("#4 val=%s", val);
+											//	log.trace("#4 val=%s", val);
 										}
 
 									} else
@@ -469,7 +489,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 					}
 
-					if((graph.subject != "query:any" && (statement !is null || search_mask_length == 0)))
+					if((graph.subject != "query:any" && (statement !is null || search_mask_length == 0)) && vv is null)
 					{
 						if(trace_msg[53] == 1)
 						{
@@ -497,31 +517,34 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				}
 
-				search_mask.length = search_mask_length;
+				if(search_mask_length > 0)
+				{
+					search_mask.length = search_mask_length;
 
-				if(trace_msg[56] == 1)
+					//					if(trace_msg[56] == 1)
 					log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
 
-				TLIterator it;
+					TLIterator it;
 
-				it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
+					it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
-				if(trace_msg[56] == 1)
-					log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
+					if(trace_msg[56] == 1)
+						log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
-				if(trace_msg[57] == 1)
-					log.trace("формируем граф содержащий результаты {");
+					if(trace_msg[57] == 1)
+						log.trace("формируем граф содержащий результаты {");
 
-				if(it !is null)
-				{
-					foreach(triple; it)
+					if(it !is null)
 					{
-						if(trace_msg[57] == 1)
-							log.trace("GET: triple %s", triple);
+						foreach(triple; it)
+						{
+							if(trace_msg[57] == 1)
+								log.trace("GET: triple %s", triple);
 
-						res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+							res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+						}
+						delete it;
 					}
-					delete it;
 				}
 
 				if(trace_msg[57] == 1)

@@ -24,7 +24,7 @@ class Ticket
 
 class ThreadContext
 {
-	GraphIO mmf;
+	GraphIO *mmf;
 	bool useMMF = false;
 	
 	GraphCluster event_filters;
