@@ -357,249 +357,296 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			{
 				Subject graph = graphs_as_template[jj];
 
-				byte[char[]] readed_predicate;
-
-				Triple[] search_mask = new Triple[graph.count_edges];
-				int search_mask_length = 0;
-				Vertex_vmm* vv;
-
 				//				if(trace_msg[46] == 1)
 				//				log.trace("graph.subject=%s", graph.subject);
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
+					// считываем данные из mmfile
+
+					Vertex_vmm* vv;
+					// берем для этого субьекта заданные поля (:get, либо все) и учитываем условия ограничители
+
 					//					log.trace("#1");
 					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
 					string from = graph.subject;
-					
-					from = graph.subject;
-					
-					if(server_context.mmf.findVertex(from, vv) == true)
+
+					bool vertex_found = server_context.mmf.findVertex(from, vv);
+
+					// проверим на соответсвие условиям ограничителям
+					bool isFilterPass = false;
+
+					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
-						log.trace("[%X] found [%s]", server_context.mmf, from);
-					} else
-					{
-						// неверно, считаем что mmfile.data == mongodb.data
-						log.trace("[%X] not found [%s]", server_context.mmf, from);
-						vv = null; // TODO убрать, если #34 работает 
-					}
-					//					log.trace("#2");
-					
-				}
-
-				// найдем предикаты, которые следует вернуть
-				for(int kk = 0; kk < graph.count_edges; kk++)
-				{
-					Predicate pp = graph.edges[kk];
-
-					if(trace_msg[46] == 1)
-						log.trace("pp0=%s", pp.predicate);
-
-					Triple statement = null;
-
-					for(int ll = 0; ll < pp.count_objects; ll++)
-					{
-						Objectz oo = pp.objects[ll];
-						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+						Predicate pp = graph.edges[kk];
+						for(int ll = 0; ll < pp.count_objects; ll++)
 						{
-							if(trace_msg[46] == 1)
-								log.trace("pp1=%s", pp.predicate);
-
-							// if(oo.literal.length > 0)
+							Objectz oo = pp.objects[ll];
+							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 							{
-								if(oo.literal == "query:get_reifed")
+								// if(oo.literal.length > 0)
 								{
-									// требуются так-же реифицированные данные по этому полю
-									// данный предикат добавить в список возвращаемых
-									if(trace_msg[47] == 1)
-										log.trace(
-												"данный предикат и реифицированные данные добавим в список возвращаемых: %s",
-												pp.predicate);
-
-									readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
-
-									if(trace_msg[48] == 1)
-										log.trace("readed_predicate.length=%d", readed_predicate.length);
-								} else if(oo.literal == "query:get")
-								{
-									// данный предикат добавить в список возвращаемых
-									if(trace_msg[49] == 1)
-										log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
-
-									if(vv !is null)
+									if(oo.literal != "query:get_reifed" && oo.literal != "query:get")
 									{
-										if(pp.predicate == "query:all_predicates")
+										string val = vv.get_OutEdge_value(cast(string) pp.predicate);
+
+										if(val != oo.literal)
 										{
-											//	log.trace("#3.1 pp.predicate=%s", pp.predicate);
-
-											// нужно взять все предикаты у данного субьекта
-
-											bool isOutEdges = vv.init_OutEdges_values_cache();
-											bool isProperties = vv.init_Properties_values_cache();
-
-											foreach(string key; vv.out_edges.keys)
-											{
-												foreach(string val; vv.out_edges[key])
-												{
-													res.addTriple(graph.subject, cast(string) key, cast(string) val);
-												}
-												//												log.trace("#4 vv.out_edges=%s", qq);												
-											}
-
-											foreach(string key; vv.properties.keys)
-											{
-												foreach(string val; vv.properties[key])
-												{
-													res.addTriple(graph.subject, cast(string) key, cast(string) val);
-												}
-											}
-											//											res.addTriple(graph.subject, cast(string) pp.predicate, val);
-
-										} else
-										{
-											//	log.trace("#3 pp.predicate=%s", pp.predicate);
-
-											// нашли то что нужно
-											// теперь добавим в результаты, предикаты помеченые как get
-
-											string val = vv.get_OutEdge_value(cast(string) pp.predicate);
-											res.addTriple(graph.subject, cast(string) pp.predicate, val);
-											//	log.trace("#4 val=%s", val);
+											isFilterPass = false;
+											break;
 										}
 
-									} else
-									{
-										readed_predicate[cast(string) pp.predicate] = field.GET;
-									}
-
-									if(trace_msg[50] == 1)
-										log.trace("readed_predicate.length=%d", readed_predicate.length);
-								} else
-								{
-									if(statement is null)
-										statement = new Triple(null, pp.predicate, oo.literal);
-
-									if(trace_msg[51] == 1)
-									{
-										log.trace("statement: p=%s o=%s", statement.P, statement.O);
 									}
 								}
 							}
 						}
-
 					}
 
-					if((graph.subject != "query:any" && (statement !is null || search_mask_length == 0)) && vv is null)
+					if(isFilterPass == true)
 					{
-						if(trace_msg[53] == 1)
+						if(graph.getFirstObject("query:all_predicates") == "query:get")
 						{
-							log.trace("subject=%s", graph.subject);
-							log.trace("statement=%X", statement);
+							// если все поля нужно вернуть
+							bool isOutEdges = vv.init_OutEdges_values_cache();
+							bool isProperties = vv.init_Properties_values_cache();
+
+							foreach(string key; vv.out_edges.keys)
+							{
+								foreach(string val; vv.out_edges[key])
+								{
+									res.addTriple(graph.subject, cast(string) key, cast(string) val);
+								}
+								//												log.trace("#4 vv.out_edges=%s", qq);												
+							}
+
+							foreach(string key; vv.properties.keys)
+							{
+								foreach(string val; vv.properties[key])
+								{
+									res.addTriple(graph.subject, cast(string) key, cast(string) val);
+								}
+							}
+
+						} else
+						{
+							// если возвращаемые поля заданны					
+							for(int kk = 0; kk < graph.count_edges; kk++)
+							{
+								Predicate pp = graph.edges[kk];
+								for(int ll = 0; ll < pp.count_objects; ll++)
+								{
+									Objectz oo = pp.objects[ll];
+									if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+									{
+										if(trace_msg[46] == 1)
+											log.trace("pp1=%s", pp.predicate);
+
+										// if(oo.literal.length > 0)
+										{
+											if(oo.literal == "query:get_reifed")
+											{
+												// требуются так-же реифицированные данные по этому полю
+												// данный предикат добавить в список возвращаемых
+											} else if(oo.literal == "query:get")
+											{
+												string val = vv.get_OutEdge_value(cast(string) pp.predicate);
+												res.addTriple(graph.subject, cast(string) pp.predicate, val);
+
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+					//					if(server_context.mmf.findVertex(from, vv) == true)
+					//					{
+					//						log.trace("found [%s]", from);
+					//					} else
+					//					{
+					// неверно, считаем что mmfile.data == mongodb.data
+					//						log.trace("[%X] not found [%s]", server_context.mmf, from);
+					//						vv = null; // TODO убрать, если #34 работает 
+					//					}
+					//					log.trace("#2");
+
+				} else
+				{
+					// считываем данные из mongodb
+
+					byte[char[]] readed_predicate;
+					Triple[] search_mask = new Triple[graph.count_edges];
+					int search_mask_length = 0;
+
+					// найдем предикаты, которые следует вернуть
+					for(int kk = 0; kk < graph.count_edges; kk++)
+					{
+						Predicate pp = graph.edges[kk];
+
+						if(trace_msg[46] == 1)
+							log.trace("pp0=%s", pp.predicate);
+
+						Triple statement = null;
+
+						for(int ll = 0; ll < pp.count_objects; ll++)
+						{
+							Objectz oo = pp.objects[ll];
+							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+							{
+								if(trace_msg[46] == 1)
+									log.trace("pp1=%s", pp.predicate);
+
+								// if(oo.literal.length > 0)
+								{
+									if(oo.literal == "query:get_reifed")
+									{
+										// требуются так-же реифицированные данные по этому полю
+										// данный предикат добавить в список возвращаемых
+										if(trace_msg[47] == 1)
+											log.trace(
+													"данный предикат и реифицированные данные добавим в список возвращаемых: %s",
+													pp.predicate);
+
+										readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
+
+										if(trace_msg[48] == 1)
+											log.trace("readed_predicate.length=%d", readed_predicate.length);
+									} else if(oo.literal == "query:get")
+									{
+										// данный предикат добавить в список возвращаемых
+										if(trace_msg[49] == 1)
+											log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
+
+										readed_predicate[cast(string) pp.predicate] = field.GET;
+
+										if(trace_msg[50] == 1)
+											log.trace("readed_predicate.length=%d", readed_predicate.length);
+									} else
+									{
+										// это условие ограничивающее результаты выборки
+										if(statement is null)
+											statement = new Triple(null, pp.predicate, oo.literal);
+
+										if(trace_msg[51] == 1)
+											log.trace("statement: p=%s o=%s", statement.P, statement.O);
+									}
+								}
+							}
+
 						}
 
-						if(statement is null)
-							statement = new Triple(graph.subject, null, null);
-						else
-							statement.S = graph.subject;
+						if(graph.subject != "query:any" && (statement !is null || search_mask_length == 0))
+						{
+							if(trace_msg[53] == 1)
+							{
+								log.trace("subject=%s", graph.subject);
+								log.trace("statement=%X", statement);
+							}
 
-						if(trace_msg[54] == 1)
-							log.trace("s=%s", statement.S);
+							if(statement is null)
+								statement = new Triple(graph.subject, null, null);
+							else
+								statement.S = graph.subject;
+
+							if(trace_msg[54] == 1)
+								log.trace("s=%s", statement.S);
+						}
+
+						if(statement !is null)
+						{
+							search_mask[search_mask_length] = statement;
+							search_mask_length++;
+
+							if(trace_msg[55] == 1)
+								log.trace("search_mask_length=%d", search_mask_length);
+						}
+
 					}
 
-					if(statement !is null)
+					if(search_mask_length > 0)
 					{
-						search_mask[search_mask_length] = statement;
-						search_mask_length++;
+						search_mask.length = search_mask_length;
 
-						if(trace_msg[55] == 1)
-							log.trace("search_mask_length=%d", search_mask_length);
+						//					if(trace_msg[56] == 1)
+						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
+
+						TLIterator it;
+
+						it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
+
+						if(trace_msg[56] == 1)
+							log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
+
+						if(trace_msg[57] == 1)
+							log.trace("формируем граф содержащий результаты {");
+
+						if(it !is null)
+						{
+							foreach(triple; it)
+							{
+								if(trace_msg[57] == 1)
+									log.trace("GET: triple %s", triple);
+
+								if(triple.O !is null && triple.O.length > 0)
+									res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+							}
+							delete it;
+						}
 					}
-
-				}
-
-				if(search_mask_length > 0)
-				{
-					search_mask.length = search_mask_length;
-
-					//					if(trace_msg[56] == 1)
-					log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
-
-					TLIterator it;
-
-					it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
-
-					if(trace_msg[56] == 1)
-						log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
 					if(trace_msg[57] == 1)
-						log.trace("формируем граф содержащий результаты {");
+						log.trace("}");
 
-					if(it !is null)
+					if(trace_msg[58] == 1)
+						log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
+
+					// авторизуем найденные субьекты
+					int count_found_subjects = 0;
+					int count_authorized_subjects = 0;
+
+					string authorize_reason;
+
+					foreach(s; res.graphs_of_subject)
 					{
-						foreach(triple; it)
+						count_found_subjects++;
+
+						bool isExistSubject;
+						bool result_of_az = authorize(userId, s.subject, operation.READ, server_context,
+								authorize_reason, isExistSubject);
+
+						if(result_of_az == false)
 						{
-							if(trace_msg[57] == 1)
-								log.trace("GET: triple %s", triple);
+							if(trace_msg[59] == 1)
+								log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
 
-							res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+							s.count_edges = 0;
+							s.subject = null;
+
+							if(trace_msg[60] == 1)
+								log.trace("remove from list");
+						} else
+						{
+							count_authorized_subjects++;
 						}
-						delete it;
-					}
-				}
 
-				if(trace_msg[57] == 1)
-					log.trace("}");
-
-				if(trace_msg[58] == 1)
-					log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
-
-				// авторизуем найденные субьекты
-				int count_found_subjects = 0;
-				int count_authorized_subjects = 0;
-
-				string authorize_reason;
-
-				foreach(s; res.graphs_of_subject)
-				{
-					count_found_subjects++;
-
-					bool isExistSubject;
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
-							isExistSubject);
-
-					if(result_of_az == false)
-					{
-						if(trace_msg[59] == 1)
-							log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
-
-						s.count_edges = 0;
-						s.subject = null;
-
-						if(trace_msg[60] == 1)
-							log.trace("remove from list");
-					} else
-					{
-						count_authorized_subjects++;
 					}
 
+					buff1[] = ' ';
+					Integer.format(buff1, count_found_subjects, cast(char[]) "");
+
+					if(count_found_subjects == count_authorized_subjects)
+					{
+						reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
+					} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
+					{
+						reason = "запрос выполнен: не все найденные субьекты " ~ cast(string) buff1 ~ " успешно авторизованны";
+					} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
+					{
+						reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(string) buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
+					}
+
+					isOk = true;
 				}
-
-				buff1[] = ' ';
-				Integer.format(buff1, count_found_subjects, cast(char[]) "");
-
-				if(count_found_subjects == count_authorized_subjects)
-				{
-					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
-				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
-				{
-					reason = "запрос выполнен: не все найденные субьекты " ~ cast(string) buff1 ~ " успешно авторизованны";
-				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
-				{
-					reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(string) buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
-				}
-
-				isOk = true;
-
 			}
 
 			if(trace_msg[61] == 1)

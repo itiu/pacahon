@@ -312,7 +312,7 @@ struct GraphIO
 			//			printf("#7\n");
 			return true;
 		}
-		printf("#8\n");
+//		printf("#8\n");
 		return false;
 	}
 
