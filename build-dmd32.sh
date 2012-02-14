@@ -15,7 +15,7 @@ rm *.oi
 
 $DMD -m32 -debug -d \
 @dfiles \
-lib32/libzmq.a lib32/libstdc++.a lib32/libuuid.a lib32/libmongoc.a lib32/libbson.a \
+lib32/libzmq.a lib32/libstdc++.a lib32/libuuid.a lib32/libmongoc.a lib32/libbson.a lib32/libchash.o \
 -ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-32
 rm *.o
 
