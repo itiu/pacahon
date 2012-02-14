@@ -307,7 +307,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 	if(trace_msg[41] == 1)
 		log.trace("command get");
 
-	reason = "запрос не может быть выполнен";
+	reason = "запрос не выполнен";
 
 	Predicate* args = message.getPredicate(msg__args);
 
@@ -367,31 +367,38 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					Vertex_vmm* vv;
 					// берем для этого субьекта заданные поля (:get, либо все) и учитываем условия ограничители
 
-					//					log.trace("#1");
+//					log.trace("#1");
+
 					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
 					string from = graph.subject;
 
 					bool vertex_found = server_context.mmf.findVertex(from, vv);
 
+//					log.trace("#2");
+
 					// проверим на соответсвие условиям ограничителям
-					bool isFilterPass = false;
+					bool isFilterPass = true;
 
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
 						Predicate pp = graph.edges[kk];
+//						log.trace("#6 pp.predicate=%s", pp.predicate);
 						for(int ll = 0; ll < pp.count_objects; ll++)
 						{
+//							log.trace("#4");
 							Objectz oo = pp.objects[ll];
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 							{
+//								log.trace("#5 oo.literal=%s", oo.literal);
 								// if(oo.literal.length > 0)
 								{
 									if(oo.literal != "query:get_reifed" && oo.literal != "query:get")
 									{
-										string val = vv.get_OutEdge_value(cast(string) pp.predicate);
+										bool rr = vv.OutEdge_is_exist_value(cast(string) pp.predicate, oo.literal);
 
-										if(val != oo.literal)
+										if(rr == false)
 										{
+//											log.trace("#7 isFilterPass = false");
 											isFilterPass = false;
 											break;
 										}
@@ -404,8 +411,11 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 					if(isFilterPass == true)
 					{
+//						log.trace("#8");
 						if(graph.getFirstObject("query:all_predicates") == "query:get")
 						{
+//							log.trace("#9");
+
 							// если все поля нужно вернуть
 							bool isOutEdges = vv.init_OutEdges_values_cache();
 							bool isProperties = vv.init_Properties_values_cache();
@@ -414,15 +424,16 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 							{
 								foreach(string val; vv.out_edges[key])
 								{
+//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
 									res.addTriple(graph.subject, cast(string) key, cast(string) val);
 								}
-								//												log.trace("#4 vv.out_edges=%s", qq);												
 							}
 
 							foreach(string key; vv.properties.keys)
 							{
 								foreach(string val; vv.properties[key])
 								{
+//									log.trace("#101 vv.properties=[%s : %s]", cast(string) key, cast(string) val);
 									res.addTriple(graph.subject, cast(string) key, cast(string) val);
 								}
 							}
@@ -449,7 +460,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 												// данный предикат добавить в список возвращаемых
 											} else if(oo.literal == "query:get")
 											{
-												string val = vv.get_OutEdge_value(cast(string) pp.predicate);
+												string val = vv.get_OutEdge_first_value(cast(string) pp.predicate);
 												res.addTriple(graph.subject, cast(string) pp.predicate, val);
 
 											}
@@ -568,7 +579,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						search_mask.length = search_mask_length;
 
 						//					if(trace_msg[56] == 1)
-						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
+//						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
 
 						TLIterator it;
 
@@ -594,59 +605,60 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						}
 					}
 
-					if(trace_msg[57] == 1)
-						log.trace("}");
-
-					if(trace_msg[58] == 1)
-						log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
-
-					// авторизуем найденные субьекты
-					int count_found_subjects = 0;
-					int count_authorized_subjects = 0;
-
-					string authorize_reason;
-
-					foreach(s; res.graphs_of_subject)
-					{
-						count_found_subjects++;
-
-						bool isExistSubject;
-						bool result_of_az = authorize(userId, s.subject, operation.READ, server_context,
-								authorize_reason, isExistSubject);
-
-						if(result_of_az == false)
-						{
-							if(trace_msg[59] == 1)
-								log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
-
-							s.count_edges = 0;
-							s.subject = null;
-
-							if(trace_msg[60] == 1)
-								log.trace("remove from list");
-						} else
-						{
-							count_authorized_subjects++;
-						}
-
-					}
-
-					buff1[] = ' ';
-					Integer.format(buff1, count_found_subjects, cast(char[]) "");
-
-					if(count_found_subjects == count_authorized_subjects)
-					{
-						reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
-					} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
-					{
-						reason = "запрос выполнен: не все найденные субьекты " ~ cast(string) buff1 ~ " успешно авторизованны";
-					} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
-					{
-						reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(string) buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
-					}
-
-					isOk = true;
 				}
+				if(trace_msg[57] == 1)
+					log.trace("}");
+
+				if(trace_msg[58] == 1)
+					log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
+
+				// авторизуем найденные субьекты
+				int count_found_subjects = 0;
+				int count_authorized_subjects = 0;
+
+				string authorize_reason;
+
+				foreach(s; res.graphs_of_subject)
+				{
+					count_found_subjects++;
+
+					bool isExistSubject;
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
+							isExistSubject);
+
+					if(result_of_az == false)
+					{
+						if(trace_msg[59] == 1)
+							log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
+
+						s.count_edges = 0;
+						s.subject = null;
+
+						if(trace_msg[60] == 1)
+							log.trace("remove from list");
+					} else
+					{
+						count_authorized_subjects++;
+					}
+
+				}
+
+				buff1[] = ' ';
+				Integer.format(buff1, count_found_subjects, cast(char[]) "");
+
+				if(count_found_subjects == count_authorized_subjects)
+				{
+					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
+				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
+				{
+					reason = "запрос выполнен: не все найденные субьекты " ~ cast(string) buff1 ~ " успешно авторизованны";
+				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
+				{
+					reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(string) buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
+				}
+
+				isOk = true;
+				//				}
 			}
 
 			if(trace_msg[61] == 1)

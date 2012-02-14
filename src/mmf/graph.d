@@ -1,5 +1,7 @@
 module mmf.graph;
 
+// TODO изменить разделение на свойства и ребра
+
 import std.mmfile;
 import std.stdio;
 import libchash_h;
@@ -312,7 +314,7 @@ struct GraphIO
 			//			printf("#7\n");
 			return true;
 		}
-//		printf("#8\n");
+		//		printf("#8\n");
 		return false;
 	}
 
@@ -748,7 +750,7 @@ struct Vertex_vmm
 		return [];
 	}
 
-	string get_OutEdge_value(ref string _label)
+	string get_OutEdge_first_value(ref string _label)
 	{
 		if(length_out_edges > 0 && out_edges.length == 0)
 		{
@@ -791,6 +793,53 @@ struct Vertex_vmm
 		}
 
 		return "";
+	}
+
+	bool OutEdge_is_exist_value(ref string _label, ref string _test_value)
+	{
+		if(length_out_edges > 0 && out_edges.length == 0)
+		{
+			// init
+			uint i_ptr = offset + offset_out_edges;
+
+			for(int ii = 0; ii < length_out_edges; ii++)
+			{
+				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+				i_ptr += uint.sizeof;
+
+				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
+				i_ptr += length;
+
+				uint count_values;
+				count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+				i_ptr += uint.sizeof;
+
+				if(i_ptr > offset + size)
+					return false;
+
+				for(int jj = 0; jj < count_values; jj++)
+				{
+					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+					i_ptr += uint.sizeof;
+
+					if(label == _label)
+					{
+						string value = cast(string) ch.array[i_ptr .. i_ptr + length];
+
+						if(_test_value == value)
+							return true;
+					}
+					i_ptr += length;
+
+					if(i_ptr > offset + size)
+						return false;
+
+				}
+			}
+
+		}
+
+		return false;
 	}
 
 }
