@@ -50,3 +50,4 @@ build/src/myversion.d
 build/src/server.d 
 build/src/libchash_h.d
 build/src/mmf/graph.d
+build/src/mmf/rebuild_graph.d

@@ -63,203 +63,208 @@ void main(char[][] args)
 		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
 				myversion.patch, myversion.hash, myversion.date);
 
-		JSONValue props;
-
-		try
+		if(args.length > 1 && args[1] == "rebuild-graph")
 		{
-			props = get_props("pacahon-properties.json");
-		} catch(Exception ex1)
+			mmf.rebuild_graph.rebuild();
+		} else
 		{
-			throw new Exception("ex! parse params", ex1);
-		}
+			JSONValue props;
 
-		mq_client client = null;
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		// адрес базы данных mongodb
-		string mongodb_server = "localhost";
-		if(("mongodb_server" in props.object) !is null)
-			mongodb_server = props.object["mongodb_server"].str;
-
-		// порт базы данных mongodb
-		int mongodb_port = 27017;
-		if(("mongodb_port" in props.object) !is null)
-			mongodb_port = cast(int) props.object["mongodb_port"].integer;
-
-		// имя коллекции
-		string mongodb_collection = "pacahon";
-		if(("mongodb_collection" in props.object) !is null)
-			mongodb_collection = props.object["mongodb_collection"].str;
-
-		// кеширование
-		// NONE
-		// ALL_DATA
-		// QUERY_RESULT		
-		string cache_type = "NONE";
-		if(("cache_type" in props.object) !is null)
-			cache_type = props.object["cache_type"].str;
-
-		// использование графа на memory map file
-		// NO
-		// YES				
-		string use_mmfile = "NO";
-		if(("use_mmfile" in props.object) !is null)
-			use_mmfile = props.object["use_mmfile"].str;
-
-		string bind_to = "tcp://*:5555";
-		if(("zmq_point" in props.object) !is null)
-			bind_to = props.object["zmq_point"].str;
-
-		string zmq_connect_type = "server";
-		if(("zmq_connect_type" in props.object) !is null)
-			zmq_connect_type = props.object["zmq_connect_type"].str;
-
-		// логгирование
-		// gebug - все отладочные сообщения, внимание! при включении будут жуткие тормоза! 
-		// off - выключено
-		// info - краткая информация о выполненных командах 
-		// info_and_io - краткая информация о выполненных командах и входящие и исходящие сообщения 
-		string logging = "info_and_io";
-		if(("logging" in props.object) !is null)
-			logging = props.object["logging"].str;
-
-		// поведение:
-		//	all - выполняет все операции
-		//  writer - только операции записи
-		//  reader - только операции чтения
-		//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
-		string behavior = "all";
-		if(("behavior" in props.object) !is null)
-			behavior = props.object["behavior"].str;
-
-		string yawl_engine = null;
-		if(("yawl-engine" in props.object) !is null)
-			yawl_engine = props.object["yawl-engine"].str;
-
-		/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-		writeln("connect to mongodb, \n");
-		writeln("	port:", mongodb_port);
-		writeln("	server:", mongodb_server);
-		writeln("	collection:", mongodb_collection);
-		writeln("cache_type:", cache_type);
-		writeln("use_mmfile:", use_mmfile);
-
-		byte cp = caching_type.NONE;
-
-		if(cache_type == "ALL_DATA")
-			cp = caching_type.ALL_DATA;
-
-		if(cache_type == "QUERY_RESULT")
-			cp = caching_type.QUERY_RESULT;
-
-		TripleStorage ts;
-		try
-		{
-			ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
-
-			ts.define_predicate_as_multiple("a");
-			ts.define_predicate_as_multiple("rdf:type");
-			ts.define_predicate_as_multiple("rdfs:subClassOf");
-			ts.define_predicate_as_multiple("gost19:take");
-			ts.define_predicate_as_multiple("event:msg_template");
-
-			ts.define_predicate_as_multilang("swrc:name");
-			ts.define_predicate_as_multilang("swrc:firstName");
-			ts.define_predicate_as_multilang("swrc:lastName");
-			//			ts.define_predicate_as_multilang("gost19:middleName");
-			ts.define_predicate_as_multilang("docs:position");
-
-			ts.set_fulltext_indexed_predicates("swrc:name");
-			ts.set_fulltext_indexed_predicates("swrc:firstName");
-			ts.set_fulltext_indexed_predicates("swrc:lastName");
-			ts.set_fulltext_indexed_predicates("gost19:middleName");
-			ts.set_fulltext_indexed_predicates("docs:position");
-			ts.set_fulltext_indexed_predicates("rdfs:label");
-			ts.set_fulltext_indexed_predicates("swrc:email");
-			ts.set_fulltext_indexed_predicates("swrc:phone");
-			ts.set_fulltext_indexed_predicates("gost19:internal_phone");
-
-			printf("ok, connected : %X\n", ts);
-		} catch(Exception ex)
-		{
-			throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
-		}
-
-		if(zmq_connect_type == "server")
-		{
 			try
 			{
-				client = new zmq_point_to_poin_client(bind_to);
-				writeln("point to point zmq listener started:", bind_to);
+				props = get_props("pacahon-properties.json");
+			} catch(Exception ex1)
+			{
+				throw new Exception("ex! parse params", ex1);
+			}
+
+			mq_client client = null;
+
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			// адрес базы данных mongodb
+			string mongodb_server = "localhost";
+			if(("mongodb_server" in props.object) !is null)
+				mongodb_server = props.object["mongodb_server"].str;
+
+			// порт базы данных mongodb
+			int mongodb_port = 27017;
+			if(("mongodb_port" in props.object) !is null)
+				mongodb_port = cast(int) props.object["mongodb_port"].integer;
+
+			// имя коллекции
+			string mongodb_collection = "pacahon";
+			if(("mongodb_collection" in props.object) !is null)
+				mongodb_collection = props.object["mongodb_collection"].str;
+
+			// кеширование
+			// NONE
+			// ALL_DATA
+			// QUERY_RESULT		
+			string cache_type = "NONE";
+			if(("cache_type" in props.object) !is null)
+				cache_type = props.object["cache_type"].str;
+
+			// использование графа на memory map file
+			// NO
+			// YES				
+			string use_mmfile = "NO";
+			if(("use_mmfile" in props.object) !is null)
+				use_mmfile = props.object["use_mmfile"].str;
+
+			string bind_to = "tcp://*:5555";
+			if(("zmq_point" in props.object) !is null)
+				bind_to = props.object["zmq_point"].str;
+
+			string zmq_connect_type = "server";
+			if(("zmq_connect_type" in props.object) !is null)
+				zmq_connect_type = props.object["zmq_connect_type"].str;
+
+			// логгирование
+			// gebug - все отладочные сообщения, внимание! при включении будут жуткие тормоза! 
+			// off - выключено
+			// info - краткая информация о выполненных командах 
+			// info_and_io - краткая информация о выполненных командах и входящие и исходящие сообщения 
+			string logging = "info_and_io";
+			if(("logging" in props.object) !is null)
+				logging = props.object["logging"].str;
+
+			// поведение:
+			//	all - выполняет все операции
+			//  writer - только операции записи
+			//  reader - только операции чтения
+			//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
+			string behavior = "all";
+			if(("behavior" in props.object) !is null)
+				behavior = props.object["behavior"].str;
+
+			string yawl_engine = null;
+			if(("yawl-engine" in props.object) !is null)
+				yawl_engine = props.object["yawl-engine"].str;
+
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+			writeln("connect to mongodb, \n");
+			writeln("	port:", mongodb_port);
+			writeln("	server:", mongodb_server);
+			writeln("	collection:", mongodb_collection);
+			writeln("cache_type:", cache_type);
+			writeln("use_mmfile:", use_mmfile);
+
+			byte cp = caching_type.NONE;
+
+			if(cache_type == "ALL_DATA")
+				cp = caching_type.ALL_DATA;
+
+			if(cache_type == "QUERY_RESULT")
+				cp = caching_type.QUERY_RESULT;
+
+			TripleStorage ts;
+			try
+			{
+				ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
+
+				ts.define_predicate_as_multiple("a");
+				ts.define_predicate_as_multiple("rdf:type");
+				ts.define_predicate_as_multiple("rdfs:subClassOf");
+				ts.define_predicate_as_multiple("gost19:take");
+				ts.define_predicate_as_multiple("event:msg_template");
+
+				ts.define_predicate_as_multilang("swrc:name");
+				ts.define_predicate_as_multilang("swrc:firstName");
+				ts.define_predicate_as_multilang("swrc:lastName");
+				//			ts.define_predicate_as_multilang("gost19:middleName");
+				ts.define_predicate_as_multilang("docs:position");
+
+				ts.set_fulltext_indexed_predicates("swrc:name");
+				ts.set_fulltext_indexed_predicates("swrc:firstName");
+				ts.set_fulltext_indexed_predicates("swrc:lastName");
+				ts.set_fulltext_indexed_predicates("gost19:middleName");
+				ts.set_fulltext_indexed_predicates("docs:position");
+				ts.set_fulltext_indexed_predicates("rdfs:label");
+				ts.set_fulltext_indexed_predicates("swrc:email");
+				ts.set_fulltext_indexed_predicates("swrc:phone");
+				ts.set_fulltext_indexed_predicates("gost19:internal_phone");
+
+				printf("ok, connected : %X\n", ts);
 			} catch(Exception ex)
 			{
+				throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
 			}
-		}
 
-		if(zmq_connect_type == "broker")
-		{
-			if(client is null)
+			if(zmq_connect_type == "server")
 			{
-				client = new zmq_pp_broker_client(bind_to, behavior);
-				writeln("zmq PPP broker listener started:", bind_to);
-			} else
-			{
-			}
-		}
-
-		if(client !is null)
-		{
-			client.set_callback(&get_message);
-
-			ServerThread thread = new ServerThread(&client.listener, ts);
-
-			thread.resource.client = client;
-
-			JSONValue[] gateways;
-
-			//TODO			thread.resource.yawl_engine_connect = new ZmqConnection (client);
-			if(("gateways" in props.object) !is null)
-			{
-				gateways = props.object["gateways"].array;
-				foreach(gateway; gateways)
+				try
 				{
-					if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
-					{
-						thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client,
-								gateway.object["point"].str);
-					}
+					client = new zmq_point_to_poin_client(bind_to);
+					writeln("point to point zmq listener started:", bind_to);
+				} catch(Exception ex)
+				{
 				}
 			}
 
-			writeln(thread.resource.gateways);
-
-			load_events(thread.resource);
-
-			if(use_mmfile == "YES")
+			if(zmq_connect_type == "broker")
 			{
-				writeln("open mmf...");
-				thread.resource.mmf = new GraphIO;
-				thread.resource.mmf.open_mmfiles("HA1");
-				thread.resource.useMMF = true;
-				writeln("ok");
+				if(client is null)
+				{
+					client = new zmq_pp_broker_client(bind_to, behavior);
+					writeln("zmq PPP broker listener started:", bind_to);
+				} else
+				{
+				}
 			}
 
-			thread.start();
-
-			LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
-			load_info_thread.start();
-
-			version(D1)
+			if(client !is null)
 			{
-				thread.wait();
-			}
+				client.set_callback(&get_message);
 
-			while(true)
-				core.thread.Thread.getThis().sleep(100_000_000);
+				ServerThread thread = new ServerThread(&client.listener, ts);
+
+				thread.resource.client = client;
+
+				JSONValue[] gateways;
+
+				//TODO			thread.resource.yawl_engine_connect = new ZmqConnection (client);
+				if(("gateways" in props.object) !is null)
+				{
+					gateways = props.object["gateways"].array;
+					foreach(gateway; gateways)
+					{
+						if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
+						{
+							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client,
+									gateway.object["point"].str);
+						}
+					}
+				}
+
+				writeln(thread.resource.gateways);
+
+				load_events(thread.resource);
+
+				if(use_mmfile == "YES")
+				{
+					writeln("open mmf...");
+					thread.resource.mmf = new GraphIO;
+					thread.resource.mmf.open_mmfiles("HA1");
+					thread.resource.useMMF = true;
+					writeln("ok");
+				}
+
+				thread.start();
+
+				LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
+				load_info_thread.start();
+
+				version(D1)
+				{
+					thread.wait();
+				}
+
+				while(true)
+					core.thread.Thread.getThis().sleep(100_000_000);
+			}
 		}
-
 	} catch(Exception ex)
 	{
 		writeln("Exception: ", ex.msg);

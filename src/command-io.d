@@ -367,14 +367,14 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					Vertex_vmm* vv;
 					// берем для этого субьекта заданные поля (:get, либо все) и учитываем условия ограничители
 
-//					log.trace("#1");
+					//					log.trace("#1");
 
 					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
 					string from = graph.subject;
 
 					bool vertex_found = server_context.mmf.findVertex(from, vv);
 
-//					log.trace("#2");
+					//					log.trace("#2");
 
 					// проверим на соответсвие условиям ограничителям
 					bool isFilterPass = true;
@@ -382,14 +382,14 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
 						Predicate pp = graph.edges[kk];
-//						log.trace("#6 pp.predicate=%s", pp.predicate);
+						//						log.trace("#6 pp.predicate=%s", pp.predicate);
 						for(int ll = 0; ll < pp.count_objects; ll++)
 						{
-//							log.trace("#4");
+							//							log.trace("#4");
 							Objectz oo = pp.objects[ll];
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 							{
-//								log.trace("#5 oo.literal=%s", oo.literal);
+								//								log.trace("#5 oo.literal=%s", oo.literal);
 								// if(oo.literal.length > 0)
 								{
 									if(oo.literal != "query:get_reifed" && oo.literal != "query:get")
@@ -398,7 +398,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 										if(rr == false)
 										{
-//											log.trace("#7 isFilterPass = false");
+											//											log.trace("#7 isFilterPass = false");
 											isFilterPass = false;
 											break;
 										}
@@ -411,30 +411,56 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 					if(isFilterPass == true)
 					{
-//						log.trace("#8");
-						if(graph.getFirstObject("query:all_predicates") == "query:get")
+						//						log.trace("#8");
+						if(graph.getFirstObject("query:all_predicates") == "query:get_reifed")
 						{
-//							log.trace("#9");
+							//							log.trace("#9");
 
 							// если все поля нужно вернуть
-							bool isOutEdges = vv.init_OutEdges_values_cache();
-							bool isProperties = vv.init_Properties_values_cache();
+							bool isEdges = vv.init_Edges_values_cache();
 
-							foreach(string key; vv.out_edges.keys)
+							foreach(string key; vv.edges.keys)
 							{
-								foreach(string val; vv.out_edges[key])
+								foreach(string val; vv.edges[key])
 								{
-//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
-									res.addTriple(graph.subject, cast(string) key, cast(string) val);
+									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
+									res.addTriple(graph.subject, key, val);
+
+									string ss_reif = "_" ~ val ~ "~" ~ graph.subject ~ "~" ~ key;
+									Vertex_vmm* vv_reif = new Vertex_vmm;
+
+									bool reif_found = server_context.mmf.findVertex(ss_reif, vv_reif);
+
+									if(reif_found == true)
+									{
+										log.trace("reif_found : %s", ss_reif);
+
+										vv_reif.init_Edges_values_cache();
+
+										foreach(string key1; vv_reif.edges.keys)
+										{
+											foreach(string val1; vv_reif.edges[key1])
+											{
+												log.trace("#100 add tiple=[%s %s %s]", vv_reif.getLabel, key1, val1);
+												res.addTriple(vv_reif.getLabel, key1, val1);
+											}
+										}
+
+									}
 								}
 							}
 
-							foreach(string key; vv.properties.keys)
+						} else if(graph.getFirstObject("query:all_predicates") == "query:get")
+						{
+							bool isEdges = vv.init_Edges_values_cache();
+
+							foreach(string key; vv.edges.keys)
 							{
-								foreach(string val; vv.properties[key])
+								foreach(string val; vv.edges[key])
 								{
-//									log.trace("#101 vv.properties=[%s : %s]", cast(string) key, cast(string) val);
-									res.addTriple(graph.subject, cast(string) key, cast(string) val);
+									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
+									res.addTriple(graph.subject, key, val);
+
 								}
 							}
 
@@ -458,11 +484,19 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 											{
 												// требуются так-же реифицированные данные по этому полю
 												// данный предикат добавить в список возвращаемых
+
 											} else if(oo.literal == "query:get")
 											{
-												string val = vv.get_OutEdge_first_value(cast(string) pp.predicate);
-												res.addTriple(graph.subject, cast(string) pp.predicate, val);
+												string values[] = vv.get_Edge_values(cast(string) pp.predicate);
 
+												foreach(string val; values)
+												{
+
+													if(val !is null && val.length > 0)
+													{
+														res.addTriple(graph.subject, cast(string) pp.predicate, val);
+													}
+												}
 											}
 										}
 									}
@@ -579,7 +613,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						search_mask.length = search_mask_length;
 
 						//					if(trace_msg[56] == 1)
-//						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
+						//						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
 
 						TLIterator it;
 

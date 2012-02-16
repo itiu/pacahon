@@ -2,7 +2,7 @@ DMD=dmd
 
 VERSION_MAJOR=1
 VERSION_MINOR=26
-VERSION_PATCH=6
+VERSION_PATCH=8
 
 cp -v -r src/* build/src
 
@@ -14,7 +14,7 @@ rm *.io
 rm *.oi
 
 $DMD -m32 -debug -d \
-@dfiles \
+@pacahon-src-list \
 lib32/libzmq.a lib32/libstdc++.a lib32/libuuid.a lib32/libmongoc.a lib32/libbson.a lib32/libchash.o \
 -ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-32
 rm *.o

@@ -1,15 +1,31 @@
 module mmf.graph;
 
-// TODO изменить разделение на свойства и ребра
+// изменение узла графа:
+//		1. создание нового узла
+// 	 	2. деактивация исходного
+//		3. замена в индексе поиска по идентификатору, адреса узла на новый
 
-import std.mmfile;
-import std.stdio;
-import libchash_h;
-import trioplax.Logger;
-import core.memory;
-import std.c.string;
-import tango.text.convert.Integer;
-import std.file;
+// хранение реифицированных данных:
+//
+//			I вариант:
+//				реификация сохраняется как одно из значений ребра, структура хранения - узел графа
+//				если значение начинается с [0], то это реификация предыдущего по списку значения 
+// 				реифицированные данные можно добавить к уже существующему
+//
+//			II вариант:
+//				сохраняем как обычный узел, однако меняем значение @, на @ = S+P+O, реифицируемых фактов 
+
+private
+{
+	import std.mmfile;
+	import std.stdio;
+	import libchash_h;
+	import trioplax.Logger;
+	import core.memory;
+	import std.c.string;
+	import tango.text.convert.Integer;
+	import std.file;
+}
 
 const byte p_count_allocated_vertex = 1;
 
@@ -150,7 +166,10 @@ struct GraphIO
 				while(next(it1))
 				{
 					if(count > 2_100_000)
+					{
+						log.trace("debug break: count > 2_100_000 ");
 						break;
+					}
 
 					if(it1.count % 100_000 == 0)
 					{
@@ -161,14 +180,20 @@ struct GraphIO
 					string label = vv.getLabel;
 
 					//					log.trace ("count: %d label: [%s]", count, label);
+					if(label.length > 5 && label[0] == '_' && label[1] == ':' && label[2] == 'R')
+					{
+						// это узел-реификация
+						// сформируем для него идентификатор, @ = S + P + O
 
-					if(label.length > 256)
+					}
+
+					if(label.length > 65536)
 					{
 						log.trace("count=%d, label.length(%d):%s", count, label.length, label);
 						break;
 					}
 
-					//					keys[count] = cast(char*) GC.malloc(label.length + 1);
+					//					keys[count] = cast(char*) GC.malloc(label.length + 1);					
 					keys[count] = cast(char*) core.sys.posix.stdlib.malloc(label.length + 1);
 
 					*(keys[count] + label.length) = 0;
@@ -352,17 +377,10 @@ struct GraphIO
 		if(trace)
 			printf("vv.length_label=%X\n", vv.length_label);
 
-		vv.offset_properties = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
-		ptr += uint.sizeof;
-		//		printf("vv.offset_properties=%X\n", vv.offset_properties);
-
-		vv.length_properties = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
+		vv.offset_edges = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
 		ptr += uint.sizeof;
 
-		vv.offset_out_edges = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
-		ptr += uint.sizeof;
-
-		vv.length_out_edges = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
+		vv.length_edges = *cast(uint*) _array[ptr .. ptr + uint.sizeof];
 		ptr += uint.sizeof;
 
 		return true;
@@ -381,11 +399,8 @@ struct Vertex_vmm
 
 		uint length_label = 0;
 
-		uint offset_properties;
-		uint length_properties = 0;
-
-		uint offset_out_edges;
-		uint length_out_edges = 0;
+		uint offset_edges;
+		uint length_edges = 0;
 
 		// local
 		uint offset_label;
@@ -398,8 +413,7 @@ struct Vertex_vmm
 	MmFileInfo* ch;
 	GraphIO* gio;
 
-	string[][string] properties;
-	string[][string] out_edges;
+	string[][string] edges;
 
 	public uint getOffset()
 	{
@@ -423,31 +437,23 @@ struct Vertex_vmm
 
 	bool store()
 	{
+		if(label.length > 5 && label[0] == '_' && label[1] == ':' && label[2] == 'R')
+		{
+			label = "_" ~ edges["rdf:object"][0] ~ "~" ~ edges["rdf:predicate"][0] ~ "~" ~ edges["rdf:subject"][0];
+		}
+
 		// вычислить размер сохраняемой структуры
 		uint len = SIZE_HEADER_VERTEX;
 
 		len += label.length + uint.sizeof;
 
 		len += uint.sizeof;
-		foreach(key; properties.keys)
+		foreach(key; edges.keys)
 		{
 			len += key.length + uint.sizeof;
 
 			len += uint.sizeof;
-			string[] values = properties.get(key, []);
-			foreach(value; values)
-			{
-				len += value.length + uint.sizeof;
-			}
-		}
-
-		len += uint.sizeof;
-		foreach(key; out_edges.keys)
-		{
-			len += key.length + uint.sizeof;
-
-			len += uint.sizeof;
-			string[] values = out_edges.get(key, []);
+			string[] values = edges.get(key, []);
 			foreach(value; values)
 			{
 				len += value.length + uint.sizeof;
@@ -497,41 +503,21 @@ struct Vertex_vmm
 			*buf = length_label;
 			header_ptr += uint.sizeof;
 
-			// сохранить properties
-			offset_properties = ptr - offset;
-			length_properties = cast(uint) properties.length;
-
-			//			writeln("properties=", properties);
-
-			// сохранить offset_properties
-			buf = cast(uint*) ch.array[header_ptr .. header_ptr + uint.sizeof];
-			//			printf("offset_properties [%X]=%X\n", header_ptr, offset_properties);
-			*buf = offset_properties;
-			header_ptr += uint.sizeof;
-
-			// сохранить length_properties
-			buf = cast(uint*) ch.array[header_ptr .. header_ptr + uint.sizeof];
-			*buf = length_properties;
-			header_ptr += uint.sizeof;
-			//			printf("count properties: [%X]=[%X]\n", header_ptr, length_properties);
-
-			ptr = store_elements(properties, ptr);
-
-			offset_out_edges = ptr - offset;
+			offset_edges = ptr - offset;
 			//			printf("offset_out_edges [%X]=%X\n", header_ptr, offset_out_edges);
-			length_out_edges = cast(uint) out_edges.length;
+			length_edges = cast(uint) edges.length;
 
-			// сохранить offset_out_edges
+			// сохранить offset_edges
 			buf = cast(uint*) ch.array[header_ptr .. header_ptr + uint.sizeof];
-			*buf = offset_out_edges;
+			*buf = offset_edges;
 			header_ptr += uint.sizeof;
 
-			// сохранить length_out_edges
+			// сохранить length_edges
 			buf = cast(uint*) ch.array[header_ptr .. header_ptr + uint.sizeof];
-			*buf = length_out_edges;
+			*buf = length_edges;
 			header_ptr += uint.sizeof;
 
-			ptr = store_elements(out_edges, ptr);
+			ptr = store_elements(edges, ptr);
 		} else
 		{
 			return false;
@@ -550,10 +536,10 @@ struct Vertex_vmm
 		{
 			string[] values = properties.get(key, []);
 
-			// сохраним размер label
-			buf = cast(uint*) ch.array[ptr .. ptr + uint.sizeof];
-			*buf = cast(uint) key.length;
-			ptr += uint.sizeof;
+			// сохраним размер label, размер ограничен 64K
+			buf = cast(uint*) ch.array[ptr .. ptr + ushort.sizeof];
+			*buf = cast(ushort) key.length;
+			ptr += ushort.sizeof;
 
 			// сохраним label
 			data = cast(ubyte[]) ch.array[ptr .. ptr + key.length];
@@ -561,11 +547,11 @@ struct Vertex_vmm
 			data[] = bstr[];
 			ptr += key.length;
 
-			// сохраним количество значений в values
-			buf = cast(uint*) ch.array[ptr .. ptr + uint.sizeof];
-			*buf = cast(uint) values.length;
+			// сохраним количество значений в values, количество значений ограниченно 64K
+			buf = cast(uint*) ch.array[ptr .. ptr + ushort.sizeof];
+			*buf = cast(ushort) values.length;
 			//			printf("count values: [%X]=[%X]\n", ptr, values.length);
-			ptr += uint.sizeof;
+			ptr += ushort.sizeof;
 
 			// сохраним значения
 			foreach(value; values)
@@ -588,85 +574,22 @@ struct Vertex_vmm
 		return ptr;
 	}
 
-	bool init_Properties_values_cache()
+	bool init_Edges_values_cache()
 	{
-		// init
-		uint i_ptr = offset + offset_properties;
-		//			printf("i_ptr=%X\n", i_ptr);
+		uint i_ptr = offset + offset_edges;
 
-		for(int ii = 0; ii < length_properties; ii++)
+		for(int ii = 0; ii < length_edges; ii++)
 		{
-			uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-			//				printf("length element of property=%X\n", length);
-			i_ptr += uint.sizeof;
+			// размер label, размер ограничен 64K
+			ushort length_label = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+			i_ptr += ushort.sizeof;
 
-			string label = cast(string) ch.array[i_ptr .. i_ptr + length];
-			i_ptr += length;
-			//				writeln("label element of property=", label);
+			string label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+			i_ptr += length_label;
 
-			uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-			i_ptr += uint.sizeof;
-			//				printf("count_values element of property=%X\n", count_values);
-
-			if(i_ptr > offset + offset_out_edges)
-			{
-				writeln("#1 i_ptr > offset_out_edges");
-				return false;
-			}
-
-			string[] values = new string[count_values];
-			for(int jj = 0; jj < count_values; jj++)
-			{
-				length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				//					printf("length value of element of property[%X]=%X\n", i_ptr, length);
-				i_ptr += uint.sizeof;
-
-				string value = cast(string) ch.array[i_ptr .. i_ptr + length];
-				i_ptr += length;
-				//					writeln("value element of property=", value);
-
-				if(i_ptr > offset + offset_out_edges)
-				{
-					writeln("#2 i_ptr > offset_out_edges");
-					return false;
-				}
-
-				values[jj] = value;
-			}
-
-			properties[label] = values;
-		}
-		return true;
-	}
-
-	string[] getProperty_value_use_cache(ref string _label)
-	{
-		string[] res;
-		if(length_properties > 0 && properties.length == 0)
-		{
-			//			printf("length_properties=%X\n", length_properties);
-			if(init_Properties_values_cache == false)
-				return [];
-		}
-
-		res = properties.get(_label, []);
-		return res;
-	}
-
-	bool init_OutEdges_values_cache()
-	{
-		uint i_ptr = offset + offset_out_edges;
-
-		for(int ii = 0; ii < length_out_edges; ii++)
-		{
-			uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-			i_ptr += uint.sizeof;
-
-			string label = cast(string) ch.array[i_ptr .. i_ptr + length];
-			i_ptr += length;
-
-			uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-			i_ptr += uint.sizeof;
+			// количество значений ограниченно 64K
+			ushort count_values = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+			i_ptr += ushort.sizeof;
 
 			if(i_ptr > offset + size)
 				return false;
@@ -674,7 +597,7 @@ struct Vertex_vmm
 			string[] values = new string[count_values];
 			for(int jj = 0; jj < count_values; jj++)
 			{
-				length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 				i_ptr += uint.sizeof;
 
 				string value = cast(string) ch.array[i_ptr .. i_ptr + length];
@@ -686,42 +609,44 @@ struct Vertex_vmm
 				values[jj] = value;
 			}
 
-			out_edges[label] = values;
+			edges[label] = values;
 		}
 
 		return true;
 	}
 
-	string[] get_OutEdge_values_use_cache(ref string _label)
+	string[] get_Edge_values_use_cache(ref string _label)
 	{
 		string[] res;
-		if(length_out_edges > 0 && out_edges.length == 0)
+		if(length_edges > 0 && edges.length == 0)
 		{
-			if(init_OutEdges_values_cache() == false)
+			if(init_Edges_values_cache() == false)
 				return [];
 		}
 
-		res = out_edges.get(_label, []);
+		res = edges.get(_label, []);
 		return res;
 	}
 
-	string[] get_OutEdge_values(ref string _label)
+	string[] get_Edge_values(ref string _label)
 	{
-		if(length_out_edges > 0)
+		if(length_edges > 0)
 		{
 			// init
-			uint i_ptr = offset + offset_out_edges;
+			uint i_ptr = offset + offset_edges;
 
-			for(int ii = 0; ii < length_out_edges; ii++)
+			for(int ii = 0; ii < length_edges; ii++)
 			{
-				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				// размер label, размер ограничен 64K
+				ushort length_label = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
-				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
-				i_ptr += length;
+				string label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+				i_ptr += length_label;
 
-				uint count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				// количество значений ограниченно 64K
+				ushort count_values = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
 				if(i_ptr > offset + size)
 					return [];
@@ -729,7 +654,7 @@ struct Vertex_vmm
 				string[] values = new string[count_values];
 				for(int jj = 0; jj < count_values; jj++)
 				{
-					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+					uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 					i_ptr += uint.sizeof;
 
 					string value = cast(string) ch.array[i_ptr .. i_ptr + length];
@@ -750,31 +675,33 @@ struct Vertex_vmm
 		return [];
 	}
 
-	string get_OutEdge_first_value(ref string _label)
+	string get_Edge_first_value(ref string _label)
 	{
-		if(length_out_edges > 0 && out_edges.length == 0)
+		if(length_edges > 0 && edges.length == 0)
 		{
 			// init
-			uint i_ptr = offset + offset_out_edges;
+			uint i_ptr = offset + offset_edges;
 
-			for(int ii = 0; ii < length_out_edges; ii++)
+			for(int ii = 0; ii < length_edges; ii++)
 			{
-				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				// размер label, размер ограничен 64K
+				ushort length_label = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
-				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
-				i_ptr += length;
+				string label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+				i_ptr += length_label;
 
-				uint count_values;
-				count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				// количество значений ограниченно 64K
+				ushort count_values;
+				count_values = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
 				if(i_ptr > offset + size)
 					return "";
 
 				for(int jj = 0; jj < count_values; jj++)
 				{
-					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+					uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 					i_ptr += uint.sizeof;
 
 					if(label == _label)
@@ -797,29 +724,29 @@ struct Vertex_vmm
 
 	bool OutEdge_is_exist_value(ref string _label, ref string _test_value)
 	{
-		if(length_out_edges > 0 && out_edges.length == 0)
+		if(length_edges > 0 && edges.length == 0)
 		{
 			// init
-			uint i_ptr = offset + offset_out_edges;
+			uint i_ptr = offset + offset_edges;
 
-			for(int ii = 0; ii < length_out_edges; ii++)
+			for(int ii = 0; ii < length_edges; ii++)
 			{
-				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				ushort length_label = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
-				string label = cast(string) ch.array[i_ptr .. i_ptr + length];
-				i_ptr += length;
+				string label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+				i_ptr += length_label;
 
-				uint count_values;
-				count_values = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
-				i_ptr += uint.sizeof;
+				ushort count_values;
+				count_values = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
+				i_ptr += ushort.sizeof;
 
 				if(i_ptr > offset + size)
 					return false;
 
 				for(int jj = 0; jj < count_values; jj++)
 				{
-					length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
+					uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 					i_ptr += uint.sizeof;
 
 					if(label == _label)
