@@ -88,7 +88,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 		if(targetId is null)
 			throw new Exception("char[] targetId == null");
 
-		if (targetId[0] == '_' && targetId[1] == ':' && targetId[2] == 'R' && operation.READ)
+		if (targetId[0] == '_' /*&& targetId[1] == ':' && targetId[2] == 'R' */&& operation.READ)
 		{
 			// TODO для доп части у реифицированных фактов следует сделать нормальную проверку
 			return true;

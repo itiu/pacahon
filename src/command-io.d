@@ -426,7 +426,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
 									res.addTriple(graph.subject, key, val);
 
-									string ss_reif = "_" ~ val ~ "~" ~ graph.subject ~ "~" ~ key;
+									string ss_reif = "_" ~ val ~ "~" ~ key ~ "~" ~ graph.subject;
 									Vertex_vmm* vv_reif = new Vertex_vmm;
 
 									bool reif_found = server_context.mmf.findVertex(ss_reif, vv_reif);
