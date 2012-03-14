@@ -41,12 +41,18 @@ private import mmf.graph;
 Logger log;
 //char[] buff;
 char[] buff1;
+string[] reifed_data_subj;
+
+int read_from_mongo = 0;
+int read_from_mmf = 0;
 
 static this()
 {
 	buff = new char[21];
 	buff1 = new char[6];
 	log = new Logger("pacahon", "log", "command-io");
+	reifed_data_subj = new string[1];
+	reifed_data_subj[0] = "_:R__01";
 }
 
 /*
@@ -297,6 +303,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 {
 	StopWatch sw;
 	sw.start();
+	
+//	log.trace("GET");
 
 	// в качестве аргумента - шаблон для выборки
 	// query:get - обозначает что будет возвращено значение соответствующего предиката
@@ -358,23 +366,24 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				Subject graph = graphs_as_template[jj];
 
 				//				if(trace_msg[46] == 1)
-				//				log.trace("graph.subject=%s", graph.subject);
+//				log.trace("graph.subject=%s", graph.subject);
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
+					read_from_mmf++;
+					log.trace("MMF:%d", read_from_mmf);
+					
 					// считываем данные из mmfile
 
 					Vertex_vmm* vv;
 					// берем для этого субьекта заданные поля (:get, либо все) и учитываем условия ограничители
-
-					//					log.trace("#1");
 
 					vv = new Vertex_vmm; // TODO #34 проверить, если установить vv = null
 					string from = graph.subject;
 
 					bool vertex_found = server_context.mmf.findVertex(from, vv);
 
-					//					log.trace("#2");
+//					log.trace("#2");
 
 					// проверим на соответсвие условиям ограничителям
 					bool isFilterPass = true;
@@ -414,41 +423,74 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						//						log.trace("#8");
 						if(graph.getFirstObject("query:all_predicates") == "query:get_reifed")
 						{
-							//							log.trace("#9");
+//							log.trace("#9");
 
 							// если все поля нужно вернуть
-							bool isEdges = vv.init_Edges_values_cache();
-
+							bool isEdges = vv.init_Edges_values_cache(true);
+							
+							int count_of_reifed_data = 0;
+							
 							foreach(string key; vv.edges.keys)
 							{
-								foreach(string val; vv.edges[key])
+//								log.trace("#100.- key=[%s]", cast(string) key);
+								string[] values = vv.edges.get (key, []);
+								
+//								log.trace("#100.0 key[%s] : values [%s]", key, values);
+								foreach(string val; values)
 								{
-									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
+//									log.trace("#100.1 addTriple=[%s %s %s]", graph.subject, key, val);
 									res.addTriple(graph.subject, key, val);
 
 									string ss_reif = "_" ~ val ~ "~" ~ key ~ "~" ~ graph.subject;
 									Vertex_vmm* vv_reif = new Vertex_vmm;
 
 									bool reif_found = server_context.mmf.findVertex(ss_reif, vv_reif);
-
+																	
 									if(reif_found == true)
 									{
-										log.trace("reif_found : %s", ss_reif);
+//										log.trace("reif_found : %s", ss_reif);
+																														
+										vv_reif.init_Edges_values_cache(true);
+/*
+										char[] reifed_data_subj = new char[8];
+										reifed_data_subj[0] = '_';
+										reifed_data_subj[1] = ':';
+										reifed_data_subj[2] = 'R';
+										reifed_data_subj[3] = '_';
+										reifed_data_subj[4] = '_';
+										reifed_data_subj[5] = '_';
+										reifed_data_subj[6] = '_';
+										reifed_data_subj[7] = '0';
 
-										vv_reif.init_Edges_values_cache();
-
+										Integer.format(reifed_data_subj, count_of_reifed_data, cast(char[]) "X2");
+										
+										string str_reifed_data_subj = cast(string)reifed_data_subj;
+*/										
+//										log.trace("#100.19 keys=[%s]", vv_reif.edges.keys);
+										
 										foreach(string key1; vv_reif.edges.keys)
 										{
-											foreach(string val1; vv_reif.edges[key1])
+											string values[] = vv_reif.edges[key1];
+//											log.trace("#100.20 values=[%s]", values);												
+											foreach(string val1; values)
 											{
-												log.trace("#100 add tiple=[%s %s %s]", vv_reif.getLabel, key1, val1);
-												res.addTriple(vv_reif.getLabel, key1, val1);
+//												log.trace("#100.21 add tiple=[%s %s %s]", reifed_data_subj[count_of_reifed_data], key1, val1);												
+												res.addTriple(reifed_data_subj[count_of_reifed_data], key1, val1);
+//												res.addTriple(vv_reif.getLabel, key1, val1);
+//												log.trace("#100.3"); 	
 											}
+//											log.trace("#100.4"); 
 										}
-
+//										log.trace("#100.5");
+										
+										count_of_reifed_data++; //???
 									}
+//									log.trace("#100.6"); 									
 								}
+//								log.trace("#100.7"); 								
 							}
+							
+//							log.trace("#9.1");
 
 						} else if(graph.getFirstObject("query:all_predicates") == "query:get")
 						{
@@ -459,6 +501,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 								foreach(string val; vv.edges[key])
 								{
 									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
+//									log.trace("#9.2 add tiple=[%s %s %s]", graph.subject, key, val);												
 									res.addTriple(graph.subject, key, val);
 
 								}
@@ -494,6 +537,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 													if(val !is null && val.length > 0)
 													{
+//														log.trace("#11.1 add tiple=[%s %s %s]", graph.subject, cast(string) pp.predicate, val);																										
 														res.addTriple(graph.subject, cast(string) pp.predicate, val);
 													}
 												}
@@ -517,6 +561,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				} else
 				{
+					read_from_mongo++;
+					log.trace("MONGO:%d", read_from_mongo);
+					
 					// считываем данные из mongodb
 
 					byte[char[]] readed_predicate;
@@ -633,7 +680,10 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 									log.trace("GET: triple %s", triple);
 
 								if(triple.O !is null && triple.O.length > 0)
+								{
+//									log.trace("DB: addTriple [%s %s %s]", triple.S, triple.P, triple.O);									
 									res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+								}
 							}
 							delete it;
 						}

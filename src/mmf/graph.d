@@ -574,7 +574,7 @@ struct Vertex_vmm
 		return ptr;
 	}
 
-	bool init_Edges_values_cache()
+	bool init_Edges_values_cache(bool is_create_copy = false)
 	{
 		uint i_ptr = offset + offset_edges;
 
@@ -584,7 +584,18 @@ struct Vertex_vmm
 			ushort length_label = *cast(ushort*) ch.array[i_ptr .. i_ptr + ushort.sizeof];
 			i_ptr += ushort.sizeof;
 
-			string label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+			string label;
+
+			if(is_create_copy)
+			{
+				void[] tmp = new void[length_label];
+				tmp[] = ch.array[i_ptr .. i_ptr + length_label];
+				label = cast(string) tmp;
+			} else
+			{
+				label = cast(string) ch.array[i_ptr .. i_ptr + length_label];
+			}
+
 			i_ptr += length_label;
 
 			// количество значений ограниченно 64K
@@ -600,7 +611,19 @@ struct Vertex_vmm
 				uint length = *cast(uint*) ch.array[i_ptr .. i_ptr + uint.sizeof];
 				i_ptr += uint.sizeof;
 
-				string value = cast(string) ch.array[i_ptr .. i_ptr + length];
+				string value;
+
+				if(is_create_copy)
+				{
+					void[] tmp = new void[length];
+
+					tmp[] = ch.array[i_ptr .. i_ptr + length];
+
+					value = cast(string) tmp;
+				} else
+				{
+					value = cast(string) ch.array[i_ptr .. i_ptr + length];
+				}
 				i_ptr += length;
 
 				if(i_ptr > offset + size)

@@ -2,7 +2,7 @@ DMD=dmd
 
 VERSION_MAJOR=1
 VERSION_MINOR=26
-VERSION_PATCH=8
+VERSION_PATCH=10
 
 cp -v -r src/* build/src
 
