@@ -43,8 +43,8 @@ Logger log;
 char[] buff1;
 string[] reifed_data_subj;
 
-int read_from_mongo = 0;
-int read_from_mmf = 0;
+//int read_from_mongo = 0;
+//int read_from_mmf = 0;
 
 static this()
 {
@@ -299,10 +299,10 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 }
 
 public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
-		out string reason, ref GraphCluster res)
+		out string reason, ref GraphCluster res, out char from)
 {
-	StopWatch sw;
-	sw.start();
+//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
+	
 	
 //	log.trace("GET");
 
@@ -367,11 +367,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				//				if(trace_msg[46] == 1)
 //				log.trace("graph.subject=%s", graph.subject);
+				StopWatch sw;
+				sw.start();
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
-					read_from_mmf++;
-					log.trace("MMF:%d", read_from_mmf);
+//					read_from_mmf++;
+//					log.trace("MMF:%d", read_from_mmf);
+					
+					from = 'M';
 					
 					// считываем данные из mmfile
 
@@ -427,6 +431,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 							// если все поля нужно вернуть
 							bool isEdges = vv.init_Edges_values_cache(true);
+							sw.stop();
 							
 							int count_of_reifed_data = 0;
 							
@@ -495,6 +500,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						} else if(graph.getFirstObject("query:all_predicates") == "query:get")
 						{
 							bool isEdges = vv.init_Edges_values_cache();
+							sw.stop();
 
 							foreach(string key; vv.edges.keys)
 							{
@@ -561,8 +567,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				} else
 				{
-					read_from_mongo++;
-					log.trace("MONGO:%d", read_from_mongo);
+//					read_from_mongo++;
+//					log.trace("MONGO:%d", read_from_mongo);
+					from = 'D';
 					
 					// считываем данные из mongodb
 
@@ -685,11 +692,22 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 									res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 								}
 							}
+							sw.stop();
+
 							delete it;
 						}
 					}
 
 				}
+				
+//				if(trace_msg[61] == 1)
+				{
+//					sw.stop();
+					long t = cast(long) sw.peek().usecs;
+
+					log.trace("get, read data time: %d [µs]", t);
+				}
+				
 				if(trace_msg[57] == 1)
 					log.trace("}");
 
@@ -744,7 +762,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				isOk = true;
 				//				}
 			}
-
+/*
 			if(trace_msg[61] == 1)
 			{
 				sw.stop();
@@ -752,10 +770,12 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				log.trace("total time command get: %d [µs]", t);
 			}
+*/			
 		}
 	}
 
 	// TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
+//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
 
 	return;
 }

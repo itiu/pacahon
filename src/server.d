@@ -60,8 +60,8 @@ void main(char[][] args)
 {
 	try
 	{
-		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
-				myversion.patch, myversion.hash, myversion.date);
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor, myversion.patch,
+				myversion.hash, myversion.date);
 
 		if(args.length > 1 && args[1] == "rebuild-graph")
 		{
@@ -232,8 +232,7 @@ void main(char[][] args)
 					{
 						if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
 						{
-							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client,
-									gateway.object["point"].str);
+							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client, gateway.object["point"].str);
 						}
 					}
 				}
@@ -300,14 +299,20 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		log.trace("get message, count:[%d], message_size:[%d]", server_thread.stat.count_message, message_size);
 
 	//	from_client.get_counts(count_message, count_command);
-
-	if(trace_msg[0] == 1)
-		io_msg.trace_io(true, msg, message_size);
-
 	TripleStorage ts = server_thread.resource.ts;
 
 	Subject[] triples;
 
+	if(trace_msg[0] == 1)
+		io_msg.trace_io(true, msg, message_size);
+	/*	
+	 {
+	 sw.stop();
+	 long t = cast(long) sw.peek().usecs;
+	 log.trace("messages count: %d, %d [µs] next: message parser start", server_thread.stat.count_message, t);
+	 sw.start();
+	 }
+	 */
 	if(*msg == '{' || *msg == '[')
 	{
 		try
@@ -341,7 +346,14 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			log.trace("Exception in parse_n3_string:[%s]", ex.msg);
 		}
 	}
-
+	/*
+	 {
+	 sw.stop();
+	 long t = cast(long) sw.peek().usecs;
+	 log.trace("messages count: %d, %d [µs] next: message parser stop", server_thread.stat.count_message, t);
+	 sw.start();
+	 }
+	 */
 	if(trace_msg[2] == 1)
 	{
 		OutBuffer outbuff = new OutBuffer();
@@ -369,6 +381,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	// local_ticket <- здесь может быть тикет для выполнения пакетных операций
 	string local_ticket;
+	char from;
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
@@ -427,8 +440,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					{
 						// тикет просрочен
 						if(trace_msg[61] == 1)
-							log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime,
-									tt.end_time);
+							log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime, tt.end_time);
 					} else
 					{
 						userId = tt.userId;
@@ -452,11 +464,11 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					sw.stop();
 					long t = cast(long) sw.peek().usecs;
 
-					log.trace("messages count: %d, %d [µs] next: command_preparer", server_thread.stat.count_message, t);
+					log.trace("messages count: %d, %d [µs] start: command_preparer", server_thread.stat.count_message, t);
 					sw.start();
 				}
 
-				command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket);
+				command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket, from);
 
 				if(trace_msg[7] == 1)
 				{
@@ -475,26 +487,22 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(trace_msg[68] == 1)
 			{
-				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(),
-						command.subject, sender.getFirstObject(), server_thread.stat.count_command, t);
+				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), command.subject,
+						sender.getFirstObject(), server_thread.stat.count_command, t);
 				if(t > 60_000_000)
-					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject, sender.getFirstObject());
 				else if(t > 10_000_000)
-					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject, sender.getFirstObject());
 				else if(t > 1_000_000)
-					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject, sender.getFirstObject());
 				else if(t > 100_000)
-					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject, sender.getFirstObject());
 			}
 
 		} else
 		{
 			results[ii] = new Subject;
-			command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket);
+			command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket, from);
 		}
 
 	}
@@ -517,7 +525,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(trace_msg[9] == 1)
 		log.trace("данные для отправки сформированны, out_data=%s", cast(char[]) out_data);
 
-	//	if(from_client !is null)
+	//if(from_client !is null)
 	//	{
 	//		out_data = msg_out;		
 	//		from_client.send(cast(char*) "".ptr, cast(char*) msg_out, msg_out.length, false);
@@ -666,8 +674,7 @@ class ServerThread: core.thread.Thread
 			if(when !is null)
 			{
 				if(trace_msg[24] == 1)
-					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when,
-							duration);
+					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when, duration);
 
 				// TODO stringToTime очень медленная операция ~ 100 микросекунд
 				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?

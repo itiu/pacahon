@@ -108,7 +108,14 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 				log.trace("субьект найден в кэше");
 		} else
 		{
-			subjectIsExist = server_thread.ts.isExistSubject(targetId);
+			if (server_thread.useMMF == true)			
+			{
+				subjectIsExist = true;
+			}
+			else
+			{
+				subjectIsExist = server_thread.ts.isExistSubject(targetId);
+			}
 
 			if(trace_msg[25] == 1)
 			{
@@ -137,6 +144,16 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 				if(subject_creator is null)
 				{
+					if (server_thread.useMMF == true)			
+					{
+						reason = "пользователь известен, он создатель данного субьекта";
+
+						server_thread.cache__subject_creator[targetId] = userId;
+						res = true;
+					}
+					else
+					{
+					
 					TLIterator it = server_thread.ts.getTriples(targetId, dc__creator, userId);
 
 					if(it !is null)
@@ -157,6 +174,7 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 						reason = "пользователь известен, но не является создателем данного субьекта";
 						res = false;
+					}
 					}
 				} else
 				{

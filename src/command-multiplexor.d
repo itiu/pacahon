@@ -247,7 +247,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 }
 
 void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId,
-		ThreadContext server_thread, out string local_ticket)
+		ThreadContext server_thread, out string local_ticket, out char from)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -278,7 +278,8 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 					log.trace("command_preparer, get");
 
 				GraphCluster gres = new GraphCluster;
-				get(message, sender, userId, server_thread, isOk, reason, gres);
+				
+				get(message, sender, userId, server_thread, isOk, reason, gres, from);
 				if(isOk == true)
 				{
 					//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
