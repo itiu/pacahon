@@ -14,8 +14,11 @@ private import std.datetime;
 
 public bool cinfo_exit = false;
 
-//private string set_bar_color = "\x1B[31m"; //"\x1B[41m";
-private string set_bar_color = "\x1B[41m";
+private string set_bar_color_1 = "\x1B[41m";
+private string set_bar_color_2 = "\x1B[43m";
+private string set_bar_color_3 = "\x1B[45m";
+private string set_bar_color_4 = "\x1B[46m";
+
 private string set_text_color_green = "\x1B[32m";
 private string set_text_color_blue = "\x1B[34m";
 private string set_all_attribute_off = "\x1B[0m";
@@ -56,6 +59,8 @@ class LoadInfoThread: Thread
 
 				int delta_count = msg_count - prev_count;
 
+				float p100 = 3000;
+				
 				if(delta_count > 0)
 				// || ff == false)
 				{
@@ -75,11 +80,35 @@ class LoadInfoThread: Thread
 					now[10] = ' ';
 					now.length = 19;
 					
-            				auto writer = appender!string();
-			                formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
-			                now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
+            		auto writer = appender!string();
+			        formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
+			        		now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
 //			                writer.put(cast(char) 0);
-					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)3000) * delta_count + 1);
+			        
+			        string set_bar_color; 
+			                
+			        if (delta_count < 3000)
+			        {
+			        	p100 = 3000;
+			        	set_bar_color = set_bar_color_1;
+			        }
+			        else if (delta_count >= 3000 && delta_count < 6000)
+			        {
+			        	p100 = 6000;
+			        	set_bar_color = set_bar_color_2;
+			        }
+			        else if (delta_count >= 6000 && delta_count < 10000)
+			        {
+			        	p100 = 10000;
+			        	set_bar_color = set_bar_color_3;
+			        }
+			        else if (delta_count >= 10000 && delta_count < 20000)
+			        {
+			        	p100 = 20000;
+			        	set_bar_color = set_bar_color_4;
+			        }
+			        
+					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * delta_count + 1);															
 					writeln(set_bar_color, writer.data[0..d_delta_count], set_all_attribute_off, writer.data[d_delta_count..$]);
 				}
 
