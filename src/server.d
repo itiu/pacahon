@@ -15,7 +15,7 @@ private import std.outbuffer;
 
 private import std.datetime;
 
-import core.memory;
+private import core.memory;
 
 private import libzmq_headers;
 private import zmq_point_to_poin_client;
@@ -45,7 +45,7 @@ private import pacahon.command.event_filter;
 
 private import pacahon.zmq_connection;
 
-private import mmf.graph;
+private import mmf.mmfgraph;
 
 Logger log;
 Logger io_msg;

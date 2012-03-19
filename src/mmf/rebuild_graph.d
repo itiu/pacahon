@@ -21,7 +21,7 @@ private
 	import std.string;
 	import std.array;
 
-	import mmf.graph;
+	import mmf.mmfgraph;
 
 	import libchash_h;
 
@@ -237,11 +237,11 @@ void rebuild()
 				foreach(vmmi; vmms.values)
 				{
 					log.trace("	store : %s", vmmi.getLabel);
-					bool res = vmmi.store();
+					int res = vmmi.insert_to_file();
 
-					if(res == false)
+					if(res < 0)
 					{
-						writeln("rebuild_graph:fail");
+						writeln("rebuild_graph:fail, errcode=", res);
 						return;
 					}
 				}

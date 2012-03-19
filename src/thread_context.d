@@ -5,7 +5,7 @@ private import mq_client;
 private import trioplax.Logger;
 private import pacahon.graph;
 private import pacahon.zmq_connection;
-import mmf.graph;
+import mmf.mmfgraph;
 
 Logger log;
 

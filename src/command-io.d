@@ -36,7 +36,7 @@ private import trioplax.Logger;
 
 private import pacahon.command.event_filter;
 
-private import mmf.graph;
+private import mmf.mmfgraph;
 
 Logger log;
 //char[] buff;
@@ -360,6 +360,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			{
 				reason = "в сообщении отсутствует граф-шаблон";
 			}
+			
+			StopWatch sw;
+			sw.start();
 
 			for(int jj = 0; jj < graphs_as_template.length; jj++)
 			{
@@ -367,8 +370,6 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				//				if(trace_msg[46] == 1)
 //				log.trace("graph.subject=%s", graph.subject);
-				StopWatch sw;
-				sw.start();
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
@@ -700,12 +701,13 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				}
 				
-//				if(trace_msg[61] == 1)
+				if(trace_msg[61] == 1)
 				{
-//					sw.stop();
+					sw.stop();
 					long t = cast(long) sw.peek().usecs;
 
 					log.trace("get, read data time: %d [µs]", t);
+					sw.start ();
 				}
 				
 				if(trace_msg[57] == 1)
@@ -762,7 +764,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				isOk = true;
 				//				}
 			}
-/*
+
 			if(trace_msg[61] == 1)
 			{
 				sw.stop();
@@ -770,7 +772,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				log.trace("total time command get: %d [µs]", t);
 			}
-*/			
+			
 		}
 	}
 
