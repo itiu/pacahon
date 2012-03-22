@@ -39,6 +39,8 @@ private import pacahon.thread_context;
 
 private import trioplax.Logger;
 
+private import std.conv;
+
 Logger log;
 
 static this()
@@ -328,6 +330,16 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			{
 				//			if(trace_msg[63] == 1)
 				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
+			}
+			if("get_info" in command.objects_of_value)
+			{
+				Statistic stat = server_thread.stat;
+				
+				Subject res1 = new Subject();
+				
+				res1.addPredicate("count_messages", text (stat.count_message));
+
+				out_message.addPredicate(msg__result, res1);				
 			}
 			//		reason = cast(char[]) "запрос выполнен";
 		} else

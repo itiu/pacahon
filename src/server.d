@@ -288,7 +288,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	//	if(time_from_last_call < 10)
 	//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
 
-	server_thread.stat.idle_time += time_from_last_call;
+	server_thread.resource.stat.idle_time += time_from_last_call;
 
 	StopWatch sw;
 	sw.start();
@@ -296,7 +296,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	byte msg_format = format.UNKNOWN;
 
 	if(trace_msg[1] == 1)
-		log.trace("get message, count:[%d], message_size:[%d]", server_thread.stat.count_message, message_size);
+		log.trace("get message, count:[%d], message_size:[%d]", server_thread.resource.stat.count_message, message_size);
 
 	//	from_client.get_counts(count_message, count_command);
 	TripleStorage ts = server_thread.resource.ts;
@@ -464,7 +464,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					sw.stop();
 					long t = cast(long) sw.peek().usecs;
 
-					log.trace("messages count: %d, %d [µs] start: command_preparer", server_thread.stat.count_message, t);
+					log.trace("messages count: %d, %d [µs] start: command_preparer", server_thread.resource.stat.count_message, t);
 					sw.start();
 				}
 
@@ -474,21 +474,21 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				{
 					sw.stop();
 					long t = cast(long) sw.peek().usecs;
-					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.stat.count_message, t);
+					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.resource.stat.count_message, t);
 					sw.start();
 				}
 				//				results[ii] = out_message;
 			}
 
 			Predicate* command_name = command.getPredicate(msg__command);
-			server_thread.stat.count_command++;
+			server_thread.resource.stat.count_command++;
 			sw_c.stop();
 			long t = cast(long) sw_c.peek().usecs;
 
 			if(trace_msg[68] == 1)
 			{
 				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), command.subject,
-						sender.getFirstObject(), server_thread.stat.count_command, t);
+						sender.getFirstObject(), server_thread.resource.stat.count_command, t);
 				if(t > 60_000_000)
 					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject, sender.getFirstObject());
 				else if(t > 10_000_000)
@@ -537,17 +537,17 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
 	}
 
-	server_thread.stat.count_message++;
-	server_thread.stat.size__user_of_ticket = cast(uint) server_thread.resource.user_of_ticket.length;
-	server_thread.stat.size__cache__subject_creator = cast(uint) server_thread.resource.cache__subject_creator.length;
+	server_thread.resource.stat.count_message++;
+	server_thread.resource.stat.size__user_of_ticket = cast(uint) server_thread.resource.user_of_ticket.length;
+	server_thread.resource.stat.size__cache__subject_creator = cast(uint) server_thread.resource.cache__subject_creator.length;
 
 	sw.stop();
 	long t = cast(long) sw.peek().usecs;
 
-	server_thread.stat.worked_time += t;
+	server_thread.resource.stat.worked_time += t;
 
 	if(trace_msg[69] == 1)
-		log.trace("messages count: %d, total time: %d [µs]", server_thread.stat.count_message, t);
+		log.trace("messages count: %d, total time: %d [µs]", server_thread.resource.stat.count_message, t);
 
 	server_thread.sw.reset();
 	server_thread.sw.start();
@@ -562,34 +562,24 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	return;
 }
 
-synchronized class Statistic
-{
-	int count_message = 0;
-	int count_command = 0;
-	int idle_time = 0;
-	int worked_time = 0;
-	int size__user_of_ticket;
-	int size__cache__subject_creator;
-}
-
 class ServerThread: core.thread.Thread
 {
 	ThreadContext resource;
 
 	StopWatch sw;
-	Statistic stat;
+//	Statistic stat;
 
 	Statistic getStatistic()
 	{
-		return stat;
+		return resource.stat;
 	}
 
 	this(void delegate() _dd, TripleStorage _ts)
 	{
 		super(_dd);
-		stat = new Statistic();
 		resource = new ThreadContext();
 		resource.ts = _ts;
+		resource.stat = new Statistic();
 		sw.start();
 	}
 

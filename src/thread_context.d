@@ -22,8 +22,20 @@ class Ticket
 	long end_time;
 }
 
+synchronized class Statistic
+{
+	int count_message = 0;
+	int count_command = 0;
+	int idle_time = 0;
+	int worked_time = 0;
+	int size__user_of_ticket;
+	int size__cache__subject_creator;
+}
+
 class ThreadContext
 {
+	Statistic stat;
+	
 	GraphIO *mmf;
 	bool useMMF = false;
 	
