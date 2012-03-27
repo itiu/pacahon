@@ -35,14 +35,25 @@ NB: Описание сборки / установки приведено для
 
 2.2.2. Загрузить и скомпилировать pacahon:
 
-git clone git@github.com:itiu/pacahon.git
-cd pacahon
-./get-dependencies.sh
-./build-dmd32.sh или ./build-dmd64.sh
+linux:
+
+    git clone git@github.com:itiu/pacahon.git
+    cd pacahon
+    ./get-dependencies.sh
+    ./build-dmd32.sh или ./build-dmd64.sh
 
 После компиляции в каталоге появится исполняемый файл Pacahon
 
-2.3. MongoDB
+
+2.3. Запуск
+
+Перед тем как запустить Pacahon, убедитесь что запущен сервер mongodb
+Если отсутствует конфигурационный файл pacahon-properties.json, то при первом запуске pacahon создаст 
+требуемый конфигурационный файл по умолчанию. В случае невозможности соеденится с базой данных, 
+Pacahon завершит свою работу с сообщением: Exception: Connect to mongodb: failed to connect to mongodb   
+
+
+2.4. MongoDB
 Для приемлемой, c точки зрения времени выполнения запросов к mongodb, рекомендуется настройка индексов. 
 Процедура настройки индексов зависит от конкретной структуры хранимых данных.
 Выполнить эту операцию можно с помощью оболочки командной строки ./mondgo
