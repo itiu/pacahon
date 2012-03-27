@@ -34,6 +34,8 @@ synchronized class Statistic
 
 class ThreadContext
 {
+	bool IGNORE_EMPTY_TRIPLE = false;
+	
 	Statistic stat;
 	
 	GraphIO *mmf;
@@ -45,9 +47,6 @@ class ThreadContext
 	TripleStorage ts;
 
 	mq_client client;
-
-	// TODO времянка, переделать!
-	void* soc__reply_to_n1 = null;
 
 	ZmqConnection[string] gateways;
 

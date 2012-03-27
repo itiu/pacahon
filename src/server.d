@@ -220,6 +220,16 @@ void main(char[][] args)
 
 				ServerThread thread = new ServerThread(&client.listener, ts);
 
+				if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
+				{
+					if (props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
+						thread.resource.IGNORE_EMPTY_TRIPLE = false;
+					else
+						thread.resource.IGNORE_EMPTY_TRIPLE = true;					
+				}
+				
+				writeln("IGNORE_EMPTY_TRIPLE:", thread.resource.IGNORE_EMPTY_TRIPLE);
+								
 				thread.resource.client = client;
 
 				JSONValue[] gateways;

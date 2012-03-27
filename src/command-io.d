@@ -59,8 +59,7 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
-		out string reason)
+Subject put(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
@@ -163,8 +162,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				string authorize_reason;
 				bool subjectIsExist = false;
 
-				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context,
-						authorize_reason, subjectIsExist) == true)
+				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context, authorize_reason, subjectIsExist) == true)
 				{
 					if(userId !is null)
 					{
@@ -183,11 +181,9 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 							Objectz oo = pp.objects[ll];
 
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								server_context.ts.addTriple(
-										new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
+								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
 							else
-								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject,
-										oo.lang));
+								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject, oo.lang));
 						}
 
 					}
@@ -258,8 +254,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 
 				if(r_subject !is null && r_predicate !is null && r_object !is null)
 				{
-					Triple reif = new Triple(r_subject.getFirstObject(), r_predicate.getFirstObject(),
-							r_object.getFirstObject());
+					Triple reif = new Triple(r_subject.getFirstObject(), r_predicate.getFirstObject(), r_object.getFirstObject());
 
 					for(int kk = 0; kk < graph.count_edges; kk++)
 					{
@@ -274,8 +269,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 								if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 									server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 								else
-									server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject,
-											oo.lang);
+									server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
 							}
 						}
 
@@ -298,13 +292,12 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 	return res;
 }
 
-public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
-		out string reason, ref GraphCluster res, out char from)
+public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk, out string reason,
+		ref GraphCluster res, out char from)
 {
-//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
-	
-	
-//	log.trace("GET");
+	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
+
+	//	log.trace("GET");
 
 	// в качестве аргумента - шаблон для выборки
 	// query:get - обозначает что будет возвращено значение соответствующего предиката
@@ -360,7 +353,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 			{
 				reason = "в сообщении отсутствует граф-шаблон";
 			}
-			
+
 			StopWatch sw;
 			sw.start();
 
@@ -369,15 +362,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				Subject graph = graphs_as_template[jj];
 
 				//				if(trace_msg[46] == 1)
-//				log.trace("graph.subject=%s", graph.subject);
+				//				log.trace("graph.subject=%s", graph.subject);
 
 				if(graph.subject != "query:any" && server_context.useMMF == true)
 				{
-//					read_from_mmf++;
-//					log.trace("MMF:%d", read_from_mmf);
-					
+					//					read_from_mmf++;
+					//					log.trace("MMF:%d", read_from_mmf);
+
 					from = 'M';
-					
+
 					// считываем данные из mmfile
 
 					Vertex_vmm* vv;
@@ -388,7 +381,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 					bool vertex_found = server_context.mmf.findVertex(from, vv);
 
-//					log.trace("#2");
+					//					log.trace("#2");
 
 					// проверим на соответсвие условиям ограничителям
 					bool isFilterPass = true;
@@ -428,75 +421,74 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 						//						log.trace("#8");
 						if(graph.getFirstObject("query:all_predicates") == "query:get_reifed")
 						{
-//							log.trace("#9");
+							//							log.trace("#9");
 
 							// если все поля нужно вернуть
 							bool isEdges = vv.init_Edges_values_cache(true);
 							sw.stop();
-							
+
 							int count_of_reifed_data = 0;
-							
+
 							foreach(string key; vv.edges.keys)
 							{
-//								log.trace("#100.- key=[%s]", cast(string) key);
-								string[] values = vv.edges.get (key, []);
-								
-//								log.trace("#100.0 key[%s] : values [%s]", key, values);
+								//								log.trace("#100.- key=[%s]", cast(string) key);
+								string[] values = vv.edges.get(key, []);
+
+								//								log.trace("#100.0 key[%s] : values [%s]", key, values);
 								foreach(string val; values)
 								{
-//									log.trace("#100.1 addTriple=[%s %s %s]", graph.subject, key, val);
+									//									log.trace("#100.1 addTriple=[%s %s %s]", graph.subject, key, val);
 									res.addTriple(graph.subject, key, val);
 
 									string ss_reif = "_" ~ val ~ "~" ~ key ~ "~" ~ graph.subject;
 									Vertex_vmm* vv_reif = new Vertex_vmm;
 
 									bool reif_found = server_context.mmf.findVertex(ss_reif, vv_reif);
-																	
+
 									if(reif_found == true)
 									{
-//										log.trace("reif_found : %s", ss_reif);
-																														
-										vv_reif.init_Edges_values_cache(true);
-/*
-										char[] reifed_data_subj = new char[8];
-										reifed_data_subj[0] = '_';
-										reifed_data_subj[1] = ':';
-										reifed_data_subj[2] = 'R';
-										reifed_data_subj[3] = '_';
-										reifed_data_subj[4] = '_';
-										reifed_data_subj[5] = '_';
-										reifed_data_subj[6] = '_';
-										reifed_data_subj[7] = '0';
+										//										log.trace("reif_found : %s", ss_reif);
 
-										Integer.format(reifed_data_subj, count_of_reifed_data, cast(char[]) "X2");
-										
-										string str_reifed_data_subj = cast(string)reifed_data_subj;
-*/										
-//										log.trace("#100.19 keys=[%s]", vv_reif.edges.keys);
-										
+										vv_reif.init_Edges_values_cache(true);
+										/*
+										 char[] reifed_data_subj = new char[8];
+										 reifed_data_subj[0] = '_';
+										 reifed_data_subj[1] = ':';
+										 reifed_data_subj[2] = 'R';
+										 reifed_data_subj[3] = '_';
+										 reifed_data_subj[4] = '_';
+										 reifed_data_subj[5] = '_';
+										 reifed_data_subj[6] = '_';
+										 reifed_data_subj[7] = '0';
+
+										 Integer.format(reifed_data_subj, count_of_reifed_data, cast(char[]) "X2");
+										 
+										 string str_reifed_data_subj = cast(string)reifed_data_subj;
+										 */
+										//										log.trace("#100.19 keys=[%s]", vv_reif.edges.keys);
 										foreach(string key1; vv_reif.edges.keys)
 										{
 											string values[] = vv_reif.edges[key1];
-//											log.trace("#100.20 values=[%s]", values);												
+											//											log.trace("#100.20 values=[%s]", values);												
 											foreach(string val1; values)
 											{
-//												log.trace("#100.21 add tiple=[%s %s %s]", reifed_data_subj[count_of_reifed_data], key1, val1);												
+												//												log.trace("#100.21 add tiple=[%s %s %s]", reifed_data_subj[count_of_reifed_data], key1, val1);												
 												res.addTriple(reifed_data_subj[count_of_reifed_data], key1, val1);
-//												res.addTriple(vv_reif.getLabel, key1, val1);
-//												log.trace("#100.3"); 	
+												//												res.addTriple(vv_reif.getLabel, key1, val1);
+												//												log.trace("#100.3"); 	
 											}
-//											log.trace("#100.4"); 
+											//											log.trace("#100.4"); 
 										}
-//										log.trace("#100.5");
-										
+										//										log.trace("#100.5");
+
 										count_of_reifed_data++; //???
 									}
-//									log.trace("#100.6"); 									
+									//									log.trace("#100.6"); 									
 								}
-//								log.trace("#100.7"); 								
+								//								log.trace("#100.7"); 								
 							}
-							
-//							log.trace("#9.1");
+
+							//							log.trace("#9.1");
 
 						} else if(graph.getFirstObject("query:all_predicates") == "query:get")
 						{
@@ -508,7 +500,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 								foreach(string val; vv.edges[key])
 								{
 									//									log.trace("#100 vv.out_edges=[%s : %s]", cast(string) key, cast(string) val);
-//									log.trace("#9.2 add tiple=[%s %s %s]", graph.subject, key, val);												
+									//									log.trace("#9.2 add tiple=[%s %s %s]", graph.subject, key, val);												
 									res.addTriple(graph.subject, key, val);
 
 								}
@@ -542,9 +534,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 												foreach(string val; values)
 												{
 
-													if(val !is null && val.length > 0)
+													if(server_context.IGNORE_EMPTY_TRIPLE == true)
 													{
-//														log.trace("#11.1 add tiple=[%s %s %s]", graph.subject, cast(string) pp.predicate, val);																										
+														if(val !is null && val.length > 0)
+														{
+															//	log.trace("#11.1 add tiple=[%s %s %s]", graph.subject, cast(string) pp.predicate, val);																										
+															res.addTriple(graph.subject, cast(string) pp.predicate, val);
+														}
+													} else
+													{
 														res.addTriple(graph.subject, cast(string) pp.predicate, val);
 													}
 												}
@@ -568,10 +566,10 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				} else
 				{
-//					read_from_mongo++;
-//					log.trace("MONGO:%d", read_from_mongo);
+					//					read_from_mongo++;
+					//					log.trace("MONGO:%d", read_from_mongo);
 					from = 'D';
-					
+
 					// считываем данные из mongodb
 
 					byte[char[]] readed_predicate;
@@ -603,8 +601,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 										// требуются так-же реифицированные данные по этому полю
 										// данный предикат добавить в список возвращаемых
 										if(trace_msg[47] == 1)
-											log.trace(
-													"данный предикат и реифицированные данные добавим в список возвращаемых: %s",
+											log.trace("данный предикат и реифицированные данные добавим в список возвращаемых: %s",
 													pp.predicate);
 
 										readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
@@ -687,11 +684,18 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 								if(trace_msg[57] == 1)
 									log.trace("GET: triple %s", triple);
 
-								if(triple.O !is null && triple.O.length > 0)
+								if(server_context.IGNORE_EMPTY_TRIPLE == true)
 								{
-//									log.trace("DB: addTriple [%s %s %s]", triple.S, triple.P, triple.O);									
+									if(triple.O !is null && triple.O.length > 0)
+									{
+										//									log.trace("DB: addTriple [%s %s %s]", triple.S, triple.P, triple.O);									
+										res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+									}
+								} else
+								{
 									res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 								}
+
 							}
 							sw.stop();
 
@@ -700,16 +704,16 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					}
 
 				}
-				
+
 				if(trace_msg[61] == 1)
 				{
 					sw.stop();
 					long t = cast(long) sw.peek().usecs;
 
 					log.trace("get, read data time: %d [µs]", t);
-					sw.start ();
+					sw.start();
 				}
-				
+
 				if(trace_msg[57] == 1)
 					log.trace("}");
 
@@ -727,8 +731,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					count_found_subjects++;
 
 					bool isExistSubject;
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
-							isExistSubject);
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason, isExistSubject);
 
 					if(result_of_az == false)
 					{
@@ -772,18 +775,17 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				log.trace("total time command get: %d [µs]", t);
 			}
-			
+
 		}
 	}
 
 	// TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
-//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
+	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
 
 	return;
 }
 
-Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
-		out string reason)
+Subject remove(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk, out string reason)
 {
 	if(trace_msg[38] == 1)
 		log.trace("command remove");
@@ -822,8 +824,7 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_context,
-				authorize_reason, isExistSubject);
+		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_context, authorize_reason, isExistSubject);
 
 		if(result_of_az)
 		{
