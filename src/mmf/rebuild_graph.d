@@ -71,7 +71,7 @@ void rebuild()
 	TripleStorage ts;
 	try
 	{
-		ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, 0);
+		ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
 
 		ts.define_predicate_as_multiple("a");
 		ts.define_predicate_as_multiple("rdf:type");

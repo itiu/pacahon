@@ -2,7 +2,6 @@ build/src/fred/fred.d
 build/src/fred/fred_uni.d 
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
-build/src/rt/util/hash.d 
 build/src/tango/core/BitManip.d 
 build/src/tango/core/ByteSwap.d 
 build/src/tango/core/Exception.d
@@ -18,8 +17,7 @@ build/src/tango/util/uuid/NamespaceGenV3.d
 build/src/tango/util/uuid/NamespaceGenV5.d 
 build/src/tango/util/uuid/RandomGen.d 
 build/src/tango/util/uuid/Uuid.d
-build/src/trioplax/memory/ComplexKeys.d 
-build/src/trioplax/memory/TripleStorageMemory.d
+build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/TripleStorageMongoDB.d 
 build/src/trioplax/Logger.d 
 build/src/trioplax/TripleStorage.d 

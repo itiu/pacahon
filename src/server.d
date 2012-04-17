@@ -151,18 +151,10 @@ void main(char[][] args)
 			writeln("cache_type:", cache_type);
 			writeln("use_mmfile:", use_mmfile);
 
-			byte cp = caching_type.NONE;
-
-			if(cache_type == "ALL_DATA")
-				cp = caching_type.ALL_DATA;
-
-			if(cache_type == "QUERY_RESULT")
-				cp = caching_type.QUERY_RESULT;
-
 			TripleStorage ts;
 			try
 			{
-				ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection, cp);
+				ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
 
 				ts.define_predicate_as_multiple("a");
 				ts.define_predicate_as_multiple("rdf:type");
