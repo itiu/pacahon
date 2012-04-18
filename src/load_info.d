@@ -9,6 +9,7 @@ private import std.stdio;
 private import pacahon.thread_context;
 private import pacahon.utils;
 
+private import trioplax.Logger;
 
 private import std.datetime;
 
@@ -23,6 +24,13 @@ private string set_text_color_green = "\x1B[32m";
 private string set_text_color_blue = "\x1B[34m";
 private string set_all_attribute_off = "\x1B[0m";
 private string set_cursor_in_begin_string = "\x1B[0E";
+
+Logger log;
+
+static this()
+{
+	log = new Logger("pacahon", "log", "server-statistics");
+}
 
 class LoadInfoThread: Thread
 {
@@ -84,6 +92,8 @@ class LoadInfoThread: Thread
 			        formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
 			        		now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
 //			                writer.put(cast(char) 0);
+			        
+			        log.trace ("delta_count_msg:%d", delta_count);
 			        
 			        string set_bar_color; 
 			                
