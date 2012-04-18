@@ -29,7 +29,7 @@ Logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server-statistics");
+	log = new Logger("server-statistics", "log", "");
 }
 
 class LoadInfoThread: Thread
