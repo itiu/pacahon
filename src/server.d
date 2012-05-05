@@ -161,6 +161,9 @@ void main(char[][] args)
 				ts.define_predicate_as_multiple("rdfs:subClassOf");
 				ts.define_predicate_as_multiple("gost19:take");
 				ts.define_predicate_as_multiple("event:msg_template");
+				ts.define_predicate_as_multiple("owl:hasValue");
+				ts.define_predicate_as_multiple("owl:someValuesFrom");
+				ts.define_predicate_as_multiple("owl:allValuesFrom");
 
 				ts.define_predicate_as_multilang("swrc:name");
 				ts.define_predicate_as_multilang("swrc:firstName");
