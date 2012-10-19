@@ -1,8 +1,8 @@
 DMD=dmd
 
 VERSION_MAJOR=1
-VERSION_MINOR=28
-VERSION_PATCH=4
+VERSION_MINOR=29
+VERSION_PATCH=0
 
 cp -v -r src/* build/src
 
@@ -13,7 +13,7 @@ rm *.log
 rm *.io
 rm *.oi
 
-$DMD -m64 -debug -d -g \
+$DMD -m64 -debug -g \
 @pacahon-src-list \
 lib64/libzmq.a lib64/libstdc++.a lib64/libuuid.a lib64/libmongoc.a lib64/libbson.a lib64/libchash.o \
 -ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
