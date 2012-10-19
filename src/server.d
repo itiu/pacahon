@@ -14,14 +14,12 @@ private import std.json_str;
 private import std.outbuffer;
 
 private import std.datetime;
-
+import std.conv;
 private import core.memory;
 
 private import libzmq_headers;
 private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
-
-private import Integer = tango.text.convert.Integer;
 
 private import pacahon.graph;
 private import pacahon.n3.parser;
@@ -138,10 +136,6 @@ void main(char[][] args)
 			if(("behavior" in props.object) !is null)
 				behavior = props.object["behavior"].str;
 
-			string yawl_engine = null;
-			if(("yawl-engine" in props.object) !is null)
-				yawl_engine = props.object["yawl-engine"].str;
-
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			writeln("connect to mongodb, \n");
@@ -229,7 +223,6 @@ void main(char[][] args)
 
 				JSONValue[] gateways;
 
-				//TODO			thread.resource.yawl_engine_connect = new ZmqConnection (client);
 				if(("gateways" in props.object) !is null)
 				{
 					gateways = props.object["gateways"].array;
@@ -260,13 +253,8 @@ void main(char[][] args)
 				LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 				load_info_thread.start();
 
-				version(D1)
-				{
-					thread.wait();
-				}
-
 				while(true)
-					core.thread.Thread.getThis().sleep(100_000_000);
+					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
 		}
 	} catch(Exception ex)
@@ -390,7 +378,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
-		StopWatch sw_c;
+			StopWatch sw_c;
 		sw_c.start();
 
 		Subject command = triples[ii];
@@ -641,7 +629,7 @@ class ServerThread: core.thread.Thread
 
 					if(triple.P == ticket__duration)
 					{
-						duration = Integer.toInt(cast(char[]) triple.O);
+						duration = parse!uint(triple.O);
 					}
 					if(tt.userId !is null && when !is null && duration > 10)
 						break;

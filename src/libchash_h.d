@@ -156,6 +156,6 @@ extern (C) HTItem *HashNextBucket(HashTable *ht);
 
 extern (C) int HashSetDeltaGoalSize(HashTable *ht, int delta);
 
-extern (C) void HashSave(FILE *fp, HashTable *ht, int (*write)(FILE *, char *));
-extern (C) HashTable *HashLoad(FILE *fp, char * (*read)(FILE *, int));
-extern (C) HashTable *HashLoadKeys(FILE *fp, char * (*read)(FILE *, int));
+//extern (C) void HashSave(FILE *fp, HashTable *ht, function int (*write)(FILE *, char *));
+//extern (C) HashTable *HashLoad(FILE *fp, char * (*read)(FILE *, int));
+//extern (C) HashTable *HashLoadKeys(FILE *fp, char * (*read)(FILE *, int));

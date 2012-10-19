@@ -3,7 +3,6 @@
 module pacahon.command.multiplexor;
 
 private import pacahon.command.io;
-private import pacahon.command.yawl;
 private import pacahon.command.event_filter;
 
 private import core.stdc.stdio;
@@ -15,11 +14,6 @@ private import std.datetime;
 
 private import std.stdio;
 private import std.outbuffer;
-
-private import tango.util.uuid.NamespaceGenV5;
-private import tango.util.digest.Sha1;
-private import tango.util.uuid.RandomGen;
-private import tango.math.random.Twister;
 
 private import std.datetime;
 
@@ -40,6 +34,7 @@ private import pacahon.thread_context;
 private import trioplax.Logger;
 
 private import std.conv;
+import std.uuid;
 
 Logger log;
 
@@ -126,17 +121,14 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 					log.trace("get_ticket: read triple: %s", tt);
 
 				// такой логин и пароль найдены, формируем тикет
-				Twister rnd;
-				rnd.seed;
-				UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-				Uuid generated = rndUuid.next;
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
+				UUID new_id = randomUUID();
 
 				if(trace_msg[65] == 1)
 					log.trace("get_ticket: store ticket in DB");
 
 				// сохраняем в хранилище
-				string ticket_id = "auth:" ~ cast(string) generated.toString;
+				string ticket_id = "auth:" ~ new_id.toString ();//cast(string) generated.toString;
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 				server_thread.ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
@@ -215,7 +207,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 							unset_all_messages();
 					} else if(oo.literal.length > 1)
 					{
-						int idx = Integer.toInt(cast(char[]) oo.literal, 10);
+						int idx = parse!uint(oo.literal);
 						unset_message(idx);
 					}
 				}
@@ -234,7 +226,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 							set_all_messages();
 					} else if(oo.literal.length > 1)
 					{
-						int idx = Integer.toInt(cast(char[]) oo.literal, 10);
+						int idx = parse!uint(oo.literal);
 						set_message(idx);
 					}
 				}
@@ -316,16 +308,6 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 					if(trace_msg[15] == 1)
 						log.trace("command_preparer, get_ticket is False");
 				}
-			} else if("yawl:announceItemEnabled" in command.objects_of_value)
-			{
-				yawl_announceItemEnabled(message, sender, userId, server_thread, isOk, reason);
-
-			} else if("yawl:ParameterInfoRequest" in command.objects_of_value)
-			{
-				GraphCluster gres = new GraphCluster;
-				yawl_ParameterInfoRequest(message, sender, userId, server_thread, isOk, reason, gres);
-				out_message.addPredicate(msg__result, gres);
-
 			} else if("set_message_trace" in command.objects_of_value)
 			{
 				//			if(trace_msg[63] == 1)

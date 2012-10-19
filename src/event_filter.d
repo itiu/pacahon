@@ -8,6 +8,7 @@ import std.conv;
 import std.math;
 import std.exception;
 private import std.datetime;
+import std.uuid;
 
 private import pacahon.graph;
 private import pacahon.thread_context;
@@ -24,11 +25,6 @@ private import fred;
 import std.array: appender;
 //private import std.format;
 private import pacahon.utils;
-
-private import tango.util.uuid.NamespaceGenV5;
-private import tango.util.digest.Sha1;
-private import tango.util.uuid.RandomGen;
-private import tango.math.random.Twister;
 
 private import pacahon.zmq_connection;
 
@@ -94,9 +90,9 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 						if(p_template !is null)
 						{
-							for(int i = 0; i < p_template.count_objects; i++)
+							for(int iz = 0; iz < p_template.count_objects; iz++)
 							{
-								Objectz p_object = p_template.objects[i];
+								Objectz p_object = p_template.objects[iz];
 
 								string msg_template = p_object.literal;
 
@@ -125,11 +121,8 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 										{
 											if(rrr[0] == '$')
 											{
-												Twister rnd;
-												rnd.seed;
-												UuidGen rndUuid = new RandomGen!(Twister)(rnd);
-												Uuid generated = rndUuid.next;
-												list_vars[i] = cast(string) generated.toString;
+												UUID new_id = randomUUID();
+												list_vars[i] = new_id.toString ();
 												vars[rrr] = list_vars[i];
 											} else
 											{
@@ -153,8 +146,8 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 													auto rg1 = regex(regex0);
 													auto m3 = match(predicat_value, rg1);
 
-													auto c = m3.captures;
-													predicat_value = c["var"];
+													auto _c = m3.captures;
+													predicat_value = _c["var"];
 												} else
 												{
 													predicat_name = rrr;

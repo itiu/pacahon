@@ -23,8 +23,8 @@ private
 	import trioplax.Logger;
 	import core.memory;
 	import std.c.string;
-	import tango.text.convert.Integer;
 	import std.file;
+	import std.conv;
 }
 
 const byte p_count_allocated_vertex = 1;
@@ -88,7 +88,7 @@ struct GraphIO
 
 		// откроем новый файл
 		MmFileInfo mmfi;
-		mmfi.array = new MmFile(file_name_prefix ~ "." ~ cast(string) toString(last_alloc_mmfile), MmFile.Mode.readWriteNew,
+		mmfi.array = new MmFile(file_name_prefix ~ "." ~ text (last_alloc_mmfile), MmFile.Mode.readWriteNew,
 				size_hash_file, null, win);
 		chunk[last_alloc_mmfile] = mmfi;
 
@@ -122,7 +122,7 @@ struct GraphIO
 
 		foreach(string name; dirEntries(".", SpanMode.shallow))
 		{
-			string nfile = "./" ~ file_name_prefix ~ "." ~ cast(string) toString(found_alloc_file);
+			string nfile = "./" ~ file_name_prefix ~ "." ~ text(found_alloc_file);
 
 			if(trace)
 				writeln("@1 nfile=", nfile);

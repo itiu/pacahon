@@ -46,8 +46,8 @@ class LoadInfoThread: Thread
 
 		void run()
 		{
-			double sleep_time = 1;
-			Thread.getThis().sleep(cast(int) (sleep_time * 10_000_000));
+			long sleep_time = 1;
+			Thread.sleep(dur!("seconds")(sleep_time));
 
 			int prev_count = 0;
 			int prev_idle_time = 0;
@@ -128,7 +128,7 @@ class LoadInfoThread: Thread
 				//					ff = true;
 
 				prev_count = msg_count;
-				Thread.getThis().sleep(cast(int) (sleep_time * 10_000_000));
+				Thread.sleep(dur!("seconds")(sleep_time));
 			}
 			writeln("exit form thread cinfo");
 		}

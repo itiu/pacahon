@@ -11,11 +11,6 @@ private import std.datetime;
 private import std.stdio;
 private import std.outbuffer;
 
-private import tango.util.uuid.NamespaceGenV5;
-private import tango.util.digest.Sha1;
-private import tango.util.uuid.RandomGen;
-private import tango.math.random.Twister;
-
 private import std.datetime;
 
 private import trioplax.triple;
@@ -48,7 +43,7 @@ string[] reifed_data_subj;
 
 static this()
 {
-	buff = new char[21];
+//	buff = new char[21];
 	buff1 = new char[6];
 	log = new Logger("pacahon", "log", "command-io");
 	reifed_data_subj = new string[1];
@@ -293,7 +288,7 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 }
 
 public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk, out string reason,
-		ref GraphCluster res, out char from)
+		ref GraphCluster res, out char from_out)
 {
 	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
 
@@ -369,7 +364,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					//					read_from_mmf++;
 					//					log.trace("MMF:%d", read_from_mmf);
 
-					from = 'M';
+					from_out = 'M';
 
 					// считываем данные из mmfile
 
@@ -468,9 +463,9 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 										//										log.trace("#100.19 keys=[%s]", vv_reif.edges.keys);
 										foreach(string key1; vv_reif.edges.keys)
 										{
-											string values[] = vv_reif.edges[key1];
+											string _values[] = vv_reif.edges[key1];
 											//											log.trace("#100.20 values=[%s]", values);												
-											foreach(string val1; values)
+											foreach(string val1; _values)
 											{
 												//												log.trace("#100.21 add tiple=[%s %s %s]", reifed_data_subj[count_of_reifed_data], key1, val1);												
 												res.addTriple(reifed_data_subj[count_of_reifed_data], key1, val1);
@@ -568,7 +563,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 				{
 					//					read_from_mongo++;
 					//					log.trace("MONGO:%d", read_from_mongo);
-					from = 'D';
+					from_out = 'D';
 
 					// считываем данные из mongodb
 
@@ -750,18 +745,19 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				}
 
-				buff1[] = ' ';
-				Integer.format(buff1, count_found_subjects, cast(char[]) "");
+//				buff1[] = ' ';
+//				Integer.format(buff1, count_found_subjects, cast(char[]) "");
+				
 
 				if(count_found_subjects == count_authorized_subjects)
 				{
 					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
 				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
 				{
-					reason = "запрос выполнен: не все найденные субьекты " ~ cast(string) buff1 ~ " успешно авторизованны";
+					reason = "запрос выполнен: не все найденные субьекты " ~ text (count_found_subjects) ~ " успешно авторизованны";
 				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
 				{
-					reason = "запрос выполнен: ни один из найденных субьектов (" ~ cast(string) buff1 ~ "), не был успешно авторизован:" ~ authorize_reason;
+					reason = "запрос выполнен: ни один из найденных субьектов (" ~  text (count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
 				}
 
 				isOk = true;
