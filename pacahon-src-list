@@ -27,6 +27,8 @@ build/src/utils.d
 build/src/zmq_connection.d 
 build/src/zmq_point_to_poin_client.d 
 build/src/zmq_pp_broker_client.d
+build/src/librabbitmq_headers.d
+build/src/rabbitmq_client.d
 build/src/std/json_str.d
 build/src/myversion.d
 build/src/server.d 

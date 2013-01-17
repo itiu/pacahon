@@ -1,0 +1,6 @@
+{
+"mongodb_server":"127.0.0.1",
+"mongodb_port":27017,
+"zmq_point":"tcp:\/\/*:5555",
+"mongodb_collection":"pacahon"
+}

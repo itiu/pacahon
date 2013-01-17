@@ -16,7 +16,7 @@ rm *.oi
 $DMD -m64 -debug -g \
 @pacahon-src-list \
 lib64/libzmq.a lib64/libstdc++.a lib64/libuuid.a lib64/libmongoc.a lib64/libbson.a lib64/libchash.o lib64/librabbitmq.a \
--ofPacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
-rm *.o
+-oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
+rm target/*.o
 
 #$DMD -m64 -O -Iimport -inline -d -L-Llib64 -L-lluad -L-llua -L-ldl \
