@@ -1,11 +1,11 @@
 mongo_d_driver__hash=ddbedad
-trioplax__hash=969252b
-zeromq__hash=1215155
+trioplax__hash=d254529
+mq_connector__hash=ca3df79
 fred_hash=f20ef0709c
 
 trioplax__project_name=itiu-trioplax
 mongo_d_driver__project_name=itiu-mongo-d-driver
-zeromq__project_name=itiu-zeromq-connector
+mq_connector__project_name=itiu-mq-connector
 fred__project_name=blackwhale-rfed
 
 mkdir build
@@ -20,9 +20,9 @@ wget --no-check-certificate https://github.com/itiu/trioplax/zipball/$trioplax__
 unzip $trioplax__hash
 rm $trioplax__hash
 
-wget --no-check-certificate https://github.com/itiu/zeromq-connector/zipball/$zeromq__hash
-unzip $zeromq__hash
-rm $zeromq__hash
+wget --no-check-certificate https://github.com/itiu/mq-connector/zipball/$mq_connector__hash
+unzip $mq_connector__hash
+rm $mq_connector__hash
 
 wget --no-check-certificate --directory-prefix=$fred__project_name/src/fred https://raw.github.com/blackwhale/FReD/$fred_hash/fred_uni.d
 wget --no-check-certificate --directory-prefix=$fred__project_name/src/fred https://raw.github.com/blackwhale/FReD/$fred_hash/fred.d
@@ -31,7 +31,7 @@ cd ..
 
 cp -v -r build/$trioplax__project_name-$trioplax__hash/src/* build/src
 cp -v -r build/$mongo_d_driver__project_name-$mongo_d_driver__hash/src/* build/src
-cp -v -r build/$zeromq__project_name-$zeromq__hash/src/* build/src
+cp -v -r build/$mq_connector__project_name-$mq_connector__hash/src/* build/src
 cp -v -r build/$fred__project_name/src/* build/src
 
 rm build/src/test_recieve.d 
