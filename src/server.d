@@ -5,21 +5,19 @@ private import myversion;
 private import core.thread;
 private import core.stdc.stdio;
 private import core.stdc.stdlib;
-
-private import std.stdio;
-
-private import std.c.string;
-
-private import std.json_str;
-private import std.outbuffer;
-
-private import std.datetime;
-import std.conv;
 private import core.memory;
 
-private import libzmq_headers;
+private import std.stdio;
+private import std.c.string;
+private import std.json_str;
+private import std.outbuffer;
+private import std.datetime;
+private import std.conv;
+
+//private import libzmq_headers;
 private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
+private import rabbitmq_client;
 
 private import pacahon.graph;
 private import pacahon.n3.parser;
@@ -58,8 +56,8 @@ void main(char[][] args)
 {
 	try
 	{
-		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor, myversion.patch,
-				myversion.hash, myversion.date);
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
+				myversion.patch, myversion.hash, myversion.date);
 
 		if(args.length > 1 && args[1] == "rebuild-graph")
 		{
@@ -73,10 +71,11 @@ void main(char[][] args)
 				props = get_props("pacahon-properties.json");
 			} catch(Exception ex1)
 			{
-				throw new Exception("ex! parse params", ex1);
+				throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 			}
 
-			mq_client client = null;
+			mq_client zmq_connection = null;
+			mq_client rabbitmq_connection = null;
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -138,54 +137,13 @@ void main(char[][] args)
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			writeln("connect to mongodb, \n");
-			writeln("	port:", mongodb_port);
-			writeln("	server:", mongodb_server);
-			writeln("	collection:", mongodb_collection);
-			writeln("cache_type:", cache_type);
-			writeln("use_mmfile:", use_mmfile);
-
-			TripleStorage ts;
-			try
-			{
-				ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
-
-				ts.define_predicate_as_multiple("a");
-				ts.define_predicate_as_multiple("rdf:type");
-				ts.define_predicate_as_multiple("rdfs:subClassOf");
-				ts.define_predicate_as_multiple("gost19:take");
-				ts.define_predicate_as_multiple("event:msg_template");
-				ts.define_predicate_as_multiple("owl:hasValue");
-				ts.define_predicate_as_multiple("owl:someValuesFrom");
-				ts.define_predicate_as_multiple("owl:allValuesFrom");
-
-				ts.define_predicate_as_multilang("swrc:name");
-				ts.define_predicate_as_multilang("swrc:firstName");
-				ts.define_predicate_as_multilang("swrc:lastName");
-				//			ts.define_predicate_as_multilang("gost19:middleName");
-				ts.define_predicate_as_multilang("docs:position");
-
-				ts.set_fulltext_indexed_predicates("swrc:name");
-				ts.set_fulltext_indexed_predicates("swrc:firstName");
-				ts.set_fulltext_indexed_predicates("swrc:lastName");
-				ts.set_fulltext_indexed_predicates("gost19:middleName");
-				ts.set_fulltext_indexed_predicates("docs:position");
-				ts.set_fulltext_indexed_predicates("rdfs:label");
-				ts.set_fulltext_indexed_predicates("swrc:email");
-				ts.set_fulltext_indexed_predicates("swrc:phone");
-				ts.set_fulltext_indexed_predicates("gost19:internal_phone");
-
-				printf("ok, connected : %X\n", ts);
-			} catch(Exception ex)
-			{
-				throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
-			}
+			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
 
 			if(zmq_connect_type == "server")
 			{
 				try
 				{
-					client = new zmq_point_to_poin_client(bind_to);
+					zmq_connection = new zmq_point_to_poin_client(bind_to);
 					writeln("point to point zmq listener started:", bind_to);
 				} catch(Exception ex)
 				{
@@ -194,32 +152,32 @@ void main(char[][] args)
 
 			if(zmq_connect_type == "broker")
 			{
-				if(client is null)
+				if(zmq_connection is null)
 				{
-					client = new zmq_pp_broker_client(bind_to, behavior);
+					zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
 					writeln("zmq PPP broker listener started:", bind_to);
 				} else
 				{
 				}
 			}
 
-			if(client !is null)
+			if(zmq_connection !is null)
 			{
-				client.set_callback(&get_message);
+				zmq_connection.set_callback(&get_message);
 
-				ServerThread thread = new ServerThread(&client.listener, ts);
+				ServerThread thread = new ServerThread(&zmq_connection.listener, ts0);
 
 				if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
 				{
-					if (props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
+					if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
 						thread.resource.IGNORE_EMPTY_TRIPLE = false;
 					else
-						thread.resource.IGNORE_EMPTY_TRIPLE = true;					
+						thread.resource.IGNORE_EMPTY_TRIPLE = true;
 				}
-				
+
 				writeln("IGNORE_EMPTY_TRIPLE:", thread.resource.IGNORE_EMPTY_TRIPLE);
-								
-				thread.resource.client = client;
+
+				thread.resource.client = zmq_connection;
 
 				JSONValue[] gateways;
 
@@ -230,7 +188,8 @@ void main(char[][] args)
 					{
 						if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
 						{
-							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(client, gateway.object["point"].str);
+							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(zmq_connection,
+									gateway.object["point"].str);
 						}
 					}
 				}
@@ -253,6 +212,45 @@ void main(char[][] args)
 				LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
 				load_info_thread.start();
 
+				// прием данных по каналу rabbitmq
+				JSONValue[string] rabbitmq_props;
+				if(("rabbitmq" in props.object) !is null)
+				{
+					rabbitmq_props = props.object["rabbitmq"].object;
+
+					char[][string] params;
+					foreach(key; rabbitmq_props.keys)
+					{
+						params[key] = cast(char[]) rabbitmq_props[key].str;
+					}
+
+					try
+					{
+						rabbitmq_connection = new rabbitmq_client(params);
+						if(rabbitmq_connection.is_success() == true)
+						{
+							TripleStorage ts1 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection,
+									"rabbitmq listener");
+
+							writeln("connect to rabbitmq:", params);
+
+							rabbitmq_connection.set_callback(&get_message_from_rabbit);
+
+							ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, ts1);
+
+							thread_listener_for_rabbitmq.resource.client = rabbitmq_connection;
+
+							thread_listener_for_rabbitmq.start();
+						} else
+						{
+							writeln(rabbitmq_connection.get_fail_msg);
+						}
+					} catch(Exception ex)
+					{
+					}
+
+				}
+
 				while(true)
 					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
@@ -269,6 +267,19 @@ enum format: byte
 	TURTLE = 0,
 	JSON_LD = 1,
 	UNKNOWN = -1
+}
+
+void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
+{
+	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
+
+	TripleStorage ts = server_thread.resource.ts;
+
+	if(*msg == '<')
+	{
+		io_msg.trace_io(true, msg, message_size);
+
+	}
 }
 
 void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
@@ -378,7 +389,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	for(int ii = 0; ii < triples.length; ii++)
 	{
-			StopWatch sw_c;
+		StopWatch sw_c;
 		sw_c.start();
 
 		Subject command = triples[ii];
@@ -483,13 +494,17 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), command.subject,
 						sender.getFirstObject(), server_thread.resource.stat.count_command, t);
 				if(t > 60_000_000)
-					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject, sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 10_000_000)
-					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject, sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 1_000_000)
-					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject, sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 				else if(t > 100_000)
-					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject, sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject,
+							sender.getFirstObject());
 			}
 
 		} else
@@ -555,12 +570,59 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	return;
 }
 
+TripleStorage connect_to_triple_storage(int mongodb_port, string mongodb_server, string mongodb_collection, string thread_name)
+{
+	writeln("connect to mongodb, thread:", thread_name);
+	writeln("	port:", mongodb_port);
+	writeln("	server:", mongodb_server);
+	writeln("	collection:", mongodb_collection);
+
+	TripleStorage ts;
+	try
+	{
+		ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+
+		ts.define_predicate_as_multiple("a");
+		ts.define_predicate_as_multiple("rdf:type");
+		ts.define_predicate_as_multiple("rdfs:subClassOf");
+		ts.define_predicate_as_multiple("gost19:take");
+		ts.define_predicate_as_multiple("event:msg_template");
+		ts.define_predicate_as_multiple("owl:hasValue");
+		ts.define_predicate_as_multiple("owl:someValuesFrom");
+		ts.define_predicate_as_multiple("owl:allValuesFrom");
+
+		ts.define_predicate_as_multilang("swrc:name");
+		ts.define_predicate_as_multilang("swrc:firstName");
+		ts.define_predicate_as_multilang("swrc:lastName");
+		//			ts.define_predicate_as_multilang("gost19:middleName");
+		ts.define_predicate_as_multilang("docs:position");
+
+		ts.set_fulltext_indexed_predicates("swrc:name");
+		ts.set_fulltext_indexed_predicates("swrc:firstName");
+		ts.set_fulltext_indexed_predicates("swrc:lastName");
+		ts.set_fulltext_indexed_predicates("gost19:middleName");
+		ts.set_fulltext_indexed_predicates("docs:position");
+		ts.set_fulltext_indexed_predicates("rdfs:label");
+		ts.set_fulltext_indexed_predicates("swrc:email");
+		ts.set_fulltext_indexed_predicates("swrc:phone");
+		ts.set_fulltext_indexed_predicates("gost19:internal_phone");
+
+		printf("ok, connected : %X\n", ts);
+	} catch(Exception ex)
+	{
+		throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
+	}
+
+	return ts;
+}
+
 class ServerThread: core.thread.Thread
 {
 	ThreadContext resource;
 
 	StopWatch sw;
-//	Statistic stat;
+
+	//	Statistic stat;
 
 	Statistic getStatistic()
 	{
@@ -668,4 +730,5 @@ class ServerThread: core.thread.Thread
 
 		return tt;
 	}
+
 }

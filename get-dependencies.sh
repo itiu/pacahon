@@ -1,6 +1,6 @@
 mongo_d_driver__hash=ddbedad
 trioplax__hash=d254529
-mq_connector__hash=ca3df79
+mq_connector__hash=00ca3e8
 fred_hash=f20ef0709c
 
 trioplax__project_name=itiu-trioplax
