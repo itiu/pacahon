@@ -19,15 +19,15 @@ private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
 private import rabbitmq_client;
 
-private import pacahon.graph;
-private import pacahon.n3.parser;
-private import pacahon.json_ld.parser1;
-
 private import trioplax.triple;
 private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
 
 private import trioplax.Logger;
+
+private import pacahon.graph;
+private import pacahon.n3.parser;
+private import pacahon.json_ld.parser1;
 
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
@@ -40,6 +40,7 @@ private import pacahon.thread_context;
 private import pacahon.command.event_filter;
 
 private import pacahon.zmq_connection;
+private import pacahon.ba2pacahon;
 
 private import mmf.mmfgraph;
 
@@ -197,7 +198,6 @@ void main(char[][] args)
 				writeln(thread.resource.gateways);
 
 				load_events(thread.resource);
-
 				if(use_mmfile == "YES")
 				{
 					writeln("open mmf...");
@@ -278,7 +278,7 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 	if(*msg == '<')
 	{
 		io_msg.trace_io(true, msg, message_size);
-
+		Subject[] graphs_on_put = ba2pacahon (pacahon.utils.fromStringz (cast(char*)msg));
 	}
 }
 

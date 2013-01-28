@@ -8,6 +8,7 @@ build/src/trioplax/Logger.d
 build/src/trioplax/TripleStorage.d 
 build/src/trioplax/triple.d
 build/src/Log.d 
+build/src/ba2pacahon.d
 build/src/authorization.d 
 build/src/command-io.d 
 build/src/command-multiplexor.d 
