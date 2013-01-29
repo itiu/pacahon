@@ -11,5 +11,26 @@
 	"vhost":"bigarchive",
 	"login":"ba",
 	"credentional":"123456"
+    },
+    "ba2onto":
+    {
+	"template":
+	{
+	    "id":"124235",
+	    "version":"13",
+	    "attributes":
+	    {
+		"attribute":
+		{	
+		    "code":"автор",
+		    "onto":"dc:creator"
+		},
+		"attribute":
+		{	
+		    "code":"имя",
+		    "onto":"swrc:name"
+		}
+	    }
+	}
     }
 }
