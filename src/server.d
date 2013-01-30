@@ -136,6 +136,9 @@ void main(char[][] args)
 			if(("behavior" in props.object) !is null)
 				behavior = props.object["behavior"].str;
 
+
+			init_ba2pacahon ();				
+
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
@@ -161,6 +164,7 @@ void main(char[][] args)
 				{
 				}
 			}
+						
 
 			if(zmq_connection !is null)
 			{
@@ -206,7 +210,7 @@ void main(char[][] args)
 					thread.resource.useMMF = true;
 					writeln("ok");
 				}
-
+				
 				thread.start();
 
 				LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
@@ -250,7 +254,7 @@ void main(char[][] args)
 					}
 
 				}
-
+				
 				while(true)
 					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
