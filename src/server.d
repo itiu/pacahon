@@ -14,7 +14,6 @@ private import std.outbuffer;
 private import std.datetime;
 private import std.conv;
 
-//private import libzmq_headers;
 private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
 private import rabbitmq_client;
@@ -142,6 +141,7 @@ void main(char[][] args)
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
+			writeln("connect to db is ok");
 
 			if(zmq_connect_type == "server")
 			{
@@ -153,8 +153,7 @@ void main(char[][] args)
 				{
 				}
 			}
-
-			if(zmq_connect_type == "broker")
+			else if(zmq_connect_type == "broker")
 			{
 				if(zmq_connection is null)
 				{
