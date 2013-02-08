@@ -1,5 +1,5 @@
 *;*;автор;dc:creator;*
 id1;v1;автор;dc:creator;DICT
-id1;v1;имя;swrc:name:DICT
+id1;v1;имя;swrc:name;DICT
 id2;v1;автор;dc:creator;DOC
 id2;v1;имя;swrc:name;DOC
