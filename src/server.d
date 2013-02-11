@@ -136,8 +136,6 @@ void main(char[][] args)
 				behavior = props.object["behavior"].str;
 
 
-			init_ba2pacahon ();				
-
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
@@ -169,19 +167,19 @@ void main(char[][] args)
 			{
 				zmq_connection.set_callback(&get_message);
 
-				ServerThread thread = new ServerThread(&zmq_connection.listener, ts0);
+				ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, ts0);
 
 				if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
 				{
 					if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
-						thread.resource.IGNORE_EMPTY_TRIPLE = false;
+						thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
 					else
-						thread.resource.IGNORE_EMPTY_TRIPLE = true;
+						thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
 				}
 
-				writeln("IGNORE_EMPTY_TRIPLE:", thread.resource.IGNORE_EMPTY_TRIPLE);
+				writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
 
-				thread.resource.client = zmq_connection;
+				thread_listener_for_zmq.resource.client = zmq_connection;
 
 				JSONValue[] gateways;
 
@@ -192,33 +190,35 @@ void main(char[][] args)
 					{
 						if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
 						{
-							thread.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(zmq_connection,
+							thread_listener_for_zmq.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(zmq_connection,
 									gateway.object["point"].str);
 						}
 					}
 				}
 
-				writeln(thread.resource.gateways);
+				writeln(thread_listener_for_zmq.resource.gateways);
 
-				load_events(thread.resource);
+				load_events(thread_listener_for_zmq.resource);
+//				init_ba2pacahon (thread_listener_for_zmq.resource);								
+				
 				if(use_mmfile == "YES")
 				{
 					writeln("open mmf...");
-					thread.resource.mmf = new GraphIO;
-					thread.resource.mmf.open_mmfiles("HA1");
-					thread.resource.useMMF = true;
+					thread_listener_for_zmq.resource.mmf = new GraphIO;
+					thread_listener_for_zmq.resource.mmf.open_mmfiles("HA1");
+					thread_listener_for_zmq.resource.useMMF = true;
 					writeln("ok");
 				}
 				
-				thread.start();
+				thread_listener_for_zmq.start();
 
-				LoadInfoThread load_info_thread = new LoadInfoThread(&thread.getStatistic);
+				LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
 				load_info_thread.start();
 
 				// прием данных по каналу rabbitmq
 				JSONValue[string] rabbitmq_props;
 				if(("rabbitmq" in props.object) !is null)
-				{
+				{					
 					rabbitmq_props = props.object["rabbitmq"].object;
 
 					char[][string] params;
@@ -232,6 +232,7 @@ void main(char[][] args)
 						rabbitmq_connection = new rabbitmq_client(params);
 						if(rabbitmq_connection.is_success() == true)
 						{
+							writeln("create connection for this thread");
 							TripleStorage ts1 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection,
 									"rabbitmq listener");
 
@@ -242,6 +243,8 @@ void main(char[][] args)
 							ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, ts1);
 
 							thread_listener_for_rabbitmq.resource.client = rabbitmq_connection;
+							
+							init_ba2pacahon (thread_listener_for_rabbitmq.resource);				
 
 							thread_listener_for_rabbitmq.start();
 						} else

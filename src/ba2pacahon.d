@@ -4,12 +4,25 @@ private import std.stdio;
 private import std.xml;
 private import std.csv;
 
+private import trioplax.triple;
+private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorageMongoDB;
+private import trioplax.Logger;
+
+private import pacahon.know_predicates;
+
 private import pacahon.graph;
+private import pacahon.thread_context;
 
 string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;
 
-void init_ba2pacahon()
+/*
+ * маппер словарей [ba] <-> [pacahon]
+ * 
+ */
+
+void init_ba2pacahon(ThreadContext server_thread)
 {
 	string file_name = "map-ba2onto.csv";
 
@@ -44,7 +57,13 @@ void init_ba2pacahon()
 		}
 
 	}
+	
+	TLIterator it = server_thread.ts.getTriples(null, "a", ba2pacahon__Record);
+	foreach(triple; it)
+		server_thread.ba2pacahon_records.addTriple(triple.S, triple.P, triple.O, triple.lang);
 
+	delete (it);
+	writeln("loaded ",  server_thread.ba2pacahon_records.length, " ba2pacahon map records");	
 }
 
 Subject[] ba2pacahon(string str_xml)

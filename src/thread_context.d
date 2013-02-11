@@ -41,6 +41,7 @@ class ThreadContext
 	GraphIO *mmf;
 	bool useMMF = false;
 	
+	GraphCluster ba2pacahon_records;	
 	GraphCluster event_filters;
 	Ticket[string] user_of_ticket;
 	string[string] cache__subject_creator;
@@ -53,6 +54,7 @@ class ThreadContext
 	this()
 	{
 		event_filters = new GraphCluster();
+		ba2pacahon_records = new GraphCluster();
 	}
 
 	ZmqConnection getGateway(string _alias)

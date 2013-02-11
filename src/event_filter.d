@@ -2,13 +2,14 @@
 
 module pacahon.command.event_filter;
 
-import std.stdio;
-import std.string;
-import std.conv;
-import std.math;
-import std.exception;
+private import std.stdio;
+private import std.string;
+private import std.conv;
+private import std.math;
+private import std.exception;
 private import std.datetime;
-import std.uuid;
+private import std.uuid;
+private import std.array: appender;
 
 private import pacahon.graph;
 private import pacahon.thread_context;
@@ -16,14 +17,12 @@ private import pacahon.thread_context;
 private import trioplax.triple;
 private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
-
 private import trioplax.Logger;
+
 private import pacahon.know_predicates;
 
 private import fred;
 
-import std.array: appender;
-//private import std.format;
 private import pacahon.utils;
 
 private import pacahon.zmq_connection;

@@ -5,7 +5,8 @@
     "zmq_point":"tcp:\/\/*:5555",
     "rabbitmq" :
     {	
-    	"hostname":"192.168.0.101",
+    	"hostname0":"192.168.0.101",
+    	"hostname":"172.17.4.49",
 	"port":"5672",
 	"queuename":"new-search",
 	"vhost":"bigarchive",
