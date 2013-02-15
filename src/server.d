@@ -19,8 +19,7 @@ private import zmq_pp_broker_client;
 private import rabbitmq_client;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
-private import trioplax.mongodb.TripleStorageMongoDB;
+private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 
@@ -582,7 +581,7 @@ TripleStorage connect_to_triple_storage(int mongodb_port, string mongodb_server,
 	TripleStorage ts;
 	try
 	{
-		ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+		ts = new TripleStorage(mongodb_server, mongodb_port, mongodb_collection);
 
 		ts.define_predicate_as_multiple("a");
 		ts.define_predicate_as_multiple("rdf:type");

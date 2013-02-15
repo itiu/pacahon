@@ -1,28 +1,41 @@
-// TODO Batch insert/update
-// TODO утечка памяти при добавлении фактов
-// TODO утечка памяти при чтении фактов
+module trioplax.mongodb.TripleStorage;
 
-module trioplax.mongodb.TripleStorageMongoDB;
+private
+{
+	import std.string;
 
-private import std.string;
-private import std.c.string;
-private import std.datetime;
-private import std.stdio;
-private import std.outbuffer;
-private import std.conv;
+	import std.c.string;
+	import std.datetime;
+	import std.stdio;
+	import std.outbuffer;
+	import std.conv;
 
-private import core.stdc.stdio;
-private import core.thread;
+	import core.stdc.stdio;
+	import core.thread;
 
-private import util.Logger;
+	import util.Logger;
 
-private import trioplax.triple;
-private import trioplax.TripleStorage;
+	import trioplax.triple;
 
-private import trioplax.mongodb.ComplexKeys;
+	import trioplax.mongodb.ComplexKeys;
 
-private import mongoc.bson_h;
-private import mongoc.mongo_h;
+	import mongoc.bson_h;
+	import mongoc.mongo_h;
+
+	import pacahon.graph;
+}
+
+enum field: byte
+{
+ GET = 0,
+ GET_REIFED = 1
+}
+
+interface TLIterator
+{
+    int opApply(int delegate(ref Triple) dg);
+    int length ();
+}
 
 Logger log;
 
@@ -32,7 +45,7 @@ static this()
 }
 
 class TripleStorageMongoDBIterator: TLIterator
-{	
+{
 	mongo_cursor* cursor;
 	byte[char[]] reading_predicates;
 	bool is_query_all_predicates = false;
@@ -100,8 +113,8 @@ class TripleStorageMongoDBIterator: TLIterator
 		while(mongo_cursor_next(cursor) == MONGO_OK)
 		{
 			if(trace_msg[1007] == 1)
-					log.trace("while(mongo_cursor_next(cursor) == MONGO_OK)");
-						
+				log.trace("while(mongo_cursor_next(cursor) == MONGO_OK)");
+
 			bson_iterator it;
 			bson_iterator_init(&it, &cursor.current);
 
@@ -319,7 +332,7 @@ class TripleStorageMongoDBIterator: TLIterator
 									{
 										count_of_reifed_data++; //???
 
-										string reifed_data_subj = "_:R_" ~ text (count_of_reifed_data);
+										string reifed_data_subj = "_:R_" ~ text(count_of_reifed_data);
 										//										log.trace("TripleStorageMongoDBIterator: # <, count_of_reifed_data=%s", reifed_data_subj);										
 
 										string _name_key_L1 = fromStringz(bson_iterator_key(&i_L1));
@@ -347,21 +360,18 @@ class TripleStorageMongoDBIterator: TLIterator
 													string _name_key_L2 = fromStringz(bson_iterator_key(&i_L2));
 
 													if(trace_msg[1015] == 1)
-														log.trace("TripleStorageMongoDBIterator:_name_key_L2=%s",
-																_name_key_L2);
+														log.trace("TripleStorageMongoDBIterator:_name_key_L2=%s", _name_key_L2);
 
 													string _name_val_L2 = fromStringz(bson_iterator_string(&i_L2));
 
 													if(trace_msg[1016] == 1)
-														log.trace("TripleStorageMongoDBIterator:_name_val_L2L=%s",
-																_name_val_L2);
+														log.trace("TripleStorageMongoDBIterator:_name_val_L2L=%s", _name_val_L2);
 
 													//	r_triple.P = _name_key_L2;
 													//	r_triple.O = _name_val_L2;
 													//	r_triple.S = cast(immutable) reifed_data_subj;
 
-													Triple r_triple = new Triple(reifed_data_subj,
-															_name_key_L2, _name_val_L2);
+													Triple r_triple = new Triple(reifed_data_subj, _name_key_L2, _name_val_L2);
 													//													log.trace("++ triple %s", r_triple);
 
 													if(last_r_triples >= r_triples.length)
@@ -390,12 +400,9 @@ class TripleStorageMongoDBIterator: TLIterator
 														{
 															case bson_type.BSON_STRING:
 															{
-																string
-																		A_value = fromStringz(
-																				bson_iterator_string(&i_1));
+																string A_value = fromStringz(bson_iterator_string(&i_1));
 
-																Triple r_triple = new Triple(
-																		reifed_data_subj, _name_key_L2,
+																Triple r_triple = new Triple(reifed_data_subj, _name_key_L2,
 																		A_value);
 
 																if(last_r_triples >= r_triples.length)
@@ -428,8 +435,8 @@ class TripleStorageMongoDBIterator: TLIterator
 										//										if (reif_triples is null)
 										//											log.trace("TripleStorageMongoDBIterator: reif_triples is null");																					
 
-										FKeys reifed_composite_key = new FKeys(s_reif_parent_triple,
-												p_reif_parent_triple, o_reif_parent_triple);
+										FKeys reifed_composite_key = new FKeys(s_reif_parent_triple, p_reif_parent_triple,
+												o_reif_parent_triple);
 										reif_triples[reifed_composite_key] = r_triples;
 
 										//										log.trace("TripleStorageMongoDBIterator: #10 reifed_composite_key=%s", reifed_composite_key);
@@ -504,7 +511,7 @@ struct CacheInfo
 	bool isCached = false;
 }
 
-class TripleStorageMongoDB: TripleStorage
+class TripleStorage
 {
 	string query_log_filename = "triple-storage-io";
 
@@ -537,26 +544,25 @@ class TripleStorageMongoDB: TripleStorage
 
 		int err = 0;
 
-		while (limit_count_attempt > 1)
+		while(limit_count_attempt > 1)
 		{
-		    err = mongo_connect(&conn, cast(char*) toStringz(host), port);
-		    if(err == MONGO_OK)
-		    {
-			break;
-		    }
-		    else
-		    {
-			log.trace("failed to connect to mongodb, err=%s", mongo_error_str[mongo_get_error(&conn)]);
-		    }
-		    limit_count_attempt --;
-                    core.thread.Thread.sleep(dur!("seconds")(5));                                        		    
-		}    
+			err = mongo_connect(&conn, cast(char*) toStringz(host), port);
+			if(err == MONGO_OK)
+			{
+				break;
+			} else
+			{
+				log.trace("failed to connect to mongodb, err=%s", mongo_error_str[mongo_get_error(&conn)]);
+			}
+			limit_count_attempt--;
+			core.thread.Thread.sleep(dur!("seconds")(5));
+		}
 		if(err != MONGO_OK)
 		{
-		    log.trace("failed to connect to mongodb, err=%s", mongo_error_str[mongo_get_error(&conn)]);
-		    throw new Exception("failed to connect to mongodb");
+			log.trace("failed to connect to mongodb, err=%s", mongo_error_str[mongo_get_error(&conn)]);
+			throw new Exception("failed to connect to mongodb");
 		}
-		    
+
 		log.trace("connect to mongodb sucessful");
 		mongo_set_op_timeout(&conn, 1000);
 	}
@@ -815,21 +821,21 @@ class TripleStorageMongoDB: TripleStorage
 			bson_append_finish_object(&op);
 		}
 
-//		bson_finish(&cond);
-//		bson_finish(&op);
-				
-//		mongo_update(&conn, ns, &cond, &op, 1);
+		//		bson_finish(&cond);
+		//		bson_finish(&op);
 
-//		bson_destroy(&op);
-//		bson_destroy(&cond);
+		//		mongo_update(&conn, ns, &cond, &op, 1);
+
+		//		bson_destroy(&op);
+		//		bson_destroy(&cond);
 
 		// добавим данные для полнотекстового поиска
 		char[][] aaa;
 
 		if((tt.P in fulltext_indexed_predicates) !is null)
 		{
-//			bson_init(&op);
-//			_bson_append_start_object(&op, "$addToSet");
+			//			bson_init(&op);
+			//			_bson_append_start_object(&op, "$addToSet");
 
 			//			bson_buffer* sub1 = bson_append_start_object(sub, "_keywords");
 			//			bson_buffer* sub2 = bson_append_start_array(sub1, cast(char*) "$each");			
@@ -839,12 +845,12 @@ class TripleStorageMongoDB: TripleStorage
 			if(l_o.length > 2)
 			{
 				_bson_append_start_object(&op, "$addToSet");
-//				_bson_append_string(&op, "_keywords", cast(string) l_o);
+				//				_bson_append_string(&op, "_keywords", cast(string) l_o);
 
-//				bson_append_finish_object(&op);
+				//				bson_append_finish_object(&op);
 
-//				bson_finish(&op);
-//				mongo_update(&conn, ns, &cond, &op, 1);
+				//				bson_finish(&op);
+				//				mongo_update(&conn, ns, &cond, &op, 1);
 
 				for(int ic = 0; ic < l_o.length; ic++)
 				{
@@ -854,10 +860,10 @@ class TripleStorageMongoDB: TripleStorage
 
 				aaa = split(l_o, " ");
 
-//				bson_destroy(&op);
+				//				bson_destroy(&op);
 
-//				bson_init(&op);
-//				_bson_append_start_object(&op, "$addToSet");
+				//				bson_init(&op);
+				//				_bson_append_start_object(&op, "$addToSet");
 				_bson_append_start_object(&op, "_keywords");
 				_bson_append_start_array(&op, "$each");
 
@@ -874,12 +880,12 @@ class TripleStorageMongoDB: TripleStorage
 
 				bson_append_finish_object(&op);
 				bson_append_finish_object(&op);
-//				bson_append_finish_object(&op);
+				//				bson_append_finish_object(&op);
 
-//				bson_finish(&op);
-//				mongo_update(&conn, ns, &cond, &op, 1);
+				//				bson_finish(&op);
+				//				mongo_update(&conn, ns, &cond, &op, 1);
 
-//				bson_destroy(&op);
+				//				bson_destroy(&op);
 			}
 		}
 
@@ -892,7 +898,7 @@ class TripleStorageMongoDB: TripleStorage
 		bson_finish(&op);
 		mongo_update(&conn, ns, &cond, &op, 1);
 
-//		bson_destroy(&op);
+		//		bson_destroy(&op);
 		bson_destroy(&cond);
 		bson_destroy(&op);
 
@@ -928,9 +934,9 @@ class TripleStorageMongoDB: TripleStorage
 				log.trace("ex! getSubjects, err=%s", mongo_error_str[mongo_get_error(&conn)]);
 				throw new Exception("getSubjects, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
 			}
-			
+
 			bson_destroy(&fields);
-			bson_destroy(&query);			
+			bson_destroy(&query);
 		}
 
 		if(mongo_cursor_next(cursor) == MONGO_OK)
@@ -1003,7 +1009,7 @@ class TripleStorageMongoDB: TripleStorage
 		TLIterator it;
 
 		it = new TripleStorageMongoDBIterator(cursor);
-		
+
 		bson_destroy(&fields);
 		bson_destroy(&query);
 
@@ -1111,7 +1117,7 @@ class TripleStorageMongoDB: TripleStorage
 			sw0.start();
 
 			mongo_cursor* cursor;
-			
+
 			cursor = mongo_find(&conn, ns, &query, &fields, MAX_SIZE_READ_RECORDS, 0, 0);
 			if(cursor is null)
 			{
@@ -1119,11 +1125,10 @@ class TripleStorageMongoDB: TripleStorage
 				throw new Exception("getTriplesOfMask:mongo_find, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
 			}
 
-			
 			sw0.stop();
 
 			long t0 = cast(long) sw0.peek().usecs;
-			
+
 			if(t0 > 5000)
 			{
 				char[] ss = bson_to_string(&query);
@@ -1239,7 +1244,6 @@ void bson_raw_to_string(bson* b, int depth, OutBuffer outbuff, bson_iterator* ii
 		outbuff.write(getString(key));
 		outbuff.write(cast(char[]) ":");
 
-
 		switch(t)
 		{
 			case bson_type.BSON_INT:
@@ -1291,7 +1295,7 @@ void bson_raw_to_string(bson* b, int depth, OutBuffer outbuff, bson_iterator* ii
 				bson_raw_to_string(null, depth + 1, outbuff, &i1);
 				outbuff.write(cast(char[]) "\n]");
 			break;
-			
+
 			default:
 			break;
 			//				fprintf(stderr, "can't print type : %d\n", t);
@@ -1320,4 +1324,3 @@ private void add_fulltext_to_query(string fulltext_param, bson* bb)
 	bson_append_finish_object(bb);
 	bson_append_finish_object(bb);
 }
-

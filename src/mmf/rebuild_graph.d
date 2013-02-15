@@ -10,8 +10,7 @@ private
 	import std.json_str;
 
 	import trioplax.triple;
-	import trioplax.TripleStorage;
-	import trioplax.mongodb.TripleStorageMongoDB;
+	import trioplax.mongodb.TripleStorage;
 
 	import util.Logger;
 
@@ -71,7 +70,7 @@ void rebuild()
 	TripleStorage ts;
 	try
 	{
-		ts = new TripleStorageMongoDB(mongodb_server, mongodb_port, mongodb_collection);
+		ts = new TripleStorage(mongodb_server, mongodb_port, mongodb_collection);
 
 		ts.define_predicate_as_multiple("a");
 		ts.define_predicate_as_multiple("rdf:type");
@@ -144,7 +143,7 @@ void rebuild()
 	{
 		if(trace)
 			writeln("#4");
-		subj = (cast(TripleStorageMongoDB) ts).getNextSubject(cursor);
+		subj = ts.getNextSubject(cursor);
 
 		//		keys[count] = cast(char*) toStringz(subj);
 		//		qqqq = cast(char*) toStringz(subj);

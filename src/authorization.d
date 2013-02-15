@@ -5,7 +5,7 @@ private import std.datetime;
 private import std.stdio;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 private import pacahon.know_predicates;

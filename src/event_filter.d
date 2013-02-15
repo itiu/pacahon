@@ -15,8 +15,7 @@ private import pacahon.graph;
 private import pacahon.thread_context;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
-private import trioplax.mongodb.TripleStorageMongoDB;
+private import trioplax.mongodb.TripleStorage;
 private import util.Logger;
 
 private import pacahon.know_predicates;

@@ -14,7 +14,7 @@ private import std.outbuffer;
 private import std.datetime;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 

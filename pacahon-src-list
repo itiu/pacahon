@@ -6,8 +6,7 @@ build/src/fred/fred_uni.d
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
 build/src/trioplax/mongodb/ComplexKeys.d 
-build/src/trioplax/mongodb/TripleStorageMongoDB.d 
-build/src/trioplax/TripleStorage.d 
+build/src/trioplax/mongodb/TripleStorage.d 
 build/src/trioplax/triple.d
 build/src/ba2pacahon.d
 build/src/authorization.d 

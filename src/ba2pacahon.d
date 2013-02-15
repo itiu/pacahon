@@ -5,8 +5,7 @@ private import std.xml;
 private import std.csv;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
-private import trioplax.mongodb.TripleStorageMongoDB;
+private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 

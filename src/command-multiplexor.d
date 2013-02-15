@@ -17,7 +17,7 @@ private import std.conv;
 private import std.uuid;
 
 private import trioplax.triple;
-private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 

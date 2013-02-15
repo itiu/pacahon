@@ -1,13 +1,13 @@
 module pacahon.thread_context;
 
-private import trioplax.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 private import mq_client;
 
 private import util.Logger;
 
 private import pacahon.graph;
 private import pacahon.zmq_connection;
-import mmf.mmfgraph;
+private import mmf.mmfgraph;
 
 Logger log;
 
