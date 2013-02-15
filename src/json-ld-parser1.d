@@ -3,12 +3,12 @@ module pacahon.json_ld.parser1;
 private import std.outbuffer;
 private import std.stdio;
 private import pacahon.graph;
-import std.range;
-import std.ascii;
-import std.utf;
-import std.conv;
+private import std.range;
+private import std.ascii;
+private import std.utf;
+private import std.conv;
 
-private import trioplax.Logger;
+private import util.Logger;
 
 Logger log;
 

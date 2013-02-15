@@ -13,9 +13,9 @@ private
 	import trioplax.TripleStorage;
 	import trioplax.mongodb.TripleStorageMongoDB;
 
-	import trioplax.Logger;
+	import util.Logger;
 
-	import pacahon.utils;
+	import util.utils;
 	import std.datetime;
 
 	import std.string;

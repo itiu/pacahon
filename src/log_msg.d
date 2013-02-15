@@ -1,5 +1,6 @@
 module pacahon.log_msg;
-private import trioplax.Logger;
+
+private import util.Logger;
 
 // last id = 69
 

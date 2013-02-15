@@ -20,7 +20,7 @@ private
 	import std.mmfile;
 	import std.stdio;
 	import libchash_h;
-	import trioplax.Logger;
+	import util.Logger;
 	import core.memory;
 	import std.c.string;
 	import std.file;

@@ -8,7 +8,7 @@ private import std.datetime;
 private import std.outbuffer;
 
 private import pacahon.graph;
-private import pacahon.utils;
+private import util.utils;
 
 int def_size_out_array = 100;
 

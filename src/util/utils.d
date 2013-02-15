@@ -1,4 +1,4 @@
-module pacahon.utils;
+module util.utils;
 
 private import std.file;
 

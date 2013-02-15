@@ -8,7 +8,7 @@ private import std.outbuffer;
 
 private import pacahon.graph;
 
-private import trioplax.Logger;
+private import util.Logger;
 
 Logger log;
 

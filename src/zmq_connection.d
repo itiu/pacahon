@@ -1,7 +1,7 @@
 module pacahon.zmq_connection;
 
 private import mq_client;
-private import trioplax.Logger;
+private import util.Logger;
 
 Logger log;
 Logger oi_msg;

@@ -12,7 +12,7 @@ private import pacahon.know_predicates;
 private import pacahon.log_msg;
 private import pacahon.thread_context;
 
-private import trioplax.Logger;
+private import util.Logger;
 
 Logger log;
 

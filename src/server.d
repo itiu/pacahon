@@ -22,22 +22,18 @@ private import trioplax.triple;
 private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
 
-private import trioplax.Logger;
+private import util.Logger;
 
 private import pacahon.graph;
 private import pacahon.n3.parser;
 private import pacahon.json_ld.parser1;
-
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
-
-private import pacahon.utils;
+private import util.utils;
 private import pacahon.log_msg;
 private import pacahon.load_info;
 private import pacahon.thread_context;
-
 private import pacahon.command.event_filter;
-
 private import pacahon.zmq_connection;
 private import pacahon.ba2pacahon;
 
@@ -284,7 +280,7 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 	if(*msg == '<')
 	{
 		io_msg.trace_io(true, msg, message_size);
-		Subject[] graphs_on_put = ba2pacahon (pacahon.utils.fromStringz (cast(char*)msg));
+		Subject[] graphs_on_put = ba2pacahon (util.utils.fromStringz (cast(char*)msg));
 	}
 }
 

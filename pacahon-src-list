@@ -1,13 +1,14 @@
+build/src/util/Logger.d 
+build/src/util/utils.d 
+
 build/src/fred/fred.d
 build/src/fred/fred_uni.d 
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
 build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/TripleStorageMongoDB.d 
-build/src/trioplax/Logger.d 
 build/src/trioplax/TripleStorage.d 
 build/src/trioplax/triple.d
-build/src/Log.d 
 build/src/ba2pacahon.d
 build/src/authorization.d 
 build/src/command-io.d 
@@ -21,8 +22,8 @@ build/src/load_info.d
 build/src/log_msg.d 
 build/src/thread_context.d 
 build/src/turtle-parser.d 
-build/src/utils.d 
 
+build/src/Log.d 
 build/src/libczmq_header.d 
 build/src/libzmq_header.d 
 build/src/mq_client.d 

@@ -7,7 +7,8 @@ private import std.csv;
 private import trioplax.triple;
 private import trioplax.TripleStorage;
 private import trioplax.mongodb.TripleStorageMongoDB;
-private import trioplax.Logger;
+
+private import util.Logger;
 
 private import pacahon.know_predicates;
 

@@ -2,7 +2,9 @@ module pacahon.thread_context;
 
 private import trioplax.TripleStorage;
 private import mq_client;
-private import trioplax.Logger;
+
+private import util.Logger;
+
 private import pacahon.graph;
 private import pacahon.zmq_connection;
 import mmf.mmfgraph;

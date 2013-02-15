@@ -24,10 +24,10 @@ private import pacahon.json_ld.parser;
 private import pacahon.authorization;
 private import pacahon.know_predicates;
 private import pacahon.log_msg;
-private import pacahon.utils;
+private import util.utils;
 private import pacahon.thread_context;
 
-private import trioplax.Logger;
+private import util.Logger;
 
 private import pacahon.command.event_filter;
 
