@@ -27,14 +27,15 @@ private
 
 enum field: byte
 {
- GET = 0,
- GET_REIFED = 1
+	GET = 0,
+	GET_REIFED = 1
 }
 
 interface TLIterator
 {
-    int opApply(int delegate(ref Triple) dg);
-    int length ();
+	int opApply(int delegate(ref Triple) dg);
+
+	int length();
 }
 
 Logger log;
@@ -776,6 +777,161 @@ class TripleStorage
 		addTriple(newtt);
 	}
 
+	public int addSubject(Subject graph)
+	{
+		// основной цикл по добавлению фактов в хранилище из данного субьекта 
+		if(graph.count_edges > 0)
+		{
+			bson op;
+			bson cond;
+
+			bson_init(&cond);
+			_bson_append_string(&cond, "@", graph.subject);
+			bson_finish(&cond);
+
+			bson_init(&op);
+
+			for(int kk = 0; kk < graph.count_edges; kk++)
+			{
+				Predicate pp = graph.edges[kk];
+
+				bool predicat_as_multitiple = ((pp.predicate in predicate_as_multiple) !is null);
+
+				if(pp.count_objects > 0)
+				{
+					if(predicat_as_multitiple || pp.count_objects > 1)
+						_bson_append_start_object(&op, "$addToSet");
+					else
+						_bson_append_start_object(&op, "$set");
+
+					string pd = pp.predicate;
+
+					if(pp.count_objects > 1)
+					{
+						_bson_append_start_object(&op, pp.predicate);
+
+						_bson_append_start_array(&op, "$each");
+						pd = "";
+					}
+
+					for(int ll = 0; ll < pp.count_objects; ll++)
+					{
+						Objectz oo = pp.objects[ll];
+
+						string oo_as_text;
+
+						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+							oo_as_text = oo.literal;
+						else
+							oo_as_text = oo.subject.subject;
+
+						if(predicat_as_multitiple)
+						{
+							if(oo.lang == _NONE)
+								_bson_append_string(&op, pd, oo_as_text);
+							else if(oo.lang == _RU)
+								_bson_append_string(&op, pd, oo_as_text ~ "@ru");
+							if(oo.lang == _EN)
+								_bson_append_string(&op, pd, oo_as_text ~ "@en");
+						} else
+						{
+							if(oo.lang == _NONE)
+							{
+								_bson_append_string(&op, pd, oo_as_text);
+							} else if(oo.lang == _RU)
+							{
+								_bson_append_string(&op, pd, oo_as_text ~ "@ru");
+							} else if(oo.lang == _EN)
+							{
+								_bson_append_string(&op, pd, oo_as_text ~ "@en");
+							}
+
+						}
+					}
+					if(pp.count_objects > 1)
+					{
+						bson_append_finish_object(&op); // ] $each
+						bson_append_finish_object(&op); // } predicate					
+					}
+					bson_append_finish_object(&op);
+
+				}
+			}
+
+			// добавим данные для полнотекстового поиска
+			bool block_ft_was_created = false;
+			for(int kk = 0; kk < graph.count_edges; kk++)
+			{
+				Predicate pp = graph.edges[kk];
+				if((pp.predicate in fulltext_indexed_predicates) !is null && pp.count_objects > 0)
+				{
+					if(block_ft_was_created == false)
+					{
+						_bson_append_start_object(&op, "$addToSet");
+
+						_bson_append_start_object(&op, "_keywords");
+						_bson_append_start_array(&op, "$each");
+
+						block_ft_was_created = true;
+					}
+
+					for(int ll = 0; ll < pp.count_objects; ll++)
+					{
+						Objectz oo = pp.objects[ll];
+
+						string oo_as_text;
+
+						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+							oo_as_text = oo.literal;
+						else
+							oo_as_text = oo.subject.subject;
+
+						char[] l_o = cast(char[]) toLower(oo_as_text);
+
+						if(l_o.length > 2)
+						{
+
+							_bson_append_string(&op, "", cast(string) l_o);
+
+							for(int ic = 0; ic < l_o.length; ic++)
+							{
+								if((l_o[ic] == '-' && ic == 0) || l_o[ic] == '"' || l_o[ic] == '\'' || (l_o[ic] == '@' && (l_o.length - ic) > 4) || l_o[ic] == '\'' || l_o[ic] == '\\' || l_o[ic] == '.' || l_o[ic] == '+')
+									l_o[ic] = ' ';
+							}
+
+							char[][] aaa;
+							aaa = split(l_o, " ");
+
+							foreach(aa; aaa)
+							{
+								if(aa.length > 2)
+								{
+									_bson_append_string(&op, "", cast(string) aa);
+								}
+							}
+
+						}
+					}
+
+				}
+			}
+			if(block_ft_was_created == true)
+			{
+				bson_append_finish_object(&op); // ] $each
+				bson_append_finish_object(&op); // } _keywords
+				bson_append_finish_object(&op); // } $addToSet
+			}
+
+			bson_finish(&op);
+			mongo_update(&conn, ns, &cond, &op, 1);
+
+			bson_destroy(&cond);
+			bson_destroy(&op);
+
+		}
+		return 0;
+	}
+
 	public int addTriple(Triple tt)
 	{
 		StopWatch sw;
@@ -821,36 +977,14 @@ class TripleStorage
 			bson_append_finish_object(&op);
 		}
 
-		//		bson_finish(&cond);
-		//		bson_finish(&op);
-
-		//		mongo_update(&conn, ns, &cond, &op, 1);
-
-		//		bson_destroy(&op);
-		//		bson_destroy(&cond);
-
 		// добавим данные для полнотекстового поиска
-		char[][] aaa;
-
 		if((tt.P in fulltext_indexed_predicates) !is null)
 		{
-			//			bson_init(&op);
-			//			_bson_append_start_object(&op, "$addToSet");
-
-			//			bson_buffer* sub1 = bson_append_start_object(sub, "_keywords");
-			//			bson_buffer* sub2 = bson_append_start_array(sub1, cast(char*) "$each");			
-
 			char[] l_o = cast(char[]) toLower(tt.O);
 
 			if(l_o.length > 2)
 			{
 				_bson_append_start_object(&op, "$addToSet");
-				//				_bson_append_string(&op, "_keywords", cast(string) l_o);
-
-				//				bson_append_finish_object(&op);
-
-				//				bson_finish(&op);
-				//				mongo_update(&conn, ns, &cond, &op, 1);
 
 				for(int ic = 0; ic < l_o.length; ic++)
 				{
@@ -858,12 +992,9 @@ class TripleStorage
 						l_o[ic] = ' ';
 				}
 
+				char[][] aaa;
 				aaa = split(l_o, " ");
 
-				//				bson_destroy(&op);
-
-				//				bson_init(&op);
-				//				_bson_append_start_object(&op, "$addToSet");
 				_bson_append_start_object(&op, "_keywords");
 				_bson_append_start_array(&op, "$each");
 
@@ -880,25 +1011,12 @@ class TripleStorage
 
 				bson_append_finish_object(&op);
 				bson_append_finish_object(&op);
-				//				bson_append_finish_object(&op);
-
-				//				bson_finish(&op);
-				//				mongo_update(&conn, ns, &cond, &op, 1);
-
-				//				bson_destroy(&op);
 			}
 		}
-
-		//		bson_from_buffer(&op, &bb);
-		//		log.trace ("query FT %s", bson_to_string (&op));
-		//		mongo_update(&conn, ns, &cond, &op, 1);
-
-		//		Thread.getThis().sleep(100_000);
 
 		bson_finish(&op);
 		mongo_update(&conn, ns, &cond, &op, 1);
 
-		//		bson_destroy(&op);
 		bson_destroy(&cond);
 		bson_destroy(&op);
 

@@ -81,7 +81,7 @@ final class GraphCluster
 
 	int length()
 	{
-		return cast(uint)graphs_of_subject.length;
+		return cast(uint) graphs_of_subject.length;
 	}
 
 }
@@ -110,6 +110,20 @@ final class Subject
 			return pp.getFirstObject();
 		}
 		return null;
+	}
+
+	bool isExsistsPredicate(string pname)
+	{
+		if(needReidex == true || edges_of_predicate.length != edges.length)
+			reindex_predicate();
+
+		Predicate* pp = null;
+		Predicate** ppp = (pname in edges_of_predicate);
+
+		if(ppp !is null)
+			return true;
+		else
+			return false;
 	}
 
 	Predicate* getPredicate(string pname)

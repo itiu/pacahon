@@ -43,7 +43,7 @@ string[] reifed_data_subj;
 
 static this()
 {
-//	buff = new char[21];
+	//	buff = new char[21];
 	buff1 = new char[6];
 	log = new Logger("pacahon", "log", "command-io");
 	reifed_data_subj = new string[1];
@@ -157,31 +157,16 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 				string authorize_reason;
 				bool subjectIsExist = false;
 
-				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context, authorize_reason, subjectIsExist) == true)
+				if(authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context, authorize_reason,
+						subjectIsExist) == true)
 				{
-					if(userId !is null)
+					if(userId !is null && graph.isExsistsPredicate (dc__creator) == false)
 					{
 						// добавим признак dc:creator
-						server_context.ts.addTriple(new Triple(graph.subject, dc__creator, userId));
+						graph.addPredicate(dc__creator, userId);
 					}
 
-					// основной цикл по добавлению фактов в хранилище из данного субьекта 
-					// TODO сделать рекурсивное добавление (для многоуровневых графов)
-					for(int kk = 0; kk < graph.count_edges; kk++)
-					{
-						Predicate pp = graph.edges[kk];
-
-						for(int ll = 0; ll < pp.count_objects; ll++)
-						{
-							Objectz oo = pp.objects[ll];
-
-							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.literal, oo.lang));
-							else
-								server_context.ts.addTriple(new Triple(graph.subject, pp.predicate, oo.subject.subject, oo.lang));
-						}
-
-					}
+					server_context.ts.addSubject(graph);
 
 					if(type.isExistLiteral(event__Event))
 					{
@@ -287,8 +272,8 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 	return res;
 }
 
-public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk, out string reason,
-		ref GraphCluster res, out char from_out)
+public void get(Subject message, Predicate* sender, string userId, ThreadContext server_context, out bool isOk,
+		out string reason, ref GraphCluster res, out char from_out)
 {
 	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
 
@@ -596,7 +581,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 										// требуются так-же реифицированные данные по этому полю
 										// данный предикат добавить в список возвращаемых
 										if(trace_msg[47] == 1)
-											log.trace("данный предикат и реифицированные данные добавим в список возвращаемых: %s",
+											log.trace(
+													"данный предикат и реифицированные данные добавим в список возвращаемых: %s",
 													pp.predicate);
 
 										readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
@@ -726,7 +712,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					count_found_subjects++;
 
 					bool isExistSubject;
-					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason, isExistSubject);
+					bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
+							isExistSubject);
 
 					if(result_of_az == false)
 					{
@@ -745,19 +732,15 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 				}
 
-//				buff1[] = ' ';
-//				Integer.format(buff1, count_found_subjects, cast(char[]) "");
-				
-
 				if(count_found_subjects == count_authorized_subjects)
 				{
-					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ cast(string) buff1;
+					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ text (count_found_subjects);
 				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
 				{
-					reason = "запрос выполнен: не все найденные субьекты " ~ text (count_found_subjects) ~ " успешно авторизованны";
+					reason = "запрос выполнен: не все найденные субьекты " ~ text(count_found_subjects) ~ " успешно авторизованны";
 				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
 				{
-					reason = "запрос выполнен: ни один из найденных субьектов (" ~  text (count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
+					reason = "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
 				}
 
 				isOk = true;
@@ -820,7 +803,8 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_context, authorize_reason, isExistSubject);
+		bool result_of_az = authorize(userId, subj_id.getFirstObject, operation.DELETE, server_context, authorize_reason,
+				isExistSubject);
 
 		if(result_of_az)
 		{
