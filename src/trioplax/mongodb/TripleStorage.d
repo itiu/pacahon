@@ -22,6 +22,7 @@ private
 	import mongoc.bson_h;
 	import mongoc.mongo_h;
 
+	import pacahon.know_predicates;
 	import pacahon.graph;
 }
 
@@ -35,14 +36,14 @@ interface TLIterator
 {
 	int opApply(int delegate(ref Triple) dg);
 
-	int length();
+//	int length();
 }
 
 Logger log;
 
 static this()
 {
-	log = new Logger("trioplax", "log", "");
+	log = new Logger("pacahon", "log", "");
 }
 
 class TripleStorageMongoDBIterator: TLIterator
@@ -491,18 +492,18 @@ class TripleStorageMongoDBIterator: TLIterator
 		return 0;
 	}
 
-	int length()
-	{
-		int count = 0;
+//	int length()
+//	{
+//		int count = 0;
 
-		//		foreach(tt; this)
-		//		{
-		//			count++;
-		//			log.trace("length:%s", tt);
-		//		}
+//		foreach(tt; this)
+//		{
+//			count++;
+//			log.trace("length:%s", tt);
+//		}
 
-		return count;
-	}
+//		return count;
+//	}
 }
 
 struct CacheInfo
@@ -603,9 +604,9 @@ class TripleStorage
 	//	{
 	//	}
 
-	public void set_stat_info_logging(bool flag)
-	{
-	}
+	//	public void set_stat_info_logging(bool flag)
+	//	{
+	//	}
 
 	//	public void setPredicatesToS1PPOO(char[] _P1, char[] _P2, char[] _store_predicate_in_list_on_idx_s1ppoo)
 	//	{
@@ -799,18 +800,22 @@ class TripleStorage
 
 				if(pp.count_objects > 0)
 				{
-					if(predicat_as_multitiple || pp.count_objects > 1)
+					if(predicat_as_multitiple)
 						_bson_append_start_object(&op, "$addToSet");
 					else
 						_bson_append_start_object(&op, "$set");
 
 					string pd = pp.predicate;
 
-					if(pp.count_objects > 1)
+					if(predicat_as_multitiple == true)
 					{
 						_bson_append_start_object(&op, pp.predicate);
 
 						_bson_append_start_array(&op, "$each");
+						pd = "";
+					} else if(pp.count_objects > 1)
+					{
+						_bson_append_start_array(&op, pp.predicate);
 						pd = "";
 					}
 
@@ -848,11 +853,15 @@ class TripleStorage
 
 						}
 					}
-					if(pp.count_objects > 1)
+					if(predicat_as_multitiple == true)
 					{
 						bson_append_finish_object(&op); // ] $each
 						bson_append_finish_object(&op); // } predicate					
+					} else if(pp.count_objects > 1)
+					{
+						bson_append_finish_object(&op); // } predicate					
 					}
+
 					bson_append_finish_object(&op);
 
 				}
