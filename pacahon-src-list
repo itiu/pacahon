@@ -1,8 +1,6 @@
 build/src/util/Logger.d 
 build/src/util/utils.d 
 
-build/src/fred/fred.d
-build/src/fred/fred_uni.d 
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
 build/src/trioplax/mongodb/ComplexKeys.d 

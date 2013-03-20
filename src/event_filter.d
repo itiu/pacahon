@@ -20,7 +20,7 @@ private import util.Logger;
 
 private import pacahon.know_predicates;
 
-private import fred;
+private import std.regex;
 
 private import util.utils;
 
