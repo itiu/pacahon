@@ -12,19 +12,19 @@ build/src/command-io.d
 build/src/command-multiplexor.d 
 build/src/event_filter.d 
 build/src/graph.d 
-build/src/json-ld-parser.d 
-build/src/json-ld-parser1.d 
+build/src/util/json-ld-parser.d 
+build/src/util/json-ld-parser1.d 
 build/src/know_predicates.d 
-build/src/load_info.d 
+build/src/util/load_info.d 
 build/src/log_msg.d 
 build/src/thread_context.d 
-build/src/turtle-parser.d 
+build/src/util/turtle-parser.d 
 
 build/src/Log.d 
 build/src/libczmq_header.d 
 build/src/libzmq_header.d 
 build/src/mq_client.d 
-build/src/zmq_connection.d 
+build/src/util/zmq_connection.d 
 build/src/zmq_point_to_poin_client.d 
 build/src/zmq_pp_broker_client.d
 build/src/librabbitmq_headers.d
