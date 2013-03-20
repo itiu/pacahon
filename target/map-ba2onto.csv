@@ -1,4 +1,35 @@
 *;*;автор;dc:creator;*
+*;*;date_from;swrc__startDate;*
+*;*;date_to;swrc__endDate;*
+*;*;file;docs__attachment;*
+*;*;from;docs__from;*
+*;*;name;swrc__name;*
+*;*;subject/тема;dc__subject;*
+*;*;to;swrc__endDate;*
+*;*;в копию;docs__carbon_copy;*
+*;*;вложение;docs__attachment;*
+*;*;вложения;docs__attachment;*
+*;*;дата начала;swrc__startDate;*
+*;*;дата окончания;swrc__endDate;*
+*;*;дата окончания (планируемая;*swrc__endDate;*
+*;*;заголовок;dc__title;*
+*;*;ключевые слова;swrc__keywords;*
+*;*;комментарии;swrc__note;*
+*;*;комментарий;swrc__note;*
+*;*;кому;docs__to;*
+*;*;контрагент;docs__contractor;*
+*;*;контрагент (название/ страна/ город;*docs__contractor;*
+*;*;краткое содержание;dc__description;*
+*;*;название;swrc__name;*
+*;*;наименование;swrc__name;*
+*;*;номер;swrc__number;*
+*;*;от кого;docs__from;*
+*;*;подразделение;docs__unit;*
+*;*;полное название;swrc__name;*
+*;*;содержание;docs__content;*
+*;*;ссылка на документ;docs__link;*
+*;*;тема;dc__subject;*
+*;*;тип;dc__type;*
 id1;v1;автор;dc:creator;DICT
 id1;v1;имя;swrc:name;DICT
 id2;v1;автор;dc:creator;DOC

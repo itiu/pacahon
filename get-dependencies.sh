@@ -1,5 +1,5 @@
 mongo_d_driver__hash=ddbedad
-mq_connector__hash=4f06774
+mq_connector__hash=cf47a3d
 
 mongo_d_driver__project_name=itiu-mongo-d-driver
 mq_connector__project_name=itiu-mq-connector

@@ -33,6 +33,6 @@ build/src/rabbitmq_client.d
 build/src/std/json_str.d
 build/src/myversion.d
 build/src/server.d 
-build/src/libchash_h.d
+build/src/util/libchash_h.d
 build/src/mmf/mmfgraph.d
 build/src/mmf/rebuild_graph.d

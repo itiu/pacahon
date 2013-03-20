@@ -46,33 +46,46 @@ void init_ba2pacahon(ThreadContext server_thread)
 			foreach(record; records)
 			{
 				map_ba2onto[record._id][record._version][record._code] = record._onto;
-				map_ba2onto["doc:" ~ record._id][record._version][record._code] = record._onto;
+				//				map_ba2onto["doc:" ~ record._id][record._version][record._code] = record._onto;
 			}
+			writeln("loaded ", map_ba2onto.length, " ba2pacahon map records from file");
 
 			writeln("test: ###:", map_ba2onto["id2"]["v1"]["автор"]);
 			writeln("test: ###:", map_ba2onto["id1"]["v1"]["имя"]);
+			writeln("test: ###:", map_ba2onto["*"]["*"]["date_to"]);
 		} catch(Exception ex1)
 		{
 			throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 		}
 
 	}
-	
+
 	TLIterator it = server_thread.ts.getTriples(null, "a", ba2pacahon__Record);
 	foreach(triple; it)
+	{
 		server_thread.ba2pacahon_records.addTriple(triple.S, triple.P, triple.O, triple.lang);
+	}
 
 	delete (it);
-	writeln("loaded ",  server_thread.ba2pacahon_records.length, " ba2pacahon map records");	
+	writeln("loaded ", server_thread.ba2pacahon_records.length, " ba2pacahon map records from storage");
 }
 
 Subject[] ba2pacahon(string str_xml)
 {
-
+//	writeln("src=[" ~ str_xml ~ "]");
 	// Check for well-formedness 
-	check(str_xml);
+	try
+	{
+		check(str_xml);
+
+		auto doc = new Document(str_xml); // Plain-print it 
+		writeln(doc.toString());
+		writeln("success!");
+
+	} catch(Exception ex)
+	{
+		writeln("Ex:" ~ ex.msg);
+	}
 	// Make a DOM tree 
-	auto doc = new Document(str_xml); // Plain-print it 
-	writeln(doc);
 	return null;
 }

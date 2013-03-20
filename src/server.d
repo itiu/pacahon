@@ -136,6 +136,7 @@ void main(char[][] args)
 			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
 			writeln("connect to db is ok");
 
+			writeln("zmq connect type as " ~ zmq_connect_type);
 			if(zmq_connect_type == "server")
 			{
 				try
@@ -279,7 +280,7 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 	if(*msg == '<')
 	{
 		io_msg.trace_io(true, msg, message_size);
-		Subject[] graphs_on_put = ba2pacahon (util.utils.fromStringz (cast(char*)msg));
+		Subject[] graphs_on_put = ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size));
 	}
 }
 
