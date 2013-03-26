@@ -54,6 +54,15 @@ struct JSONValue {
                 JSONValue[]                     array;
         }
         JSON_TYPE                               type;
+        
+        public string get_str (string field_name)
+        {
+         if (field_name in object)
+         {
+        	 return object[field_name].str;
+         }
+         return null;
+        }
 }
 
 /**

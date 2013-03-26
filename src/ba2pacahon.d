@@ -14,11 +14,14 @@ private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
+private import std.json_str;
+private import std.string;
+
 string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;
 
 /*
- * маппер словарей [ba] <-> [pacahon]
+ * маппер структур [ba] <-> [pacahon]
  * 
  */
 
@@ -70,16 +73,63 @@ void init_ba2pacahon(ThreadContext server_thread)
 	writeln("loaded ", server_thread.ba2pacahon_records.length, " ba2pacahon map records from storage");
 }
 
-Subject[] ba2pacahon(string str_xml)
+Subject[] ba2pacahon(string str_json)
 {
-//	writeln("src=[" ~ str_xml ~ "]");
-	// Check for well-formedness 
+	/* Обновляется (документ/шаблон/справочник)
+	 * считаем что связанные документы должны быть в наличии и актуальны,
+	 * если таковых нет, то не заполняем реификацию
+	 */
+	
+	
+	JSONValue doc;
+
+	writeln("src=" ~ str_json ~ "");
+
 	try
 	{
-		check(str_xml);
+		doc = parseJSON(cast(char[]) str_json);
 
-		auto doc = new Document(str_xml); // Plain-print it 
-		writeln(doc.toString());
+		string id = doc.object["id"].str;
+		string versionId = doc.get_str("versionId");
+		string objectType = doc.get_str("objectType");
+		string typeVersionId = doc.get_str("typeVersionId");
+		string dateCreated = doc.get_str("dateCreated");
+		string active = doc.get_str("active");
+		string typeId = doc.get_str("typeId");
+		string authorId = doc.get_str("authorId");
+		string systemInformation = doc.get_str("systemInformation");
+
+		if (systemInformation !is null && objectType == "TEMPLATE") // есть только у шаблона
+		{
+				foreach (el ; split (systemInformation, ";"))
+				{
+//					writeln ("el=" ~ el);
+					if (el.indexOf("$defaultRepresentation") == 0)
+					{
+						string[] el_spl = split (el, "=");
+						writeln (el_spl[0], " = ", el_spl[1]);
+//						def_repr_code = new String[1];
+//						def_repr_code[0] = el.split("=")[1];
+					}
+				}
+		}
+		
+		JSONValue[] attributes;
+
+		if(("attributes" in doc.object) !is null)
+		{
+			attributes = doc.object["attributes"].array;
+
+			if(attributes !is null)
+			{
+				foreach(att; attributes)
+				{
+					writeln(att.object["code"].str);
+
+				}
+			}
+		}
+
 		writeln("success!");
 
 	} catch(Exception ex)

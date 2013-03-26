@@ -277,9 +277,10 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 
 	TripleStorage ts = server_thread.resource.ts;
 
-	if(*msg == '<')
+//	if(*msg == '<')
 	{
 		io_msg.trace_io(true, msg, message_size);
+//writeln (util.utils.fromStringz (cast(char*)msg, message_size));
 		Subject[] graphs_on_put = ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size));
 	}
 }
