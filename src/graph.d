@@ -37,7 +37,7 @@ enum OBJECT_TYPE: byte
 	CLUSTER = 3
 }
 
-enum LITERAL_LANG: byte
+enum LANG: byte
 {
 	NONE = 0,
 	RU = 1,
@@ -50,6 +50,9 @@ final class GraphCluster
 
 	void addTriple(string s, string p, string o, byte lang = 0)
 	{
+		if(o is null)
+			return;
+
 		Subject ss = graphs_of_subject.get(s, null);
 
 		if(ss is null)
@@ -150,6 +153,9 @@ final class Subject
 
 	void addPredicateAsURI(string predicate, string object)
 	{
+		if(object is null)
+			return;
+
 		if(edges.length == 0)
 			edges = new Predicate[16];
 
@@ -168,8 +174,11 @@ final class Subject
 		needReidex = true;
 	}
 
-	void addPredicate(string predicate, string object, byte lang = LITERAL_LANG.NONE)
+	void addPredicate(string predicate, string object, byte lang = LANG.NONE)
 	{
+		if(object is null)
+			return;
+
 		Predicate* pp;
 		for(int i = 0; i < count_edges; i++)
 		{
@@ -205,6 +214,9 @@ final class Subject
 
 	void addPredicate(string predicate, GraphCluster cluster)
 	{
+		if(cluster is null)
+			return;
+
 		Predicate* pp;
 		for(int i = 0; i < count_edges; i++)
 		{
@@ -240,6 +252,9 @@ final class Subject
 
 	void addPredicate(string predicate, Subject subject)
 	{
+		if(subject is null)
+			return;
+
 		Predicate* pp;
 		for(int i = 0; i < count_edges; i++)
 		{
@@ -385,8 +400,11 @@ struct Predicate
 		return null;
 	}
 
-	void addLiteral(string val, byte lang = LITERAL_LANG.NONE)
+	void addLiteral(string val, byte lang = LANG.NONE)
 	{
+		if(val is null)
+			return;
+
 		if(objects.length == count_objects)
 			objects.length += 16;
 
@@ -398,6 +416,9 @@ struct Predicate
 
 	void addCluster(GraphCluster cl)
 	{
+		if(cl is null)
+			return;
+
 		if(objects.length == count_objects)
 			objects.length += 16;
 
@@ -409,6 +430,9 @@ struct Predicate
 
 	void addSubject(Subject ss)
 	{
+		if(ss is null)
+			return;
+
 		if(objects.length == count_objects)
 			objects.length += 16;
 

@@ -407,10 +407,10 @@ private void next_element(char* element, int el_length, state_struct* state)
 				if(*ptr == '@')
 				{
 					if(*(ptr + 1) == 'r' && *(ptr + 2) == 'u')
-						ee.objects[ee.count_objects].lang = LITERAL_LANG.RU;
+						ee.objects[ee.count_objects].lang = LANG.RU;
 
 					if(*(ptr + 1) == 'e' && *(ptr + 2) == 'n')
-						ee.objects[ee.count_objects].lang = LITERAL_LANG.EN;
+						ee.objects[ee.count_objects].lang = LANG.EN;
 				}
 				//				printf("!!! 7\n");
 
@@ -583,11 +583,11 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
 				else
 				    outbuff.write(cast(char[]) "\"");
 				    
-				if(oo.lang == LITERAL_LANG.RU)
+				if(oo.lang == LANG.RU)
 				{
 					outbuff.write(cast(char[]) "@ru");
 				}
-				else if(oo.lang == LITERAL_LANG.EN)
+				else if(oo.lang == LANG.EN)
 				{
 					outbuff.write(cast(char[]) "@en");
 				}

@@ -63,6 +63,15 @@ struct JSONValue {
          }
          return null;
         }
+        
+        public long get_int (string field_name)
+        {
+         if (field_name in object)
+         {
+        	 return object[field_name].integer;
+         }
+         return 0;
+        }
 }
 
 /**

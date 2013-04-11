@@ -600,21 +600,6 @@ class TripleStorage
 
 	public bool f_trace_list_pull = true;
 
-	//	public void set_new_index(ubyte index, uint max_count_element, uint max_length_order, uint inital_triple_area_length)
-	//	{
-	//	}
-
-	//	public void set_stat_info_logging(bool flag)
-	//	{
-	//	}
-
-	//	public void setPredicatesToS1PPOO(char[] _P1, char[] _P2, char[] _store_predicate_in_list_on_idx_s1ppoo)
-	//	{
-	//		P1 = _P1;
-	//		P2 = _P2;
-	//		store_predicate_in_list_on_idx_s1ppoo = _store_predicate_in_list_on_idx_s1ppoo;
-	//	}
-
 	public bool removeSubject(string s)
 	{
 		try

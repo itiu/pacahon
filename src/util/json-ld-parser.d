@@ -87,9 +87,9 @@ void addElement(string key, JSONValue element, GraphCluster gcl, Subject ss = nu
 			if(val.length >= 3 && val[val.length - 3] == '@')
 			{
 				if(val[val.length - 2] == 'r' && val[val.length - 1] == 'u')
-					ss.addPredicate(key, val[0 .. val.length - 3], LITERAL_LANG.RU);
+					ss.addPredicate(key, val[0 .. val.length - 3], LANG.RU);
 				else if(val[val.length - 2] == 'e' && val[val.length - 1] == 'n')
-					ss.addPredicate(key, val[0 .. val.length - 3], LITERAL_LANG.EN);
+					ss.addPredicate(key, val[0 .. val.length - 3], LANG.EN);
 			} else
 			{
 				ss.addPredicate(key, val);
@@ -262,10 +262,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						outbuff.write(oo.literal);
 					}
 
-					if(oo.lang == LITERAL_LANG.RU)
+					if(oo.lang == LANG.RU)
 					{
 						outbuff.write(cast(char[]) "@ru");
-					} else if(oo.lang == LITERAL_LANG.EN)
+					} else if(oo.lang == LANG.EN)
 					{
 						outbuff.write(cast(char[]) "@en");
 					}
