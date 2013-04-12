@@ -119,3 +119,5 @@ public const string docs__middleName = "docs:middleName";
 
 public const string ba__systemInformation = "ba:systemInformation";
 public const string ba__description = "ba:description";
+public const string ba__organizationTag = "ba:organizationTag";
+public const string ba__readOnly = "ba:readOnly";

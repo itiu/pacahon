@@ -26,6 +26,8 @@ private import util.utils;
 string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;
 
+GraphCluster[string][string] templates;
+
 Logger log;
 
 static this()
@@ -40,6 +42,8 @@ static this()
 
 void init_ba2pacahon(ThreadContext server_thread)
 {
+	// шаблоны загружаем по мере необходимости
+
 	string file_name = "map-ba2onto.csv";
 
 	if(std.file.exists(file_name))
@@ -111,17 +115,32 @@ Subject[] ba2pacahon(string str_json)
 		string dateCreated = doc.get_str("dateCreated");
 		string active = doc.get_str("active");
 		string actual = doc.get_str("actual");
-		string typeId = doc.get_str("typeId");
 		string authorId = doc.get_str("authorId");
 		string dateLastModified = doc.get_str("dateLastModified");
 
 		GraphCluster gl = new GraphCluster();
 		Subject node = new Subject();
 
+		writeln("objectType=", objectType);
+
 		if(objectType == "TEMPLATE")
 		{
-			//			writeln("TEMPLATE");
-			templateId = "user_onto:tmpl_" ~ id[0 .. 7] ~ "_" ~ versionId[0 .. 7];
+			string c_id;
+			if(id.length > 7)
+				c_id = id[0 .. 7];
+			else
+				c_id = id;
+
+			string c_vid;
+			if(versionId.length > 7)
+				c_vid = versionId[0 .. 7];
+			else
+				c_vid = versionId;
+
+			//			writeln ("TEMPLATE c_id=", c_id, "c_vid=", c_vid);
+
+			templateId = "user_onto:tmpl_" ~ c_id ~ "_" ~ c_vid;
+
 			node.subject = templateId;
 			node.addPredicate(rdfs__subClassOf, docs__Document);
 			node.addPredicate(rdf__type, rdfs__Class);
@@ -191,9 +210,10 @@ Subject[] ba2pacahon(string str_json)
 
 						string new_code = toTranslit(code);
 
-						//						writeln("[" ~ code ~ "]->[" ~ new_code ~ "]");
+						//												writeln("[" ~ code ~ "]->[" ~ new_code ~ "]");
 
-						string restrictionId = "user-onto:rstr_" ~ id[0 .. 7] ~ "_" ~ versionId[0 .. 7] ~ "_" ~ new_code;
+						string restrictionId;
+						restrictionId = "user-onto:rstr_" ~ c_id ~ "_" ~ c_vid ~ "_" ~ new_code;
 
 						Subject attr_node = new Subject();
 						attr_node.subject = restrictionId;
@@ -216,17 +236,32 @@ Subject[] ba2pacahon(string str_json)
 						string description = att.get_str("description");
 						attr_node.addPredicate(ba__description, description);
 
+						string[string] descr_els;
+
+						if(description.indexOf("$") >= 0)
+						{
+							string[] els = description.split(";");
+							foreach(el; els)
+							{
+								string[] el_els = el.split("=");
+								if(el_els.length == 2)
+									descr_els[el_els[0]] = el_els[1];
+							}
+						}
+
+						//						writeln(descr_els);
+
 						string obligatory = att.get_str("obligatory");
 						if(obligatory == "true")
-						{
 							attr_node.addPredicate(owl__minCardinality, "1");
-						}
 
 						string multiSelect = att.get_str("multiSelect");
 						if(multiSelect == "false")
-						{
 							attr_node.addPredicate(owl__maxCardinality, "1");
-						}
+
+						string computationalReadonly = att.get_str("computationalReadonly");
+						if(computationalReadonly == "true")
+							attr_node.addPredicate(ba__readOnly, "true");
 
 						string type = att.get_str("type");
 
@@ -252,45 +287,91 @@ Subject[] ba2pacahon(string str_json)
 						} else if(type == "FILE")
 						{
 							attr_node.addPredicate(owl__allValuesFrom, docs__FileDescription);
-						} else if(type == "LINK")
+						} else if(type == "LINK" || type == "DICTIONARY")
 						{
-							attr_node.addPredicate(owl__allValuesFrom, docs__Document);
-						} else if(type == "DICTIONARY")
-						{
-							//docs__defaultValue
-							string dictionaryIdValue = att.get_str("dictionaryIdValue");
-							attr_node.addPredicate(owl__allValuesFrom, "user_onto:tmpl_" ~ dictionaryIdValue);
+							string composition = descr_els.get("$composition", null);
+							//							writeln ("composition=", composition);
 
-							string recordIdValue = att.get_str("recordIdValue");
-							if(recordIdValue !is null)
-								attr_node.addPredicate(docs__defaultValue, "user_onto:doc_" ~ recordIdValue);
+							if(composition !is null)
+							{
+								string[] composition_els = composition.split("|");
+								foreach(el; composition_els)
+								{
+									el = toTranslit(el);
 
-							string dictionaryNameValue = att.get_str("dictionaryNameValue");
-							attr_node.addPredicate(rdfs__comment, dictionaryNameValue);
+									attr_node.addPredicate(docs__take, el);
 
+									//									writeln ("	el=", el);
+
+								}
+							}
+
+							if(type == "LINK")
+							{
+								string isTable = descr_els.get("$isTable", null);
+								if(isTable !is null)
+									attr_node.addPredicate(owl__allValuesFrom, "user_onto:doc_" ~ isTable);
+								else
+									attr_node.addPredicate(owl__allValuesFrom, docs__Document);
+
+							} else if(type == "DICTIONARY")
+							{
+								//docs__defaultValue
+								string dictionaryIdValue = att.get_str("dictionaryIdValue");
+								attr_node.addPredicate(owl__allValuesFrom, "user_onto:tmpl_" ~ dictionaryIdValue);
+
+								string recordIdValue = att.get_str("recordIdValue");
+								if(recordIdValue !is null)
+									attr_node.addPredicate(docs__defaultValue, "user_onto:doc_" ~ recordIdValue);
+
+								string dictionaryNameValue = att.get_str("dictionaryNameValue");
+								attr_node.addPredicate(rdfs__comment, dictionaryNameValue);
+
+							}
 						} else if(type == "ORGANIZATION")
 						{
 							string organizationTag = att.get_str("organizationTag");
 
-							if(organizationTag == "user")
+							if(organizationTag !is null && organizationTag.length > 5)
 							{
-								if(organizationTag.indexOf(";") > 0)
-									attr_node.addPredicate(owl__someValuesFrom, swrc__Person);
-								else
-									attr_node.addPredicate(owl__allValuesFrom, swrc__Person);
+								if(organizationTag.indexOf("user") >= 0)
+								{
+									if(organizationTag.indexOf(";") > 0)
+										attr_node.addPredicate(owl__someValuesFrom, swrc__Person);
+									else
+										attr_node.addPredicate(owl__allValuesFrom, swrc__Person);
 
-								attr_node.addPredicate(docs__take, swrc__lastName);
-								attr_node.addPredicate(docs__take, swrc__firstName);
-								attr_node.addPredicate(docs__take, docs__middleName);
-							} else if("department")
-							{
-								attr_node.addPredicate(docs__take, swrc__name);
-								
-								if(organizationTag.indexOf(";") > 0)
-									attr_node.addPredicate(owl__someValuesFrom, swrc__Department);
-								else
-									attr_node.addPredicate(owl__allValuesFrom, swrc__Department);
-							}
+									attr_node.addPredicate(docs__take, swrc__lastName);
+									attr_node.addPredicate(docs__take, swrc__firstName);
+									attr_node.addPredicate(docs__take, docs__middleName);
+								}
+								if(organizationTag.indexOf("department") >= 0)
+								{
+									attr_node.addPredicate(docs__take, swrc__name);
+
+									if(organizationTag.indexOf(";") > 0)
+										attr_node.addPredicate(owl__someValuesFrom, swrc__Department);
+									else
+										attr_node.addPredicate(owl__allValuesFrom, swrc__Department);
+								}
+
+								attr_node.addPredicate(ba__organizationTag, organizationTag);
+
+								/*	пока не целесообразно раскладывать 	organizationTag					
+								 string qq[] = organizationTag.split("|");
+								 if(qq.length == 2)
+								 {
+								 string ou_ids[] = qq[1].split(",");
+
+								 foreach(ou_id; ou_ids)
+								 {
+								 writeln (ou_id);
+								 //									string uri = ouId__ouUri.get(ou_id);
+								 //									if(uri != null)
+								 //										attr_node.addPredicate(docs__defaultValue, uri);
+								 }
+								 }
+								 */}
 						}
 
 						gl.addSubject(attr_node);
@@ -299,9 +380,10 @@ Subject[] ba2pacahon(string str_json)
 			}
 		} else
 		{
+			string typeId = doc.get_str("typeId");
 			string typeVersionId = doc.get_str("typeVersionId");
+			getTemplate(typeId, typeVersionId);
 		}
-
 		gl.addSubject(node);
 
 		log.trace("*");
@@ -318,6 +400,28 @@ Subject[] ba2pacahon(string str_json)
 	}
 	// Make a DOM tree 
 	return null;
+}
+
+GraphCluster getTemplate(string id, string versionId)
+{
+	GraphCluster res = null;
+
+	try
+	{
+		GraphCluster[string] rr = templates.get(id, null);
+
+		if(rr !is null)
+		{
+			res = rr.get(versionId, null);
+		}
+	} catch(Exception ex)
+	{
+		writeln("Ex!" ~ ex.msg);
+	}
+
+	writeln ("template [" ~ id ~ "][" ~ versionId ~ "]=", res);
+	
+	return res;
 }
 
 static string[3] split_lang(string src)
