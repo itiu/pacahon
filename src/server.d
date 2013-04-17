@@ -281,7 +281,7 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 	{
 		io_msg.trace_io(true, msg, message_size);
 //writeln (util.utils.fromStringz (cast(char*)msg, message_size));
-		Subject[] graphs_on_put = ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size));
+		ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size), server_thread.resource);
 	}
 }
 

@@ -1,6 +1,6 @@
 module pacahon.know_predicates;
 
-public const string rdf__type = "rdf:type"; // TODO a == rdf:type 
+public const string rdf__type = "a"; // TODO a == rdf:type 
 public const string rdf__subject = "rdf:subject";
 public const string rdf__predicate = "rdf:predicate";
 public const string rdf__object = "rdf:object";
@@ -13,8 +13,9 @@ public const string rdfs__label = "rdfs:label";
 public const string rdfs__comment = "rdfs:comment";
 
 public const string owl__Ontology = "owl:Ontology";
-public const string owl__imports = "owl:imports";
+//public const string owl__imports = "owl:imports";
 public const string owl__Restriction = "owl:Restriction";
+public const string owl__hasPart = "owl:hasPart";
 public const string owl__onProperty = "owl:onProperty";
 public const string owl__allValuesFrom = "owl:allValuesFrom";
 public const string owl__someValuesFrom = "owl:someValuesFrom";
@@ -114,10 +115,13 @@ public const string docs__active = "docs:active";
 public const string docs__actual = "docs:actual";
 public const string docs__kindOf = "docs:kindOf";
 public const string docs__defaultValue = "docs:defaultValue";
-public const string docs__take = "docs:take";
+public const string docs__importPredicate = "docs:importPredicate";
+public const string docs__exportPredicate = "docs:exportPredicate";
 public const string docs__middleName = "docs:middleName";
+public const string docs__version = "docs:version";
 
 public const string ba__systemInformation = "ba:systemInformation";
 public const string ba__description = "ba:description";
 public const string ba__organizationTag = "ba:organizationTag";
 public const string ba__readOnly = "ba:readOnly";
+public const string ba__code = "ba:code";

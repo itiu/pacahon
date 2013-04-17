@@ -36,3 +36,5 @@ build/src/server.d
 build/src/util/libchash_h.d
 build/src/mmf/mmfgraph.d
 build/src/mmf/rebuild_graph.d
+
+build/src/docs/docs_base.d

@@ -46,6 +46,7 @@ enum LANG: byte
 
 final class GraphCluster
 {
+	Subject[string][string] i1PO;
 	Subject[string] graphs_of_subject;
 
 	void addTriple(string s, string p, string o, byte lang = 0)
@@ -87,6 +88,78 @@ final class GraphCluster
 		return cast(uint) graphs_of_subject.length;
 	}
 
+	Subject find_subject(string predicate, string literal)
+	{
+		Subject[string] ss = i1PO.get(predicate, null);
+		if(ss !is null)
+		{
+			return ss.get(literal, null);
+		}
+		return null;
+	}
+
+	Predicate* find_subject_and_get_predicate(string s_predicate, string s_literal, string p_predicate)
+	{
+		//		writeln ("s_predicate=", s_predicate);
+		Subject[string] ss = i1PO.get(s_predicate, null);
+		if(ss !is null)
+		{
+			//			writeln ("SS=", ss);
+			Subject fs = ss.get(s_literal, null);
+
+			if(fs !is null)
+			{
+				Predicate* pr = fs.edges_of_predicate.get(p_predicate, null);
+
+				return pr;
+			}
+		}
+		return null;
+	}
+
+	void reindex_i1PO(byte[string] indexedPredicates = null)
+	{
+		foreach(subject; graphs_of_subject.values)
+		{
+			for(short jj = 0; jj < subject.count_edges; jj++)
+			{
+				Predicate* pp = &subject.edges[jj];
+
+				if(indexedPredicates !is null && indexedPredicates.get(pp.predicate, 0) == 0)
+					continue;
+
+				for(short kk = 0; kk < pp.count_objects; kk++)
+				{
+					if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
+					{
+						i1PO[pp.predicate][cast(string) pp.objects[kk].literal] = subject;
+					}
+				}
+
+			}
+
+		}
+	}
+
+	void reindex_iXPO()
+	{
+		foreach(subject; graphs_of_subject.values)
+		{
+			subject.reindex_predicate();
+		}
+	}
+
+	override string toString()
+	{
+		string res = "";
+
+		foreach(el; this.graphs_of_subject.values)
+		{
+			res ~= " " ~ el.toString() ~ "\n";
+
+		}
+		return res;
+	}
 }
 
 final class Subject
@@ -359,6 +432,30 @@ final class Subject
 		}
 		needReidex = false;
 	}
+
+	Subject dup ()
+	{
+		Subject new_subj = new Subject ();
+		
+		new_subj.needReidex = this.needReidex;
+		new_subj.subject = this.subject;
+		new_subj.edges = this.edges.dup;
+		new_subj.count_edges = this.count_edges;
+		
+		return new_subj;
+	}
+	
+	override string toString()
+	{
+		string res = this.subject ~ "\n  ";
+
+		for(int i = 0; i < count_edges; i++)
+		{
+			res ~= "  " ~ edges[i].toString() ~ "\n";
+		}
+
+		return res;
+	}
 }
 
 struct Predicate
@@ -451,6 +548,12 @@ struct Predicate
 
 		count_objects++;
 	}
+
+	string toString()
+	{
+		return this.predicate ~ " " ~ getFirstObject();
+	}
+
 }
 
 struct Objectz
