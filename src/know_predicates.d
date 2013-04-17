@@ -119,6 +119,7 @@ public const string docs__importPredicate = "docs:importPredicate";
 public const string docs__exportPredicate = "docs:exportPredicate";
 public const string docs__middleName = "docs:middleName";
 public const string docs__version = "docs:version";
+public const string docs__templateName = "docs:templateName";
 
 public const string ba__systemInformation = "ba:systemInformation";
 public const string ba__description = "ba:description";

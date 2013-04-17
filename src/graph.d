@@ -100,16 +100,18 @@ final class GraphCluster
 
 	Predicate* find_subject_and_get_predicate(string s_predicate, string s_literal, string p_predicate)
 	{
-		//		writeln ("s_predicate=", s_predicate);
+//				writeln ("s_predicate=", s_predicate);
 		Subject[string] ss = i1PO.get(s_predicate, null);
 		if(ss !is null)
 		{
-			//			writeln ("SS=", ss);
+//						writeln ("SS=", ss);
 			Subject fs = ss.get(s_literal, null);
 
+//			writeln ("fs=", fs);
 			if(fs !is null)
 			{
-				Predicate* pr = fs.edges_of_predicate.get(p_predicate, null);
+//				writeln ("edges_of_predicate=", fs.edges_of_predicate);
+				Predicate* pr = fs.getPredicate(p_predicate);
 
 				return pr;
 			}
@@ -169,7 +171,7 @@ final class Subject
 	Predicate[] edges;
 	short count_edges = 0;
 
-	Predicate*[char[]] edges_of_predicate;
+	private Predicate*[char[]] edges_of_predicate;
 
 	string getFirstObject(string pname)
 	{
@@ -210,18 +212,6 @@ final class Subject
 		//		writeln ("edges_of_predicate=", edges_of_predicate, ", edges=", edges);
 
 		return edges_of_predicate.get(pname, null);
-		/*		
-		 Predicate* pp = null;
-		 Predicate** ppp = (pname in edges_of_predicate);
-
-		 if(ppp !is null)
-		 {
-		 pp = *ppp;
-
-		 return pp;
-		 }
-		 return null;
-		 */
 	}
 
 	void addPredicateAsURI(string predicate, string object)
@@ -433,18 +423,18 @@ final class Subject
 		needReidex = false;
 	}
 
-	Subject dup ()
+	Subject dup()
 	{
-		Subject new_subj = new Subject ();
-		
+		Subject new_subj = new Subject();
+
 		new_subj.needReidex = this.needReidex;
 		new_subj.subject = this.subject;
 		new_subj.edges = this.edges.dup;
 		new_subj.count_edges = this.count_edges;
-		
+
 		return new_subj;
 	}
-	
+
 	override string toString()
 	{
 		string res = this.subject ~ "\n  ";

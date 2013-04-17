@@ -1,4 +1,4 @@
-module docs.docs_base;
+module onto.docs_base;
 
 private import std.stdio;
 
@@ -37,27 +37,27 @@ static this()
 }
 
 /*
-void setActualTemplate(string v_dc_identifier, GraphCluster old_version_tmpl, GraphCluster new_version_tmpl,
-		ThreadContext server_context)
-{
-	if(old_version_tmpl is null)
-		old_version_tmpl = getTemplate(v_dc_identifier, null, server_context);
+ void setActualTemplate(string v_dc_identifier, GraphCluster old_version_tmpl, GraphCluster new_version_tmpl,
+ ThreadContext server_context)
+ {
+ if(old_version_tmpl is null)
+ old_version_tmpl = getTemplate(v_dc_identifier, null, server_context);
 
-	if(old_version_tmpl !is null)
-	{
-		Predicate* old_version = old_version_tmpl.find_subject_and_get_predicate(rdf__type, rdfs__Class, docs__version);
+ if(old_version_tmpl !is null)
+ {
+ Predicate* old_version = old_version_tmpl.find_subject_and_get_predicate(rdf__type, rdfs__Class, docs__version);
 
-		if(old_version !is null)
-		{
-			templates[v_dc_identifier][old_version.getFirstObject()] = old_version_tmpl;
-		}
-		templates[v_dc_identifier]["actual"] = new_version_tmpl;
-		new_version_tmpl.reindex_i1PO(indexedPredicates);
-		//		new_version_tmpl.reindex_iXPO();		
-	}
+ if(old_version !is null)
+ {
+ templates[v_dc_identifier][old_version.getFirstObject()] = old_version_tmpl;
+ }
+ templates[v_dc_identifier]["actual"] = new_version_tmpl;
+ new_version_tmpl.reindex_i1PO(indexedPredicates);
+ //		new_version_tmpl.reindex_iXPO();		
+ }
 
-}
-*/
+ }
+ */
 
 GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadContext server_context)
 {
