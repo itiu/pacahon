@@ -804,10 +804,8 @@ class TripleStorage
 						pd = "";
 					}
 
-					for(int ll = 0; ll < pp.count_objects; ll++)
+					foreach(oo ; pp.getObjects)
 					{
-						Objectz oo = pp.objects[ll];
-
 						string oo_as_text;
 
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
@@ -869,10 +867,8 @@ class TripleStorage
 						block_ft_was_created = true;
 					}
 
-					for(int ll = 0; ll < pp.count_objects; ll++)
+					foreach(oo ; pp.getObjects)
 					{
-						Objectz oo = pp.objects[ll];
-
 						string oo_as_text;
 
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)

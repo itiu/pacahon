@@ -17,7 +17,6 @@ private import pacahon.thread_context;
 
 //private import util.Logger;
 //private import std.outbuffer;
-//private import pacahon.json_ld.parser;
 
 //private import util.utils;
 
@@ -36,28 +35,46 @@ static this()
 	indexedPredicates[docs__actual] = 1;
 }
 
-/*
- void setActualTemplate(string v_dc_identifier, GraphCluster old_version_tmpl, GraphCluster new_version_tmpl,
- ThreadContext server_context)
- {
- if(old_version_tmpl is null)
- old_version_tmpl = getTemplate(v_dc_identifier, null, server_context);
+GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadContext server_context)
+{
+//	writeln ("#### getDocument :[", subject, "] ", readed_predicate);
+	GraphCluster res = null;
 
- if(old_version_tmpl !is null)
- {
- Predicate* old_version = old_version_tmpl.find_subject_and_get_predicate(rdf__type, rdfs__Class, docs__version);
+	if(subject is null)
+		return null;
 
- if(old_version !is null)
- {
- templates[v_dc_identifier][old_version.getFirstObject()] = old_version_tmpl;
- }
- templates[v_dc_identifier]["actual"] = new_version_tmpl;
- new_version_tmpl.reindex_i1PO(indexedPredicates);
- //		new_version_tmpl.reindex_iXPO();		
- }
+	Triple[] search_mask = new Triple[1];
+	byte[char[]] r_predicate;
+	TLIterator it;
 
- }
- */
+	search_mask[0] = new Triple(subject, null, null);
+
+	foreach(el; readed_predicate)
+	{
+		r_predicate[el.literal] = 1;
+	}
+	r_predicate[rdf__type] = 1;
+
+//	writeln ("r_predicate = ", r_predicate);
+	it = server_context.ts.getTriplesOfMask(search_mask, r_predicate);
+	if(it !is null)
+	{
+		foreach(triple; it)
+		{
+			if(res is null)
+				res = new GraphCluster();
+
+			res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+//			writeln(triple.S, " ", triple.P, " ", triple.O, " ", triple.lang);
+		}
+	}
+	
+	if(res !is null)
+	{
+		res.reindex_i1PO(indexedPredicates);
+	}	
+	return res;
+}
 
 GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadContext server_context)
 {

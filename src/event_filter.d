@@ -88,10 +88,8 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 						if(p_template !is null)
 						{
-							for(int iz = 0; iz < p_template.count_objects; iz++)
+							foreach(p_object ; p_template.getObjects())
 							{
-								Objectz p_object = p_template.objects[iz];
-
 								string msg_template = p_object.literal;
 
 								if(msg_template !is null)

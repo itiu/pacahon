@@ -447,12 +447,12 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		if(pp.count_objects > 1)
 			outbuff.write('[');
 
-		for(int kk = 0; kk < pp.count_objects; kk++)
+		bool ff = false;
+		foreach(oo; pp.getObjects())
 		{
-			Objectz oo = pp.objects[kk];
-
-			if(kk > 0)
+			if(ff == true)
 				outbuff.write(',');
+			ff = true;
 
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{

@@ -1,5 +1,17 @@
 module pacahon.know_predicates;
 
+//classes
+public const static string prefix_tmpl = "ou:template_";
+public const static string prefix_restriction = "uo :rstr_";
+
+// individuals
+public const static string prefix_doc = "zdb:doc_";
+public const static string prefix_person = "zdb:person_";
+public const static string prefix_department = "zdb:dep_";
+
+
+
+
 public const string rdf__type = "a"; // TODO a == rdf:type 
 public const string rdf__subject = "rdf:subject";
 public const string rdf__predicate = "rdf:predicate";

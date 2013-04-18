@@ -383,6 +383,38 @@ final class Subject
 		needReidex = true;
 	}
 
+	void addPredicate(string predicate, Objectz[] oo)
+	{
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
+		{
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
+		}
+		if(pp !is null)
+		{
+			pp.addObjectzs(oo);
+		} else
+		{
+			if(edges.length == 0)
+				edges = new Predicate[16];
+
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = oo;
+			edges[count_edges].count_objects = cast(ushort)oo.length;
+			count_edges++;
+		}
+		needReidex = true;
+	}
+
 	Predicate* addPredicate()
 	{
 		if(edges.length == 0)
@@ -451,11 +483,16 @@ final class Subject
 struct Predicate
 {
 	string predicate = null;
-	Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
+	private Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
 
 	Objectz*[char[]] objects_of_value;
 
+	Objectz[] getObjects ()
+	{
+		return objects[0..count_objects];
+	}
+	
 	string getFirstObject()
 	{
 		if(count_objects > 0)
@@ -537,6 +574,13 @@ struct Predicate
 		objects[count_objects] = oo;
 
 		count_objects++;
+	}
+
+	void addObjectzs(Objectz[] oo)
+	{
+		objects = oo;
+
+		count_objects = cast(ushort)oo.length;
 	}
 
 	string toString()

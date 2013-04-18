@@ -125,7 +125,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		Subject node = new Subject();
 		Subject actual_node = null;
 
-		writeln("objectType=", objectType);
+		//writeln("objectType=", objectType);
 		string c_id;
 		if(id.length > 7)
 			c_id = id[0 .. 7];
@@ -138,19 +138,24 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		else
 			c_vid = versionId;
 
-		writeln(objectType, " id=", id, " c_id=", c_id, "c_vid=", c_vid);
+		//writeln(objectType, " id=", id, " c_id=", c_id, "c_vid=", c_vid);
 
 		if(objectType == "TEMPLATE")
 		{
-			subj_versioned_UID = "uo:tmpl_" ~ c_id ~ "_" ~ c_vid;
-			subj_UID = "uo:tmpl_" ~ id;
-			
+			subj_versioned_UID = prefix_tmpl ~ c_id ~ "_" ~ c_vid;
+			subj_UID = prefix_tmpl ~ id;
+
 			node.subject = subj_versioned_UID;
 			node.addPredicate(rdfs__subClassOf, docs__Document);
 			node.addPredicate(rdf__type, rdfs__Class);
 			node.addPredicate(dc__identifier, id);
 
-			node.addPredicate(dc__creator, "zdb:person_" ~ authorId);
+			node.addPredicate(dc__creator, prefix_person ~ authorId);
+			if(dateCreated != null)
+				node.addPredicate(dc__created, dateCreated);
+
+			if(dateLastModified != null)
+				node.addPredicate(dc__modified, dateLastModified);
 
 			string name[3] = split_lang(doc.get_str("name"));
 
@@ -162,12 +167,6 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 			if(name[LANG.RU] !is null && name[LANG.EN] is null)
 				node.addPredicate(rdfs__label, name[LANG.RU]);
-
-			if(dateCreated != null)
-				node.addPredicate(dc__created, dateCreated);
-
-			if(dateLastModified != null)
-				node.addPredicate(dc__modified, dateLastModified);
 
 			if(active == "1")
 				node.addPredicate(docs__active, "true");
@@ -217,15 +216,13 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 					foreach(att; attributes)
 					{
 						string code = att.object["code"].str;
-
 						string value = att.get_str("value");
-
 						string new_code = ba2user_onto(code);
 
 						//						writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "]");
 
 						string restrictionId;
-						restrictionId = "uo:rstr_" ~ c_id ~ "_" ~ c_vid ~ "_" ~ new_code;
+						restrictionId = prefix_restriction ~ c_id ~ "_" ~ c_vid ~ "_" ~ new_code;
 
 						Subject attr_node = new Subject();
 						attr_node.subject = restrictionId;
@@ -244,10 +241,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						//						node.addPredicate(rdfs__subClassOf, restrictionId);
 
 						string description = att.get_str("description");
-						attr_node.addPredicate(ba__description, description);
 
 						string[string] descr_els;
-
 						if(description.indexOf("$") >= 0)
 						{
 							string[] els = description.split(";");
@@ -257,9 +252,10 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								if(el_els.length == 2)
 									descr_els[el_els[0]] = el_els[1];
 							}
+							//						writeln(descr_els);
 						}
 
-						//						writeln(descr_els);
+						attr_node.addPredicate(ba__description, description);
 
 						string obligatory = att.get_str("obligatory");
 						if(obligatory == "true")
@@ -305,7 +301,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								string isTable = descr_els.get("$isTable", null);
 								if(isTable !is null)
 								{
-									allValuesFrom = "uo:doc_" ~ isTable;
+									allValuesFrom = prefix_tmpl ~ isTable;
 									dc_identifier_val = isTable;
 								} else
 									allValuesFrom = docs__Document;
@@ -314,16 +310,15 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 							{
 								//docs__defaultValue
 								string dictionaryIdValue = att.get_str("dictionaryIdValue");
-								allValuesFrom = "uo:tmpl_" ~ dictionaryIdValue;
+								allValuesFrom = prefix_tmpl ~ dictionaryIdValue;
 								dc_identifier_val = dictionaryIdValue;
 
 								string recordIdValue = att.get_str("recordIdValue");
 								if(recordIdValue !is null)
-									attr_node.addPredicate(docs__defaultValue, "uo:doc_" ~ recordIdValue);
+									attr_node.addPredicate(docs__defaultValue, prefix_doc ~ recordIdValue);
 
 								string dictionaryNameValue = att.get_str("dictionaryNameValue");
 								attr_node.addPredicate(rdfs__comment, dictionaryNameValue);
-
 							}
 
 							if(allValuesFrom !is null)
@@ -355,7 +350,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 									if(export_predicates !is null)
 									{
 										//										writeln("import predicate", export_predicates);
-										foreach(el; export_predicates.objects)
+										foreach(el; export_predicates.getObjects)
 										{
 											attr_node.addPredicate(docs__importPredicate, el);
 											//											writeln("import predicate", el);
@@ -403,7 +398,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						if(actual == "1")
 						{
 							Subject actual_attr_node = attr_node.dup();
-							actual_attr_node.subject = "uo:rstr_" ~ id ~ "_" ~ new_code;
+							actual_attr_node.subject = prefix_restriction ~ id ~ "_" ~ new_code;
 							actual_attr_node.addPredicate(dc__hasPart, subj_UID);
 							gcl_actual.addSubject(actual_attr_node);
 						}
@@ -416,32 +411,32 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 				}
 			}
 
-			if(actual == "1")
-			{
-				actual_node = node.dup();
-				actual_node.addPredicate(docs__actual, "true");
-				actual_node.subject = subj_UID;
-				gcl_actual.addSubject(actual_node);
-			}
-
-			node.addPredicate(docs__version, versionId);
-			gcl_versioned.addSubject(node);
-
 		} else
 		{
 			// objectType != "TEMPLATE"
-			subj_versioned_UID = "uo:doc_" ~ c_id ~ "_" ~ c_vid;
-			subj_UID = "uo:doc_" ~ id;
+			subj_versioned_UID = prefix_doc ~ c_id ~ "_" ~ c_vid;
+			subj_UID = prefix_doc ~ id;
 
 			node.subject = subj_versioned_UID;
 			node.addPredicate(rdf__type, docs__Document);
 			node.addPredicate(dc__identifier, id);
 			
+			node.addPredicate(dc__creator, prefix_person ~ authorId);
+			if(dateCreated != null)
+				node.addPredicate(dc__created, dateCreated);
+
+			if(dateLastModified != null)
+				node.addPredicate(dc__modified, dateLastModified);
+
 			string typeId = doc.get_str("typeId");
 			string typeVersionId = doc.get_str("typeVersionId");
 			GraphCluster tmplate = getTemplate(typeId, typeVersionId, server_context);
 			if(tmplate !is null)
 			{
+				Subject tmpl_class = tmplate.find_subject(rdf__type, rdfs__Class);
+				
+				node.addPredicate(rdf__type, tmpl_class.subject);
+
 				JSONValue[] attributes;
 
 				if(("attributes" in doc.object) !is null)
@@ -453,55 +448,132 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						foreach(att; attributes)
 						{
 							string code = att.object["code"].str;
-
 							string value = att.get_str("value");
 
 							if(value !is null && value.length > 0)
 							{
-								writeln("value=", value);
 								string new_code = ba2user_onto(code);
+//								writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
+
+								string description = att.get_str("description");
+
+								string[string] descr_els;
+								if(description !is null)
+								{
+									if(description.indexOf("$") >= 0)
+									{
+										string[] els = description.split(";");
+										foreach(el; els)
+										{
+											string[] el_els = el.split("=");
+											if(el_els.length == 2)
+												descr_els[el_els[0]] = el_els[1];
+										}
+										//						writeln(descr_els);
+									}
+								}
 
 								string type = att.get_str("type");
 
 								if(type == "DICTIONARY")
 								{
-									value = "uo:doc_" ~ value;
+									value = prefix_doc ~ value;
 									// возьмем данные для реификации из аттрибута (recordNameValue) 
 									string recordNameValue = att.get_str("recordNameValue");
 									string dictionaryNameValue = att.get_str("dictionaryNameValue");
 
-									writeln("recordNameValue=", recordNameValue);
-									writeln("dictionaryNameValue=", dictionaryNameValue);
+//									writeln("recordNameValue=", recordNameValue);
+//									writeln("dictionaryNameValue=", dictionaryNameValue);
 
 									Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
 
 									if(restriction !is null)
 									{
-										//	writeln("restriction=", restriction);
-
-										//docs__templateName
-										// создать реифицированный субьект rS к текущему аттрибуту
-										Subject rS = create_reifed_info (subj_versioned_UID, new_code, value);
-																				
+										//										writeln("restriction=", restriction);
+										//										writeln("value=", value);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
-											writeln("docs__importPredicates=", importPredicates.objects);
+											//											writeln("docs__importPredicates=", importPredicates.getObjects);
+
+											// создать реифицированный субьект rS к текущему аттрибуту
+											Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
+
 											// возьмем данные из импортируемых полей данного документа
 											// добавим реифицированные данные в rS
-											
-											if (importPredicates.count_objects == 1)	
+
+											if(importPredicates.count_objects == 1)
 											{
 												rS.addPredicate(docs__templateName, dictionaryNameValue);
-												rS.addPredicate(importPredicates.getFirstObject (), recordNameValue);
+												rS.addPredicate(importPredicates.getFirstObject(), recordNameValue);
+											} else
+											{
+												// возьмем из compositionValues
+												string compositionValues = descr_els.get("$compositionValues", null);
+
+												if(compositionValues !is null)
+												{
+													string[] els = compositionValues.split("|");
+													foreach(el; els)
+													{
+														string gg[] = el.split("--");
+
+														if(gg.length == 2)
+														{
+															rS.addPredicate(ba2user_onto(gg[0]), gg[1]);
+														}
+													}
+												}
+											}
+
+											gcl_versioned.addSubject(rS);
+										}
+
+									}
+								} else if(type == "LINK")
+								{
+									value = prefix_doc ~ value;
+
+									Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
+
+									if(restriction !is null)
+									{
+										// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
+										// требуется считать из базы
+										//										writeln("restriction=", restriction);
+
+										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
+										if(importPredicates !is null)
+										{
+											//											writeln("docs__importPredicates=", importPredicates.objects);
+											GraphCluster inner_doc = getDocument(value, importPredicates.getObjects(),
+													server_context);
+											//											writeln("doc = ", inner_doc);	
+
+											if(inner_doc !is null)
+											{
+												Subject indoc = inner_doc.find_subject(rdf__type, docs__Document);
+
+												// создать реифицированный субьект rS к текущему аттрибуту
+												Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
+
+												foreach(el; importPredicates.getObjects())
+												{
+													Predicate* pp = indoc.getPredicate(el.literal);
+													rS.addPredicate(el.literal, pp.getObjects());
+												}
+												gcl_versioned.addSubject(rS);
 											}
 										}
-										
-										gcl_versioned.addSubject(rS);
+
 									}
-								}
-								
-								node.addPredicate (new_code, value);
+								} 
+								else if(type == "ORGANIZATION")
+								{
+									value = prefix_person ~ value;									
+								}								
+
+								node.addPredicate(new_code, value);
 							}
 							//							writeln ("ss=", ss);
 
@@ -512,6 +584,17 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			gcl_versioned.addSubject(node);
 
 		}
+
+		if(actual == "1")
+		{
+			actual_node = node.dup();
+			actual_node.addPredicate(docs__actual, "true");
+			actual_node.subject = subj_UID;
+			gcl_actual.addSubject(actual_node);
+		}
+
+		node.addPredicate(docs__version, versionId);
+		gcl_versioned.addSubject(node);
 
 		log.trace("*");
 		writeln("*");
@@ -526,11 +609,11 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		bool isOk;
 		string reason;
 		store_graph(gcl_versioned.graphs_of_subject.values, null, server_context, isOk, reason);
-		
-//		foreach(subject; gcl_versioned.graphs_of_subject.values)
-//		{
-//			server_context.ts.addSubject(subject);
-//		}
+
+		//		foreach(subject; gcl_versioned.graphs_of_subject.values)
+		//		{
+		//			server_context.ts.addSubject(subject);
+		//		}
 
 		if(actual == "1")
 		{

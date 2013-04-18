@@ -24,7 +24,6 @@ private import trioplax.mongodb.TripleStorage;
 private import util.Logger;
 
 private import pacahon.graph;
-private import pacahon.n3.parser;
 private import pacahon.json_ld.parser1;
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
@@ -266,7 +265,6 @@ void main(char[][] args)
 
 enum format: byte
 {
-	TURTLE = 0,
 	JSON_LD = 1,
 	UNKNOWN = -1
 }
@@ -336,24 +334,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		{
 			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
 		}
-	} else
-	{
-		try
-		{
-			if(trace_msg[66] == 1)
-				log.trace("parse from turtle");
-
-			msg_format = format.TURTLE;
-			triples = parse_n3_string(cast(char*) msg, message_size);
-
-			if(trace_msg[67] == 1)
-				log.trace("parse from turtle, ok");
-		} catch(Exception ex)
-		{
-			log.trace("Exception in parse_n3_string:[%s]", ex.msg);
-		}
-	}
-	/*
+	}	/*
 	 {
 	 sw.stop();
 	 long t = cast(long) sw.peek().usecs;
@@ -361,14 +342,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	 sw.start();
 	 }
 	 */
-	if(trace_msg[2] == 1)
-	{
-		OutBuffer outbuff = new OutBuffer();
-		toTurtle(triples, outbuff);
-		outbuff.write(0);
-		ubyte[] bb = outbuff.toBytes();
-		io_msg.trace_io(true, cast(byte*) bb, bb.length);
-	}
 
 	if(trace_msg[3] == 1)
 	{
@@ -430,9 +403,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			string userId;
 
-			if(ticket !is null && ticket.objects !is null)
+			if(ticket !is null && ticket.getObjects() !is null)
 			{
-				string ticket_str = ticket.objects[0].literal;
+				string ticket_str = ticket.getObjects()[0].literal;
 
 				if(ticket_str == "@local")
 					ticket_str = local_ticket;
@@ -522,9 +495,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
 	OutBuffer outbuff = new OutBuffer();
-
-	if(msg_format == format.TURTLE)
-		toTurtle(results, outbuff);
 
 	if(msg_format == format.JSON_LD)
 		toJson_ld(results, outbuff);

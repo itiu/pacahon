@@ -18,7 +18,6 @@ private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 
-private import pacahon.n3.parser;
 private import pacahon.json_ld.parser;
 
 private import pacahon.authorization;
@@ -70,34 +69,22 @@ Subject put(Subject message, Predicate* sender, string userId, ThreadContext ser
 	if(trace_msg[32] == 1)
 		log.trace("command put, args.count_objects=%d ", args.count_objects);
 
-	for(short ii; ii < args.count_objects; ii++)
+	foreach(arg; args.getObjects)
 	{
 		Subject[] graphs_on_put = null;
 
 		if(trace_msg[33] == 1)
-			log.trace("args.objects[%d].type = %s", ii, text(args.objects[ii].type));
+			log.trace("args.objects.type = %s", text(arg.type));
 
 		try
 		{
-			if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
+			if(arg.type == OBJECT_TYPE.CLUSTER)
 			{
-				graphs_on_put = args.objects[ii].cluster.graphs_of_subject.values;
-			} else if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+				graphs_on_put = arg.cluster.graphs_of_subject.values;
+			} else if(arg.type == OBJECT_TYPE.SUBJECT)
 			{
 				graphs_on_put = new Subject[1];
-				graphs_on_put[0] = args.objects[ii].subject;
-			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
-			{
-				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = cast(uint) strlen(args_text);
-
-				if(trace_msg[33] == 1)
-					log.trace("start parse arg");
-
-				graphs_on_put = parse_n3_string(cast(char*) args_text, arg_size);
-
-				if(trace_msg[33] == 1)
-					log.trace("complete parse arg");
+				graphs_on_put[0] = arg.subject;
 			}
 		} catch(Exception ex)
 		{
@@ -260,10 +247,8 @@ public void store_graph(Subject[] graphs_on_put, string userId, ThreadContext se
 
 					if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
 					{
-						for(int ll = 0; ll < pp.count_objects; ll++)
+						foreach(oo; pp.getObjects())
 						{
-							Objectz oo = pp.objects[ll];
-
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 								server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 							else
@@ -312,30 +297,21 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 	if(args !is null)
 	{
-		for(short ii; ii < args.count_objects; ii++)
+		foreach(arg; args.getObjects())
 		{
 			if(trace_msg[43] == 1)
-				log.trace("args.objects[%d].type = %s", ii, text(args.objects[ii].type));
+				log.trace("args.objects.type = %s", text(arg.type));
 
 			Subject[] graphs_as_template;
 
-			if(args.objects[ii].type == OBJECT_TYPE.CLUSTER)
+			if(arg.type == OBJECT_TYPE.CLUSTER)
 			{
-				graphs_as_template = args.objects[ii].cluster.graphs_of_subject.values;
-			} else if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+				graphs_as_template = arg.cluster.graphs_of_subject.values;
+			} else if(arg.type == OBJECT_TYPE.SUBJECT)
 			{
 				graphs_as_template = new Subject[1];
-				graphs_as_template[0] = args.objects[ii].subject;
-			} else if(args.objects[ii].type == OBJECT_TYPE.LITERAL)
-			{
-				char* args_text = cast(char*) args.objects[ii].literal;
-				int arg_size = cast(uint) strlen(args_text);
-
-				if(trace_msg[44] == 1)
-					log.trace("arg [%s], arg_size=%d", args.objects[ii].literal, arg_size);
-
-				graphs_as_template = parse_n3_string(cast(char*) args_text, arg_size);
-			}
+				graphs_as_template[0] = arg.subject;
+			} 
 
 			if(trace_msg[45] == 1)
 				log.trace("arguments has been read");
@@ -381,10 +357,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 					{
 						Predicate pp = graph.edges[kk];
 						//						log.trace("#6 pp.predicate=%s", pp.predicate);
-						for(int ll = 0; ll < pp.count_objects; ll++)
+						foreach(oo; pp.getObjects())
 						{
-							//							log.trace("#4");
-							Objectz oo = pp.objects[ll];
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 							{
 								//								log.trace("#5 oo.literal=%s", oo.literal);
@@ -503,9 +477,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 							for(int kk = 0; kk < graph.count_edges; kk++)
 							{
 								Predicate pp = graph.edges[kk];
-								for(int ll = 0; ll < pp.count_objects; ll++)
+								foreach(oo; pp.getObjects())
 								{
-									Objectz oo = pp.objects[ll];
 									if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 									{
 										if(trace_msg[46] == 1)
@@ -577,9 +550,8 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 						Triple statement = null;
 
-						for(int ll = 0; ll < pp.count_objects; ll++)
+						foreach(oo; pp.getObjects())
 						{
-							Objectz oo = pp.objects[ll];
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 							{
 								if(trace_msg[46] == 1)
@@ -796,7 +768,7 @@ Subject remove(Subject message, Predicate* sender, string userId, ThreadContext 
 			return null;
 		}
 
-		Subject ss = arg.objects[0].subject;
+		Subject ss = arg.getObjects()[0].subject;
 		if(ss is null)
 		{
 			reason = msg__args ~ " найден, но не заполнен";

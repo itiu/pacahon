@@ -18,7 +18,6 @@ build/src/know_predicates.d
 build/src/util/load_info.d 
 build/src/log_msg.d 
 build/src/thread_context.d 
-build/src/util/turtle-parser.d 
 
 build/src/Log.d 
 build/src/libczmq_header.d 

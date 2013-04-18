@@ -21,7 +21,6 @@ private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 
-private import pacahon.n3.parser;
 private import pacahon.json_ld.parser;
 
 private import pacahon.authorization;
@@ -68,7 +67,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 			return null;
 		}
 
-		Subject ss = arg.objects[0].subject;
+		Subject ss = arg.getObjects()[0].subject;
 		if(ss is null)
 		{
 			reason = msg__args ~ " найден, но не заполнен";
@@ -103,9 +102,9 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		// TODO определится что возвращать null или пустой итератор
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: start getTriplesOfMask search_mask");
-		
+
 		TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
-		
+
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: iterator %x", it);
 
@@ -124,7 +123,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 					log.trace("get_ticket: store ticket in DB");
 
 				// сохраняем в хранилище
-				string ticket_id = "auth:" ~ new_id.toString ();//cast(string) generated.toString;
+				string ticket_id = "auth:" ~ new_id.toString();//cast(string) generated.toString;
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
 				server_thread.ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
@@ -177,26 +176,25 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 	}
 }
 
-public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread,
-		out bool isOk, out string reason)
+public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+		out string reason)
 {
 	Subject res;
 
 	Predicate* args = message.getPredicate(msg__args);
 
-	for(short ii; ii < args.count_objects; ii++)
+	foreach(arg; args.getObjects())
 	{
-		if(args.objects[ii].type == OBJECT_TYPE.SUBJECT)
+		if(arg.type == OBJECT_TYPE.SUBJECT)
 		{
-			Subject arg = args.objects[ii].subject;
+			Subject sarg = arg.subject;
 
-			Predicate* unset_msgs = arg.getPredicate(pacahon__off_trace_msg);
+			Predicate* unset_msgs = sarg.getPredicate(pacahon__off_trace_msg);
 
 			if(unset_msgs !is null)
 			{
-				for(int ll = 0; ll < unset_msgs.count_objects; ll++)
+				foreach(oo; unset_msgs.getObjects())
 				{
-					Objectz oo = unset_msgs.objects[ll];
 					if(oo.literal.length == 1)
 					{
 						if(oo.literal[0] == '*')
@@ -209,13 +207,12 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 				}
 			}
 
-			Predicate* set_msgs = arg.getPredicate(pacahon__on_trace_msg);
+			Predicate* set_msgs = sarg.getPredicate(pacahon__on_trace_msg);
 
 			if(set_msgs !is null)
 			{
-				for(int ll = 0; ll < set_msgs.count_objects; ll++)
+				foreach(oo; set_msgs.getObjects())
 				{
-					Objectz oo = set_msgs.objects[ll];
 					if(oo.literal.length == 1)
 					{
 						if(oo.literal[0] == '*')
@@ -236,8 +233,8 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId,
-		ThreadContext server_thread, out string local_ticket, out char from)
+void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, ThreadContext server_thread,
+		out string local_ticket, out char from)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -268,7 +265,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 					log.trace("command_preparer, get");
 
 				GraphCluster gres = new GraphCluster;
-				
+
 				get(message, sender, userId, server_thread, isOk, reason, gres, from);
 				if(isOk == true)
 				{
@@ -312,12 +309,12 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 			if("get_info" in command.objects_of_value)
 			{
 				Statistic stat = server_thread.stat;
-				
-				Subject res1 = new Subject();
-				
-				res1.addPredicate("count_messages", text (stat.count_message));
 
-				out_message.addPredicate(msg__result, res1);				
+				Subject res1 = new Subject();
+
+				res1.addPredicate("count_messages", text(stat.count_message));
+
+				out_message.addPredicate(msg__result, res1);
 			}
 			//		reason = cast(char[]) "запрос выполнен";
 		} else
