@@ -2,7 +2,7 @@ module pacahon.know_predicates;
 
 //classes
 public const static string prefix_tmpl = "ou:template_";
-public const static string prefix_restriction = "uo :rstr_";
+public const static string prefix_restriction = "uo:rstr_";
 
 // individuals
 public const static string prefix_doc = "zdb:doc_";
@@ -108,13 +108,13 @@ public const string docs__file = "docs:file"; // тег - ссылка на фа
 public const string docs__attachment = "docs:attachment"; // тег для использования в экземплярах документа	
 public const string docs__tumbnail = "docs:tumbnail";
 public const string docs__unit = "docs:unit";
-public const string docs__department_card = "docs:department_card";
 public const string docs__parentUnit = "docs:parentUnit";
-public const string docs__employee_card = "docs:employee_card";
 public const string docs__employee = "docs:employee";
-public const string docs__organization_card = "docs:organization_card";
-public const string docs__unit_card = "docs:unit_card";
-public const string docs__group_card = "docs:group_card";
+public const string docs__employee_card = "docs:employee_card"; 			// карточка пользователя
+public const string docs__organization_card = "docs:organization_card"; 	// карточка организации
+public const string docs__unit_card = "docs:unit_card"; 					// карточка единицы орг структуры
+public const string docs__department_card = "docs:department_card"; 		// карточка подразделения
+public const string docs__group_card = "docs:group_card"; 					// карточка группы
 public const string docs__carbon_copy = "docs:carbon_copy";
 public const string docs__dateInterval = "docs:dateInterval";
 public const string docs__contractor = "docs:contractor";
@@ -129,7 +129,8 @@ public const string docs__kindOf = "docs:kindOf";
 public const string docs__defaultValue = "docs:defaultValue";
 public const string docs__importPredicate = "docs:importPredicate";
 public const string docs__exportPredicate = "docs:exportPredicate";
-public const string docs__middleName = "docs:middleName";
+//public const string docs__middleName = "docs:middleName";
+public const string gost19__middleName = "gost19:middleName";
 public const string docs__version = "docs:version";
 public const string docs__templateName = "docs:templateName";
 
