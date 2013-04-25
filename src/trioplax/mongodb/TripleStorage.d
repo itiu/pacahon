@@ -1237,7 +1237,7 @@ class TripleStorage
 
 			long t0 = cast(long) sw0.peek().usecs;
 
-			if(t0 > 5000)
+			if(t0 > 50000)
 			{
 				char[] ss = bson_to_string(&query);
 				log.trace("getTriplesOfMask: QUERY:\n %s", ss);

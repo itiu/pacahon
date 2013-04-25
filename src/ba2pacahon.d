@@ -13,7 +13,7 @@ private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
-private import std.json_str;
+private import std.json;
 private import std.string;
 
 private import util.Logger;
@@ -30,6 +30,8 @@ string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;
 
 Logger log;
+
+int count = 0;
 
 static this()
 {
@@ -104,7 +106,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 	try
 	{
-		log.trace("start parse json");
+		//		log.trace("start parse json");
 
 		doc = parseJSON(cast(char[]) str_json);
 
@@ -114,13 +116,13 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		string subj_versioned_UID;
 
 		string id = doc.object["id"].str;
-		string versionId = doc.get_str("versionId");
-		string objectType = doc.get_str("objectType");
-		string dateCreated = doc.get_str("dateCreated");
-		string active = doc.get_str("active");
-		string actual = doc.get_str("actual");
-		string authorId = doc.get_str("authorId");
-		string dateLastModified = doc.get_str("dateLastModified");
+		string versionId = get_str(doc, "versionId");
+		string objectType = get_str(doc, "objectType");
+		string dateCreated = get_str(doc, "dateCreated");
+		string active = get_str(doc, "active");
+		string actual = get_str(doc, "actual");
+		string authorId = get_str(doc, "authorId");
+		string dateLastModified = get_str(doc, "dateLastModified");
 
 		Subject node = new Subject();
 		Subject actual_node = null;
@@ -149,7 +151,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			else
 				subj_UID = id;
 
-			writeln(subj_UID);
+			//writeln(subj_UID);
 
 			node.subject = subj_versioned_UID;
 			node.addPredicate(rdfs__subClassOf, docs__Document);
@@ -232,7 +234,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						string value = att.get_str("value");
 						string new_code = ba2user_onto(code);
 
-						//						writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "]");
+						//writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "]");
 
 						string restrictionId;
 						restrictionId = prefix_restriction ~ c_id ~ "_" ~ c_vid ~ "_" ~ new_code;
@@ -265,7 +267,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								if(el_els.length == 2)
 									descr_els[el_els[0]] = el_els[1];
 							}
-							//						writeln(descr_els);
+							//writeln(descr_els);
 						}
 
 						attr_node.addPredicate(ba__description, description);
@@ -354,7 +356,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 								if(dc_identifier_val !is null && dc_identifier_val.length > 3)
 								{
-									//								writeln("композиция не задана, берем представление по умолчанию у шаблона на который ссылаемся");
+									//writeln("композиция не задана, берем представление по умолчанию у шаблона на который ссылаемся");
 									GraphCluster _tmpl = getTemplate(dc_identifier_val, null, server_context);
 
 									if(_tmpl !is null)
@@ -375,7 +377,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 										//								export_predicates
 									} else
 									{
-										log.trace("linked template [" ~ dc_identifier_val ~ "] not found [" ~ id ~"][" ~ code ~ "]");
+										log.trace(
+												"linked template [" ~ dc_identifier_val ~ "] not found [" ~ id ~ "][" ~ code ~ "]");
 									}
 								}
 
@@ -472,7 +475,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 							if(value !is null && value.length > 0)
 							{
 								string new_code = ba2user_onto(code);
-								//								writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
+								//writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
 								string description = att.get_str("description");
 
@@ -488,7 +491,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 											if(el_els.length == 2)
 												descr_els[el_els[0]] = el_els[1];
 										}
-										//						writeln(descr_els);
+										//writeln(descr_els);
 									}
 								}
 
@@ -501,20 +504,18 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 									string recordNameValue = att.get_str("recordNameValue");
 									string dictionaryNameValue = att.get_str("dictionaryNameValue");
 
-									//									writeln("recordNameValue=", recordNameValue);
-									//									writeln("dictionaryNameValue=", dictionaryNameValue);
+									//writeln("recordNameValue=", recordNameValue);
+									//writeln("dictionaryNameValue=", dictionaryNameValue);
 
 									Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
 
 									if(restriction !is null)
 									{
-										//										writeln("restriction=", restriction);
-										//										writeln("value=", value);
+										//writeln("restriction=", restriction);
+										//writeln("value=", value);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
-											//											writeln("docs__importPredicates=", importPredicates.getObjects);
-
 											// создать реифицированный субьект rS к текущему аттрибуту
 											Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
 
@@ -558,14 +559,14 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 									{
 										// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 										// требуется считать из базы
-										//										writeln("restriction=", restriction);
+										//writeln("restriction=", restriction);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
-											//											writeln("docs__importPredicates=", importPredicates.objects);
+											//writeln("#2docs__importPredicates=", importPredicates.getObjects());
 											GraphCluster inner_doc = getDocument(value, importPredicates.getObjects(),
 													server_context);
-											//											writeln("doc = ", inner_doc);	
+											//writeln("doc = ", inner_doc);	
 											if(inner_doc !is null)
 											{
 												Subject indoc = inner_doc.find_subject(rdf__type, docs__Document);
@@ -593,7 +594,6 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 								node.addPredicate(new_code, value);
 							}
-							//							writeln ("ss=", ss);
 
 						}
 					}
@@ -614,14 +614,11 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		node.addPredicate(docs__version, versionId);
 		gcl_versioned.addSubject(node);
 
-		log.trace("*");
-		writeln("*");
-
-		OutBuffer outbuff = new OutBuffer();
-		toJson_ld(gcl_versioned.graphs_of_subject.values, outbuff);
-		outbuff.write(0);
-		ubyte[] bb = outbuff.toBytes();
-		log.trace_io(false, cast(byte*) bb, bb.length);
+		//		OutBuffer outbuff = new OutBuffer();
+		//		toJson_ld(gcl_versioned.graphs_of_subject.values, outbuff);
+		//		outbuff.write(0);
+		//		ubyte[] bb = outbuff.toBytes();
+		//		log.trace_io(false, cast(byte*) bb, bb.length);
 
 		// store versioned 
 		bool isOk;
@@ -643,6 +640,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			}
 		}
 
+		log.trace("ba2pacahon, count:%d", ++count);
 	} catch(Exception ex)
 	{
 		writeln("Ex:" ~ ex.msg);
@@ -684,4 +682,22 @@ static string[3] split_lang(string src)
 		res[LANG.RU] = src;
 	}
 	return res;
+}
+
+public string get_str(JSONValue jv, string field_name)
+{
+	if(field_name in jv.object)
+	{
+		return jv.object[field_name].str;
+	}
+	return null;
+}
+
+public long get_int(JSONValue jv, string field_name)
+{
+	if(field_name in jv.object)
+	{
+		return jv.object[field_name].integer;
+	}
+	return 0;
 }

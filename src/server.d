@@ -9,7 +9,7 @@ private import core.memory;
 
 private import std.stdio;
 private import std.c.string;
-private import std.json_str;
+private import std.json;
 private import std.outbuffer;
 private import std.datetime;
 private import std.conv;

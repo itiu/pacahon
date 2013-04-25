@@ -2,7 +2,7 @@
     "mongodb_server":"127.0.0.1",
     "mongodb_port":27017,
     "mongodb_collection":"pacahon",
-    "zmq_point":"tcp:\/\/*:5555",
+    "zmq_point":"tcp:\/\/*:5554",
     "rabbitmq" :
     {	
     	"hostname":"192.168.0.102",

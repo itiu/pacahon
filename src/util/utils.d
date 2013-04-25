@@ -4,7 +4,7 @@ private import std.file;
 
 private import std.datetime;
 
-private import std.json_str;
+private import std.json;
 private import core.stdc.stdio;
 private import std.c.string;
 private import std.c.linux.linux;

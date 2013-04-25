@@ -7,7 +7,7 @@ private
 
 	import std.c.stdio;
 
-	import std.json_str;
+	import std.json;
 
 	import trioplax.triple;
 	import trioplax.mongodb.TripleStorage;

@@ -29,7 +29,6 @@ build/src/zmq_pp_broker_client.d
 build/src/librabbitmq_headers.d
 build/src/rabbitmq_client.d
 
-build/src/std/json_str.d
 build/src/myversion.d
 build/src/server.d 
 build/src/util/libchash_h.d

@@ -3,12 +3,15 @@ module onto.rdf_base;
 private import std.stdio;
 private import pacahon.know_predicates;
 private import pacahon.graph;
+private import std.uuid;
 
 Subject create_reifed_info(string ss, string pp, string oo)
 {
 	Subject new_subj = new Subject();
-
-	new_subj.subject = "r" ~ oo[8..14];
+	
+	UUID new_id = randomUUID();	
+	
+	new_subj.subject = "r" ~ new_id.toString()[0..8];
 
 	new_subj.addPredicate(rdf__type, rdf__Statement);
 	new_subj.addPredicate(rdf__subject, ss);
