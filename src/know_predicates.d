@@ -62,6 +62,11 @@ public const string swrc__Department = "swrc:Department";
 public const string swrc__lastName = "swrc:lastName";
 public const string swrc__firstName = "swrc:firstName";
 public const string swrc__name = "swrc:name";
+public const string swrc__email = "swrc:email";
+public const string swrc__phone = "swrc:phone";
+
+public const string gost19__middleName = "gost19:middleName";
+public const string gost19__internal_phone = "gost19:internal_phone";
 
 public const string msg__Message = "msg:Message";
 public const string msg__args = "msg:args";
@@ -102,6 +107,7 @@ public const string ba2pacahon__pacahon = "ba2pacahon:pacahon"; // термин 
 public const string docs__Group = "docs:Group";
 public const string docs__Document = "docs:Document";
 public const string docs__document = "docs:document";
+public const string docs__label = "docs:label";
 public const string docs__source = "docs:source";
 public const string docs__FileDescription = "docs:FileDescription"; // класс карточка файла
 public const string docs__file = "docs:file"; // тег - ссылка на файл ( используется в карточке файла)
@@ -130,7 +136,6 @@ public const string docs__defaultValue = "docs:defaultValue";
 public const string docs__importPredicate = "docs:importPredicate";
 public const string docs__exportPredicate = "docs:exportPredicate";
 //public const string docs__middleName = "docs:middleName";
-public const string gost19__middleName = "gost19:middleName";
 public const string docs__version = "docs:version";
 public const string docs__templateName = "docs:templateName";
 

@@ -13,12 +13,12 @@ private import std.outbuffer;
 
 private import std.datetime;
 
-private import trioplax.triple;
+private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 
-private import pacahon.json_ld.parser;
+private import pacahon.json_ld.parser1;
 
 private import pacahon.authorization;
 private import pacahon.know_predicates;
@@ -173,7 +173,7 @@ public void store_graph(Subject[] graphs_on_put, string userId, ThreadContext se
 					graph.addPredicate(dc__creator, userId);
 				}
 
-				server_context.ts.addSubject(graph);
+				server_context.ts.storeSubject(graph);
 
 				if(type.isExistLiteral(event__Event))
 				{

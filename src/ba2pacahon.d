@@ -3,7 +3,7 @@ module pacahon.ba2pacahon;
 private import std.stdio;
 private import std.csv;
 
-private import trioplax.triple;
+private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
@@ -18,7 +18,7 @@ private import std.string;
 
 private import util.Logger;
 private import std.outbuffer;
-private import pacahon.json_ld.parser;
+//private import pacahon.json_ld.parser;
 
 private import util.utils;
 private import onto.rdf_base;
@@ -458,6 +458,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 				Subject tmpl_class = tmplate.find_subject(rdf__type, rdfs__Class);
 
 				node.addPredicate(rdf__type, tmpl_class.subject);
+				node.addPredicate(docs__label, tmpl_class.getObjects(rdfs__label));
 
 				JSONValue[] attributes;
 
@@ -477,40 +478,41 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								string new_code = ba2user_onto(code);
 								//writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
-								string description = att.get_str("description");
+								Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
 
-								string[string] descr_els;
-								if(description !is null)
+								if(restriction !is null)
 								{
-									if(description.indexOf("$") >= 0)
+									
+									string description = att.get_str("description");
+
+									string[string] descr_els;
+									if(description !is null)
 									{
-										string[] els = description.split(";");
-										foreach(el; els)
+										if(description.indexOf("$") >= 0)
 										{
-											string[] el_els = el.split("=");
-											if(el_els.length == 2)
-												descr_els[el_els[0]] = el_els[1];
+											string[] els = description.split(";");
+											foreach(el; els)
+											{
+												string[] el_els = el.split("=");
+												if(el_els.length == 2)
+													descr_els[el_els[0]] = el_els[1];
+											}
+											//writeln(descr_els);
 										}
-										//writeln(descr_els);
 									}
-								}
 
-								string type = att.get_str("type");
+									string type = att.get_str("type");
 
-								if(type == "DICTIONARY")
-								{
-									value = prefix_doc ~ value;
-									// возьмем данные для реификации из аттрибута (recordNameValue) 
-									string recordNameValue = att.get_str("recordNameValue");
-									string dictionaryNameValue = att.get_str("dictionaryNameValue");
-
-									//writeln("recordNameValue=", recordNameValue);
-									//writeln("dictionaryNameValue=", dictionaryNameValue);
-
-									Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
-
-									if(restriction !is null)
+									if(type == "DICTIONARY")
 									{
+										value = prefix_doc ~ value;
+										// возьмем данные для реификации из аттрибута (recordNameValue) 
+										string recordNameValue = att.get_str("recordNameValue");
+										string dictionaryNameValue = att.get_str("dictionaryNameValue");
+
+										//writeln("recordNameValue=", recordNameValue);
+										//writeln("dictionaryNameValue=", dictionaryNameValue);
+
 										//writeln("restriction=", restriction);
 										//writeln("value=", value);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
@@ -547,16 +549,11 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 											}
 
 											gcl_versioned.addSubject(rS);
+
 										}
-
-									}
-								} else if(type == "LINK" || type == "ORGANIZATION")
-								{
-									value = prefix_doc ~ value;
-									Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
-
-									if(restriction !is null)
+									} else if(type == "LINK" || type == "ORGANIZATION")
 									{
+										value = prefix_doc ~ value;
 										// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 										// требуется считать из базы
 										//writeln("restriction=", restriction);
@@ -591,8 +588,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 									}
 								}
-
-								node.addPredicate(new_code, value);
+								node.addPredicate(new_code, value, restriction);
 							}
 
 						}
@@ -636,7 +632,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			foreach(subject; gcl_actual.graphs_of_subject.values)
 			{
 				server_context.ts.removeSubject(subject.subject);
-				server_context.ts.addSubject(subject);
+				server_context.ts.storeSubject(subject);
 			}
 		}
 

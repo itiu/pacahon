@@ -14,7 +14,7 @@ private import std.array: appender;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
-private import trioplax.triple;
+private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 private import util.Logger;
 

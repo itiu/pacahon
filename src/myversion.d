@@ -1,1 +1,1 @@
-module myversion; public static string major="1"; public static string minor="31"; public static string patch="1"; public static string author="Itiu"; public static string date="Wed Apr 24 18:23:45 2013 +0400"; public static string hash="27934c3";
+module myversion; public static string major="1"; public static string minor="31"; public static string patch="1"; public static string author="Itiu"; public static string date="Thu Apr 25 18:17:14 2013 +0400"; public static string hash="7c4080a";

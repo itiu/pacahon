@@ -9,7 +9,7 @@ private
 
 	import std.json;
 
-	import trioplax.triple;
+	import trioplax.mongodb.triple;
 	import trioplax.mongodb.TripleStorage;
 
 	import util.Logger;

@@ -18,7 +18,7 @@ private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
 private import rabbitmq_client;
 
-private import trioplax.triple;
+private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
@@ -553,30 +553,29 @@ TripleStorage connect_to_triple_storage(int mongodb_port, string mongodb_server,
 	{
 		ts = new TripleStorage(mongodb_server, mongodb_port, mongodb_collection);
 
-		ts.define_predicate_as_multiple("a");
-		ts.define_predicate_as_multiple("rdf:type");
-		ts.define_predicate_as_multiple("rdfs:subClassOf");
+		ts.define_predicate_as_multiple(rdf__type);
+		ts.define_predicate_as_multiple(rdfs__subClassOf);
 		ts.define_predicate_as_multiple("gost19:take");
-		ts.define_predicate_as_multiple("event:msg_template");
-		ts.define_predicate_as_multiple("owl:hasValue");
-		ts.define_predicate_as_multiple("owl:someValuesFrom");
-		ts.define_predicate_as_multiple("owl:allValuesFrom");
+		ts.define_predicate_as_multiple(event__msg_template);
+		ts.define_predicate_as_multiple(owl__someValuesFrom);
+		ts.define_predicate_as_multiple(owl__allValuesFrom);
 
-		ts.define_predicate_as_multilang("swrc:name");
-		ts.define_predicate_as_multilang("swrc:firstName");
-		ts.define_predicate_as_multilang("swrc:lastName");
+		ts.define_predicate_as_multilang(swrc__name);
+		ts.define_predicate_as_multilang(swrc__firstName);
+		ts.define_predicate_as_multilang(swrc__lastName);
 		//			ts.define_predicate_as_multilang("gost19:middleName");
-		ts.define_predicate_as_multilang("docs:position");
+		ts.define_predicate_as_multilang(docs__position);
 
-		ts.set_fulltext_indexed_predicates("swrc:name");
-		ts.set_fulltext_indexed_predicates("swrc:firstName");
-		ts.set_fulltext_indexed_predicates("swrc:lastName");
-		ts.set_fulltext_indexed_predicates("gost19:middleName");
-		ts.set_fulltext_indexed_predicates("docs:position");
-		ts.set_fulltext_indexed_predicates("rdfs:label");
-		ts.set_fulltext_indexed_predicates("swrc:email");
-		ts.set_fulltext_indexed_predicates("swrc:phone");
-		ts.set_fulltext_indexed_predicates("gost19:internal_phone");
+		ts.set_fulltext_indexed_predicates(swrc__name);
+		ts.set_fulltext_indexed_predicates(swrc__firstName);
+		ts.set_fulltext_indexed_predicates(swrc__lastName);
+		ts.set_fulltext_indexed_predicates(gost19__middleName);
+		ts.set_fulltext_indexed_predicates(docs__position);
+		ts.set_fulltext_indexed_predicates(docs__label);
+		ts.set_fulltext_indexed_predicates(rdfs__label);
+		ts.set_fulltext_indexed_predicates(swrc__email);
+		ts.set_fulltext_indexed_predicates(swrc__phone);
+		ts.set_fulltext_indexed_predicates(gost19__internal_phone);
 
 		printf("ok, connected : %X\n", ts);
 	} catch(Exception ex)

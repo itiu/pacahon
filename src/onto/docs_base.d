@@ -2,7 +2,7 @@ module onto.docs_base;
 
 private import std.stdio;
 
-private import trioplax.triple;
+private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 
 //private import util.Logger;
@@ -12,13 +12,6 @@ private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
-//private import std.json_str;
-//private import std.string;
-
-//private import util.Logger;
-//private import std.outbuffer;
-
-//private import util.utils;
 
 // TODO предусмотреть сброс кэша шаблонов
 GraphCluster[string][string] templates;

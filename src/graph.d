@@ -37,6 +37,14 @@ enum OBJECT_TYPE: byte
 	CLUSTER = 3
 }
 
+enum DATA_TYPE: byte
+{
+	STRING = 0,
+	INTEGER = 1,
+	DOUBLE = 2,
+	DATETIME = 3
+}
+
 enum LANG: byte
 {
 	NONE = 0,
@@ -100,17 +108,17 @@ final class GraphCluster
 
 	Predicate* find_subject_and_get_predicate(string s_predicate, string s_literal, string p_predicate)
 	{
-//				writeln ("s_predicate=", s_predicate);
+		//				writeln ("s_predicate=", s_predicate);
 		Subject[string] ss = i1PO.get(s_predicate, null);
 		if(ss !is null)
 		{
-//						writeln ("SS=", ss);
+			//						writeln ("SS=", ss);
 			Subject fs = ss.get(s_literal, null);
 
-//			writeln ("fs=", fs);
+			//			writeln ("fs=", fs);
 			if(fs !is null)
 			{
-//				writeln ("edges_of_predicate=", fs.edges_of_predicate);
+				//				writeln ("edges_of_predicate=", fs.edges_of_predicate);
 				Predicate* pr = fs.getPredicate(p_predicate);
 
 				return pr;
@@ -190,6 +198,23 @@ final class Subject
 		return null;
 	}
 
+	Objectz[] getObjects(string pname)
+	{
+		if(needReidex == true || edges_of_predicate.length != edges.length)
+			reindex_predicate();
+
+		Predicate* pp = null;
+		Predicate** ppp = (pname in edges_of_predicate);
+
+		if(ppp !is null)
+		{
+			pp = *ppp;
+
+			return pp.getObjects();
+		}
+		return null;
+	}
+
 	bool isExsistsPredicate(string pname)
 	{
 		if(needReidex == true || edges_of_predicate.length != edges.length)
@@ -237,6 +262,45 @@ final class Subject
 		needReidex = true;
 	}
 
+	void addPredicate(string predicate, string object, ref Subject _restriction, byte lang = LANG.NONE)
+	{
+		if(object is null)
+			return;
+
+		Predicate* pp;
+		for(int i = 0; i < count_edges; i++)
+		{
+			if(edges[i].predicate == predicate)
+			{
+				pp = &edges[i];
+				break;
+			}
+		}
+
+		if(pp !is null)
+		{
+			pp.addLiteral(object, lang);
+		} else
+		{
+			if(edges.length == 0)
+				edges = new Predicate[16];
+
+			if(edges.length == count_edges)
+			{
+				edges.length += 16;
+			}
+
+			edges[count_edges].predicate = predicate;
+			edges[count_edges].objects = new Objectz[1];
+			edges[count_edges].count_objects = 1;
+			edges[count_edges].objects[0].literal = object;
+			edges[count_edges].objects[0].lang = lang;
+			edges[count_edges].restriction = _restriction;
+			count_edges++;
+		}
+		needReidex = true;
+	}
+	
 	void addPredicate(string predicate, string object, byte lang = LANG.NONE)
 	{
 		if(object is null)
@@ -409,7 +473,7 @@ final class Subject
 
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = oo;
-			edges[count_edges].count_objects = cast(ushort)oo.length;
+			edges[count_edges].count_objects = cast(ushort) oo.length;
 			count_edges++;
 		}
 		needReidex = true;
@@ -485,14 +549,15 @@ struct Predicate
 	string predicate = null;
 	private Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
-
+	Subject restriction = null; // свойства данного предиката в виде owl:Restriction
+	
 	Objectz*[char[]] objects_of_value;
 
-	Objectz[] getObjects ()
+	Objectz[] getObjects()
 	{
-		return objects[0..count_objects];
+		return objects[0 .. count_objects];
 	}
-	
+
 	string getFirstObject()
 	{
 		if(count_objects > 0)
@@ -580,7 +645,7 @@ struct Predicate
 	{
 		objects = oo;
 
-		count_objects = cast(ushort)oo.length;
+		count_objects = cast(ushort) oo.length;
 	}
 
 	string toString()
@@ -600,5 +665,6 @@ struct Objectz
 	//	}
 
 	byte type = OBJECT_TYPE.LITERAL;
+	byte data_type = DATA_TYPE.STRING;
 	byte lang;
 }

@@ -15,7 +15,7 @@ private
 
 	import util.Logger;
 
-	import trioplax.triple;
+	import trioplax.mongodb.triple;
 
 	import trioplax.mongodb.ComplexKeys;
 
@@ -763,7 +763,7 @@ class TripleStorage
 		addTriple(newtt);
 	}
 
-	public int addSubject(Subject graph)
+	public int storeSubject(Subject graph)
 	{
 		// основной цикл по добавлению фактов в хранилище из данного субьекта 
 		if(graph.count_edges > 0)
@@ -781,7 +781,21 @@ class TripleStorage
 			{
 				Predicate pp = graph.edges[kk];
 
-				bool predicat_as_multitiple = ((pp.predicate in predicate_as_multiple) !is null);
+				bool predicat_as_multitiple = false;
+
+				if(pp.restriction !is null)
+				{
+
+					if(pp.restriction.getFirstObject(owl__maxCardinality) is null)
+					{
+						predicat_as_multitiple = true;
+//						writeln("#1#predicate=", pp.predicate);
+//						writeln("	multitiple");
+					}
+				} else
+				{
+					predicat_as_multitiple = ((pp.predicate in predicate_as_multiple) !is null);
+				}
 
 				if(pp.count_objects > 0)
 				{
@@ -804,7 +818,7 @@ class TripleStorage
 						pd = "";
 					}
 
-					foreach(oo ; pp.getObjects)
+					foreach(oo; pp.getObjects)
 					{
 						string oo_as_text;
 
@@ -855,7 +869,26 @@ class TripleStorage
 			for(int kk = 0; kk < graph.count_edges; kk++)
 			{
 				Predicate pp = graph.edges[kk];
-				if((pp.predicate in fulltext_indexed_predicates) !is null && pp.count_objects > 0)
+
+				bool predicat_as_fulltext_indexed = false;
+				if(pp.restriction !is null)
+				{
+//					writeln("#2#predicate=", pp.predicate);
+					string type = pp.restriction.getFirstObject(owl__allValuesFrom);
+//					writeln("	type=", type);
+
+					if(type !is null && type == "xsd:string")
+					{
+//						writeln("#2#predicate=", pp.predicate, " predicat_as_fulltext_indexed");
+						predicat_as_fulltext_indexed = true;
+					}
+
+				} else
+				{
+					predicat_as_fulltext_indexed = ((pp.predicate in fulltext_indexed_predicates) !is null);
+				}
+
+				if(predicat_as_fulltext_indexed == true && pp.count_objects > 0)
 				{
 					if(block_ft_was_created == false)
 					{
@@ -867,7 +900,7 @@ class TripleStorage
 						block_ft_was_created = true;
 					}
 
-					foreach(oo ; pp.getObjects)
+					foreach(oo; pp.getObjects)
 					{
 						string oo_as_text;
 

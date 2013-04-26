@@ -1,4 +1,4 @@
-module trioplax.triple;
+module trioplax.mongodb.triple;
 
 private import std.array;
 private import std.stdio;
@@ -14,9 +14,9 @@ static this()
 	log = new Logger("trioplax", "log", "");
 }
 
-public immutable byte _NONE = 0;
-public immutable byte _RU = 1;
-public immutable byte _EN = 2;
+public static const byte _NONE = 0;
+public static const byte _RU = 1;
+public static const byte _EN = 2;
 
 class Triple
 {

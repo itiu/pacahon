@@ -5,14 +5,14 @@ build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
 build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/TripleStorage.d 
-build/src/trioplax/triple.d
+build/src/trioplax/mongodb/triple.d
 build/src/ba2pacahon.d
 build/src/authorization.d 
 build/src/command-io.d 
 build/src/command-multiplexor.d 
 build/src/event_filter.d 
 build/src/graph.d 
-build/src/util/json-ld-parser.d 
+#build/src/util/json-ld-parser.d 
 build/src/util/json-ld-parser1.d 
 build/src/know_predicates.d 
 build/src/util/load_info.d 
