@@ -57,10 +57,10 @@ final class GraphCluster
 	Subject[string][string] i1PO;
 	Subject[string] graphs_of_subject;
 
-	void addTriple(string s, string p, string o, byte lang = 0)
+	Subject addTriple(string s, string p, string o, byte lang = 0)
 	{
 		if(o is null)
-			return;
+			return null;
 
 		Subject ss = graphs_of_subject.get(s, null);
 
@@ -71,6 +71,8 @@ final class GraphCluster
 		}
 		graphs_of_subject[cast(string) s] = ss;
 		ss.addPredicate(p, o, lang);
+		
+		return ss;
 	}
 
 	Subject addSubject(string subject_id)

@@ -12,10 +12,39 @@ private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
-
 // TODO предусмотреть сброс кэша шаблонов
-GraphCluster[string][string] templates;
+DocTemplate[string][string] templates;
 byte[string] indexedPredicates;
+
+class DocTemplate
+{
+	Subject main;
+	GraphCluster data;
+
+	this()
+	{
+		data = new GraphCluster();
+	}
+
+	Subject addTriple(string S, string P, string O, byte lang)
+	{
+		return data.addTriple(S, P, O, lang);
+	}
+
+	Predicate* get_export_predicates()
+	{
+		if(main is null)
+			return null;
+
+		Predicate* pp = main.getPredicate(docs__exportPredicate);
+		if(pp !is null)
+		{
+			return pp;
+		}
+		return null;
+	}
+
+}
 
 //Logger log;
 
@@ -35,25 +64,47 @@ GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadConte
 
 	byte[string] r_predicate;
 
-	if (readed_predicate is null)
+	if(readed_predicate is null)
 	{
 		r_predicate[query__all_predicates] = 1;
-	}
-	else
+	} else
 	{
-	foreach(el; readed_predicate)
-	{
-		r_predicate[el.literal] = 1;
+		foreach(el; readed_predicate)
+		{
+			r_predicate[el.literal] = 1;
+		}
+
+		r_predicate[rdf__type] = 0;
 	}
-	
-	r_predicate[rdf__type] = 0;
-	}
-	return _getDocument(subject, r_predicate, server_context);
+	Subject main_subject;
+	return _getDocument(subject, r_predicate, main_subject, server_context);
 }
 
-GraphCluster _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context)
+GraphCluster getDocument(string subject, Objectz[] readed_predicate, out Subject main_subject, ThreadContext server_context)
 {
-//	writeln ("#### getDocument :[", subject, "] ", readed_predicate);
+	if(subject is null)
+		return null;
+
+	byte[string] r_predicate;
+
+	if(readed_predicate is null)
+	{
+		r_predicate[query__all_predicates] = 1;
+	} else
+	{
+		foreach(el; readed_predicate)
+		{
+			r_predicate[el.literal] = 1;
+		}
+
+		r_predicate[rdf__type] = 0;
+	}
+	return _getDocument(subject, r_predicate, main_subject, server_context);
+}
+
+GraphCluster _getDocument(string subject, byte[string] r_predicate, out Subject main_subject, ThreadContext server_context)
+{
+	//	writeln ("#### getDocument :[", subject, "] ", readed_predicate);
 	GraphCluster res = null;
 
 	if(subject is null)
@@ -64,7 +115,7 @@ GraphCluster _getDocument(string subject, byte[string] r_predicate, ThreadContex
 
 	search_mask[0] = new Triple(subject, null, null);
 
-//	writeln ("r_predicate = ", r_predicate);
+	//	writeln ("r_predicate = ", r_predicate);
 	it = server_context.ts.getTriplesOfMask(search_mask, r_predicate);
 	if(it !is null)
 	{
@@ -73,28 +124,43 @@ GraphCluster _getDocument(string subject, byte[string] r_predicate, ThreadContex
 			if(res is null)
 				res = new GraphCluster();
 
-			res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-//			writeln(triple.S, " ", triple.P, " ", triple.O, " ", triple.lang);
+			Subject ss = res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+
+			if(main_subject is null && triple.P == rdf__type && (triple.O == docs__Document || triple.O == docs__employee_card))
+				main_subject = ss;
+
+			//						writeln(triple.S, " ", triple.P, " ", triple.O, " ", triple.lang);
 		}
 	}
-	
+
 	if(res !is null)
 	{
 		res.reindex_i1PO(indexedPredicates);
-	}	
+	}
 	return res;
 }
 
-GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadContext server_context)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadContext server_context, string uid = null)
 {
-	GraphCluster res = null;
+	Triple[] search_mask = new Triple[3];
 
-	if(v_dc_identifier is null)
+	DocTemplate res = null;
+
+	if(v_dc_identifier is null && uid is null)
 		return null;
 
-	try
+	try	
 	{
-		GraphCluster[string] rr = templates.get(v_dc_identifier, null);
+		DocTemplate[string] rr;
+
+		if(uid !is null)
+		{
+			v_dc_identifier = uid;
+			v_docs_version = "@";
+		}
+
+		rr = templates.get(v_dc_identifier, null);
 
 		if(rr !is null)
 		{
@@ -114,17 +180,24 @@ GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadCo
 		//				writeln(templates);
 
 		// в кэше не найдено, ищем в базе
-		Triple[] search_mask = new Triple[3];
 		byte[string] readed_predicate;
 		TLIterator it;
 
-		search_mask[0] = new Triple(null, dc__identifier, v_dc_identifier);
-		search_mask[1] = new Triple(null, rdf__type, rdfs__Class);
-		if(v_docs_version is null)
-			search_mask[2] = new Triple(null, docs__actual, "true");
-		else
-			search_mask[2] = new Triple(null, docs__version, v_docs_version);
-		readed_predicate["query:all_predicates"] = 1;
+		if(uid is null)
+		{
+			search_mask[0] = new Triple(null, dc__identifier, v_dc_identifier);
+			search_mask[1] = new Triple(null, rdf__type, rdfs__Class);
+			if(v_docs_version is null)
+				search_mask[2] = new Triple(null, docs__actual, "true");
+			else
+				search_mask[2] = new Triple(null, docs__version, v_docs_version);
+		} else
+		{
+			search_mask[0] = new Triple(uid, null, null);
+			search_mask.length = 1;
+		}
+
+		readed_predicate[query__all_predicates] = 1;
 
 		it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 		string tmpl_subj;
@@ -133,35 +206,43 @@ GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadCo
 			foreach(triple; it)
 			{
 				if(res is null)
-					res = new GraphCluster();
+					res = new DocTemplate();
 
 				if(tmpl_subj is null)
 					tmpl_subj = triple.S;
 
-				res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-				//								writeln (triple.S, " ", triple.P, " ",triple.O, " ",triple.lang);
+				Subject ss = res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+				if(res.main is null)
+				{
+					res.main = ss;
+					templates[tmpl_subj]["@"] = res;
+				}
+
 			}
 
-			search_mask = new Triple[1];
-			search_mask[0] = new Triple(null, dc__hasPart, tmpl_subj);
-
-			it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
-			if(it !is null)
+			if(res !is null)
 			{
-				foreach(triple; it)
+				search_mask = new Triple[1];
+				search_mask[0] = new Triple(null, dc__hasPart, tmpl_subj);
+
+				it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
+				if(it !is null)
 				{
-					res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-					//										writeln (triple.S, " ", triple.P, " ",triple.O, " ",triple.lang);
+					foreach(triple; it)
+					{
+						res.addTriple(triple.S, triple.P, triple.O, triple.lang);
+						//										writeln (triple.S, " ", triple.P, " ",triple.O, " ",triple.lang);
+					}
 				}
 			}
 		}
 
 		if(res !is null)
 		{
-			res.reindex_i1PO(indexedPredicates);
+			res.data.reindex_i1PO(indexedPredicates);
 			//			res.reindex_iXPO();
 
-			if(res.find_subject(docs__actual, "true"))
+			if(res.data.find_subject(docs__actual, "true"))
 			{
 				//				writeln ("set actual to:[", v_dc_identifier, "][", v_docs_version, "]");
 				// это актуальная версия шаблона
@@ -176,6 +257,9 @@ GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadCo
 	{
 		//				writeln("найдено в кэше[", v_dc_identifier, "][", v_docs_version, "]");
 	}
+
+	if(res is null)
+		writeln("template not found:", v_dc_identifier, " search_mask=", search_mask);
 
 	return res;
 }

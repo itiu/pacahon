@@ -1,5 +1,7 @@
 module pacahon.ba2pacahon;
 
+private import core.thread;
+
 private import std.stdio;
 private import std.csv;
 
@@ -357,17 +359,16 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								if(dc_identifier_val !is null && dc_identifier_val.length > 3)
 								{
 									//writeln("композиция не задана, берем представление по умолчанию у шаблона на который ссылаемся");
-									GraphCluster _tmpl = getTemplate(dc_identifier_val, null, server_context);
+									DocTemplate _tmpl = getTemplate(dc_identifier_val, null, server_context);
 
 									if(_tmpl !is null)
 									{
 										//									writeln("шаблон найден");
-										Predicate* export_predicates = _tmpl.find_subject_and_get_predicate(rdf__type,
-												rdfs__Class, docs__exportPredicate);
+										Predicate* export_predicates = _tmpl.get_export_predicates();
 										if(export_predicates !is null)
 										{
 											//										writeln("import predicate", export_predicates);
-											foreach(el; export_predicates.getObjects)
+											foreach(el; export_predicates.getObjects())
 											{
 												attr_node.addPredicate(docs__importPredicate, el);
 												//											writeln("import predicate", el);
@@ -452,10 +453,10 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 			string typeId = doc.get_str("typeId");
 			string typeVersionId = doc.get_str("typeVersionId");
-			GraphCluster tmplate = getTemplate(typeId, typeVersionId, server_context);
+			DocTemplate tmplate = getTemplate(typeId, typeVersionId, server_context);
 			if(tmplate !is null)
 			{
-				Subject tmpl_class = tmplate.find_subject(rdf__type, rdfs__Class);
+				Subject tmpl_class = tmplate.data.find_subject(rdf__type, rdfs__Class);
 
 				node.addPredicate(rdf__type, tmpl_class.subject);
 				node.addPredicate(docs__label, tmpl_class.getObjects(rdfs__label));
@@ -478,11 +479,11 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								string new_code = ba2user_onto(code);
 								//writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
-								Subject restriction = tmplate.find_subject(owl__onProperty, new_code);
+								Subject restriction = tmplate.data.find_subject(owl__onProperty, new_code);
 
 								if(restriction !is null)
 								{
-									
+
 									string description = att.get_str("description");
 
 									string[string] descr_els;
@@ -502,22 +503,19 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 									}
 
 									string type = att.get_str("type");
-
+/*
 									if(type == "DICTIONARY")
 									{
 										value = prefix_doc ~ value;
 										// возьмем данные для реификации из аттрибута (recordNameValue) 
-										string recordNameValue = att.get_str("recordNameValue");
-										string dictionaryNameValue = att.get_str("dictionaryNameValue");
 
-										//writeln("recordNameValue=", recordNameValue);
-										//writeln("dictionaryNameValue=", dictionaryNameValue);
-
-										//writeln("restriction=", restriction);
-										//writeln("value=", value);
+										writeln("restriction=", restriction);
+										writeln("value=", value);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
+											writeln ("importPredicates=", importPredicates.getObjects());
+											
 											// создать реифицированный субьект rS к текущему аттрибуту
 											Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
 
@@ -526,13 +524,24 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 											if(importPredicates.count_objects == 1)
 											{
+												writeln ("###1");
+												string recordNameValue = att.get_str("recordNameValue");
+												string dictionaryNameValue = att.get_str("dictionaryNameValue");
+
+												writeln("recordNameValue=", recordNameValue);
+												writeln("dictionaryNameValue=", dictionaryNameValue);
+												
 												rS.addPredicate(docs__templateName, dictionaryNameValue);
 												rS.addPredicate(importPredicates.getFirstObject(), recordNameValue);
 											} else
 											{
+												writeln ("###2");
 												// возьмем из compositionValues
 												string compositionValues = descr_els.get("$compositionValues", null);
-
+												
+												writeln ("descr_els=", descr_els);
+												writeln ("compositionValues=", compositionValues);
+												
 												if(compositionValues !is null)
 												{
 													string[] els = compositionValues.split("|");
@@ -548,61 +557,72 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 												}
 											}
 
+											writeln ("rS=", rS);	
 											gcl_versioned.addSubject(rS);
+											core.thread.Thread.sleep(dur!("seconds")(2));
 
 										}
-									} else if(type == "LINK" || type == "ORGANIZATION")
+									} else
+*/										
+									if(type == "LINK" || type == "ORGANIZATION" || type == "DICTIONARY")
 									{
 										value = prefix_doc ~ value;
 										// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 										// требуется считать из базы
-										writeln("link value=", value);
-										writeln("restriction=", restriction);
+//										writeln("link value=", value);
+//										writeln("restriction=", restriction);
+										Subject linked_doc;
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
-											writeln("#1#docs__importPredicates=", importPredicates.getObjects());
-											GraphCluster inner_doc = getDocument(value, importPredicates.getObjects(),
-													server_context);
-											writeln("doc = ", inner_doc);	
-											if(inner_doc !is null)
+//											writeln ("###1");
+											getDocument(value, importPredicates.getObjects(), linked_doc, server_context);
+										} else
+										{
+//											writeln ("###2");
+											// импортируемые предикаты не указанны
+											// считаем экспортируемые предикаты из шаблона документа
+											getDocument(value, null, linked_doc, server_context);
+											if(linked_doc !is null)
 											{
-												Subject indoc = inner_doc.find_subject(rdf__type, docs__Document);
-												if(indoc is null)
-													indoc = inner_doc.find_subject(rdf__type, docs__employee_card);
+//												writeln ("###2.1");
+												Predicate* type_in = linked_doc.getPredicate(rdf__type);
+												// найдем шаблон
+												string template_uid = type_in.getObjects()[0].literal;
+												if(template_uid == docs__Document || template_uid == auth__Authenticated)
+													template_uid = type_in.getObjects()[1].literal;
 
-												if(indoc !is null)
-												{
-													// создать реифицированный субьект rS к текущему аттрибуту
-													Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
-
-													foreach(el; importPredicates.getObjects())
-													{
-														Predicate* pp = indoc.getPredicate(el.literal);
-														if(pp !is null)
-															rS.addPredicate(el.literal, pp.getObjects());
-													}
-													gcl_versioned.addSubject(rS);
-												}
+												DocTemplate template_gr = getTemplate(null, null, server_context, template_uid);
+												importPredicates = template_gr.get_export_predicates();
 											}
+										}
+										if(importPredicates !is null && linked_doc !is null)
+										{
+//											writeln ("###3");
+											// создать реифицированный субьект rS к текущему аттрибуту
+											Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
+
+											foreach(el; importPredicates.getObjects())
+											{
+												Predicate* pp = linked_doc.getPredicate(el.literal);
+												if(pp !is null)
+													rS.addPredicate(el.literal, pp.getObjects());
+											}
+											gcl_versioned.addSubject(rS);
 										}
 										else
 										{
-											// импортируемые предикаты не указанны
-											// считаем экспортируемые предикаты из шаблона документа
-											writeln("#2#read doc=", value);
-											GraphCluster inner_doc = getDocument(value, null,
-													server_context);
-											writeln("doc = ", inner_doc);	
-											if(inner_doc !is null)
-											{
-												// считаем шаблон
-												// заберем экспотрируемые поля указанные в шаблоне
-											}
+											log.trace ("not found dictionary record, id=%s", value);
+//											writeln("link value=", value);
+//											writeln("restriction=", restriction);
+//											writeln ("pause 20s");
+//											core.thread.Thread.sleep(dur!("seconds")(20));
+											
 										}
 
 									}
 								}
+																
 								node.addPredicate(new_code, value, restriction);
 							}
 
@@ -624,7 +644,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 		node.addPredicate(docs__version, versionId);
 		gcl_versioned.addSubject(node);
-
+		
 		//		OutBuffer outbuff = new OutBuffer();
 		//		toJson_ld(gcl_versioned.graphs_of_subject.values, outbuff);
 		//		outbuff.write(0);
@@ -652,6 +672,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		}
 
 		log.trace("ba2pacahon, count:%d", ++count);
+//		writeln ("pause 20s");
+//		core.thread.Thread.sleep(dur!("seconds")(20));
 	} catch(Exception ex)
 	{
 		writeln("Ex:" ~ ex.msg);

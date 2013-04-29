@@ -27,13 +27,13 @@ private import pacahon.graph;
 private import pacahon.json_ld.parser1;
 private import pacahon.command.multiplexor;
 private import pacahon.know_predicates;
-private import util.utils;
 private import pacahon.log_msg;
 private import pacahon.load_info;
 private import pacahon.thread_context;
 private import pacahon.command.event_filter;
 private import pacahon.zmq_connection;
 private import pacahon.ba2pacahon;
+private import util.utils;
 
 private import mmf.mmfgraph;
 

@@ -84,6 +84,7 @@ public const string ticket__accessor = "ticket:accessor";
 public const string ticket__when = "ticket:when";
 public const string ticket__duration = "ticket:duration";
 
+public const string auth__Authenticated = "auth:Authenticated";
 public const string auth__ticket = "auth:ticket";
 public const string auth__credential = "auth:credential";
 public const string auth__login = "auth:login";
