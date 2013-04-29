@@ -30,6 +30,29 @@ static this()
 
 GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadContext server_context)
 {
+	if(subject is null)
+		return null;
+
+	byte[string] r_predicate;
+
+	if (readed_predicate is null)
+	{
+		r_predicate[query__all_predicates] = 1;
+	}
+	else
+	{
+	foreach(el; readed_predicate)
+	{
+		r_predicate[el.literal] = 1;
+	}
+	
+	r_predicate[rdf__type] = 0;
+	}
+	return _getDocument(subject, r_predicate, server_context);
+}
+
+GraphCluster _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context)
+{
 //	writeln ("#### getDocument :[", subject, "] ", readed_predicate);
 	GraphCluster res = null;
 
@@ -37,16 +60,9 @@ GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadConte
 		return null;
 
 	Triple[] search_mask = new Triple[1];
-	byte[char[]] r_predicate;
 	TLIterator it;
 
 	search_mask[0] = new Triple(subject, null, null);
-
-	foreach(el; readed_predicate)
-	{
-		r_predicate[el.literal] = 1;
-	}
-	r_predicate[rdf__type] = 1;
 
 //	writeln ("r_predicate = ", r_predicate);
 	it = server_context.ts.getTriplesOfMask(search_mask, r_predicate);
@@ -99,7 +115,7 @@ GraphCluster getTemplate(string v_dc_identifier, string v_docs_version, ThreadCo
 
 		// в кэше не найдено, ищем в базе
 		Triple[] search_mask = new Triple[3];
-		byte[char[]] readed_predicate;
+		byte[string] readed_predicate;
 		TLIterator it;
 
 		search_mask[0] = new Triple(null, dc__identifier, v_dc_identifier);

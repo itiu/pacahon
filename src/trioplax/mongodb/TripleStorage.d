@@ -49,7 +49,7 @@ static this()
 class TripleStorageMongoDBIterator: TLIterator
 {
 	mongo_cursor* cursor;
-	byte[char[]] reading_predicates;
+	byte[string] reading_predicates;
 	bool is_query_all_predicates = false;
 	bool is_get_all = false;
 	bool is_get_all_reifed = false;
@@ -59,14 +59,14 @@ class TripleStorageMongoDBIterator: TLIterator
 		cursor = _cursor;
 	}
 
-	this(mongo_cursor* _cursor, ref byte[char[]] _reading_predicates)
+	this(mongo_cursor* _cursor, ref byte[string] _reading_predicates)
 	{
 		cursor = _cursor;
 		reading_predicates = _reading_predicates;
 
 		if(reading_predicates.length > 0)
 		{
-			byte* type_of_getting_field = ("query:all_predicates" in reading_predicates);
+			byte* type_of_getting_field = (query__all_predicates in reading_predicates);
 
 			if(type_of_getting_field !is null)
 			{
@@ -1157,7 +1157,7 @@ class TripleStorage
 		return it;
 	}
 
-	public TLIterator getTriplesOfMask(ref Triple[] mask_triples, byte[char[]] reading_predicates,
+	public TLIterator getTriplesOfMask(ref Triple[] mask_triples, byte[string] reading_predicates,
 			int MAX_SIZE_READ_RECORDS = 1000)
 	{
 		if(mask_triples !is null && mask_triples.length == 2 && mask_triples[0].S !is null && mask_triples[0].P is null && mask_triples[0].O is null && mask_triples[1].S is null && mask_triples[1].P !is null && mask_triples[1].O !is null)

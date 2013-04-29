@@ -556,14 +556,15 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 										value = prefix_doc ~ value;
 										// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 										// требуется считать из базы
-										//writeln("restriction=", restriction);
+										writeln("link value=", value);
+										writeln("restriction=", restriction);
 										Predicate* importPredicates = restriction.getPredicate(docs__importPredicate);
 										if(importPredicates !is null)
 										{
-											//writeln("#2docs__importPredicates=", importPredicates.getObjects());
+											writeln("#1#docs__importPredicates=", importPredicates.getObjects());
 											GraphCluster inner_doc = getDocument(value, importPredicates.getObjects(),
 													server_context);
-											//writeln("doc = ", inner_doc);	
+											writeln("doc = ", inner_doc);	
 											if(inner_doc !is null)
 											{
 												Subject indoc = inner_doc.find_subject(rdf__type, docs__Document);
@@ -583,6 +584,20 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 													}
 													gcl_versioned.addSubject(rS);
 												}
+											}
+										}
+										else
+										{
+											// импортируемые предикаты не указанны
+											// считаем экспортируемые предикаты из шаблона документа
+											writeln("#2#read doc=", value);
+											GraphCluster inner_doc = getDocument(value, null,
+													server_context);
+											writeln("doc = ", inner_doc);	
+											if(inner_doc !is null)
+											{
+												// считаем шаблон
+												// заберем экспотрируемые поля указанные в шаблоне
 											}
 										}
 

@@ -91,6 +91,8 @@ public const string auth__login = "auth:login";
 public const string pacahon__on_trace_msg = "pacahon:on-trace-msg";
 public const string pacahon__off_trace_msg = "pacahon:off-trace-msg";
 
+public const string query__all_predicates = "query:all_predicates";
+
 public const string event__Event = "event:Event"; // субьект типа Событие
 public const string event__autoremove = "event:autoremove"; // если == "yes", фильтр должен будет удален после исполнения
 public const string event__subject_type = "event:subject_type"; // тип отслеживаемого субьекта 

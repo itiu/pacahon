@@ -96,7 +96,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 		search_mask[0] = new Triple(null, auth__login, login.getFirstObject);
 		search_mask[1] = new Triple(null, auth__credential, credential.getFirstObject);
 
-		byte[char[]] readed_predicate;
+		byte[string] readed_predicate;
 		readed_predicate[auth__login] = true;
 
 		// TODO определится что возвращать null или пустой итератор

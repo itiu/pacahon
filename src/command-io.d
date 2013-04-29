@@ -536,7 +536,7 @@ public void get(Subject message, Predicate* sender, string userId, ThreadContext
 
 					// считываем данные из mongodb
 
-					byte[char[]] readed_predicate;
+					byte[string] readed_predicate;
 					Triple[] search_mask = new Triple[graph.count_edges];
 					int search_mask_length = 0;
 
