@@ -42,7 +42,7 @@ static this()
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+Subject get_ticket(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk,
 		out string reason)
 {
 	StopWatch sw;
@@ -59,7 +59,7 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 	try
 	{
-		Predicate* arg = message.getPredicate(msg__args);
+		Predicate arg = message.getPredicate(msg__args);
 		if(arg is null)
 		{
 			reason = "аргументы " ~ msg__args ~ " не указаны";
@@ -75,16 +75,16 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 			return null;
 		}
 
-		Predicate* login = ss.getPredicate(auth__login);
-		if(login is null || login.getFirstObject is null || login.getFirstObject.length < 2)
+		Predicate login = ss.getPredicate(auth__login);
+		if(login is null || login.getFirstLiteral is null || login.getFirstLiteral.length < 2)
 		{
 			reason = "login не указан";
 			isOk = false;
 			return null;
 		}
 
-		Predicate* credential = ss.getPredicate(auth__credential);
-		if(credential is null || credential.getFirstObject() is null || credential.getFirstObject.length < 2)
+		Predicate credential = ss.getPredicate(auth__credential);
+		if(credential is null || credential.getFirstLiteral() is null || credential.getFirstLiteral.length < 2)
 		{
 			reason = "credential не указан";
 			isOk = false;
@@ -93,8 +93,8 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 
 		Triple[] search_mask = new Triple[2];
 
-		search_mask[0] = new Triple(null, auth__login, login.getFirstObject);
-		search_mask[1] = new Triple(null, auth__credential, credential.getFirstObject);
+		search_mask[0] = new Triple(null, auth__login, login.getFirstLiteral);
+		search_mask[1] = new Triple(null, auth__credential, credential.getFirstLiteral);
 
 		byte[string] readed_predicate;
 		readed_predicate[auth__login] = true;
@@ -176,12 +176,12 @@ Subject get_ticket(Subject message, Predicate* sender, string userId, ThreadCont
 	}
 }
 
-public Subject set_message_trace(Subject message, Predicate* sender, string userId, ThreadContext server_thread, out bool isOk,
+public Subject set_message_trace(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk,
 		out string reason)
 {
 	Subject res;
 
-	Predicate* args = message.getPredicate(msg__args);
+	Predicate args = message.getPredicate(msg__args);
 
 	foreach(arg; args.getObjects())
 	{
@@ -189,7 +189,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 		{
 			Subject sarg = arg.subject;
 
-			Predicate* unset_msgs = sarg.getPredicate(pacahon__off_trace_msg);
+			Predicate unset_msgs = sarg.getPredicate(pacahon__off_trace_msg);
 
 			if(unset_msgs !is null)
 			{
@@ -207,7 +207,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 				}
 			}
 
-			Predicate* set_msgs = sarg.getPredicate(pacahon__on_trace_msg);
+			Predicate set_msgs = sarg.getPredicate(pacahon__on_trace_msg);
 
 			if(set_msgs !is null)
 			{
@@ -233,7 +233,7 @@ public Subject set_message_trace(Subject message, Predicate* sender, string user
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate* sender, string userId, ThreadContext server_thread,
+void command_preparer(Subject message, Subject out_message, Predicate sender, string userId, ThreadContext server_thread,
 		out string local_ticket, out char from)
 {
 	if(trace_msg[11] == 1)
@@ -247,7 +247,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	out_message.addPredicate(msg__sender, "pacahon");
 
 	if(sender !is null)
-		out_message.addPredicate(msg__reciever, sender.getFirstObject);
+		out_message.addPredicate(msg__reciever, sender.getFirstLiteral);
 
 	string reason;
 	bool isOk;
@@ -255,7 +255,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 	if(message !is null)
 	{
 		out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
-		Predicate* command = message.getPredicate(msg__command);
+		Predicate command = message.getPredicate(msg__command);
 
 		if(command !is null)
 		{
@@ -295,7 +295,7 @@ void command_preparer(Subject message, Subject out_message, Predicate* sender, s
 				{
 					if(trace_msg[15] == 1)
 						log.trace("command_preparer, get_ticket is Ok");
-					local_ticket = res.edges[0].getFirstObject;
+					local_ticket = res.getPredicates[0].getFirstLiteral;
 				} else
 				{
 					if(trace_msg[15] == 1)

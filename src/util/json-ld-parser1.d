@@ -190,7 +190,7 @@ GraphCluster parse_JSON_LD(T)(T json, int maxDepth = -1) if(isInputRange!T)
 		return str.data;
 	}
 
-	void parseValue(GraphCluster gcl, Subject ss, Predicate* pp, ParentLevelType plt)
+	void parseValue(GraphCluster gcl, Subject ss, Predicate pp, ParentLevelType plt)
 	{
 //		writeln("parseValue depth=", depth);
 
@@ -249,7 +249,7 @@ GraphCluster parse_JSON_LD(T)(T json, int maxDepth = -1) if(isInputRange!T)
 
 					} else
 					{
-						Predicate* new_predicate;
+						Predicate new_predicate;
 						new_predicate = new_subject.addPredicate();
 
 						new_predicate.predicate = name;
@@ -429,13 +429,14 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		outbuff.write(cast(char[]) "\",\n");
 	}
 
-	for(int jj = 0; jj < ss.count_edges; jj++)
+	bool jj = 0;
+	
+	foreach(pp ; ss.getPredicates())
 	{
-		Predicate* pp = &(ss.edges[jj]);
-
 		if(jj > 0)
 			outbuff.write(cast(char[]) ",\n");
-
+		jj = 1;
+		
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	 ");
 

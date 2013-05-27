@@ -1,11 +1,11 @@
 {
     "mongodb_server":"127.0.0.1",
     "mongodb_port":27017,
-    "mongodb_collection":"pacahon",
+    "mongodb_database_name":"pacahon",
     "zmq_point":"tcp:\/\/*:5554",
     "rabbitmq" :
     {	
-    	"hostname":"192.168.0.102",
+    	"hostname":"192.168.0.105",
     	"hostname0":"91.227.93.46",
 	"port":"5672",
 	"queuename":"new-search",

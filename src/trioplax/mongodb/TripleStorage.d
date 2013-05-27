@@ -16,7 +16,6 @@ private
 	import util.Logger;
 
 	import trioplax.mongodb.triple;
-
 	import trioplax.mongodb.ComplexKeys;
 
 	import mongoc.bson_h;
@@ -24,7 +23,16 @@ private
 
 	import pacahon.know_predicates;
 	import pacahon.graph;
+	
+	import onto.doc_template;
+//	import onto.docs_base;
+	
+	import pacahon.thread_context;
 }
+
+import core.vararg;
+alias eo dtrace;
+void eo (...){}	
 
 enum field: byte
 {
@@ -123,7 +131,7 @@ class TripleStorageMongoDBIterator: TLIterator
 			short count_fields = 0;
 			while(bson_iterator_next(&it))
 			{
-				//					writeln ("it++");
+				//					// writeln ("it++");
 				bson_type type = bson_iterator_type(&it);
 
 				if(trace_msg[1007] == 1)
@@ -492,25 +500,6 @@ class TripleStorageMongoDBIterator: TLIterator
 		return 0;
 	}
 
-//	int length()
-//	{
-//		int count = 0;
-
-//		foreach(tt; this)
-//		{
-//			count++;
-//			log.trace("length:%s", tt);
-//		}
-
-//		return count;
-//	}
-}
-
-struct CacheInfo
-{
-	int count = 0;
-	long lifetime;
-	bool isCached = false;
 }
 
 class TripleStorage
@@ -520,8 +509,9 @@ class TripleStorage
 	private long total_count_queries = 0;
 
 	private char[] buff = null;
-	private char* col = cast(char*) "coll1";
-	private char* ns = cast(char*) "coll1.simple";
+	private char* dbname = cast(char*) "pacahon";
+	private char* docs_collection = cast(char*) "pacahon.simple";
+	private char* search_collection = cast(char*) "pacahon.search";
 
 	private bool[char[]] predicate_as_multiple;
 	private bool[char[]] multilang_predicates;
@@ -531,16 +521,12 @@ class TripleStorage
 
 	private mongo conn;
 
-	byte caching_strategy;
-	CacheInfo*[hash_t] queryes;
-	int count_cached_queryes;
-
-	this(string host, int port, string collection)
+	this(string host, int port, string db_name)
 	{
-		col = cast(char*) collection;
-		ns = cast(char*) (collection ~ ".simple");
+		dbname = cast(char*) db_name;
+		docs_collection = cast(char*) (db_name ~ ".simple");
 
-		log.trace("connect to mongodb...");
+		log.trace("connect to mongodb... %s", (db_name ~ ".simple"));
 
 		int limit_count_attempt = 10;
 
@@ -604,7 +590,7 @@ class TripleStorage
 	{
 		try
 		{
-			//			writeln("remove ", s);
+			//			// writeln("remove ", s);
 
 			bson cond;
 
@@ -612,7 +598,7 @@ class TripleStorage
 			_bson_append_string(&cond, "@", s);
 
 			bson_finish(&cond);
-			mongo_remove(&conn, ns, &cond);
+			mongo_remove(&conn, docs_collection, &cond);
 
 			bson_destroy(&cond);
 
@@ -647,7 +633,7 @@ class TripleStorage
 		bson_finish(&query);
 		bson_finish(&fields);
 
-		if(mongo_find_one(&conn, ns, &query, &fields, &out_data) == 0)
+		if(mongo_find_one(&conn, docs_collection, &query, &fields, &out_data) == 0)
 			res = true;
 
 		bson_destroy(&fields);
@@ -685,7 +671,7 @@ class TripleStorage
 		bson_finish(&query);
 		bson_finish(&fields);
 
-		mongo_cursor* cursor = mongo_find(&conn, ns, &query, &fields, 1, 0, 0);
+		mongo_cursor* cursor = mongo_find(&conn, docs_collection, &query, &fields, 1, 0, 0);
 
 		if(mongo_cursor_next(cursor))
 		{
@@ -740,7 +726,7 @@ class TripleStorage
 			bson_finish(&op);
 			bson_finish(&cond);
 
-			mongo_update(&conn, ns, &cond, &op, 0);
+			mongo_update(&conn, docs_collection, &cond, &op, 0);
 
 			bson_destroy(&cond);
 			bson_destroy(&op);
@@ -758,204 +744,333 @@ class TripleStorage
 	public void addTripleToReifedData(Triple reif, string p, string o, byte lang)
 	{
 		//  {SUBJECT:[$reif_subject]}{$set: {'_reif_[$reif_predicate].[$reif_object].[$p]' : [$o]}});
-		Triple newtt = new Triple(reif.S, "_reif_" ~ reif.P ~ "." ~ reif.O ~ "." ~ p ~ "", o, lang);
+		Triple newtt = new Triple(reif.S, "_reif_" ~ reif.P ~ "." ~ reif.O ~ "." ~ p, o, lang);
 
 		addTriple(newtt);
 	}
 
-	public int storeSubject(Subject graph)
+	private void subject2basic_mongo_doc (Subject graph, bson *doc, string reifed_p = null, string reifed_o = null)
+	{
+//		// writeln ("#1");
+		
+		if (reifed_p is null)
+		{
+			_bson_append_start_object(doc, "$set");
+			_bson_append_string(doc, "@", graph.subject);
+		}
+		
+		foreach(pp; graph.getPredicates)
+		{
+			if(pp.count_objects > 0)
+			{
+				string pname = pp.predicate;
+				
+//				dtrace ("&2 pname=", pname);
+
+				string pd = pname;
+				if(pp.count_objects > 1)
+				{
+					_bson_append_start_array(doc, pname);
+					pd = "";
+				}
+				
+				foreach(oo; pp.getObjects)
+				{					
+					string oo_as_text;
+
+					if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+						oo_as_text = oo.literal;
+					else
+						oo_as_text = oo.subject.subject;
+										
+					if(oo.lang == _NONE)
+					{
+						_bson_append_string(doc, pd, oo_as_text);
+					} else if(oo.lang == _RU)
+					{
+						_bson_append_string(doc, pd, oo_as_text ~ "@ru");
+					} else if(oo.lang == _EN)
+					{
+						_bson_append_string(doc, pd, oo_as_text ~ "@en");
+					}
+										
+					if (oo.reification !is null)
+					{
+				//		// writeln ("reif!!! oo.reification=", oo.reification, ", pp.predicate=", pp.predicate, ", oo_as_text=", oo_as_text);
+						_bson_append_start_object(doc, "_reif_" ~ pp.predicate);
+						_bson_append_start_object(doc, oo_as_text);
+						
+						subject2basic_mongo_doc(oo.reification, doc, pp.predicate, oo_as_text);
+						
+						bson_append_finish_object(doc); // } finish reif o					
+						bson_append_finish_object(doc); // } finish reif p					
+					}
+					
+				}
+								
+				if(pp.count_objects > 1)
+				{
+					bson_append_finish_object(doc); // ] finish array					
+				}
+
+				
+				
+			}
+		}		
+		if (reifed_p is null)
+		{
+			bson_append_finish_object(doc); // finish document
+		}
+		
+	//	// writeln ("#2");
+	}
+	
+	private  void subject2search_mongo_doc (Subject graph, bson *doc, ThreadContext server_context)
+	{
+		_bson_append_start_object(doc, "$set");		
+		_bson_append_string(doc, "@", graph.subject);		
+		_bson_append_start_array(doc, "fields");
+		
+		foreach(pp; graph.getPredicates)
+		{
+			if(pp.count_objects > 0)
+			{
+				string pname = pp.predicate;
+
+				string type;
+				
+				if (pp.metadata !is null)
+				{
+					type = pp.metadata.getFirstLiteral (owl__allValuesFrom);
+				}
+		
+				
+				foreach(oo; pp.getObjects)
+				{					
+					_bson_append_start_object(doc, "");
+					_bson_append_string(doc, "key", pname);
+
+					string oo_ru;
+					string oo_en;
+
+					if (oo.reification !is null)
+					{
+						// считаем шаблон субьекта ссылки у которого были импортированны предикаты
+						string reif_template_uid = oo.reification.getFirstLiteral (link__importClass);
+
+						DocTemplate reif_template = onto.docs_base.getTemplate(null, null, server_context, reif_template_uid);
+
+						if (reif_template is null && pp.predicate != dc__creator && type != swrc__Department && type != owl__Restriction)
+						{
+							writeln ("#1 graph.subject=", graph.subject);
+							writeln ("pp.predicate=", pp.predicate); 
+							writeln ("reif_template_uid=", reif_template_uid);
+							writeln ("pp.metadata=", pp.metadata); 
+//							writeln ("pause 10s");
+//							core.thread.Thread.sleep(dur!("seconds")(10));							
+						}
+						// 2. для каждого из импортированных предикатов в реификации определим тип данных						
+						// иначе в текст напихаем все из реификации
+						foreach(opp; oo.reification.getPredicates)
+						{			
+							if (opp.predicate != rdf__type && opp.predicate != rdf__subject && opp.predicate !=  rdf__predicate && opp.predicate != rdf__object && opp.predicate != link__importClass)
+							{
+								if(opp.count_objects > 0)
+								{
+									Predicate reif_allValuesFrom;
+									
+									if (reif_template !is null)
+									{
+										reif_allValuesFrom = reif_template.data.find_subject_and_get_predicate(owl__onProperty, opp.predicate, owl__allValuesFrom);
+										
+										if (reif_allValuesFrom is null && opp.predicate != docs__unit)
+										{
+											writeln ("#2 graph.subject=", graph.subject);											
+											writeln ("#2 pp.predicate=", pp.predicate); 
+											writeln ("reif_template.data=",reif_template.data);
+											writeln ("opp.predicate=", opp.predicate);
+											writeln ("ex! type=", type);
+//											writeln ("pause 10s");
+//											core.thread.Thread.sleep(dur!("seconds")(10));																		
+										}
+									}
+									
+									if (reif_allValuesFrom !is null && reif_allValuesFrom.isExistLiteral (xsd__string))
+									{									
+										foreach(ooo; opp.getObjects)
+										{					
+											if(ooo.type == OBJECT_TYPE.LITERAL && ooo.lang == _RU || ooo.lang == _NONE)
+											{
+												if (ooo.literal.length > 2)
+												{
+													if (ooo.literal[$-3] == '@')
+														oo_ru = ooo.literal[0..$-3] ~ "|" ~ oo_ru;
+													else
+														oo_ru = ooo.literal ~ "|" ~ oo_ru;
+												}
+												else
+												{
+													oo_ru = ooo.literal ~ "|" ~ oo_ru;
+												}
+											}
+											if(ooo.type == OBJECT_TYPE.LITERAL && ooo.lang == _EN)
+											{
+												if (ooo.literal.length > 2)
+												{
+													if (ooo.literal[$-3] == '@')
+														oo_en = ooo.literal[0..$-3] ~ "|" ~ oo_en;
+													else
+														oo_en = ooo.literal ~ "|" ~ oo_en;
+												}
+												else
+												{
+													oo_en = ooo.literal ~ "|" ~ oo_en;
+												}
+										}
+										}
+									}
+//									else
+//									{
+//										
+//									}
+								}
+							}
+						}	
+
+						 oo_ru = prepare_string_to_search (oo_ru);
+						 oo_en = prepare_string_to_search (oo_en);
+
+						 string oo_ff = ""; 
+						 
+						if(oo_ru !is null)
+						{
+							_bson_append_string(doc, pname ~ "_ru", oo_ru);
+							if (oo_en !is null)
+								oo_ff ~= "|" ~ oo_ru;
+							else
+								oo_ff ~= oo_ru;
+						} 
+						
+						if (oo_en !is null)
+						{
+							_bson_append_string(doc, pname ~ "_en", oo_en);
+							oo_ff ~= oo_en; 
+						}
+
+						_bson_append_string(doc, "link", oo.literal);							
+						
+						if (oo_ff !is null)
+							_bson_append_string(doc, "text", oo_ff);
+					}
+					else
+					{
+						// это не реификация
+						if ((oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI) && (oo.lang == _RU))
+							oo_ru  = oo.literal;
+					
+						if ((oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI) && (oo.lang == _EN))
+							oo_en  = oo.literal;
+						
+						 oo_ru = prepare_string_to_search (oo_ru);
+						 oo_en = prepare_string_to_search (oo_en);
+
+						if(oo_ru !is null)
+							_bson_append_string(doc, pname ~ "_ru", oo_ru);
+							
+						if (oo_en !is null)
+							_bson_append_string(doc, pname ~ "_en", oo_en);
+						 
+   					    if (type !is null)
+						{
+							if (type == xsd__dateTime)
+								_bson_append_string(doc, "date", oo.literal);
+						
+						}
+						_bson_append_string(doc, "text", prepare_string_to_search (oo.literal));
+					}
+						
+					bson_append_finish_object(doc); // } finish field value					
+				}	
+			}
+			
+		}
+		
+		bson_append_finish_object(doc); // ] finish fields array					
+		bson_append_finish_object(doc); // finish document 				
+	}
+
+	string prepare_string_to_search (string in_str)
+	{		
+		if (in_str is null)
+			return null;
+		
+		char[] new_str = new char[in_str.length];
+		
+		new_str[] = in_str[];
+		
+		char[] l_o = cast(char[]) toLower(new_str);
+	
+		for(int ic = 0; ic < l_o.length; ic++)
+		{
+			if((l_o[ic] == '-' && ic == 0) || l_o[ic] == '"' || l_o[ic] == ':' || l_o[ic] == '*' || l_o[ic] == '=' || l_o[ic] == '\'' || (l_o[ic] == '@' && (l_o.length - ic) > 4) || l_o[ic] == '\\' || l_o[ic] == '.' || l_o[ic] == '+')
+			l_o[ic] = '_';
+		}
+
+		if (l_o.length > 800)
+			l_o = l_o[0..798];
+
+		if (l_o.length > 3 && l_o[$-2] == '|')
+			l_o = l_o[0..$-3];
+		
+		if (l_o.length > 2  && l_o[$-1] == '|')
+			l_o = l_o[0..$-2];
+	
+		return cast(string)l_o;
+	}
+	
+	public void storeSubject(Subject graph, ThreadContext server_context)
 	{
 		// основной цикл по добавлению фактов в хранилище из данного субьекта 
 		if(graph.count_edges > 0)
 		{
-			bson op;
+			bson search;
+			bson document;
 			bson cond;
 
 			bson_init(&cond);
 			_bson_append_string(&cond, "@", graph.subject);
 			bson_finish(&cond);
 
-			bson_init(&op);
+			bson_init(&document);			
+			subject2basic_mongo_doc (graph, &document);
+			bson_finish(&document);
+			
+			//// writeln ("@----------------------------------------------------");
+			//// writeln (bson_to_string(&cond));
+			//// writeln (bson_to_string(&document));
+			//// writeln ("@1");
+			mongo_update(&conn, docs_collection, &cond, &document,  MONGO_UPDATE_UPSERT);
+			//// writeln ("@2");
+			bson_destroy(&document);
 
-			for(int kk = 0; kk < graph.count_edges; kk++)
+			if (graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true"))
 			{
-				Predicate pp = graph.edges[kk];
-
-				bool predicat_as_multitiple = false;
-
-				if(pp.restriction !is null)
-				{
-
-					if(pp.restriction.getFirstObject(owl__maxCardinality) is null)
-					{
-						predicat_as_multitiple = true;
-//						writeln("#1#predicate=", pp.predicate);
-//						writeln("	multitiple");
-					}
-				} else
-				{
-					predicat_as_multitiple = ((pp.predicate in predicate_as_multiple) !is null);
-				}
-
-				if(pp.count_objects > 0)
-				{
-					if(predicat_as_multitiple)
-						_bson_append_start_object(&op, "$addToSet");
-					else
-						_bson_append_start_object(&op, "$set");
-
-					string pd = pp.predicate;
-
-					if(predicat_as_multitiple == true)
-					{
-						_bson_append_start_object(&op, pp.predicate);
-
-						_bson_append_start_array(&op, "$each");
-						pd = "";
-					} else if(pp.count_objects > 1)
-					{
-						_bson_append_start_array(&op, pp.predicate);
-						pd = "";
-					}
-
-					foreach(oo; pp.getObjects)
-					{
-						string oo_as_text;
-
-						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-							oo_as_text = oo.literal;
-						else
-							oo_as_text = oo.subject.subject;
-
-						if(predicat_as_multitiple)
-						{
-							if(oo.lang == _NONE)
-								_bson_append_string(&op, pd, oo_as_text);
-							else if(oo.lang == _RU)
-								_bson_append_string(&op, pd, oo_as_text ~ "@ru");
-							if(oo.lang == _EN)
-								_bson_append_string(&op, pd, oo_as_text ~ "@en");
-						} else
-						{
-							if(oo.lang == _NONE)
-							{
-								_bson_append_string(&op, pd, oo_as_text);
-							} else if(oo.lang == _RU)
-							{
-								_bson_append_string(&op, pd, oo_as_text ~ "@ru");
-							} else if(oo.lang == _EN)
-							{
-								_bson_append_string(&op, pd, oo_as_text ~ "@en");
-							}
-
-						}
-					}
-					if(predicat_as_multitiple == true)
-					{
-						bson_append_finish_object(&op); // ] $each
-						bson_append_finish_object(&op); // } predicate					
-					} else if(pp.count_objects > 1)
-					{
-						bson_append_finish_object(&op); // } predicate					
-					}
-
-					bson_append_finish_object(&op);
-
-				}
+//				// writeln ("search index!!!");
+				bson_init(&search);			
+				subject2search_mongo_doc (graph, &search, server_context);
+				bson_finish(&search);
+				mongo_update(&conn, search_collection, &cond, &search, MONGO_UPDATE_UPSERT);
+				bson_destroy(&search);
 			}
-
-			// добавим данные для полнотекстового поиска
-			bool block_ft_was_created = false;
-			for(int kk = 0; kk < graph.count_edges; kk++)
-			{
-				Predicate pp = graph.edges[kk];
-
-				bool predicat_as_fulltext_indexed = false;
-				if(pp.restriction !is null)
-				{
-//					writeln("#2#predicate=", pp.predicate);
-					string type = pp.restriction.getFirstObject(owl__allValuesFrom);
-//					writeln("	type=", type);
-
-					if(type !is null && type == "xsd:string")
-					{
-//						writeln("#2#predicate=", pp.predicate, " predicat_as_fulltext_indexed");
-						predicat_as_fulltext_indexed = true;
-					}
-
-				} else
-				{
-					predicat_as_fulltext_indexed = ((pp.predicate in fulltext_indexed_predicates) !is null);
-				}
-
-				if(predicat_as_fulltext_indexed == true && pp.count_objects > 0)
-				{
-					if(block_ft_was_created == false)
-					{
-						_bson_append_start_object(&op, "$addToSet");
-
-						_bson_append_start_object(&op, "_keywords");
-						_bson_append_start_array(&op, "$each");
-
-						block_ft_was_created = true;
-					}
-
-					foreach(oo; pp.getObjects)
-					{
-						string oo_as_text;
-
-						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-							oo_as_text = oo.literal;
-						else
-							oo_as_text = oo.subject.subject;
-
-						char[] l_o = cast(char[]) toLower(oo_as_text);
-
-						if(l_o.length > 2)
-						{
-
-							_bson_append_string(&op, "", cast(string) l_o);
-
-							for(int ic = 0; ic < l_o.length; ic++)
-							{
-								if((l_o[ic] == '-' && ic == 0) || l_o[ic] == '"' || l_o[ic] == '\'' || (l_o[ic] == '@' && (l_o.length - ic) > 4) || l_o[ic] == '\'' || l_o[ic] == '\\' || l_o[ic] == '.' || l_o[ic] == '+')
-									l_o[ic] = ' ';
-							}
-
-							char[][] aaa;
-							aaa = split(l_o, " ");
-
-							foreach(aa; aaa)
-							{
-								if(aa.length > 2)
-								{
-									_bson_append_string(&op, "", cast(string) aa);
-								}
-							}
-
-						}
-					}
-
-				}
-			}
-			if(block_ft_was_created == true)
-			{
-				bson_append_finish_object(&op); // ] $each
-				bson_append_finish_object(&op); // } _keywords
-				bson_append_finish_object(&op); // } $addToSet
-			}
-
-			bson_finish(&op);
-			mongo_update(&conn, ns, &cond, &op, 1);
+			
+//			mongo_error_t err = mongo_get_error (&conn);
 
 			bson_destroy(&cond);
-			bson_destroy(&op);
-
 		}
-		return 0;
+		return;
 	}
 
-	public int addTriple(Triple tt)
+	public int addTriple(Triple tt, bool isReification = false)
 	{
 		StopWatch sw;
 		sw.start();
@@ -1001,7 +1116,7 @@ class TripleStorage
 		}
 
 		// добавим данные для полнотекстового поиска
-		if((tt.P in fulltext_indexed_predicates) !is null)
+		if((tt.P in fulltext_indexed_predicates) !is null || isReification == true)
 		{
 			char[] l_o = cast(char[]) toLower(tt.O);
 
@@ -1038,7 +1153,7 @@ class TripleStorage
 		}
 
 		bson_finish(&op);
-		mongo_update(&conn, ns, &cond, &op, 1);
+		mongo_update(&conn, docs_collection, &cond, &op, 1);
 
 		bson_destroy(&cond);
 		bson_destroy(&op);
@@ -1069,7 +1184,7 @@ class TripleStorage
 			bson_finish(&query);
 			bson_finish(&fields);
 
-			cursor = mongo_find(&conn, ns, &query, &fields, 0, 0, 0);
+			cursor = mongo_find(&conn, docs_collection, &query, &fields, 0, 0, 0);
 			if(cursor is null)
 			{
 				log.trace("ex! getSubjects, err=%s", mongo_error_str[mongo_get_error(&conn)]);
@@ -1106,8 +1221,6 @@ class TripleStorage
 
 	public TLIterator getTriples(string s, string p, string o, int MAX_SIZE_READ_RECORDS = 1000, int OFFSET = 0)
 	{
-		CacheInfo* ci;
-
 		//		StopWatch sw;
 		//		sw.start();
 
@@ -1140,7 +1253,7 @@ class TripleStorage
 		bson_finish(&query);
 		bson_finish(&fields);
 
-		mongo_cursor* cursor = mongo_find(&conn, ns, &query, &fields, MAX_SIZE_READ_RECORDS, OFFSET, 0);
+		mongo_cursor* cursor = mongo_find(&conn, docs_collection, &query, &fields, MAX_SIZE_READ_RECORDS, OFFSET, 0);
 		if(cursor is null)
 		{
 			log.trace("ex! getTriples:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
@@ -1259,7 +1372,7 @@ class TripleStorage
 
 			mongo_cursor* cursor;
 
-			cursor = mongo_find(&conn, ns, &query, &fields, MAX_SIZE_READ_RECORDS, 0, 0);
+			cursor = mongo_find(&conn, docs_collection, &query, &fields, MAX_SIZE_READ_RECORDS, 0, 0);
 			if(cursor is null)
 			{
 				log.trace("ex! getTriplesOfMask:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
@@ -1342,11 +1455,6 @@ class TripleStorage
 		//		log.trace("TripleStorage:stat: max used pull={}, max length list={}", max_use_pull, max_length_list);
 	}
 
-}
-
-char[] getString(char* s)
-{
-	return s ? s[0 .. strlen(s)] : null;
 }
 
 char[] bson_to_string(bson* b)
@@ -1450,6 +1558,12 @@ string fromStringz(char* s)
 	char[] res = s ? s[0 .. strlen(s)] : null;
 	return cast(string) res;
 }
+
+char[] getString(char* s)
+{
+	return s ? s[0 .. strlen(s)] : null;
+}
+
 
 private void add_fulltext_to_query(string fulltext_param, bson* bb)
 {

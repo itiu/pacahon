@@ -35,8 +35,6 @@ private import pacahon.zmq_connection;
 private import pacahon.ba2pacahon;
 private import util.utils;
 
-private import mmf.mmfgraph;
-
 Logger log;
 Logger io_msg;
 
@@ -53,10 +51,6 @@ void main(char[][] args)
 		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
 				myversion.patch, myversion.hash, myversion.date);
 
-		if(args.length > 1 && args[1] == "rebuild-graph")
-		{
-			mmf.rebuild_graph.rebuild();
-		} else
 		{
 			JSONValue props;
 
@@ -84,9 +78,11 @@ void main(char[][] args)
 				mongodb_port = cast(int) props.object["mongodb_port"].integer;
 
 			// имя коллекции
-			string mongodb_collection = "pacahon";
-			if(("mongodb_collection" in props.object) !is null)
-				mongodb_collection = props.object["mongodb_collection"].str;
+			string db_name = "pacahon";
+			if(("mongodb_database_name" in props.object) !is null)
+				db_name = props.object["mongodb_database_name"].str;
+			else
+				db_name = "pacahon";
 
 			// кеширование
 			// NONE
@@ -95,13 +91,6 @@ void main(char[][] args)
 			string cache_type = "NONE";
 			if(("cache_type" in props.object) !is null)
 				cache_type = props.object["cache_type"].str;
-
-			// использование графа на memory map file
-			// NO
-			// YES				
-			string use_mmfile = "NO";
-			if(("use_mmfile" in props.object) !is null)
-				use_mmfile = props.object["use_mmfile"].str;
 
 			string bind_to = "tcp://*:5555";
 			if(("zmq_point" in props.object) !is null)
@@ -132,7 +121,7 @@ void main(char[][] args)
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection, "zeromq listener");
+			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, db_name, "zeromq listener");
 			writeln("connect to db is ok");
 
 			writeln("zmq connect type as " ~ zmq_connect_type);
@@ -189,22 +178,15 @@ void main(char[][] args)
 									gateway.object["point"].str);
 						}
 					}
+					writeln(thread_listener_for_zmq.resource.gateways);
 				}
 
-				writeln(thread_listener_for_zmq.resource.gateways);
-
+				writeln("load events");
 				load_events(thread_listener_for_zmq.resource);
-//				init_ba2pacahon (thread_listener_for_zmq.resource);								
+//				init_ba2pacahon (thread_listener_for_zmq.resource);												
+				writeln("load events... ok");
 				
-				if(use_mmfile == "YES")
-				{
-					writeln("open mmf...");
-					thread_listener_for_zmq.resource.mmf = new GraphIO;
-					thread_listener_for_zmq.resource.mmf.open_mmfiles("HA1");
-					thread_listener_for_zmq.resource.useMMF = true;
-					writeln("ok");
-				}
-				
+				writeln("start zmq listener");
 				thread_listener_for_zmq.start();
 
 				LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
@@ -214,6 +196,7 @@ void main(char[][] args)
 				JSONValue[string] rabbitmq_props;
 				if(("rabbitmq" in props.object) !is null)
 				{					
+					writeln("connect to rabbitmq");
 					rabbitmq_props = props.object["rabbitmq"].object;
 
 					char[][string] params;
@@ -228,7 +211,7 @@ void main(char[][] args)
 						if(rabbitmq_connection.is_success() == true)
 						{
 							writeln("create connection for this thread");
-							TripleStorage ts1 = connect_to_triple_storage(mongodb_port, mongodb_server, mongodb_collection,
+							TripleStorage ts1 = connect_to_triple_storage(mongodb_port, mongodb_server, db_name,
 									"rabbitmq listener");
 
 							writeln("connect to rabbitmq:", params);
@@ -242,6 +225,10 @@ void main(char[][] args)
 							init_ba2pacahon (thread_listener_for_rabbitmq.resource);				
 
 							thread_listener_for_rabbitmq.start();
+							
+							LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
+							load_info_thread1.start();
+							
 						} else
 						{
 							writeln(rabbitmq_connection.get_fail_msg);
@@ -272,20 +259,41 @@ enum format: byte
 void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
 {
 	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
+	server_thread.sw.stop();
+	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
+
+	//	if(time_from_last_call < 10)
+	//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
+
+	server_thread.resource.stat.idle_time += time_from_last_call;
+
+	StopWatch sw;
+	sw.start();
 
 	TripleStorage ts = server_thread.resource.ts;
 
-		io_msg.trace_io(true, msg, message_size);
+	io_msg.trace_io(true, msg, message_size);
 //writeln (util.utils.fromStringz (cast(char*)msg, message_size));
-		ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size), server_thread.resource);
+	ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size), server_thread.resource);
 
+	server_thread.resource.stat.count_message++;
+
+	sw.stop();
+	long t = cast(long) sw.peek().usecs;
+
+	server_thread.resource.stat.worked_time += t;
+
+	if(trace_msg[69] == 1)
+		log.trace("messages count: %d, total time: %d [µs]", server_thread.resource.stat.count_message, t);
+
+	server_thread.sw.reset();
+	server_thread.sw.start();	
 }
 
 void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
 {
 	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
 	server_thread.sw.stop();
-
 	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
 
 	//	if(time_from_last_call < 10)
@@ -382,7 +390,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 		//		command.reindex_predicate();
 
-		Predicate* type = command.getPredicate("a");
+		Predicate type = command.getPredicate("a");
 		if(type is null)
 			type = command.getPredicate(rdf__type);
 
@@ -391,13 +399,13 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 		if(type !is null && (msg__Message in type.objects_of_value) !is null)
 		{
-			Predicate* reciever = command.getPredicate(msg__reciever);
-			Predicate* sender = command.getPredicate(msg__sender);
+			Predicate reciever = command.getPredicate(msg__reciever);
+			Predicate sender = command.getPredicate(msg__sender);
 
 			if(trace_msg[6] == 1)
-				log.trace("message accepted from:%s", sender.getFirstObject());
+				log.trace("message accepted from:%s", sender.getFirstLiteral());
 
-			Predicate* ticket = command.getPredicate(msg__ticket);
+			Predicate ticket = command.getPredicate(msg__ticket);
 
 			string userId;
 
@@ -433,8 +441,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 			{
-				//				Predicate* sender = command.getEdge(msg__sender);
-				//				Subject* out_message = new Subject;
+				//				Predicat* sender = command.getEdge(msg__sender);
+				//				Subject out_message = new Subject;
 				results[ii] = new Subject;
 
 				if(trace_msg[6] == 1)
@@ -458,27 +466,27 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				//				results[ii] = out_message;
 			}
 
-			Predicate* command_name = command.getPredicate(msg__command);
+			Predicate command_name = command.getPredicate(msg__command);
 			server_thread.resource.stat.count_command++;
 			sw_c.stop();
 			long t = cast(long) sw_c.peek().usecs;
 
 			if(trace_msg[68] == 1)
 			{
-				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstObject(), command.subject,
-						sender.getFirstObject(), server_thread.resource.stat.count_command, t);
+				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(), command.subject,
+						sender.getFirstLiteral(), server_thread.resource.stat.count_command, t);
 				if(t > 60_000_000)
-					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstLiteral(), command.subject,
+							sender.getFirstLiteral());
 				else if(t > 10_000_000)
-					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstLiteral(), command.subject,
+							sender.getFirstLiteral());
 				else if(t > 1_000_000)
-					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstLiteral(), command.subject,
+							sender.getFirstLiteral());
 				else if(t > 100_000)
-					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstObject(), command.subject,
-							sender.getFirstObject());
+					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstLiteral(), command.subject,
+							sender.getFirstLiteral());
 			}
 
 		} else

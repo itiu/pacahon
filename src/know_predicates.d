@@ -6,8 +6,8 @@ public const static string prefix_restriction = "uo:rstr_";
 
 // individuals
 public const static string prefix_doc = "zdb:doc_";
-public const static string prefix_person = "zdb:person_";
-public const static string prefix_department = "zdb:dep_";
+//public const static string prefix_person = "zdb:person_";
+//public const static string prefix_department = "zdb:dep_";
 
 
 
@@ -52,11 +52,12 @@ public const string dc__created = "dc:created";
 public const string dc__identifier = "dc:identifier";
 public const string dc__subject = "dc:subject";
 public const string dc__title = "dc:title";
-public const string dc__type = "dc:type";
+//public const string dc__type = "dc:type";
 public const string dc__description = "dc:description";
 public const string dc__hasPart = "dc:hasPart";
 
 // swrc
+public const string swrc__Employee = "swrc:Employee";
 public const string swrc__Person = "swrc:Person";
 public const string swrc__Department = "swrc:Department";
 public const string swrc__lastName = "swrc:lastName";
@@ -93,6 +94,8 @@ public const string pacahon__on_trace_msg = "pacahon:on-trace-msg";
 public const string pacahon__off_trace_msg = "pacahon:off-trace-msg";
 
 public const string query__all_predicates = "query:all_predicates";
+public const string query__get_reifed = "query:get_reifed";
+public const string query__get = "query:get";
 
 public const string event__Event = "event:Event"; // субьект типа Событие
 public const string event__autoremove = "event:autoremove"; // если == "yes", фильтр должен будет удален после исполнения
@@ -136,11 +139,19 @@ public const string docs__active = "docs:active";
 public const string docs__actual = "docs:actual";
 public const string docs__kindOf = "docs:kindOf";
 public const string docs__defaultValue = "docs:defaultValue";
-public const string docs__importPredicate = "docs:importPredicate";
-public const string docs__exportPredicate = "docs:exportPredicate";
+public const string docs__modifier = "docs:modifier";
+
+public const string link__importPredicates = "link:importPredicates";
+public const string link__importClass = "link:importClass";
+public const string link__exportPredicates = "link:exportPredicates";
+
 //public const string docs__middleName = "docs:middleName";
 public const string docs__version = "docs:version";
-public const string docs__templateName = "docs:templateName";
+//public const string docs__templateName = "docs:templateName";
+
+// класс документа (шаблон)
+public const string class__identifier = "class:identifier";
+public const string class__version = "class:version";
 
 public const string ba__systemInformation = "ba:systemInformation";
 public const string ba__description = "ba:description";

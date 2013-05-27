@@ -23,7 +23,7 @@ class Triple
 	string S;
 	string P;
 	string O;
-	int hhh;
+//	int hhh;
 
 	byte lang;
 	
@@ -31,11 +31,25 @@ class Triple
 	{
 		S = cast(string)new char[_S.length];
 		P = cast(string)new char[_P.length];
-		O = cast(string)new char[_O.length];
 		
 		(cast(char[])S)[] = _S[];
 		(cast(char[])P)[] = _P[];
-		(cast(char[])O)[] = _O[];
+		
+		if (_O.length > 2 && _O[$-3] == '@')
+		{
+			O = cast(string)new char[_O.length - 3];
+			(cast(char[])O)[] = _O[0..$-3];
+			
+			if (_O[$-2] == 'r')
+				lang = _RU;
+			else if (_O[$-2] == 'e')
+				lang = _EN;			
+		}
+		else
+		{
+			O = cast(string)new char[_O.length];
+			(cast(char[])O)[] = _O[];
+		}
 	}
 
 	this(string _S, string _P, string _O, byte _lang)

@@ -195,7 +195,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 	for(int jj = 0; jj < ss.count_edges; jj++)
 	{
-		Predicate* pp = &(ss.edges[jj]);
+		Predicate pp = ss.edges[jj];
 
 		if(jj > 0)
 			outbuff.write(cast(char[]) ",\n");

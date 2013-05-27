@@ -5,46 +5,24 @@ private import std.stdio;
 private import trioplax.mongodb.triple;
 private import trioplax.mongodb.TripleStorage;
 
-//private import util.Logger;
-
 private import pacahon.know_predicates;
 
 private import pacahon.graph;
 private import pacahon.thread_context;
+private import util.Logger;
+private import onto.rdf_base;
+private import onto.doc_template;
+import std.datetime;
 
-// TODO предусмотреть сброс кэша шаблонов
-DocTemplate[string][string] templates;
 byte[string] indexedPredicates;
 
-class DocTemplate
+Logger log;
+
+static this()
 {
-	Subject main;
-	GraphCluster data;
-
-	this()
-	{
-		data = new GraphCluster();
-	}
-
-	Subject addTriple(string S, string P, string O, byte lang)
-	{
-		return data.addTriple(S, P, O, lang);
-	}
-
-	Predicate* get_export_predicates()
-	{
-		if(main is null)
-			return null;
-
-		Predicate* pp = main.getPredicate(docs__exportPredicate);
-		if(pp !is null)
-		{
-			return pp;
-		}
-		return null;
-	}
-
+	log = new Logger("ba2pacahon", "log", "ba2pacahon");
 }
+
 
 //Logger log;
 
@@ -57,10 +35,15 @@ static this()
 	indexedPredicates[docs__actual] = 1;
 }
 
-GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadContext server_context)
+
+Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext server_context, ref Subject[string] doc_cache)
 {
 	if(subject is null)
 		return null;
+	
+	Subject res = doc_cache.get (subject, null);
+	if (res !is null)
+		return res;
 
 	byte[string] r_predicate;
 
@@ -76,35 +59,13 @@ GraphCluster getDocument(string subject, Objectz[] readed_predicate, ThreadConte
 
 		r_predicate[rdf__type] = 0;
 	}
-	Subject main_subject;
-	return _getDocument(subject, r_predicate, main_subject, server_context);
+	return _getDocument(subject, r_predicate, server_context, doc_cache);
 }
 
-GraphCluster getDocument(string subject, Objectz[] readed_predicate, out Subject main_subject, ThreadContext server_context)
+Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context, ref Subject[string] doc_cache_for_insert)
 {
-	if(subject is null)
-		return null;
-
-	byte[string] r_predicate;
-
-	if(readed_predicate is null)
-	{
-		r_predicate[query__all_predicates] = 1;
-	} else
-	{
-		foreach(el; readed_predicate)
-		{
-			r_predicate[el.literal] = 1;
-		}
-
-		r_predicate[rdf__type] = 0;
-	}
-	return _getDocument(subject, r_predicate, main_subject, server_context);
-}
-
-GraphCluster _getDocument(string subject, byte[string] r_predicate, out Subject main_subject, ThreadContext server_context)
-{
-	//	writeln ("#### getDocument :[", subject, "] ", readed_predicate);
+	//	 writeln("#### getDocument :[", subject, "] ", r_predicate);
+    Subject main_subject = null;
 	GraphCluster res = null;
 
 	if(subject is null)
@@ -115,7 +76,6 @@ GraphCluster _getDocument(string subject, byte[string] r_predicate, out Subject 
 
 	search_mask[0] = new Triple(subject, null, null);
 
-	//	writeln ("r_predicate = ", r_predicate);
 	it = server_context.ts.getTriplesOfMask(search_mask, r_predicate);
 	if(it !is null)
 	{
@@ -126,18 +86,40 @@ GraphCluster _getDocument(string subject, byte[string] r_predicate, out Subject 
 
 			Subject ss = res.addTriple(triple.S, triple.P, triple.O, triple.lang);
 
-			if(main_subject is null && triple.P == rdf__type && (triple.O == docs__Document || triple.O == docs__employee_card))
-				main_subject = ss;
+			if(triple.P == rdf__type)
+			{
+				if (triple.O != rdf__Statement && main_subject is null)
+					main_subject = ss;
+				if (triple.O == docs__employee_card || triple.O == docs__unit_card || triple.O == docs__department_card)
+					doc_cache_for_insert[ss.subject] = ss;
+			}
 
-			//						writeln(triple.S, " ", triple.P, " ", triple.O, " ", triple.lang);
+		}
+		if (res !is null)
+		{
+		foreach (Subject subj; res.graphs_of_subject)
+		{
+			if (subj != main_subject)
+			{
+				// это реификация
+				string r_predicate = subj.getFirstLiteral (rdf__predicate);
+				string r_object = subj.getFirstLiteral (rdf__object);
+				
+				Objectz[] objects = main_subject.getObjects (rdf__predicate);
+			}
+		}
 		}
 	}
 
-	if(res !is null)
-	{
-		res.reindex_i1PO(indexedPredicates);
-	}
-	return res;
+//	 if (main_subject is null)
+//	 {
+//		 writeln("#### getDocument :[", subject, "] ", r_predicate, ", main_subject=", main_subject);
+//			writeln ("pause 10s");
+//			core.thread.Thread.sleep(dur!("seconds")(10));
+//		 
+//	 }
+		 
+	return main_subject;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -150,7 +132,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 	if(v_dc_identifier is null && uid is null)
 		return null;
 
-	try	
+	try
 	{
 		DocTemplate[string] rr;
 
@@ -160,7 +142,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 			v_docs_version = "@";
 		}
 
-		rr = templates.get(v_dc_identifier, null);
+		rr = server_context.templates.get(v_dc_identifier, null);
 
 		if(rr !is null)
 		{
@@ -171,13 +153,13 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 		}
 	} catch(Exception ex)
 	{
-		writeln("Ex!" ~ ex.msg);
+		// writeln("Ex!" ~ ex.msg);
 	}
 
 	if(res is null)
 	{
-		writeln("не найдено в кэше [", v_dc_identifier, "][", v_docs_version, "]");
-		//				writeln(templates);
+		log.trace("не найдено в кэше [%s][%s]", v_dc_identifier, v_docs_version);
+		//				// writeln(templates);
 
 		// в кэше не найдено, ищем в базе
 		byte[string] readed_predicate;
@@ -193,6 +175,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				search_mask[2] = new Triple(null, docs__version, v_docs_version);
 		} else
 		{
+			//// writeln ("UID=", uid);
 			search_mask[0] = new Triple(uid, null, null);
 			search_mask.length = 1;
 		}
@@ -215,7 +198,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				if(res.main is null)
 				{
 					res.main = ss;
-					templates[tmpl_subj]["@"] = res;
+					server_context.templates[tmpl_subj]["@"] = res;
 				}
 
 			}
@@ -231,7 +214,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 					foreach(triple; it)
 					{
 						res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-						//										writeln (triple.S, " ", triple.P, " ",triple.O, " ",triple.lang);
+						//										// writeln (triple.S, " ", triple.P, " ",triple.O, " ",triple.lang);
 					}
 				}
 			}
@@ -244,22 +227,115 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 
 			if(res.data.find_subject(docs__actual, "true"))
 			{
-				//				writeln ("set actual to:[", v_dc_identifier, "][", v_docs_version, "]");
+				//				// writeln ("set actual to:[", v_dc_identifier, "][", v_docs_version, "]");
 				// это актуальная версия шаблона
-				templates[v_dc_identifier]["actual"] = res;
+				server_context.templates[v_dc_identifier]["actual"] = res;
 			}
 
 			if(v_docs_version !is null)
-				templates[v_dc_identifier][v_docs_version] = res;
+				server_context.templates[v_dc_identifier][v_docs_version] = res;
 		}
 
 	} else
 	{
-		//				writeln("найдено в кэше[", v_dc_identifier, "][", v_docs_version, "]");
+		//				// writeln("найдено в кэше[", v_dc_identifier, "][", v_docs_version, "]");
 	}
 
 	if(res is null)
-		writeln("template not found:", v_dc_identifier, " search_mask=", search_mask);
+	{
+		if(v_docs_version !is null)
+		{
+			log.trace("шаблон [%s], с указаной версией[%s], не найден, поищем без версии", v_dc_identifier, v_docs_version);
+			// попробуем еще раз поискать без версии
+			res = getTemplate(v_dc_identifier, null, server_context);
+
+			if(res !is null)
+				server_context.templates[v_dc_identifier][v_docs_version] = res;
+		}
+		if(res is null)
+			log.trace("template not found:%s search_mask=%s", v_dc_identifier, search_mask);
+	}
 
 	return res;
+}
+
+Subject get_reification_subject_of_link (string subj_versioned_UID, string new_code, string value, ThreadContext server_context, ref Subject[string] doc_cache, out Predicate real_importPredicates, Predicate importPredicates = null)
+{
+	// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
+	// требуется считать из базы
+	 //writeln("#link value=", value);
+	Subject linked_doc = null;
+	string linked_template_uid;
+	
+	if(importPredicates !is null)
+	{
+		 //writeln("###1 importPredicates=", importPredicates.getObjects());
+		 //writeln("###1 value=", value);
+		
+		linked_doc = getDocument(value, importPredicates.getObjects(), server_context, doc_cache);
+		// writeln("###1 linked_doc=", linked_doc);
+
+		// найдем @ шаблона
+		if(linked_doc !is null)
+		{
+			Predicate type_in = linked_doc.getPredicate(rdf__type);
+			linked_template_uid = type_in.getObjects()[0].literal;
+			if(type_in.getObjects().length > 1 && (linked_template_uid == docs__Document || linked_template_uid == auth__Authenticated || linked_template_uid == docs__unit_card || linked_template_uid == docs__group_card))
+				linked_template_uid = type_in.getObjects()[1].literal;
+		}
+
+	} else
+	{
+		 //writeln("###2 new_code=", new_code);
+		// импортируемые предикаты не указанны
+		// считаем экспортируемые предикаты из шаблона документа
+		linked_doc = getDocument(value, null, server_context, doc_cache);
+		 //writeln("###2.0.1 linked_doc=", linked_doc);
+		if(linked_doc !is null)
+		{
+			// найдем @ шаблона
+			Predicate type_in = linked_doc.getPredicate(rdf__type);
+			linked_template_uid = type_in.getObjects()[0].literal;
+			if(type_in.getObjects().length > 1 && (linked_template_uid == docs__Document || linked_template_uid == auth__Authenticated || linked_template_uid == docs__unit_card || linked_template_uid == docs__group_card))
+				linked_template_uid = type_in.getObjects()[1].literal;
+			
+			
+			DocTemplate template_gr = getTemplate(null, null, server_context, linked_template_uid);
+			
+			if (template_gr !is null)
+			{
+				//writeln("###2.5 template_gr.data=", template_gr.data);
+				importPredicates = template_gr.get_export_predicates();
+				//writeln("###2.5 importPredicates=", importPredicates);
+			}
+			
+			//writeln("###2.6");
+		}
+	}
+	//writeln("###3");
+	if(importPredicates !is null && linked_doc !is null)
+	{
+		 //writeln("###3.1");
+		// создать реифицированный субьект rS к текущему аттрибуту
+		Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
+
+		foreach(el; importPredicates.getObjects())
+		{
+			Predicate pp = linked_doc.getPredicate(el.literal);
+			if(pp !is null)
+				rS.addPredicate(el.literal, pp.getObjects());
+		}
+		
+		real_importPredicates = importPredicates;
+		
+		if (rS !is null)
+		{
+			rS.addPredicate(link__importClass, linked_template_uid);
+		}
+		
+		return rS;
+	}
+	// writeln("###4");
+	
+	return null;
 }

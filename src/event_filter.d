@@ -35,9 +35,11 @@ static this()
 
 void load_events(ThreadContext server_thread)
 {
-	TLIterator it = server_thread.ts.getTriples(null, "a", event__Event);
+	TLIterator it = server_thread.ts.getTriples(null, rdf__type, event__Event);
 	foreach(triple; it)
+	{
 		server_thread.event_filters.addTriple(triple.S, triple.P, triple.O, triple.lang);
+	}
 
 	delete (it);
 	log.trace("loaded (%d) filter(s)", server_thread.event_filters.length);
@@ -45,30 +47,30 @@ void load_events(ThreadContext server_thread)
 
 void processed_events(Subject subject, string type, ThreadContext server_thread)
 {
-	//		writeln("info:processed_events ", type, ":", subject);
+	//writeln("info:processed_events ", type, ":", subject);
 
 	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
 	{
-		string to = ef.getFirstObject(event__to);
+		string to = ef.getFirstLiteral(event__to);
 
 		if(to is null || to.length < 2)
 		{
-			log.trace("filter [%s] skipped, invalis gateway [%s]", ef.subject, to);
+			//log.trace("filter [%s] skipped, invalis gateway [%s]", ef.subject, to);
 			continue;
 		}
 
-		Predicate* subject_types = subject.getPredicate("a");
-		//		writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
+		Predicate subject_types = subject.getPredicate("a");
+		//writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
 
-		string filter_type = ef.getFirstObject(event__subject_type);
+		string filter_type = ef.getFirstLiteral(event__subject_type);
 
 		if(subject_types.isExistLiteral(filter_type))
 		{
-			if(ef.getFirstObject(event__when) == "after")
+			if(ef.getFirstLiteral(event__when) == "after")
 			{
-				string condition = ef.getFirstObject(event__condition);
+				string condition = ef.getFirstLiteral(event__condition);
 
-				//				writeln("condition= ", condition);
+				//writeln("condition= ", condition);
 
 				bool res_cond = false;
 
@@ -84,7 +86,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 //						writeln("EVENT! see ", ef.subject, " subject[", subject.subject, "].type = ",
 //								subject_types.objects_of_value);
 
-						Predicate* p_template = ef.getPredicate(event__msg_template);
+						Predicate p_template = ef.getPredicate(event__msg_template);
 
 						if(p_template !is null)
 						{
@@ -137,7 +139,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 													if(predicat_name == "@")
 														predicat_value = subject.subject;
 													else
-														predicat_value = subject.getFirstObject(predicat_name);
+														predicat_value = subject.getFirstLiteral(predicat_name);
 
 													auto rg1 = regex(regex0);
 													auto m3 = match(predicat_value, rg1);
@@ -147,7 +149,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 												} else
 												{
 													predicat_name = rrr;
-													predicat_value = subject.getFirstObject(predicat_name);
+													predicat_value = subject.getFirstLiteral(predicat_name);
 												}
 
 												list_vars[i] = predicat_value;
@@ -190,7 +192,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 							}
 						}
 
-						string autoremove = ef.getFirstObject(event__autoremove);
+						string autoremove = ef.getFirstLiteral(event__autoremove);
 
 						if(autoremove !is null && autoremove == "yes")
 						{
@@ -267,7 +269,7 @@ bool eval(string expr, Subject data)
 		} else
 		{
 			// нужно найти данный предикат tokens[0] в data и взять его значение
-			A = data.getFirstObject(tokens[0]);
+			A = data.getFirstLiteral(tokens[0]);
 		}
 
 		if(tokens[2][0] == '\'' || tokens[2][0] == '"')
@@ -277,7 +279,7 @@ bool eval(string expr, Subject data)
 		} else
 		{
 			// нужно найти данный предикат tokens[1] в data и взять его значение
-			B = data.getFirstObject(tokens[2]);
+			B = data.getFirstLiteral(tokens[2]);
 		}
 
 		//		writeln("[", A, tokens[1], B, "]");

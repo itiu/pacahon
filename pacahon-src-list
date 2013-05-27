@@ -3,6 +3,8 @@ build/src/util/utils.d
 
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
+
+build/src/onto/doc_template.d
 build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/TripleStorage.d 
 build/src/trioplax/mongodb/triple.d
@@ -32,8 +34,6 @@ build/src/rabbitmq_client.d
 build/src/myversion.d
 build/src/server.d 
 build/src/util/libchash_h.d
-build/src/mmf/mmfgraph.d
-build/src/mmf/rebuild_graph.d
 
 build/src/onto/docs_base.d
 build/src/onto/rdf_base.d

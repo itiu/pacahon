@@ -7,14 +7,8 @@ private import util.Logger;
 
 private import pacahon.graph;
 private import pacahon.zmq_connection;
-private import mmf.mmfgraph;
 
-Logger log;
-
-static this()
-{
-	log = new Logger("pacahon", "log", "server");
-}
+private import  onto.doc_template;
 
 class Ticket
 {
@@ -40,14 +34,14 @@ class ThreadContext
 	
 	Statistic stat;
 	
-	GraphIO *mmf;
-	bool useMMF = false;
-	
 	GraphCluster ba2pacahon_records;	
 	GraphCluster event_filters;
 	Ticket[string] user_of_ticket;
 	string[string] cache__subject_creator;
 	TripleStorage ts;
+	
+	//	 TODO предусмотреть сброс кэша шаблонов
+	DocTemplate[string][string] templates;
 
 	mq_client client;
 
