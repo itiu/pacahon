@@ -32,13 +32,13 @@ enum OBJECT_TYPE: byte
 	CLUSTER = 3
 }
 
-enum DATA_TYPE: byte
-{
-	STRING = 0,
-	INTEGER = 1,
-	DOUBLE = 2,
-	DATETIME = 3
-}
+//enum DATA_TYPE: byte
+//{
+//	STRING = 0,
+//	INTEGER = 1,
+//	DOUBLE = 2,
+//	DATETIME = 3
+//}
 
 enum LANG: byte
 {
@@ -82,7 +82,7 @@ final class GraphCluster
 
 	void addSubject(Subject ss)
 	{
-		if(ss!is null && ss.subject !is null)
+		if(ss !is null && ss.subject !is null)
 		{
 			graphs_of_subject[cast(string) ss.subject] = ss;
 		}
@@ -175,20 +175,21 @@ final class Subject
 	string subject = null;
 	private Predicate[] edges;
 	short count_edges = 0;
+	Predicate exportPredicates; // ? Predicate or DocTemplate
 
 	private Predicate[string] edges_of_predicate;
 
-	Predicate[] getPredicates ()
+	Predicate[] getPredicates()
 	{
-		return edges[0..count_edges];
+		return edges[0 .. count_edges];
 	}
-	
+
 	string getFirstLiteral(string pname)
 	{
 		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate pp = edges_of_predicate.get (pname, null);
+		Predicate pp = edges_of_predicate.get(pname, null);
 		if(pp !is null)
 			return pp.getFirstLiteral();
 		return null;
@@ -199,7 +200,7 @@ final class Subject
 		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate pp = edges_of_predicate.get (pname, null);
+		Predicate pp = edges_of_predicate.get(pname, null);
 		if(pp !is null)
 			return pp.getObjects();
 		return null;
@@ -210,7 +211,7 @@ final class Subject
 		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate pp = edges_of_predicate.get (pname, null);
+		Predicate pp = edges_of_predicate.get(pname, null);
 		if(pp !is null)
 			return pp.getObject(literal);
 
@@ -222,7 +223,7 @@ final class Subject
 		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate pp = edges_of_predicate.get (pname, null);
+		Predicate pp = edges_of_predicate.get(pname, null);
 
 		if(pp !is null)
 			return true;
@@ -235,14 +236,14 @@ final class Subject
 		if(needReidex == true || edges_of_predicate.length != edges.length)
 			reindex_predicate();
 
-		Predicate pp = edges_of_predicate.get (pname, null);
+		Predicate pp = edges_of_predicate.get(pname, null);
 
 		if(pp !is null)
 		{
-			if (pp.getObject (_object) !is null)
+			if(pp.getObject(_object) !is null)
 				return true;
 		}
-		
+
 		return false;
 	}
 
@@ -270,7 +271,7 @@ final class Subject
 		edges[count_edges].predicate = predicate;
 		edges[count_edges].objects = new Objectz[1];
 		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0] = new Objectz ();		
+		edges[count_edges].objects[0] = new Objectz();
 		edges[count_edges].objects[0].literal = object;
 		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
 		count_edges++;
@@ -295,7 +296,7 @@ final class Subject
 
 		if(pp !is null)
 		{
-			pp.addLiteral(object, lang);
+			pp.addLiteral(object, _reification, lang);
 		} else
 		{
 			if(edges.length == 0)
@@ -308,10 +309,10 @@ final class Subject
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz ();
+			edges[count_edges].objects[0] = new Objectz();
 			edges[count_edges].objects[0].literal = object;
 			edges[count_edges].objects[0].lang = lang;
-			edges[count_edges].objects[0].reification = _reification; 
+			edges[count_edges].objects[0].reification = _reification;
 			edges[count_edges].metadata = _metadata;
 			count_edges++;
 		}
@@ -343,11 +344,11 @@ final class Subject
 			if(edges.length == count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate ();
+			edges[count_edges] = new Predicate();
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz ();
+			edges[count_edges].objects[0] = new Objectz();
 			edges[count_edges].objects[0].literal = object;
 			edges[count_edges].objects[0].lang = lang;
 			count_edges++;
@@ -385,7 +386,7 @@ final class Subject
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz ();			
+			edges[count_edges].objects[0] = new Objectz();
 			edges[count_edges].objects[0].cluster = cluster;
 			edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
 			count_edges++;
@@ -422,7 +423,7 @@ final class Subject
 			edges[count_edges].predicate = predicate;
 			edges[count_edges].objects = new Objectz[1];
 			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz ();			
+			edges[count_edges].objects[0] = new Objectz();
 			edges[count_edges].objects[0].subject = subject;
 			edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
 			count_edges++;
@@ -515,16 +516,16 @@ final class Subject
 		{
 			Predicate pp = this.edges[jj];
 
-			this.edges_of_predicate[cast(string) pp.predicate] = pp;
+			this.edges_of_predicate[pp.predicate] = pp;
 
-			for(short kk = 0; kk < pp.count_objects; kk++)
+			foreach(oo; pp.getObjects())
 			{
-				if(pp.objects[kk].type == OBJECT_TYPE.SUBJECT)
+				if(oo.type == OBJECT_TYPE.SUBJECT)
 				{
-					pp.objects[kk].subject.reindex_predicate();
-				} else if(pp.objects[kk].type == OBJECT_TYPE.LITERAL || pp.objects[kk].type == OBJECT_TYPE.URI)
+					oo.subject.reindex_predicate();
+				} else if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 				{
-					pp.objects_of_value[cast(string) pp.objects[kk].literal] = pp.objects[kk];
+					pp.objects_of_value[oo.literal] = oo;
 				}
 			}
 
@@ -538,8 +539,10 @@ final class Subject
 
 		new_subj.needReidex = this.needReidex;
 		new_subj.subject = this.subject;
+		new_subj.exportPredicates = this.exportPredicates;
 		new_subj.edges = this.edges.dup;
 		new_subj.count_edges = this.count_edges;
+		new_subj.edges_of_predicate = this.edges_of_predicate.dup;
 
 		return new_subj;
 	}
@@ -563,7 +566,7 @@ class Predicate
 	private Objectz[] objects; // начальное количество значений objects.length = 1, если необходимо иное, следует создавать новый массив objects 
 	short count_objects = 0;
 	Subject metadata = null; // свойства данного предиката в виде owl:Restriction
-    
+
 	Objectz[string] objects_of_value;
 
 	Objectz[] getObjects()
@@ -573,9 +576,9 @@ class Predicate
 
 	Objectz getObject(string literal)
 	{
-		foreach (oo;objects[0 .. count_objects])
+		foreach(oo; objects[0 .. count_objects])
 		{
-			if (oo.literal == literal)
+			if(oo.literal == literal)
 				return oo;
 		}
 		return null;
@@ -590,7 +593,7 @@ class Predicate
 
 	bool isExistLiteral(string value)
 	{
-		Objectz ooo = objects_of_value.get (value, null);
+		Objectz ooo = objects_of_value.get(value, null);
 
 		if(ooo !is null)
 			return true;
@@ -610,6 +613,20 @@ class Predicate
 			return objects[0].subject;
 		}
 		return null;
+	}
+
+	void addLiteral(string val, Subject reification, byte lang = LANG.NONE)
+	{
+		if(val is null)
+			return;
+
+		if(objects.length == count_objects)
+			objects.length += 16;
+		objects[count_objects] = new Objectz;
+		objects[count_objects].literal = val;
+		objects[count_objects].reification = reification;
+		objects[count_objects].lang = lang;
+		count_objects++;
 	}
 
 	void addLiteral(string val, byte lang = LANG.NONE)
@@ -675,14 +692,14 @@ class Predicate
 
 class Objectz
 {
-	string literal;       // если type == LITERAL
-	Subject subject;      // если type == SUBJECT
+	string literal; // если type == LITERAL
+	Subject subject; // если type == SUBJECT
 	GraphCluster cluster; // если type == CLUSTER
 
 	Subject reification = null; // реификация для данного значения
-	
+
 	byte type = OBJECT_TYPE.LITERAL;
-	byte data_type = DATA_TYPE.STRING;
+//	byte data_type = DATA_TYPE.STRING;
 	byte lang;
 
 	override string toString()

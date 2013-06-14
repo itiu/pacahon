@@ -1,9 +1,7 @@
 module onto.docs_base;
 
 private import std.stdio;
-
-private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+private import std.datetime;
 
 private import pacahon.know_predicates;
 
@@ -12,7 +10,6 @@ private import pacahon.thread_context;
 private import util.Logger;
 private import onto.rdf_base;
 private import onto.doc_template;
-import std.datetime;
 
 byte[string] indexedPredicates;
 
@@ -22,7 +19,6 @@ static this()
 {
 	log = new Logger("ba2pacahon", "log", "ba2pacahon");
 }
-
 
 //Logger log;
 
@@ -35,14 +31,13 @@ static this()
 	indexedPredicates[docs__actual] = 1;
 }
 
-
 Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext server_context, ref Subject[string] doc_cache)
 {
 	if(subject is null)
 		return null;
-	
-	Subject res = doc_cache.get (subject, null);
-	if (res !is null)
+
+	Subject res = doc_cache.get(subject, null);
+	if(res !is null)
 		return res;
 
 	byte[string] r_predicate;
@@ -50,7 +45,8 @@ Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext se
 	if(readed_predicate is null)
 	{
 		r_predicate[query__all_predicates] = 1;
-	} else
+	}
+	else
 	{
 		foreach(el; readed_predicate)
 		{
@@ -62,10 +58,11 @@ Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext se
 	return _getDocument(subject, r_predicate, server_context, doc_cache);
 }
 
-Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context, ref Subject[string] doc_cache_for_insert)
+Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context,
+		ref Subject[string] doc_cache_for_insert)
 {
 	//	 writeln("#### getDocument :[", subject, "] ", r_predicate);
-    Subject main_subject = null;
+	Subject main_subject = null;
 	GraphCluster res = null;
 
 	if(subject is null)
@@ -88,37 +85,37 @@ Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext ser
 
 			if(triple.P == rdf__type)
 			{
-				if (triple.O != rdf__Statement && main_subject is null)
+				if(triple.O != rdf__Statement && main_subject is null)
 					main_subject = ss;
-				if (triple.O == docs__employee_card || triple.O == docs__unit_card || triple.O == docs__department_card)
+				if(triple.O == docs__employee_card || triple.O == docs__unit_card || triple.O == docs__department_card)
 					doc_cache_for_insert[ss.subject] = ss;
 			}
 
 		}
-		if (res !is null)
+		if(res !is null)
 		{
-		foreach (Subject subj; res.graphs_of_subject)
-		{
-			if (subj != main_subject)
+			foreach(Subject subj; res.graphs_of_subject)
 			{
-				// это реификация
-				string r_predicate = subj.getFirstLiteral (rdf__predicate);
-				string r_object = subj.getFirstLiteral (rdf__object);
-				
-				Objectz[] objects = main_subject.getObjects (rdf__predicate);
+				if(subj != main_subject)
+				{
+					// это реификация
+					string r_predicate = subj.getFirstLiteral(rdf__predicate);
+					string r_object = subj.getFirstLiteral(rdf__object);
+
+					Objectz[] objects = main_subject.getObjects(rdf__predicate);
+				}
 			}
-		}
 		}
 	}
 
-//	 if (main_subject is null)
-//	 {
-//		 writeln("#### getDocument :[", subject, "] ", r_predicate, ", main_subject=", main_subject);
-//			writeln ("pause 10s");
-//			core.thread.Thread.sleep(dur!("seconds")(10));
-//		 
-//	 }
-		 
+	//	 if (main_subject is null)
+	//	 {
+	//		 writeln("#### getDocument :[", subject, "] ", r_predicate, ", main_subject=", main_subject);
+	//			writeln ("pause 10s");
+	//			core.thread.Thread.sleep(dur!("seconds")(10));
+	//		 
+	//	 }
+
 	return main_subject;
 }
 
@@ -151,7 +148,8 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 			else
 				res = rr.get(v_docs_version, null);
 		}
-	} catch(Exception ex)
+	}
+	catch(Exception ex)
 	{
 		// writeln("Ex!" ~ ex.msg);
 	}
@@ -173,7 +171,8 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				search_mask[2] = new Triple(null, docs__actual, "true");
 			else
 				search_mask[2] = new Triple(null, docs__version, v_docs_version);
-		} else
+		}
+		else
 		{
 			//// writeln ("UID=", uid);
 			search_mask[0] = new Triple(uid, null, null);
@@ -236,7 +235,8 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				server_context.templates[v_dc_identifier][v_docs_version] = res;
 		}
 
-	} else
+	}
+	else
 	{
 		//				// writeln("найдено в кэше[", v_dc_identifier, "][", v_docs_version, "]");
 	}
@@ -259,19 +259,20 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 	return res;
 }
 
-Subject get_reification_subject_of_link (string subj_versioned_UID, string new_code, string value, ThreadContext server_context, ref Subject[string] doc_cache, out Predicate real_importPredicates, Predicate importPredicates = null)
+Subject get_reification_subject_of_link(string subj_versioned_UID, string new_code, string value, ThreadContext server_context,
+		ref Subject[string] doc_cache, out Predicate real_importPredicates, Predicate importPredicates = null)
 {
 	// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 	// требуется считать из базы
-	 //writeln("#link value=", value);
+	//writeln("#link value=", value);
 	Subject linked_doc = null;
 	string linked_template_uid;
-	
+
 	if(importPredicates !is null)
 	{
-		 //writeln("###1 importPredicates=", importPredicates.getObjects());
-		 //writeln("###1 value=", value);
-		
+		//writeln("###1 importPredicates=", importPredicates.getObjects());
+		//writeln("###1 value=", value);
+
 		linked_doc = getDocument(value, importPredicates.getObjects(), server_context, doc_cache);
 		// writeln("###1 linked_doc=", linked_doc);
 
@@ -284,13 +285,14 @@ Subject get_reification_subject_of_link (string subj_versioned_UID, string new_c
 				linked_template_uid = type_in.getObjects()[1].literal;
 		}
 
-	} else
+	}
+	else
 	{
-		 //writeln("###2 new_code=", new_code);
+		//writeln("###2 new_code=", new_code);
 		// импортируемые предикаты не указанны
 		// считаем экспортируемые предикаты из шаблона документа
 		linked_doc = getDocument(value, null, server_context, doc_cache);
-		 //writeln("###2.0.1 linked_doc=", linked_doc);
+		//writeln("###2.0.1 linked_doc=", linked_doc);
 		if(linked_doc !is null)
 		{
 			// найдем @ шаблона
@@ -298,24 +300,23 @@ Subject get_reification_subject_of_link (string subj_versioned_UID, string new_c
 			linked_template_uid = type_in.getObjects()[0].literal;
 			if(type_in.getObjects().length > 1 && (linked_template_uid == docs__Document || linked_template_uid == auth__Authenticated || linked_template_uid == docs__unit_card || linked_template_uid == docs__group_card))
 				linked_template_uid = type_in.getObjects()[1].literal;
-			
-			
+
 			DocTemplate template_gr = getTemplate(null, null, server_context, linked_template_uid);
-			
-			if (template_gr !is null)
+
+			if(template_gr !is null)
 			{
 				//writeln("###2.5 template_gr.data=", template_gr.data);
 				importPredicates = template_gr.get_export_predicates();
 				//writeln("###2.5 importPredicates=", importPredicates);
 			}
-			
+
 			//writeln("###2.6");
 		}
 	}
 	//writeln("###3");
 	if(importPredicates !is null && linked_doc !is null)
 	{
-		 //writeln("###3.1");
+		//writeln("###3.1");
 		// создать реифицированный субьект rS к текущему аттрибуту
 		Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
 
@@ -325,17 +326,17 @@ Subject get_reification_subject_of_link (string subj_versioned_UID, string new_c
 			if(pp !is null)
 				rS.addPredicate(el.literal, pp.getObjects());
 		}
-		
+
 		real_importPredicates = importPredicates;
-		
-		if (rS !is null)
+
+		if(rS !is null)
 		{
 			rS.addPredicate(link__importClass, linked_template_uid);
 		}
-		
+
 		return rS;
 	}
 	// writeln("###4");
-	
+
 	return null;
 }

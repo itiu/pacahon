@@ -72,7 +72,10 @@ public class Logger
 	}
 	
 	void trace_io(bool io, byte* data, ulong len)
-	{		
+	{	
+		if (len <= 0)
+			return;
+		
 		string str_io;
 
 		if(io == true)

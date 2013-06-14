@@ -4,8 +4,8 @@ private import core.stdc.stdio;
 private import std.datetime;
 private import std.stdio;
 
-private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+//private import trioplax.mongodb.triple;
+//private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 private import pacahon.know_predicates;

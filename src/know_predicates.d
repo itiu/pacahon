@@ -1,7 +1,7 @@
 module pacahon.know_predicates;
 
 //classes
-public const static string prefix_tmpl = "ou:template_";
+public const static string prefix_tmpl = "uo:template_";
 public const static string prefix_restriction = "uo:rstr_";
 
 // individuals

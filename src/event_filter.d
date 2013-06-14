@@ -14,8 +14,8 @@ private import std.array: appender;
 private import pacahon.graph;
 private import pacahon.thread_context;
 
-private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+//private import trioplax.mongodb.triple;
+//private import trioplax.mongodb.TripleStorage;
 private import util.Logger;
 
 private import pacahon.know_predicates;
@@ -24,7 +24,7 @@ private import std.regex;
 
 private import util.utils;
 
-private import pacahon.zmq_connection;
+private import pacahon.oi;
 
 Logger log;
 
@@ -172,7 +172,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 
 									//	сообщение сформированно, отправляем согласно event:to	
 
-									ZmqConnection gateway = server_thread.getGateway(to);
+									OI gateway = server_thread.gateways.get(to, null);
 
 									if(gateway !is null)
 									{

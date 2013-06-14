@@ -7,6 +7,7 @@ private import std.range;
 private import std.ascii;
 private import std.utf;
 private import std.conv;
+//private import pacahon.know_predicates;
 
 private import util.Logger;
 
@@ -389,7 +390,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 			if(ii > 0)
 				outbuff.write(cast(char[]) ",\n");
 
-			toJson_ld(out_message, outbuff);
+			toJson_ld(out_message, outbuff, level);
 		}
 	}
 
@@ -417,7 +418,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
-	outbuff.write(cast(char[]) "{\n");
+	outbuff.write("{\n");
 
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	 ");
@@ -440,9 +441,8 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	 ");
 
-		outbuff.write('"');
+		outbuff.write('"');		
 		outbuff.write(pp.predicate);
-
 		outbuff.write(cast(char[]) "\": ");
 
 		if(pp.count_objects > 1)
@@ -450,7 +450,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 		bool ff = false;
 		foreach(oo; pp.getObjects())
-		{
+		{						
 			if(ff == true)
 				outbuff.write(',');
 			ff = true;
@@ -464,18 +464,18 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				{
 					outbuff.write('"');
 					// заменим все неэкранированные кавычки на [\"]
-					bool is_exist_quotes = false;
+					bool need_prepare = false;
 					foreach(ch; oo.literal)
 					{
-						if(ch == '"')
+						if(ch == '"' || ch == '\n' || ch == '\\' || ch == '\t')
 						{
-							is_exist_quotes = true;
+							need_prepare = true;
 							break;
 						}
 					}
 					//				log.trace ("write literal 2");
 
-					if(is_exist_quotes)
+					if(need_prepare)
 					{
 						int len = cast(uint)oo.literal.length;
 
@@ -483,15 +483,26 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 						{
 							if(i >= len)
 								break;
-
+							
 							char ch = oo.literal[i];
 
-							if(ch == '"' && len > 4)
+							if((ch == '"' || ch == '\\'))
 							{
 								outbuff.write('\\');
+								outbuff.write(ch);
 							}
-
-							outbuff.write(ch);
+							else if(ch == '\n')
+							{
+								outbuff.write("\\n");
+							}
+							else if(ch == '\t')
+							{
+								outbuff.write("\\t");
+							}
+							else
+							{
+								outbuff.write(ch);
+							}
 						}
 					} else
 					{
@@ -552,18 +563,17 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 					outbuff.write(']');
 				}
 			}
-
+			
 		}
-
 		if(pp.count_objects > 1)
 			outbuff.write(']');
 
 	}
 
-	outbuff.write('\n');
+//	outbuff.write('\n');
 
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
 
-	outbuff.write('}');
+	outbuff.write("\n}");
 }

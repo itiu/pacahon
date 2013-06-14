@@ -18,8 +18,8 @@ private import zmq_point_to_poin_client;
 private import zmq_pp_broker_client;
 private import rabbitmq_client;
 
-private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+//private import trioplax.mongodb.triple;
+//private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 
@@ -31,7 +31,7 @@ private import pacahon.log_msg;
 private import pacahon.load_info;
 private import pacahon.thread_context;
 private import pacahon.command.event_filter;
-private import pacahon.zmq_connection;
+private import pacahon.oi;
 private import pacahon.ba2pacahon;
 private import util.utils;
 
@@ -57,7 +57,8 @@ void main(char[][] args)
 			try
 			{
 				props = get_props("pacahon-properties.json");
-			} catch(Exception ex1)
+			}
+			catch(Exception ex1)
 			{
 				throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 			}
@@ -66,39 +67,9 @@ void main(char[][] args)
 			mq_client rabbitmq_connection = null;
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			// адрес базы данных mongodb
-			string mongodb_server = "localhost";
-			if(("mongodb_server" in props.object) !is null)
-				mongodb_server = props.object["mongodb_server"].str;
-
-			// порт базы данных mongodb
-			int mongodb_port = 27017;
-			if(("mongodb_port" in props.object) !is null)
-				mongodb_port = cast(int) props.object["mongodb_port"].integer;
-
-			// имя коллекции
-			string db_name = "pacahon";
-			if(("mongodb_database_name" in props.object) !is null)
-				db_name = props.object["mongodb_database_name"].str;
-			else
-				db_name = "pacahon";
-
-			// кеширование
-			// NONE
-			// ALL_DATA
-			// QUERY_RESULT		
-			string cache_type = "NONE";
-			if(("cache_type" in props.object) !is null)
-				cache_type = props.object["cache_type"].str;
-
 			string bind_to = "tcp://*:5555";
 			if(("zmq_point" in props.object) !is null)
 				bind_to = props.object["zmq_point"].str;
-
-			string zmq_connect_type = "server";
-			if(("zmq_connect_type" in props.object) !is null)
-				zmq_connect_type = props.object["zmq_connect_type"].str;
 
 			// логгирование
 			// gebug - все отладочные сообщения, внимание! при включении будут жуткие тормоза! 
@@ -118,132 +89,111 @@ void main(char[][] args)
 			if(("behavior" in props.object) !is null)
 				behavior = props.object["behavior"].str;
 
-
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-			TripleStorage ts0 = connect_to_triple_storage(mongodb_port, mongodb_server, db_name, "zeromq listener");
-			writeln("connect to db is ok");
-
-			writeln("zmq connect type as " ~ zmq_connect_type);
-			if(zmq_connect_type == "server")
+			JSONValue[] _listeners;
+			if(("listeners" in props.object) !is null)
 			{
-				try
+				_listeners = props.object["listeners"].array;
+				foreach(listener; _listeners)
 				{
-					zmq_connection = new zmq_point_to_poin_client(bind_to);
-					writeln("point to point zmq listener started:", bind_to);
-				} catch(Exception ex)
-				{
-				}
-			}
-			else if(zmq_connect_type == "broker")
-			{
-				if(zmq_connection is null)
-				{
-					zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
-					writeln("zmq PPP broker listener started:", bind_to);
-				} else
-				{
-				}
-			}
-						
+					string[string] params;
+					foreach(key; listener.object.keys)
+						params[key] = listener[key].str;
 
-			if(zmq_connection !is null)
-			{
-				zmq_connection.set_callback(&get_message);
-
-				ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, ts0);
-
-				if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
-				{
-					if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
-						thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
-					else
-						thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
-				}
-
-				writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
-
-				thread_listener_for_zmq.resource.client = zmq_connection;
-
-				JSONValue[] gateways;
-
-				if(("gateways" in props.object) !is null)
-				{
-					gateways = props.object["gateways"].array;
-					foreach(gateway; gateways)
+					if(params.get("transport", "") == "zmq")
 					{
-						if(("alias" in gateway.object) !is null && ("point" in gateway.object) !is null)
+						string zmq_connect_type = params.get("zmq_connect_type", "server");
+
+						if(zmq_connect_type == "server")
 						{
-							thread_listener_for_zmq.resource.gateways[gateway.object["alias"].str] = new ZmqConnection(zmq_connection,
-									gateway.object["point"].str);
+							try
+							{
+								zmq_connection = new zmq_point_to_poin_client();
+								zmq_connection.connect_as_listener (params);
+							}
+							catch(Exception ex)
+							{
+							}
 						}
-					}
-					writeln(thread_listener_for_zmq.resource.gateways);
-				}
-
-				writeln("load events");
-				load_events(thread_listener_for_zmq.resource);
-//				init_ba2pacahon (thread_listener_for_zmq.resource);												
-				writeln("load events... ok");
-				
-				writeln("start zmq listener");
-				thread_listener_for_zmq.start();
-
-				LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
-				load_info_thread.start();
-
-				// прием данных по каналу rabbitmq
-				JSONValue[string] rabbitmq_props;
-				if(("rabbitmq" in props.object) !is null)
-				{					
-					writeln("connect to rabbitmq");
-					rabbitmq_props = props.object["rabbitmq"].object;
-
-					char[][string] params;
-					foreach(key; rabbitmq_props.keys)
-					{
-						params[key] = cast(char[]) rabbitmq_props[key].str;
-					}
-
-					try
-					{
-						rabbitmq_connection = new rabbitmq_client(params);
-						if(rabbitmq_connection.is_success() == true)
+						else if(zmq_connect_type == "broker")
 						{
-							writeln("create connection for this thread");
-							TripleStorage ts1 = connect_to_triple_storage(mongodb_port, mongodb_server, db_name,
-									"rabbitmq listener");
-
-							writeln("connect to rabbitmq:", params);
-
-							rabbitmq_connection.set_callback(&get_message_from_rabbit);
-
-							ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, ts1);
-
-							thread_listener_for_rabbitmq.resource.client = rabbitmq_connection;
-							
-							init_ba2pacahon (thread_listener_for_rabbitmq.resource);				
-
-							thread_listener_for_rabbitmq.start();
-							
-							LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
-							load_info_thread1.start();
-							
-						} else
-						{
-							writeln(rabbitmq_connection.get_fail_msg);
+							if(zmq_connection is null)
+							{
+//								zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
+//								writeln("zmq PPP broker listener started:", bind_to);
+							}
+							else
+							{
+							}
 						}
-					} catch(Exception ex)
+
+						if(zmq_connection !is null)
+						{
+							zmq_connection.set_callback(&get_message);
+							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ");
+
+							if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
+							{
+								if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
+									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
+								else
+									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
+							}
+
+							writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
+
+							writeln("start zmq listener");
+							thread_listener_for_zmq.start();
+
+							LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
+							load_info_thread.start();
+						}
+
+					}
+					else if(params.get("transport", "") == "rabbitmq")
 					{
+						// прием данных по каналу rabbitmq
+						writeln("connect to rabbitmq");
+
+						try
+						{
+							rabbitmq_connection = new rabbitmq_client();
+							rabbitmq_connection.connect_as_listener (params);
+							
+							if(rabbitmq_connection.is_success() == true)
+							{
+								rabbitmq_connection.set_callback(&get_message_from_rabbit);
+
+								ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
+										props, "RABBITMQ");
+
+								init_ba2pacahon(thread_listener_for_rabbitmq.resource);
+
+								thread_listener_for_rabbitmq.start();
+
+								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
+								load_info_thread1.start();
+
+							}
+							else
+							{
+								writeln(rabbitmq_connection.get_fail_msg);
+							}
+						}
+						catch(Exception ex)
+						{
+						}
+
 					}
 
 				}
-				
+
 				while(true)
 					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
 		}
-	} catch(Exception ex)
+	}
+	catch(Exception ex)
 	{
 		writeln("Exception: ", ex.msg);
 	}
@@ -273,8 +223,8 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 	TripleStorage ts = server_thread.resource.ts;
 
 	io_msg.trace_io(true, msg, message_size);
-//writeln (util.utils.fromStringz (cast(char*)msg, message_size));
-	ba2pacahon (util.utils.fromStringz (cast(char*)msg, message_size), server_thread.resource);
+	//writeln (util.utils.fromStringz (cast(char*)msg, message_size));
+	ba2pacahon(util.utils.fromStringz(cast(char*) msg, message_size), server_thread.resource);
 
 	server_thread.resource.stat.count_message++;
 
@@ -287,7 +237,7 @@ void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client,
 		log.trace("messages count: %d, total time: %d [µs]", server_thread.resource.stat.count_message, t);
 
 	server_thread.sw.reset();
-	server_thread.sw.start();	
+	server_thread.sw.start();
 }
 
 void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
@@ -336,11 +286,12 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from json, ok");
-		} catch(Exception ex)
+		}
+		catch(Exception ex)
 		{
 			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
 		}
-	}	/*
+	} /*
 	 {
 	 sw.stop();
 	 long t = cast(long) sw.peek().usecs;
@@ -427,7 +378,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 						// тикет просрочен
 						if(trace_msg[61] == 1)
 							log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime, tt.end_time);
-					} else
+					}
+					else
 					{
 						userId = tt.userId;
 					}
@@ -489,7 +441,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 							sender.getFirstLiteral());
 			}
 
-		} else
+		}
+		else
 		{
 			results[ii] = new Subject;
 			command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket, from);
@@ -549,51 +502,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	return;
 }
 
-TripleStorage connect_to_triple_storage(int mongodb_port, string mongodb_server, string mongodb_collection, string thread_name)
-{
-	writeln("connect to mongodb, thread:", thread_name);
-	writeln("	port:", mongodb_port);
-	writeln("	server:", mongodb_server);
-	writeln("	collection:", mongodb_collection);
-
-	TripleStorage ts;
-	try
-	{
-		ts = new TripleStorage(mongodb_server, mongodb_port, mongodb_collection);
-
-		ts.define_predicate_as_multiple(rdf__type);
-		ts.define_predicate_as_multiple(rdfs__subClassOf);
-		ts.define_predicate_as_multiple("gost19:take");
-		ts.define_predicate_as_multiple(event__msg_template);
-		ts.define_predicate_as_multiple(owl__someValuesFrom);
-		ts.define_predicate_as_multiple(owl__allValuesFrom);
-
-		ts.define_predicate_as_multilang(swrc__name);
-		ts.define_predicate_as_multilang(swrc__firstName);
-		ts.define_predicate_as_multilang(swrc__lastName);
-		//			ts.define_predicate_as_multilang("gost19:middleName");
-		ts.define_predicate_as_multilang(docs__position);
-
-		ts.set_fulltext_indexed_predicates(swrc__name);
-		ts.set_fulltext_indexed_predicates(swrc__firstName);
-		ts.set_fulltext_indexed_predicates(swrc__lastName);
-		ts.set_fulltext_indexed_predicates(gost19__middleName);
-		ts.set_fulltext_indexed_predicates(docs__position);
-		ts.set_fulltext_indexed_predicates(docs__label);
-		ts.set_fulltext_indexed_predicates(rdfs__label);
-		ts.set_fulltext_indexed_predicates(swrc__email);
-		ts.set_fulltext_indexed_predicates(swrc__phone);
-		ts.set_fulltext_indexed_predicates(gost19__internal_phone);
-
-		printf("ok, connected : %X\n", ts);
-	} catch(Exception ex)
-	{
-		throw new Exception("Connect to mongodb: " ~ ex.msg, ex);
-	}
-
-	return ts;
-}
-
 class ServerThread: core.thread.Thread
 {
 	ThreadContext resource;
@@ -607,12 +515,10 @@ class ServerThread: core.thread.Thread
 		return resource.stat;
 	}
 
-	this(void delegate() _dd, TripleStorage _ts)
+	this(void delegate() _dd, JSONValue props, string context_name)
 	{
 		super(_dd);
-		resource = new ThreadContext();
-		resource.ts = _ts;
-		resource.stat = new Statistic();
+		resource = new ThreadContext(props, context_name);
 		sw.start();
 	}
 

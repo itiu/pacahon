@@ -6,8 +6,8 @@ import core.vararg;
 private import std.stdio;
 private import std.csv;
 
-private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+//private import trioplax.mongodb.triple;
+//private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 
@@ -35,8 +35,10 @@ string[string][string][string] map_onto2ba;
 Subject[string] doc_cache;
 
 alias eo trace;
-void eo (...){}	
 
+void eo(...)
+{
+}
 
 Logger log;
 
@@ -46,7 +48,6 @@ static this()
 {
 	log = new Logger("ba2pacahon", "log", "ba2pacahon");
 }
-
 
 /*
  * маппер структур [ba] <-> [pacahon]
@@ -86,7 +87,8 @@ void init_ba2pacahon(ThreadContext server_thread)
 			// writeln("test: ###:", map_ba2onto["id2"]["v1"]["автор"]);
 			// writeln("test: ###:", map_ba2onto["id1"]["v1"]["имя"]);
 			// writeln("test: ###:", map_ba2onto["*"]["*"]["date_to"]);
-		} catch(Exception ex1)
+		}
+		catch(Exception ex1)
 		{
 			throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 		}
@@ -128,7 +130,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		string subj_versioned_UID;
 
 		string id = doc.object["id"].str;
-		
+
 		string versionId = get_str(doc, "versionId");
 		string objectType = get_str(doc, "objectType");
 		string dateCreated = get_str(doc, "dateCreated");
@@ -136,10 +138,10 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		string actual = get_str(doc, "actual");
 		string authorId = get_str(doc, "authorId");
 		string lastEditorId = get_str(doc, "lastEditorId");
-		
-		if (authorId is null)
+
+		if(authorId is null)
 			authorId = lastEditorId;
-		
+
 		string dateLastModified = get_str(doc, "dateLastModified");
 
 		Subject node = new Subject();
@@ -226,7 +228,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 					node.addPredicate(link__exportPredicates, gost19__middleName);
 					node.addPredicate(link__exportPredicates, swrc__firstName);
 					node.addPredicate(link__exportPredicates, swrc__lastName);
-				} else
+				}
+				else
 				{
 					string defaultRepresentation = systemInformation_els.get("$defaultRepresentation", null);
 					if(defaultRepresentation !is null)
@@ -311,23 +314,28 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						{
 							attr_node.addPredicate(owl__allValuesFrom, xsd__boolean);
 
-						} else if(type == "TEXT" || type == "STRING")
+						}
+						else if(type == "TEXT" || type == "STRING")
 						{
 							if(value !is null && value.length > 0)
 								attr_node.addPredicate(docs__defaultValue, value);
 
 							attr_node.addPredicate(owl__allValuesFrom, xsd__string);
 
-						} else if(type == "NUMBER")
+						}
+						else if(type == "NUMBER")
 						{
 							attr_node.addPredicate(owl__allValuesFrom, xsd__decimal);
-						} else if(type == "DATE")
+						}
+						else if(type == "DATE")
 						{
 							attr_node.addPredicate(owl__allValuesFrom, xsd__dateTime);
-						} else if(type == "FILE")
+						}
+						else if(type == "FILE")
 						{
 							attr_node.addPredicate(owl__allValuesFrom, docs__FileDescription);
-						} else if(type == "LINK" || type == "DICTIONARY")
+						}
+						else if(type == "LINK" || type == "DICTIONARY")
 						{
 							string allValuesFrom;
 							string dc_identifier_val;
@@ -339,10 +347,12 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								{
 									allValuesFrom = prefix_tmpl ~ isTable;
 									dc_identifier_val = isTable;
-								} else
+								}
+								else
 									allValuesFrom = docs__Document;
 
-							} else if(type == "DICTIONARY")
+							}
+							else if(type == "DICTIONARY")
 							{
 								//docs__defaultValue
 								string dictionaryIdValue = att.get_str("dictionaryIdValue");
@@ -371,7 +381,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 									attr_node.addPredicate(link__importPredicates, el);
 								}
-							} else
+							}
+							else
 							{
 								// композиция не заданна, берем представление по умолчанию у шаблона на который ссылаемся
 
@@ -395,7 +406,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 										}
 
 										//								export_predicates
-									} else
+									}
+									else
 									{
 										log.trace(
 												"linked template [" ~ dc_identifier_val ~ "] not found [" ~ id ~ "][" ~ code ~ "]");
@@ -404,7 +416,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 							}
 
-						} else if(type == "ORGANIZATION")
+						}
+						else if(type == "ORGANIZATION")
 						{
 							string organizationTag = att.get_str("organizationTag");
 
@@ -472,7 +485,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			// store versioned 
 			bool isOk;
 			string reason;
-			store_graph(gcl_versioned.graphs_of_subject.values, null, server_context, isOk, reason, false);
+			store_graphs(gcl_versioned.graphs_of_subject.values, null, server_context, isOk, reason, false);
 
 			if(actual == "1")
 			{
@@ -484,16 +497,17 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 				}
 			}
 
-		} else
+		}
+		else
 		{
 			if(get_str(doc, "is-processed-links") == "N")
 				is_processed_links = false;
 
-			if (get_str(doc, "is-cached") == "Y")
-				is_cached = true;			
-			
+			if(get_str(doc, "is-cached") == "Y")
+				is_cached = true;
+
 			// objectType != "TEMPLATE"
-			trace ("#1 id=", id);
+			trace("#1 id=", id);
 			string typeId = doc.get_str("typeId");
 			string typeVersionId = doc.get_str("typeVersionId");
 			//// writeln ("typeId=", typeId);
@@ -510,55 +524,59 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 				if(tmpl_class is null)
 				{
 					log.trace("документ doc:" ~ id ~ ", не достаточно данных о шаблоне(классе)");
-				} else
+				}
+				else
 				{
 					DocTemplate basic_doc_class = getTemplate(null, null, server_context, docs__Document);
-					
-					trace ("#3");
+
 					subj_versioned_UID = prefix_doc ~ c_id ~ "_" ~ c_vid;
 					subj_UID = prefix_doc ~ id;
 
-					trace ("#3.1");
 					node.subject = subj_versioned_UID;
 					node.addPredicate(rdf__type, docs__Document);
 					node.addPredicate(dc__identifier, id);
+					node.exportPredicates =  tmplate.get_export_predicates ();
 
-					trace ("#3.2");
 					Predicate import_predicate;
 					Subject _reif;
 					if(is_processed_links == true)
 					{
-						_reif = get_reification_subject_of_link(subj_versioned_UID, dc__creator, prefix_doc ~ authorId, server_context, doc_cache, import_predicate);
+						_reif = get_reification_subject_of_link(subj_versioned_UID, dc__creator, prefix_doc ~ authorId,
+								server_context, doc_cache, import_predicate);
 						//writeln ("#3.2.1 _reif=", _reif);
 					}
 					node.addPredicate(dc__creator, prefix_doc ~ authorId, null, _reif);
-					
-					if(is_processed_links == true)
-					{
-						_reif = get_reification_subject_of_link(subj_versioned_UID, docs__modifier, prefix_doc ~ lastEditorId, server_context, doc_cache, import_predicate);
-						//writeln ("#3.2.1 _reif=", _reif);
-					}
-					node.addPredicate(docs__modifier, prefix_doc ~ lastEditorId, null, _reif);
-					
-					if (authorId == "DICTIONARY")
-					{
-						writeln ("docid=", id);
-						writeln ("pause 100s");
-						core.thread.Thread.sleep(dur!("seconds")(100));							
-					}
 
-					trace ("#3.3");
+					if(lastEditorId !is null)
+					{
+						if(is_processed_links == true)
+						{
+							_reif = get_reification_subject_of_link(subj_versioned_UID, docs__modifier,
+									prefix_doc ~ lastEditorId, server_context, doc_cache, import_predicate);
+							//writeln ("#3.2.1 _reif=", _reif);
+						}
+						node.addPredicate(docs__modifier, prefix_doc ~ lastEditorId, null, _reif);
+					}
+					
+//					if(authorId == "DICTIONARY")
+//					{
+//						writeln("docid=", id);
+//						writeln("pause 100s");
+//						core.thread.Thread.sleep(dur!("seconds")(100));
+//					}
+
+					trace("#3.3");
 					if(dateCreated != null)
 					{
-						Subject metadata_dc_created;					
-						if (basic_doc_class !is null)
+						Subject metadata_dc_created;
+						if(basic_doc_class !is null)
 						{
 							metadata_dc_created = basic_doc_class.data.find_subject(owl__onProperty, dc__created);
 						}
 
 						node.addPredicate(dc__created, dateCreated, metadata_dc_created, null);
 					}
-					trace ("#3.4");
+					trace("#3.4");
 					if(dateLastModified != null)
 						node.addPredicate(dc__modified, dateLastModified);
 
@@ -584,23 +602,23 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 							foreach(att; attributes)
 							{
 								// writeln ("#5.1");
-								
+
 								string code = att.object["code"].str;
 								string value = att.get_str("value");
 
 								// writeln ("#5 code=", code);
 								// writeln ("#5 value=", value);
-								
+
 								if(value !is null && value.length > 0)
 								{
 									//writeln ("#6");
-									
+
 									string new_code = ba2user_onto(code);
 									//writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
 									Subject metadata = tmplate.data.find_subject(owl__onProperty, new_code);
 									Subject reif;
-									
+
 									if(metadata !is null)
 									{
 										//writeln ("#7 metadata=", metadata);
@@ -624,42 +642,58 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 										}
 
 										string type = att.get_str("type");
-										trace ("#8 type=", type);
 
-										if ((type == "LINK" || type == "ORGANIZATION" || type == "DICTIONARY"))
+										if((type == "LINK" || type == "ORGANIZATION" || type == "DICTIONARY"))
 										{
 											value = prefix_doc ~ value;
-											trace ("#9 value=", value);
 											if(is_processed_links == true)
 											{
-												trace ("#10");
-												
-												reif = get_reification_subject_of_link(subj_versioned_UID, new_code, value, server_context, doc_cache, import_predicate,												
-														metadata.getPredicate(link__exportPredicates));
-											
+												reif = get_reification_subject_of_link(subj_versioned_UID, new_code, value,
+														server_context, doc_cache, import_predicate, metadata.getPredicate(
+																link__exportPredicates));
+
 												if(reif is null)
-													log.trace("doc[%s], linked field [%s:%s]=%s not found", id, new_code, type, value);
+													log.trace("doc[%s], linked field [%s:%s]=%s not found", id, new_code, type,
+															value);
 											}
+											node.addPredicate(new_code, value, metadata, reif);										
+										}
+										else if (type == "TEXT" || type == "STRING")
+										{
+											string att_name[3] = split_lang(value);
+											
+											if (att_name[LANG.RU] !is null)
+												node.addPredicate(new_code, att_name[LANG.RU], metadata, reif, LANG.RU);
+											else if (att_name[LANG.EN] !is null)
+												node.addPredicate(new_code, att_name[LANG.EN], metadata, reif, LANG.EN);
+											
+											if (att_name[LANG.RU] is null && att_name[LANG.EN] is null)
+												node.addPredicate(new_code, value, metadata, reif, LANG.RU);												
+										}
+										else 
+										{
+											node.addPredicate(new_code, value, metadata, reif);																					
 										}
 									}
-									// writeln ("#11 value=", value);
-
-									node.addPredicate(new_code, value, metadata, reif);
-									// writeln ("#12");
-
+									else
+									{
+										node.addPredicate(new_code, value, metadata, reif);										
+									}
+										
 								}
 
 							}
 						}
 					}
 				}
-			} else
+			}
+			else
 			{
-				
+
 				log.trace("для документа doc:" ~ id ~ ", не найден шаблон(класс)");
 				//		// writeln ("pause 20s");
-					//	core.thread.Thread.sleep(dur!("seconds")(20));
-				
+				//	core.thread.Thread.sleep(dur!("seconds")(20));
+
 			}
 			// writeln ("#13");
 
@@ -681,29 +715,28 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			// store versioned 
 			bool isOk;
 			string reason;
-			
-			if (is_cached == false)
+
+			if(is_cached == false)
 				store_graph(node, null, server_context, isOk, reason, false);
 
 			if(actual == "1")
 			{
-				if (is_cached == false)
+				if(is_cached == false)
 					store_graph(actual_node, null, server_context, isOk, reason, false);
-				if (is_cached == true)
-					doc_cache[actual_node.subject] = actual_node; 
+				if(is_cached == true)
+					doc_cache[actual_node.subject] = actual_node;
 			}
-			
-			
-//			writeln ("pause 10s");
-//			core.thread.Thread.sleep(dur!("seconds")(10));
+
+			//			writeln ("pause 10s");
+			//			core.thread.Thread.sleep(dur!("seconds")(10));
 
 		}
-
 
 		log.trace("ba2pacahon, count:%d", ++count);
 		//		// writeln ("pause 20s");
 		//		core.thread.Thread.sleep(dur!("seconds")(20));
-	} catch(Exception ex)
+	}
+	catch(Exception ex)
 	{
 		// writeln("Ex:" ~ ex.msg);
 	}
@@ -724,7 +757,6 @@ static string[3] split_lang(string src)
 	if(src.indexOf("@@") > 0)
 	{
 		string[] name_els = split(src, "@");
-		//	// writeln("name_els=", name_els);
 
 		foreach(el; name_els)
 		{
@@ -733,13 +765,15 @@ static string[3] split_lang(string src)
 				if(el[0] == 'r' && el[1] == 'u' && el[2] == '{')
 				{
 					res[LANG.RU] = el[3 .. $ - 1];
-				} else if(el[0] == 'e' && el[1] == 'n' && el[2] == '{')
+				}
+				else if(el[0] == 'e' && el[1] == 'n' && el[2] == '{')
 				{
 					res[LANG.EN] = el[3 .. $ - 1];
 				}
 			}
 		}
-	} else
+	}
+	else
 	{
 		res[LANG.RU] = src;
 	}
