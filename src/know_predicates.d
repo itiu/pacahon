@@ -140,14 +140,13 @@ public const string docs__actual = "docs:actual";
 public const string docs__kindOf = "docs:kindOf";
 public const string docs__defaultValue = "docs:defaultValue";
 public const string docs__modifier = "docs:modifier";
+//public const string docs__middleName = "docs:middleName";
+public const string docs__version = "docs:version";
+//public const string docs__templateName = "docs:templateName";
 
 public const string link__importPredicates = "link:importPredicates";
 public const string link__importClass = "link:importClass";
 public const string link__exportPredicates = "link:exportPredicates";
-
-//public const string docs__middleName = "docs:middleName";
-public const string docs__version = "docs:version";
-//public const string docs__templateName = "docs:templateName";
 
 // класс документа (шаблон)
 public const string class__identifier = "class:identifier";
@@ -158,3 +157,5 @@ public const string ba__description = "ba:description";
 public const string ba__organizationTag = "ba:organizationTag";
 public const string ba__readOnly = "ba:readOnly";
 public const string ba__code = "ba:code";
+public const string ba__doctype = "ba:doctype";
+

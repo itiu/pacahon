@@ -590,6 +590,11 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 					node.addPredicate(docs__label, tmpl_class.getObjects(rdfs__label));
 
 					JSONValue[] attributes;
+					
+					if(active == "1")
+						node.addPredicate(docs__active, "true");
+					else
+						node.addPredicate(docs__active, "false");					
 
 					// writeln ("#4 doc.object=", doc.object);
 					if(("attributes" in doc.object) !is null)
@@ -754,7 +759,8 @@ static string[3] split_lang(string src)
 {
 	string res[3];
 	// пример: "@ru@ru{Аудит ОВА}@@en{Audit}@"
-	if(src.indexOf("@@") > 0)
+	long pos = src.indexOf("@ru@ru{");
+	if(pos >= 0 && pos < 4)
 	{
 		string[] name_els = split(src, "@");
 

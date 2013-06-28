@@ -88,38 +88,45 @@ class LoadInfoThread: Thread
 					now[10] = ' ';
 					now.length = 19;
 					
+					float cps = 0.1f;
+					float wt = (cast(float)delta_worked_time)/1000/1000;
+					if (wt > 0)
+						cps = delta_count/wt;
+					
+					
             		auto writer = appender!string();
-			        formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | delta cnt:%4d | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
-			        		now, msg_count, cmd_count, delta_count, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
+			        formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | cps:%6.1f | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
+			        		now, msg_count, cmd_count, cps, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
 //			                writer.put(cast(char) 0);
 			        
-			        log.trace ("delta_count_msg:%d", delta_count);
+			        log.trace ("cps:%6.1f", cps);
 			        
 			        string set_bar_color; 
 			                
-			        if (delta_count < 3000)
+			        if (cps < 3000)
 			        {
 			        	p100 = 3000;
 			        	set_bar_color = set_bar_color_1;
 			        }
-			        else if (delta_count >= 3000 && delta_count < 6000)
+			        else if (cps >= 3000 && cps < 6000)
 			        {
 			        	p100 = 6000;
 			        	set_bar_color = set_bar_color_2;
 			        }
-			        else if (delta_count >= 6000 && delta_count < 10000)
+			        else if (cps >= 6000 && cps < 10000)
 			        {
 			        	p100 = 10000;
 			        	set_bar_color = set_bar_color_3;
 			        }
-			        else if (delta_count >= 10000 && delta_count < 20000)
+			        else if (cps >= 10000 && cps < 20000)
 			        {
 			        	p100 = 20000;
 			        	set_bar_color = set_bar_color_4;
 			        }
 			        
-					int d_delta_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * delta_count + 1);															
-					writeln(set_bar_color, writer.data[0..d_delta_count], set_all_attribute_off, writer.data[d_delta_count..$]);
+					int d_cps_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * cps + 1);	
+					if (d_cps_count > 0)
+						writeln(set_bar_color, writer.data[0..d_cps_count], set_all_attribute_off, writer.data[d_cps_count..$]);
 				}
 
 				//				if(delta_count > 0)

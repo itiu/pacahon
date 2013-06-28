@@ -2,15 +2,44 @@
     "mongodb_server":"127.0.0.1",
     "mongodb_port":27017,
     "mongodb_database_name":"pacahon",
-    "zmq_point":"tcp:\/\/*:5554",
-    "rabbitmq" :
-    {	
-    	"hostname":"192.168.0.105",
-    	"hostname0":"91.227.93.46",
+    "listeners" :
+    [
+	{    
+	    "transport":"zmq",
+	    "point":"tcp:\/\/*:5554",
+	    "zmq_connect_type":"server"
+	},
+        {	
+	    "transport":"rabbitmq",
+    	    "hostname":"127.0.0.1",
+	    "port":"5672",
+	    "queuename":"new-search",
+	    "vhost":"bigarchive",
+	    "login":"ba",
+	    "credentional":"123456"
+	}
+    ] ,
+    "gateways":
+    [
+        {
+        "alias":"search",
+	"transport":"rabbitmq",
+    	"hostname":"127.0.0.1",
 	"port":"5672",
-	"queuename":"new-search",
+	"queuename":"elasticsearch",
+	    "vhost":"bigarchive",
+	    "login":"ba",
+	    "credentional":"123456"
+        },
+	{
+        "#alias":"report",
+	"transport":"rabbitmq",
+    	"hostname":"172.17.1.169",
+	"port":"5672",
+	"queuename":"to-report",
 	"vhost":"bigarchive",
 	"login":"ba",
 	"credentional":"123456"
-    }
+	}
+    ]
 }

@@ -58,8 +58,7 @@ Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext se
 	return _getDocument(subject, r_predicate, server_context, doc_cache);
 }
 
-Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context,
-		ref Subject[string] doc_cache_for_insert)
+Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context, ref Subject[string] doc_cache_for_insert)
 {
 	//	 writeln("#### getDocument :[", subject, "] ", r_predicate);
 	Subject main_subject = null;
@@ -262,18 +261,35 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 Subject get_reification_subject_of_link(string subj_versioned_UID, string new_code, string value, ThreadContext server_context,
 		ref Subject[string] doc_cache, out Predicate real_importPredicates, Predicate importPredicates = null)
 {
+	//	bool TMP_on_trace = false;
+
+	//	if (value == "zdb:doc_d4a7956e-1382-4c6d-be6b-32d0bd511df3")
+	//	{
+	//		 writeln("#!!!");
+	//		TMP_on_trace = true;
+	//	}
+
 	// в случае линка, в исходной ba-json данных не достаточно для реификации ссылки, 
 	// требуется считать из базы
-	//writeln("#link value=", value);
+
+	//	if (TMP_on_trace)
+	//	 writeln("#link value=", value);
+
 	Subject linked_doc = null;
 	string linked_template_uid;
 
 	if(importPredicates !is null)
 	{
-		//writeln("###1 importPredicates=", importPredicates.getObjects());
-		//writeln("###1 value=", value);
+		//		if (TMP_on_trace)
+		//		{
+		//		writeln("###1 importPredicates=", importPredicates.getObjects());
+		//		writeln("###1 value=", value);
+		//		}
 
-		linked_doc = getDocument(value, importPredicates.getObjects(), server_context, doc_cache);
+		//		linked_doc = getDocument(value, importPredicates.getObjects(), server_context, doc_cache);
+		// TODO: OPTIMIZE IT, конечно, так не экономно считывать весь документ, с другой стороны в кэше лучше хранить полный документ или
+		// указание, какие предикаты были считанны
+		linked_doc = getDocument(value, null, server_context, doc_cache);
 		// writeln("###1 linked_doc=", linked_doc);
 
 		// найдем @ шаблона
@@ -288,11 +304,15 @@ Subject get_reification_subject_of_link(string subj_versioned_UID, string new_co
 	}
 	else
 	{
-		//writeln("###2 new_code=", new_code);
+		//		if (TMP_on_trace)
+		//			writeln("###2 new_code=", new_code);
 		// импортируемые предикаты не указанны
 		// считаем экспортируемые предикаты из шаблона документа
 		linked_doc = getDocument(value, null, server_context, doc_cache);
-		//writeln("###2.0.1 linked_doc=", linked_doc);
+
+		//		if (TMP_on_trace)
+		//			writeln("###2.0.1 linked_doc=", linked_doc);
+
 		if(linked_doc !is null)
 		{
 			// найдем @ шаблона
@@ -305,26 +325,35 @@ Subject get_reification_subject_of_link(string subj_versioned_UID, string new_co
 
 			if(template_gr !is null)
 			{
-				//writeln("###2.5 template_gr.data=", template_gr.data);
+				//				if (TMP_on_trace)
+				//				 writeln("###2.5 template_gr.data=", template_gr.data);
 				importPredicates = template_gr.get_export_predicates();
-				//writeln("###2.5 importPredicates=", importPredicates);
+				//				if (TMP_on_trace)
+				//				writeln("###2.5 importPredicates=", importPredicates);
 			}
 
-			//writeln("###2.6");
+			//			if (TMP_on_trace)
+			//			writeln("###2.6");
 		}
 	}
-	//writeln("###3");
+	//	if (TMP_on_trace)
+	//	writeln("###3");
 	if(importPredicates !is null && linked_doc !is null)
 	{
-		//writeln("###3.1");
+		//		if (TMP_on_trace)
+		//		writeln("###3.1");
 		// создать реифицированный субьект rS к текущему аттрибуту
 		Subject rS = create_reifed_info(subj_versioned_UID, new_code, value);
 
 		foreach(el; importPredicates.getObjects())
 		{
 			Predicate pp = linked_doc.getPredicate(el.literal);
+			//			if (TMP_on_trace)
+			//				writeln("###3.2 pp=", pp);
 			if(pp !is null)
+			{
 				rS.addPredicate(el.literal, pp.getObjects());
+			}
 		}
 
 		real_importPredicates = importPredicates;
@@ -334,9 +363,16 @@ Subject get_reification_subject_of_link(string subj_versioned_UID, string new_co
 			rS.addPredicate(link__importClass, linked_template_uid);
 		}
 
+		//		if (TMP_on_trace)
+		//			writeln("###3.3 rS=", rS);
+
+		//		if (TMP_on_trace)
+		//		{
+		//			core.thread.Thread.sleep(dur!("seconds")(10));
+		//		}
+
 		return rS;
 	}
-	// writeln("###4");
 
 	return null;
 }
