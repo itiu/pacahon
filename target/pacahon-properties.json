@@ -26,7 +26,7 @@
 	"transport":"rabbitmq",
     	"hostname":"127.0.0.1",
 	"port":"5672",
-	"queuename":"elasticsearch",
+	"queuename":"elasticsearch3",
 	    "vhost":"bigarchive",
 	    "login":"ba",
 	    "credentional":"123456"

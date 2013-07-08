@@ -346,7 +346,12 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			type = command.getPredicate(rdf__type);
 
 		if(trace_msg[6] == 1)
-			log.trace("command type:%X", type);
+		{
+			if (type !is null)
+				log.trace("command type:" ~ type.toString ());
+			else
+				log.trace("command type: unknown");			
+		}
 
 		if(type !is null && (msg__Message in type.objects_of_value) !is null)
 		{

@@ -134,7 +134,7 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 		if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
 		{
 			if(trace_msg[35] == 1)
-				log.trace("adding subject=%s", graph.subject);
+				log.trace("[35.1] adding subject=%s", graph.subject);
 
 			// цикл по всем добавляемым субьектам
 			/* 2. если создается новый субъект, то ограничений по умолчанию нет
@@ -259,7 +259,7 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 	if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
 	{
 		if(trace_msg[35] == 1)
-			log.trace("adding subject=%s", graph.subject);
+			log.trace("[35.2] adding subject=%s", graph.subject);
 
 		// цикл по всем добавляемым субьектам
 		/* 2. если создается новый субъект, то ограничений по умолчанию нет
@@ -331,8 +331,6 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 public void get(Subject message, Predicate sender, string userId, ThreadContext server_context, out bool isOk, out string reason,
 		ref GraphCluster res, out char from_out)
 {
-	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
-
 	//	log.trace("GET");
 
 	// в качестве аргумента - шаблон для выборки
@@ -352,7 +350,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 	{
 		OutBuffer outbuff = new OutBuffer();
 		toJson_ld(message, outbuff);
-		log.trace("command get, cmd=%s", outbuff.toString);
+		log.trace("[42] command get, cmd=%s", outbuff.toString);
 	}
 
 	if(args !is null)
@@ -360,7 +358,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 		foreach(arg; args.getObjects())
 		{
 			if(trace_msg[43] == 1)
-				log.trace("args.objects.type = %s", text(arg.type));
+				log.trace("[43] args.objects.type = %s", text(arg.type));
 
 			Subject[] graphs_as_template;
 
@@ -374,7 +372,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 			}
 
 			if(trace_msg[45] == 1)
-				log.trace("arguments has been read");
+				log.trace("[45] arguments has been read");
 
 			if(graphs_as_template is null)
 			{
@@ -402,7 +400,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 				foreach(pp; graph.getPredicates)
 				{
 					if(trace_msg[46] == 1)
-						log.trace("pp0=%s", pp.predicate);
+						log.trace("[46.1] pp0=%s", pp.predicate);
 
 					Triple statement = null;
 
@@ -411,7 +409,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 						if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
 						{
 							if(trace_msg[46] == 1)
-								log.trace("pp1=%s", pp.predicate);
+								log.trace("[46.2] pp1=%s", pp.predicate);
 
 							// if(oo.literal.length > 0)
 							{
@@ -420,23 +418,23 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 									// требуются так-же реифицированные данные по этому полю
 									// данный предикат добавить в список возвращаемых
 									if(trace_msg[47] == 1)
-										log.trace("данный предикат и реифицированные данные добавим в список возвращаемых: %s",
+										log.trace("[47] данный предикат и реифицированные данные добавим в список возвращаемых: %s",
 												pp.predicate);
 
 									readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
 
 									if(trace_msg[48] == 1)
-										log.trace("readed_predicate.length=%d", readed_predicate.length);
+										log.trace("[48] readed_predicate.length=%d", readed_predicate.length);
 								} else if(oo.literal == "query:get")
 								{
 									// данный предикат добавить в список возвращаемых
 									if(trace_msg[49] == 1)
-										log.trace("данный предикат добавим в список возвращаемых: %s", pp.predicate);
+										log.trace("[49] данный предикат добавим в список возвращаемых: %s", pp.predicate);
 
 									readed_predicate[cast(string) pp.predicate] = field.GET;
 
 									if(trace_msg[50] == 1)
-										log.trace("readed_predicate.length=%d", readed_predicate.length);
+										log.trace("[50] readed_predicate.length=%d", readed_predicate.length);
 								} else
 								{
 									// это условие ограничивающее результаты выборки
@@ -444,7 +442,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 										statement = new Triple(null, pp.predicate, oo.literal);
 
 									if(trace_msg[51] == 1)
-										log.trace("statement: p=%s o=%s", statement.P, statement.O);
+										log.trace("[51] statement: p=%s o=%s", statement.P, statement.O);
 								}
 							}
 						}
@@ -455,8 +453,8 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 					{
 						if(trace_msg[53] == 1)
 						{
-							log.trace("subject=%s", graph.subject);
-							log.trace("statement=%X", statement);
+							log.trace("[53] subject=%s", graph.subject);
+//							log.trace("statement=%X", statement);
 						}
 
 						if(statement is null)
@@ -465,7 +463,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 							statement.S = graph.subject;
 
 						if(trace_msg[54] == 1)
-							log.trace("s=%s", statement.S);
+							log.trace("[54] s=%s", statement.S);
 					}
 
 					if(statement !is null)
@@ -474,7 +472,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 						search_mask_length++;
 
 						if(trace_msg[55] == 1)
-							log.trace("search_mask_length=%d", search_mask_length);
+							log.trace("[55] search_mask_length=%d", search_mask_length);
 					}
 
 				}
@@ -491,10 +489,10 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 					it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 					if(trace_msg[56] == 1)
-						log.trace("server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
+						log.trace("[56] server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
 					if(trace_msg[57] == 1)
-						log.trace("формируем граф содержащий результаты {");
+						log.trace("[57] формируем граф содержащий результаты {");
 
 					if(it !is null)
 					{

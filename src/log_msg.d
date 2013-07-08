@@ -29,7 +29,10 @@ static this()
 
 	trace_msg[63] = 0; // log.trace("command_preparer, set_message_trace");
 
-//	 trace_msg[] = 1; // полное логгирование 
+	version(trace)
+	    trace_msg[] = 1; // полное логгирование 
+
+ 	trace_msg[3] = 0;
 }
 
 void set_message(int idx)

@@ -506,7 +506,6 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			if(get_str(doc, "is-cached") == "Y")
 				is_cached = true;
 
-			// objectType != "TEMPLATE"
 			trace("#1 id=", id);
 			string typeId = doc.get_str("typeId");
 			string typeVersionId = doc.get_str("typeVersionId");
@@ -536,7 +535,8 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 					node.addPredicate(rdf__type, docs__Document);
 					node.addPredicate(dc__identifier, id);
 					node.exportPredicates =  tmplate.get_export_predicates ();
-
+					node.addPredicate (ba__doctype, objectType);
+					
 					Predicate import_predicate;
 					Subject _reif;
 					if(is_processed_links == true)
