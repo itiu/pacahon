@@ -10,7 +10,7 @@ private
 	import std.json;
 	import pacahon.graph;
 	import trioplax.mongodb.TripleStorage;
-	import std.outbuffer;	
+	import std.outbuffer;
 	import mongoc.bson_h;
 	import std.c.string;
 }
@@ -22,7 +22,6 @@ private
 // "&&", "||", 
 // ">", "<", ">=", "<=", 
 // "->" : переход по ссылке на другой документ 
-
 
 class stack(T)
 {
@@ -115,24 +114,24 @@ int priority(string op)
 
  void process_op (ref stack!TTA st, string op) 
  {
-	 TTA r = st.popBack();
-	 TTA l = st.popBack();
-	 //	writeln ("process_op:op[", op, "], L:", l, ", R:", r);
-	 switch (op) 
-	 {
-		 case "<":  st.pushBack (new TTA (op, l, r));  break;
-		 case ">":  st.pushBack (new TTA (op, l, r));  break;
-		 case "==":  st.pushBack (new TTA (op, l, r));  break;
-		 case "!=":  st.pushBack (new TTA (op, l, r));  break;
-		 case "=*":  st.pushBack (new TTA (op, l, r));  break;
-		 case "=+":  st.pushBack (new TTA (op, l, r));  break;
-		 case "->":  st.pushBack (new TTA (op, l, r));  break;
-		 case ">=":  st.pushBack (new TTA (op, l, r));  break;
-		 case "<=":  st.pushBack (new TTA (op, l, r));  break;
-		 case "||":  st.pushBack (new TTA (op, l, r));  break;
-		 case "&&":  st.pushBack (new TTA (op, l, r));  break;
-		 default:
-	 }
+ TTA r = st.popBack();
+ TTA l = st.popBack();
+ //	writeln ("process_op:op[", op, "], L:", l, ", R:", r);
+ switch (op) 
+ {
+ case "<":  st.pushBack (new TTA (op, l, r));  break;
+ case ">":  st.pushBack (new TTA (op, l, r));  break;
+ case "==":  st.pushBack (new TTA (op, l, r));  break;
+ case "!=":  st.pushBack (new TTA (op, l, r));  break;
+ case "=*":  st.pushBack (new TTA (op, l, r));  break;
+ case "=+":  st.pushBack (new TTA (op, l, r));  break;
+ case "->":  st.pushBack (new TTA (op, l, r));  break;
+ case ">=":  st.pushBack (new TTA (op, l, r));  break;
+ case "<=":  st.pushBack (new TTA (op, l, r));  break;
+ case "||":  st.pushBack (new TTA (op, l, r));  break;
+ case "&&":  st.pushBack (new TTA (op, l, r));  break;
+ default:
+ }
  }
 
 //int g_count = 0;
@@ -169,31 +168,91 @@ class TTA
 		return res ~ "}";
 	}
 
-	public string toMongoBSON(string p_op, bson *val, int level)
+	public string toMongoBSON(string p_op, bson* val, int level)
 	{
 		if(op == "==")
 		{
 			_bson_append_start_object(val, "");
-			
+
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
 			_bson_append_string(val, ls, rs);
-			
-			bson_append_finish_object(val);			
+
+			bson_append_finish_object(val);
+		} else if(op == ">")
+		{
+			string ls = L.toMongoBSON(op, val, level + 1);
+			string rs = R.toMongoBSON(op, val, level + 1);
+
+			_bson_append_start_object(val, "");
+			_bson_append_start_object(val, ls);
+
+			_bson_append_string(val, "$gt", rs);
+
+			bson_append_finish_object(val);
+			bson_append_finish_object(val);
+		} else if(op == ">=")
+		{
+			string ls = L.toMongoBSON(op, val, level + 1);
+			string rs = R.toMongoBSON(op, val, level + 1);
+
+			_bson_append_start_object(val, "");
+			_bson_append_start_object(val, ls);
+
+			_bson_append_string(val, "$gte", rs);
+
+			bson_append_finish_object(val);
+			bson_append_finish_object(val);
+		} else if(op == "<")
+		{
+			string ls = L.toMongoBSON(op, val, level + 1);
+			string rs = R.toMongoBSON(op, val, level + 1);
+
+			_bson_append_start_object(val, "");
+			_bson_append_start_object(val, ls);
+
+			_bson_append_string(val, "$lt", rs);
+
+			bson_append_finish_object(val);
+			bson_append_finish_object(val);
+		} else if(op == ">=")
+		{
+			string ls = L.toMongoBSON(op, val, level + 1);
+			string rs = R.toMongoBSON(op, val, level + 1);
+
+			_bson_append_start_object(val, "");
+			_bson_append_start_object(val, ls);
+
+			_bson_append_string(val, "$lte", rs);
+
+			bson_append_finish_object(val);
+			bson_append_finish_object(val);
+		} else if(op == "!=")
+		{
+			string ls = L.toMongoBSON(op, val, level + 1);
+			string rs = R.toMongoBSON(op, val, level + 1);
+
+			_bson_append_start_object(val, "");
+			_bson_append_start_object(val, ls);
+
+			_bson_append_string(val, "$ne", rs);
+
+			bson_append_finish_object(val);
+			bson_append_finish_object(val);
 		} else if(op == "&&" || op == "||")
 		{
 			if(p_op == op)
 			{
-				if(R !is null)
-				{
-					R.toMongoBSON(op, val, level + 1);					
-				}
-
 				if(L !is null)
 				{
-					L.toMongoBSON(op, val, level + 1);									
+					L.toMongoBSON(op, val, level + 1);
 				}
+				if(R !is null)
+				{
+					R.toMongoBSON(op, val, level + 1);
+				}
+
 			} else
 			{
 				if(op == "&&")
@@ -202,31 +261,29 @@ class TTA
 				if(op == "||")
 					_bson_append_start_array(val, "$or");
 
-				if(R !is null)
-				{
-					R.toMongoBSON(op, val, level + 1);					
-				}
-
 				if(L !is null)
 				{
-					L.toMongoBSON(op, val, level + 1);									
+					L.toMongoBSON(op, val, level + 1);
 				}
-				
-				bson_append_finish_object(val);			
-			}			
-			
-			
+				if(R !is null)
+				{
+					R.toMongoBSON(op, val, level + 1);
+				}
+
+				bson_append_finish_object(val);
+			}
+
 		} else
 		{
 			return op;
-		}		
+		}
 		return null;
 	}
 
 	public void toMongoJSON(string p_op, JSONValue* val, JSONValue* p_val, int level)
 	{
-//		string _tab = "                                                                       ";
-//		string tab = _tab[0 .. level * 2];
+		//		string _tab = "                                                                       ";
+		//		string tab = _tab[0 .. level * 2];
 
 		//	writeln (tab, "count:", count, " ,", op, ", prev:", p_op);
 
@@ -410,7 +467,7 @@ class VQL
 
 	public void get(string query_str, ref GraphCluster res, bool function(ref string id) authorizer)
 	{
-//		writeln("VQL:get");
+		//		writeln("VQL:get");
 
 		StopWatch sw;
 		sw.start();
@@ -436,28 +493,27 @@ class VQL
 
 		//			sw.reset();
 		//			sw.start();
-//		JSONValue jv = void;
-//		jv.type = JSON_TYPE.OBJECT;
-//		jv.object = null;
+		//		JSONValue jv = void;
+		//		jv.type = JSON_TYPE.OBJECT;
+		//		jv.object = null;
 
-//		JSONValue jv1 = void;
-//		tta.toMongoJSON("", &jv, &jv1, 0);
-
+		//		JSONValue jv1 = void;
+		//		tta.toMongoJSON("", &jv, &jv1, 0);
 
 		bson query;
 		bson_init(&query);
 
-		_bson_append_start_object(&query, "$query" );
+		_bson_append_start_object(&query, "$query");
 
 		tta.toMongoBSON("", &query, 0);
-		
-		bson_append_finish_object( &query );
-		  
-		if (section_is_found[SORT] == true)
+
+		bson_append_finish_object(&query);
+
+		if(section_is_found[SORT] == true)
 		{
-			_bson_append_start_object( &query, "$orderby" );
-				
-			foreach(field; split (found_sections[SORT], ","))
+			_bson_append_start_object(&query, "$orderby");
+
+			foreach(field; split(found_sections[SORT], ","))
 			{
 				long bp = indexOf(field, '\'');
 				long ep = lastIndexOf(field, '\'');
@@ -465,25 +521,23 @@ class VQL
 
 				if(ep > bp && ep - bp > 0)
 				{
-					string key = field[bp + 1..ep];
+					string key = field[bp + 1 .. ep];
 
 					if(dp > ep)
-						_bson_append_int( &query, key, -1);
+						_bson_append_int(&query, key, -1);
 					else
-						_bson_append_int( &query, key, 1);
+						_bson_append_int(&query, key, 1);
 				}
 			}
-			bson_append_finish_object( &query );
+			bson_append_finish_object(&query);
 		}
-		
 
 		bson_finish(&query);
-		
-		
-		//			writeln("\n", tta, "\n");
+
+		//writeln("\n", tta, "\n");
 		//writeln(toJSON(&jv));
-		
-//		writeln("str render:[", found_sections[RENDER], "]");
+
+		//		writeln("str render:[", found_sections[RENDER], "]");
 
 		int render = 100;
 
@@ -491,22 +545,20 @@ class VQL
 		{
 			if (found_sections[RENDER] !is null && found_sections[RENDER].length > 0)
 				render = parse!int (found_sections[RENDER]);
-		}
-		catch (Exception ex)
-		{			
+		} catch(Exception ex)
+		{
 		}
 
-		
-//		sw.stop();
-//		long t = cast(long) sw.peek().usecs;
+		//		sw.stop();
+		//		long t = cast(long) sw.peek().usecs;
 		string[string] fields;
-		
+
 		string returns[];
-		
-		if (section_is_found[RETURN] == true)
+
+		if(section_is_found[RETURN] == true)
 		{
-			returns = split (found_sections[RETURN], ",");
-				
+			returns = split(found_sections[RETURN], ",");
+
 			foreach(field; returns)
 			{
 				long bp = indexOf(field, '\'');
@@ -514,12 +566,12 @@ class VQL
 				long rp = lastIndexOf(field, " reif");
 				if(ep > bp && ep - bp > 0)
 				{
-					string key = field[bp + 1..ep];
+					string key = field[bp + 1 .. ep];
 
 					if(rp > ep)
 						fields[key] = "reif";
 					else
-						fields[key] = "1";					
+						fields[key] = "1";
 				}
 			}
 		}
@@ -527,17 +579,17 @@ class VQL
 		sw.stop();
 		long t = cast(long) sw.peek().usecs;
 
-//		writeln("convert to mongo query:", t, " µs");
+		//		writeln("convert to mongo query:", t, " µs");
 
-//		writeln (bson_to_string(&query));		
-		
-//		writeln (fields);
-		
+		//		writeln (bson_to_string(&query));		
+
+		//		writeln (fields);
+
 		ts.get(res, &query, fields, render, authorizer);
 
 		bson_destroy(&query);
 	}
-	
+
 	private void split_on_section(string query)
 	{
 		section_is_found[] = false;
@@ -572,7 +624,7 @@ class VQL
 							pos++;
 
 						pos++;
-						
+
 						while(query[pos] == ' ' && pos < query.length)
 							pos++;
 
@@ -581,9 +633,9 @@ class VQL
 
 						while(query[pos] != '}' && pos < query.length)
 							pos++;
-						
+
 						pos--;
-						
+
 						while(query[pos] == ' ' && pos > bp)
 							pos--;
 

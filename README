@@ -21,8 +21,8 @@ NB: Описание сборки / установки приведено для
 2.1. Требуемое ПО:
 
 - Клиент системы контроля версий GIT.
-- Digital mars D2 compiler dmd 2.062 ( http://www.digitalmars.com/d )
-- mongodb v2.4.1 ( http://www.mongodb.com )
+- Digital mars D2 compiler dmd 2.063 ( http://www.digitalmars.com/d )
+- mongodb v2.4.4 ( http://www.mongodb.com )
 
 используемые библиотеки и обьектные файлы (находятся в lib32 и lib64):
 - libzmq.a: zeromq v2.2.0 ( http://www.zeromq.com )

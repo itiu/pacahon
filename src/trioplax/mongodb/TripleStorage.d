@@ -34,7 +34,8 @@ interface TripleStorage
 	public TLIterator getTriplesOfMask(ref Triple[] mask_triples, byte[string] reading_predicates,
 			int MAX_SIZE_READ_RECORDS = 1000);
 
-	public void get(ref GraphCluster res, bson* query, ref string[string] fields, int render, bool function(ref string id) authorizer);
+	public void get(ref GraphCluster res, bson* query, ref string[string] fields, int render,
+			bool function(ref string id) authorizer);
 
 	public int addTriple(Triple tt, bool isReification = false);
 }
@@ -184,21 +185,27 @@ void bson_raw_to_string(bson* b, int depth, OutBuffer outbuff, bson_iterator* ii
 		key = bson_iterator_key(i);
 
 		for(temp = 0; temp <= depth; temp++)
-			outbuff.write(cast(char[]) "\t");
+			outbuff.write('\t');
 
 		outbuff.write(getString(key));
-		outbuff.write(cast(char[]) ":");
+		if(getString(key).length > 0)
+			outbuff.write(':');
 
 		switch(t)
 		{
 			case bson_type.BSON_INT:
-				outbuff.write(cast(char[]) "int ");
+				outbuff.write("int ");
 				outbuff.write(text(bson_iterator_int(i)));
 			break;
 
 			case bson_type.BSON_DOUBLE:
-				outbuff.write(cast(char[]) "double ");
+				outbuff.write("double ");
 				outbuff.write(bson_iterator_double(i));
+			break;
+
+			case bson_type.BSON_DATE:
+				outbuff.write(cast(char[]) "date ");
+			//				outbuff.write(bson_iterator_date(i));
 			break;
 
 			case bson_type.BSON_BOOL:
@@ -225,20 +232,33 @@ void bson_raw_to_string(bson* b, int depth, OutBuffer outbuff, bson_iterator* ii
 			//				printf("%s", oidhex);
 			//			break; //@@@ cast (char*)&oidhex)
 			case bson_type.BSON_OBJECT:
-				outbuff.write(cast(char[]) "\n{");
+				outbuff.write('\n');
+				for(temp = 0; temp <= depth; temp++)
+					outbuff.write('\t');
+				outbuff.write("{\n");
 
 				bson_iterator i1;
 				bson_iterator_subiterator(i, &i1);
 				bson_raw_to_string(null, depth + 1, outbuff, &i1);
-				outbuff.write(cast(char[]) "\n}");
+
+				outbuff.write('\n');
+				for(temp = 0; temp <= depth; temp++)
+					outbuff.write('\t');
+				outbuff.write('}');
 			break;
 
 			case bson_type.BSON_ARRAY:
-				outbuff.write(cast(char[]) "\n[");
+				outbuff.write('\n');
+				for(temp = 0; temp <= depth; temp++)
+					outbuff.write('\t');
+				outbuff.write("[\n");
 				bson_iterator i1;
 				bson_iterator_subiterator(i, &i1);
 				bson_raw_to_string(null, depth + 1, outbuff, &i1);
-				outbuff.write(cast(char[]) "\n]");
+				outbuff.write('\n');
+				for(temp = 0; temp <= depth; temp++)
+					outbuff.write('\t');
+				outbuff.write("]");
 			break;
 
 			default:

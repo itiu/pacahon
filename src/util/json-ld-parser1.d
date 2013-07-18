@@ -425,8 +425,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 	if(ss.subject !is null)
 	{
-		outbuff.write(cast(char[]) "\"@\" : \"");
+		outbuff.write("\"@\" : \"");
 		outbuff.write(ss.subject);
+		outbuff.write('"');
 	}
 	
 //	bool jj = 0;

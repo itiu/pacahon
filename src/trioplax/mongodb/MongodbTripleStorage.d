@@ -481,6 +481,7 @@ class TripleStorageMongoDBIterator: TLIterator
 
 class MongodbTripleStorage: TripleStorage
 {
+	auto tz = UTC();
 	string query_log_filename = "triple-storage-io";
 
 	private long total_count_queries = 0;
@@ -1263,6 +1264,36 @@ class MongodbTripleStorage: TripleStorage
 					break;
 				}
 				
+				case bson_type.BSON_DATE:
+				{
+					string name_key;
+
+					if(predicate_array !is null)
+						name_key = predicate_array;
+					else
+						name_key = fromStringz(bson_iterator_key(it)).dup;
+		
+					string value = SysTime((bson_iterator_date(it)) * 10000 + 621355968000000000, tz).toISOExtString();
+
+					//					writeln("prepare_bson @3 name_key:", name_key);
+					if(only_id == false)
+					{
+
+						if(allfields !is null)
+							ss.addPredicate(name_key, value);
+						else
+						{
+							string ff = fields.get(name_key, null);
+
+							if(ff !is null)
+							{
+								ss.addPredicate(name_key, value);
+							}
+						}
+					}
+					break;
+					
+				}
 				
 				case bson_type.BSON_ARRAY:
 				{
