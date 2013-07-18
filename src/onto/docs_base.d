@@ -10,6 +10,7 @@ private import pacahon.thread_context;
 private import util.Logger;
 private import onto.rdf_base;
 private import onto.doc_template;
+private import trioplax.mongodb.TripleStorage;
 
 byte[string] indexedPredicates;
 
@@ -45,8 +46,7 @@ Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext se
 	if(readed_predicate is null)
 	{
 		r_predicate[query__all_predicates] = 1;
-	}
-	else
+	} else
 	{
 		foreach(el; readed_predicate)
 		{
@@ -58,7 +58,8 @@ Subject getDocument(string subject, Objectz[] readed_predicate, ThreadContext se
 	return _getDocument(subject, r_predicate, server_context, doc_cache);
 }
 
-Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context, ref Subject[string] doc_cache_for_insert)
+Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext server_context,
+		ref Subject[string] doc_cache_for_insert)
 {
 	//	 writeln("#### getDocument :[", subject, "] ", r_predicate);
 	Subject main_subject = null;
@@ -93,13 +94,13 @@ Subject _getDocument(string subject, byte[string] r_predicate, ThreadContext ser
 		}
 		if(res !is null)
 		{
-			foreach(Subject subj; res.graphs_of_subject)
+			foreach(Subject subj; res.getArray)
 			{
 				if(subj != main_subject)
 				{
 					// это реификация
-					string r_predicate = subj.getFirstLiteral(rdf__predicate);
-					string r_object = subj.getFirstLiteral(rdf__object);
+					//?					string r_predicate = subj.getFirstLiteral(rdf__predicate);
+					//					string r_object = subj.getFirstLiteral(rdf__object);
 
 					Objectz[] objects = main_subject.getObjects(rdf__predicate);
 				}
@@ -147,8 +148,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 			else
 				res = rr.get(v_docs_version, null);
 		}
-	}
-	catch(Exception ex)
+	} catch(Exception ex)
 	{
 		// writeln("Ex!" ~ ex.msg);
 	}
@@ -170,8 +170,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				search_mask[2] = new Triple(null, docs__actual, "true");
 			else
 				search_mask[2] = new Triple(null, docs__version, v_docs_version);
-		}
-		else
+		} else
 		{
 			//// writeln ("UID=", uid);
 			search_mask[0] = new Triple(uid, null, null);
@@ -234,8 +233,7 @@ DocTemplate getTemplate(string v_dc_identifier, string v_docs_version, ThreadCon
 				server_context.templates[v_dc_identifier][v_docs_version] = res;
 		}
 
-	}
-	else
+	} else
 	{
 		//				// writeln("найдено в кэше[", v_dc_identifier, "][", v_docs_version, "]");
 	}
@@ -301,8 +299,7 @@ Subject get_reification_subject_of_link(string subj_versioned_UID, string new_co
 				linked_template_uid = type_in.getObjects()[1].literal;
 		}
 
-	}
-	else
+	} else
 	{
 		//		if (TMP_on_trace)
 		//			writeln("###2 new_code=", new_code);

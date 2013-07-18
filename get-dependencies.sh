@@ -25,3 +25,5 @@ rm build/src/test_recieve.d
 rm build/src/test_send.d
 
 
+
+wget --no-check-certificate https://github.com/mongodb/mongo-c-driver/zipball/879b67c40a6d2ee284c7a99b13ded8b1b6535109

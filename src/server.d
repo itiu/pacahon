@@ -19,7 +19,7 @@ private import zmq_pp_broker_client;
 private import rabbitmq_client;
 
 //private import trioplax.mongodb.triple;
-//private import trioplax.mongodb.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 

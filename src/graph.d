@@ -47,10 +47,37 @@ enum LANG: byte
 	EN = 2
 }
 
+enum STRATEGY: byte
+{
+	NOINDEXED = 0,
+	INDEXED = 1
+}
+
 final class GraphCluster
 {
-	Subject[string][string] i1PO;
-	Subject[string] graphs_of_subject;
+	private byte type;
+	private Subject[string][string] i1PO;
+	private Subject[string] graphs_of_subject;
+
+	// if STRATEGY.NOINDEXED
+	private Subject[] graphs;
+	private int count_of_graphs = 0;
+
+	this(byte _type = STRATEGY.INDEXED)
+	{
+		type = _type;
+	}
+
+	Subject[] getArray()
+	{
+		if(type == STRATEGY.NOINDEXED)
+		{
+			return graphs[0 .. count_of_graphs];
+		} else
+		{
+			return graphs_of_subject.values;
+		}
+	}
 
 	Subject addTriple(string s, string p, string o, byte lang = 0)
 	{
@@ -82,15 +109,27 @@ final class GraphCluster
 
 	void addSubject(Subject ss)
 	{
-		if(ss !is null && ss.subject !is null)
+		if(type == STRATEGY.NOINDEXED)
 		{
-			graphs_of_subject[cast(string) ss.subject] = ss;
+			count_of_graphs++;
+			if(graphs.length <= count_of_graphs)
+				graphs.length += 128;
+			graphs[count_of_graphs-1] = ss;
+		} else
+		{
+			if(ss !is null && ss.subject !is null)
+			{
+				graphs_of_subject[ss.subject] = ss;
+			}
 		}
 	}
 
 	int length()
 	{
-		return cast(uint) graphs_of_subject.length;
+		if(type == STRATEGY.NOINDEXED)
+			return count_of_graphs;
+		else
+			return cast(uint) graphs_of_subject.length;
 	}
 
 	Subject find_subject(string predicate, string literal)
@@ -163,7 +202,6 @@ final class GraphCluster
 		foreach(el; this.graphs_of_subject.values)
 		{
 			res ~= " " ~ el.toString() ~ "\n";
-
 		}
 		return res;
 	}
@@ -699,7 +737,7 @@ class Objectz
 	Subject reification = null; // реификация для данного значения
 
 	byte type = OBJECT_TYPE.LITERAL;
-//	byte data_type = DATA_TYPE.STRING;
+	//	byte data_type = DATA_TYPE.STRING;
 	byte lang;
 
 	override string toString()

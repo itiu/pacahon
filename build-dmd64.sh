@@ -4,7 +4,7 @@ VERSION_MAJOR=1
 VERSION_MINOR=33
 VERSION_PATCH=4
 
-cp -v -r src/* build/src
+cp -r src/* build/src
 
 git log -1 --pretty=format:"module myversion; public static string major=\"$VERSION_MAJOR\"; public static string minor=\"$VERSION_MINOR\"; public static string patch=\"$VERSION_PATCH\"; public static string author=\"%an\"; public static string date=\"%ad\"; public static string hash=\"%h\";">src/myversion.d
 

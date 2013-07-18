@@ -7,7 +7,7 @@ private import std.stdio;
 private import std.csv;
 
 //private import trioplax.mongodb.triple;
-//private import trioplax.mongodb.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import util.Logger;
 
@@ -485,12 +485,12 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			// store versioned 
 			bool isOk;
 			string reason;
-			store_graphs(gcl_versioned.graphs_of_subject.values, null, server_context, isOk, reason, false);
+			store_graphs(gcl_versioned.getArray, null, server_context, isOk, reason, false);
 
 			if(actual == "1")
 			{
 				// store actual 			
-				foreach(subject; gcl_actual.graphs_of_subject.values)
+				foreach(subject; gcl_actual.getArray)
 				{
 					server_context.ts.removeSubject(subject.subject);
 					server_context.ts.storeSubject(subject, server_context);

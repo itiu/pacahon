@@ -17,7 +17,7 @@ private import std.conv;
 private import std.uuid;
 
 //private import trioplax.mongodb.triple;
-//private import trioplax.mongodb.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 
 private import pacahon.graph;
 
@@ -264,7 +264,7 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 				if(trace_msg[14] == 1)
 					log.trace("command_preparer, get");
 
-				GraphCluster gres = new GraphCluster;
+				GraphCluster gres = new GraphCluster (STRATEGY.NOINDEXED);
 
 				get(message, sender, userId, server_thread, isOk, reason, gres, from);
 				if(isOk == true)

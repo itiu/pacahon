@@ -354,7 +354,7 @@ public Subject[] parse_json_ld_string(char* msg, int message_size)
 	//	sw1.stop();
 	//	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
-	return gcl.graphs_of_subject.values;
+	return gcl.getArray;
 }
 
 char[] getString(char* s, int length)
@@ -384,7 +384,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 	for(int ii = 0; ii < results.length; ii++)
 	{
 		Subject out_message = results[ii];
-
+		
 		if(out_message !is null && out_message.subject !is null)
 		{
 			if(ii > 0)
@@ -410,7 +410,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	// (+) быстрое по сравнением с вариантом A
 
 	// вариант В
-	if(ss.subject is null && ss.count_edges == 0)
+	if(ss is null || ss.subject is null && ss.count_edges == 0)
 	{
 		return;
 	}
@@ -427,16 +427,15 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	{
 		outbuff.write(cast(char[]) "\"@\" : \"");
 		outbuff.write(ss.subject);
-		outbuff.write(cast(char[]) "\",\n");
 	}
-
-	bool jj = 0;
+	
+//	bool jj = 0;
 	
 	foreach(pp ; ss.getPredicates())
 	{
-		if(jj > 0)
+//		if(jj > 0)
 			outbuff.write(cast(char[]) ",\n");
-		jj = 1;
+//		jj = 1;
 		
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	 ");
@@ -533,7 +532,11 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.SUBJECT)
 			{
-				if(oo.subject !is null && oo.subject.count_edges == 0)
+				if(oo.subject is null)
+				{
+					outbuff.write(cast(char[]) "null");
+				}	
+				else if(oo.subject !is null && oo.subject.count_edges == 0)
 				{
 					outbuff.write(cast(char[]) "null");
 				} else
@@ -543,25 +546,20 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
-				//				if(oo.cluster.graphs_of_subject.values.length == 0)
-				//				{
-				//					outbuff.write(cast(char[]) "null");
-				//				} else
-				{
-					//					if(oo.cluster.graphs_of_subject.values.length > 1)
-					outbuff.write('[');
+				outbuff.write('[');
 
-					for(int i = 0; i < oo.cluster.graphs_of_subject.values.length; i++)
+				for(int i = 0; i < oo.cluster.length; i++)
+				{
+					if (oo.cluster.getArray[i] !is null)
 					{
 						if(i > 0)
 							outbuff.write(',');
 						outbuff.write('\n');
-						toJson_ld(oo.cluster.graphs_of_subject.values[i], outbuff, level + 1);
+						
+						toJson_ld(oo.cluster.getArray[i], outbuff, level + 1);
 					}
-
-					//					if(oo.cluster.graphs_of_subject.values.length > 1)
-					outbuff.write(']');
 				}
+				outbuff.write(']');
 			}
 			
 		}

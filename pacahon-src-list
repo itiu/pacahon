@@ -7,6 +7,7 @@ build/src/mongoc/mongo_h.d
 build/src/onto/doc_template.d
 build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/MongodbTripleStorage.d 
+build/src/trioplax/mongodb/TripleStorage.d 
 build/src/ba2pacahon.d
 build/src/authorization.d 
 build/src/command-io.d 
@@ -19,6 +20,8 @@ build/src/know_predicates.d
 build/src/util/load_info.d 
 build/src/log_msg.d 
 build/src/thread_context.d 
+build/src/context.d 
+build/src/vql.d
 
 build/src/Log.d 
 build/src/libczmq_header.d 

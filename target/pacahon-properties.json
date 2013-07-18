@@ -10,7 +10,7 @@
 	    "zmq_connect_type":"server"
 	},
         {	
-	    "transport":"rabbitmq",
+	    "#transport":"rabbitmq",
     	    "hostname":"127.0.0.1",
 	    "port":"5672",
 	    "queuename":"new-search",
@@ -22,7 +22,7 @@
     "gateways":
     [
         {
-        "alias":"search",
+        "#alias":"search",
 	"transport":"rabbitmq",
     	"hostname":"127.0.0.1",
 	"port":"5672",

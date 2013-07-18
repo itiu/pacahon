@@ -15,7 +15,7 @@ private import pacahon.graph;
 private import pacahon.thread_context;
 
 //private import trioplax.mongodb.triple;
-//private import trioplax.mongodb.TripleStorage;
+private import trioplax.mongodb.TripleStorage;
 private import util.Logger;
 
 private import pacahon.know_predicates;
@@ -49,7 +49,7 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 {
 	//writeln("info:processed_events ", type, ":", subject);
 
-	foreach(ef; server_thread.event_filters.graphs_of_subject.values)
+	foreach(ef; server_thread.event_filters.getArray)
 	{
 		string to = ef.getFirstLiteral(event__to);
 

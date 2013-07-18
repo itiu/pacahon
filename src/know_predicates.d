@@ -1,5 +1,10 @@
 module pacahon.know_predicates;
 
+public static const byte _NONE = 0;
+public static const byte _RU = 1;
+public static const byte _EN = 2;
+
+
 //classes
 public const static string prefix_tmpl = "uo:template_";
 public const static string prefix_restriction = "uo:rstr_";
