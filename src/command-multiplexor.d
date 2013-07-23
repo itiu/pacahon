@@ -264,7 +264,7 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 				if(trace_msg[14] == 1)
 					log.trace("command_preparer, get");
 
-				GraphCluster gres = new GraphCluster (STRATEGY.NOINDEXED);
+				GraphCluster gres = new GraphCluster(STRATEGY.NOINDEXED);
 
 				get(message, sender, userId, server_thread, isOk, reason, gres, from);
 				if(isOk == true)
@@ -306,6 +306,14 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 				//			if(trace_msg[63] == 1)
 				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
 			}
+			else
+			{
+				reason = "неизвестная команда";
+				out_message.addPredicate(msg__status, "405");		
+				out_message.addPredicate(msg__reason, reason);
+				return;
+			}
+			
 			if("get_info" in command.objects_of_value)
 			{
 				Statistic stat = server_thread.stat;
@@ -316,18 +324,26 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 
 				out_message.addPredicate(msg__result, res1);
 			}
+			
 			//		reason = cast(char[]) "запрос выполнен";
+			if(isOk == false && userId is null)
+			{
+				out_message.addPredicate(msg__status, "401");
+				reason = "пользователь не авторизован";
+			}
+			else if(isOk == false)
+			{
+				out_message.addPredicate(msg__status, "500");
+			} else
+			{
+				out_message.addPredicate(msg__status, "200");
+			}
 		} else
 		{
 			reason = "в сообщении не указана команда";
+			out_message.addPredicate(msg__status, "400");
 		}
-		if(isOk == false)
-		{
-			out_message.addPredicate(msg__status, "fail");
-		} else
-		{
-			out_message.addPredicate(msg__status, "ok");
-		}
+
 	}
 
 	if(res !is null)

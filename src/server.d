@@ -57,8 +57,7 @@ void main(char[][] args)
 			try
 			{
 				props = get_props("pacahon-properties.json");
-			}
-			catch(Exception ex1)
+			} catch(Exception ex1)
 			{
 				throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 			}
@@ -109,20 +108,17 @@ void main(char[][] args)
 							try
 							{
 								zmq_connection = new zmq_point_to_poin_client();
-								zmq_connection.connect_as_listener (params);
-							}
-							catch(Exception ex)
+								zmq_connection.connect_as_listener(params);
+							} catch(Exception ex)
 							{
 							}
-						}
-						else if(zmq_connect_type == "broker")
+						} else if(zmq_connect_type == "broker")
 						{
 							if(zmq_connection is null)
 							{
-//								zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
-//								writeln("zmq PPP broker listener started:", bind_to);
-							}
-							else
+								//								zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
+								//								writeln("zmq PPP broker listener started:", bind_to);
+							} else
 							{
 							}
 						}
@@ -149,8 +145,7 @@ void main(char[][] args)
 							load_info_thread.start();
 						}
 
-					}
-					else if(params.get("transport", "") == "rabbitmq")
+					} else if(params.get("transport", "") == "rabbitmq")
 					{
 						// прием данных по каналу rabbitmq
 						writeln("connect to rabbitmq");
@@ -158,8 +153,8 @@ void main(char[][] args)
 						try
 						{
 							rabbitmq_connection = new rabbitmq_client();
-							rabbitmq_connection.connect_as_listener (params);
-							
+							rabbitmq_connection.connect_as_listener(params);
+
 							if(rabbitmq_connection.is_success() == true)
 							{
 								rabbitmq_connection.set_callback(&get_message_from_rabbit);
@@ -174,13 +169,11 @@ void main(char[][] args)
 								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
 								load_info_thread1.start();
 
-							}
-							else
+							} else
 							{
 								writeln(rabbitmq_connection.get_fail_msg);
 							}
-						}
-						catch(Exception ex)
+						} catch(Exception ex)
 						{
 						}
 
@@ -192,8 +185,7 @@ void main(char[][] args)
 					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
 		}
-	}
-	catch(Exception ex)
+	} catch(Exception ex)
 	{
 		writeln("Exception: ", ex.msg);
 	}
@@ -262,7 +254,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	//	from_client.get_counts(count_message, count_command);
 	TripleStorage ts = server_thread.resource.ts;
 
-	Subject[] triples;
+	Subject[] subjects;
 
 	if(trace_msg[0] == 1)
 		io_msg.trace_io(true, msg, message_size);
@@ -274,6 +266,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	 sw.start();
 	 }
 	 */
+
+	bool is_parse_success = true;
+	string parse_error;
+
 	if(*msg == '{' || *msg == '[')
 	{
 		try
@@ -282,14 +278,16 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				log.trace("parse from json");
 
 			msg_format = format.JSON_LD;
-			triples = parse_json_ld_string(cast(char*) msg, message_size);
+			subjects = parse_json_ld_string(cast(char*) msg, message_size);
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from json, ok");
-		}
-		catch(Exception ex)
+		} catch(Exception ex)
 		{
+			is_parse_success = false;
+			parse_error = ex.msg;
 			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
+
 		}
 	} /*
 	 {
@@ -303,156 +301,182 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(trace_msg[3] == 1)
 	{
 		OutBuffer outbuff = new OutBuffer();
-		toJson_ld(triples, outbuff);
+		toJson_ld(subjects, outbuff);
 		outbuff.write(0);
 		ubyte[] bb = outbuff.toBytes();
 		io_msg.trace_io(true, cast(byte*) bb, bb.length);
 	}
 
 	if(trace_msg[4] == 1)
-		log.trace("command.length=%d", triples.length);
+		log.trace("command.length=%d", subjects.length);
 
-	Subject[] results = new Subject[triples.length];
+	Subject[] results;
 
-	// найдем в массиве triples субьекта с типом msg
-
-	// local_ticket <- здесь может быть тикет для выполнения пакетных операций
-	string local_ticket;
-	char from;
-
-	for(int ii = 0; ii < triples.length; ii++)
+	if(is_parse_success == false)
 	{
-		StopWatch sw_c;
-		sw_c.start();
+		results = new Subject[1];
 
-		Subject command = triples[ii];
+		Subject res = new Subject();
 
-		if(trace_msg[5] == 1)
+		res.subject = generateMsgId();
+
+		res.addPredicateAsURI("a", msg__Message);
+		res.addPredicate(msg__sender, "pacahon");
+
+		//			if(message !is null)
+		//			{
+		//				res.addPredicateAsURI(msg__in_reply_to, message.subject);								
+		//			}
+
+		res.addPredicate(msg__reason, "JSON Parsing error:" ~ parse_error);
+		res.addPredicate(msg__status, "400");
+
+		results[0] = res;
+	} else
+	{
+		results = new Subject[subjects.length];
+
+		// найдем в массиве triples субьекта с типом msg
+
+		// local_ticket <- здесь может быть тикет для выполнения пакетных операций
+		string local_ticket;
+		char from;
+
+		for(int ii = 0; ii < subjects.length; ii++)
 		{
-			log.trace("get_message:subject.count_edges=%d", command.count_edges);
-			log.trace("get_message:message.subject=%s", command.subject);
-		}
+			StopWatch sw_c;
+			sw_c.start();
 
-		if(command.count_edges < 3)
-		{
-			log.trace("данная команда [%s] не является полной (command.count_edges < 3), пропустим\n", command.subject);
-			continue;
-		}
+			Subject command = subjects[ii];
 
-		//		command.reindex_predicate();
+			if(trace_msg[5] == 1)
+			{
+				log.trace("get_message:subject.count_edges=%d", command.count_edges);
+				log.trace("get_message:message.subject=%s", command.subject);
+			}
 
-		Predicate type = command.getPredicate("a");
-		if(type is null)
-			type = command.getPredicate(rdf__type);
+			if(command.count_edges < 3)
+			{
+				log.trace("данная команда [%s] не является полной (command.count_edges < 3), пропустим\n", command.subject);
+				continue;
+			}
 
-		if(trace_msg[6] == 1)
-		{
-			if (type !is null)
-				log.trace("command type:" ~ type.toString ());
-			else
-				log.trace("command type: unknown");			
-		}
+			//		command.reindex_predicate();
 
-		if(type !is null && (msg__Message in type.objects_of_value) !is null)
-		{
-			Predicate reciever = command.getPredicate(msg__reciever);
-			Predicate sender = command.getPredicate(msg__sender);
+			Predicate type = command.getPredicate("a");
+			if(type is null)
+				type = command.getPredicate(rdf__type);
 
 			if(trace_msg[6] == 1)
-				log.trace("message accepted from:%s", sender.getFirstLiteral());
-
-			Predicate ticket = command.getPredicate(msg__ticket);
-
-			string userId;
-
-			if(ticket !is null && ticket.getObjects() !is null)
 			{
-				string ticket_str = ticket.getObjects()[0].literal;
-
-				if(ticket_str == "@local")
-					ticket_str = local_ticket;
-
-				Ticket tt = server_thread.foundTicket(ticket_str);
-
-				// проверим время жизни тикета
-				if(tt !is null)
-				{
-					SysTime now = Clock.currTime();
-					if(now.stdTime > tt.end_time)
-					{
-						// тикет просрочен
-						if(trace_msg[61] == 1)
-							log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime, tt.end_time);
-					}
-					else
-					{
-						userId = tt.userId;
-					}
-				}
-
-				if(trace_msg[62] == 1)
-					if(userId !is null)
-						log.trace("пользователь найден, userId=%s", userId);
-
+				if(type !is null)
+					log.trace("command type:" ~ type.toString());
+				else
+					log.trace("command type: unknown");
 			}
 
-			if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
+			if(type !is null && (msg__Message in type.objects_of_value) !is null)
 			{
-				//				Predicat* sender = command.getEdge(msg__sender);
-				//				Subject out_message = new Subject;
-				results[ii] = new Subject;
+				Predicate reciever = command.getPredicate(msg__reciever);
+				Predicate sender = command.getPredicate(msg__sender);
 
 				if(trace_msg[6] == 1)
-				{
-					sw.stop();
-					long t = cast(long) sw.peek().usecs;
+					log.trace("message accepted from:%s", sender.getFirstLiteral());
 
-					log.trace("messages count: %d, %d [µs] start: command_preparer", server_thread.resource.stat.count_message, t);
-					sw.start();
+				Predicate ticket = command.getPredicate(msg__ticket);
+
+				string userId;
+
+				if(ticket !is null && ticket.getObjects() !is null)
+				{
+					string ticket_str = ticket.getObjects()[0].literal;
+
+					if(ticket_str == "@local")
+						ticket_str = local_ticket;
+
+					Ticket tt = server_thread.foundTicket(ticket_str);
+
+					// проверим время жизни тикета
+					if(tt !is null)
+					{
+						SysTime now = Clock.currTime();
+						if(now.stdTime > tt.end_time)
+						{
+							// тикет просрочен
+							if(trace_msg[61] == 1)
+								log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime,
+										tt.end_time);
+						} else
+						{
+							userId = tt.userId;
+						}
+					}
+
+					if(trace_msg[62] == 1)
+						if(userId !is null)
+							log.trace("пользователь найден, userId=%s", userId);
+
 				}
 
-				command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket, from);
-
-				if(trace_msg[7] == 1)
+				if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 				{
-					sw.stop();
-					long t = cast(long) sw.peek().usecs;
-					log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.resource.stat.count_message, t);
-					sw.start();
+					//				Predicat* sender = command.getEdge(msg__sender);
+					//				Subject out_message = new Subject;
+					results[ii] = new Subject;
+
+					if(trace_msg[6] == 1)
+					{
+						sw.stop();
+						long t = cast(long) sw.peek().usecs;
+
+						log.trace("messages count: %d, %d [µs] start: command_preparer",
+								server_thread.resource.stat.count_message, t);
+						sw.start();
+					}
+
+					command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket, from);
+
+					if(trace_msg[7] == 1)
+					{
+						sw.stop();
+						long t = cast(long) sw.peek().usecs;
+						log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.resource.stat.count_message,
+								t);
+						sw.start();
+					}
+					//				results[ii] = out_message;
 				}
-				//				results[ii] = out_message;
-			}
 
-			Predicate command_name = command.getPredicate(msg__command);
-			server_thread.resource.stat.count_command++;
-			sw_c.stop();
-			long t = cast(long) sw_c.peek().usecs;
+				Predicate command_name = command.getPredicate(msg__command);
+				server_thread.resource.stat.count_command++;
+				sw_c.stop();
+				long t = cast(long) sw_c.peek().usecs;
 
-			if(trace_msg[68] == 1)
+				if(trace_msg[68] == 1)
+				{
+					log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(),
+							command.subject, sender.getFirstLiteral(), server_thread.resource.stat.count_command, t);
+					if(t > 60_000_000)
+						log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstLiteral(), command.subject,
+								sender.getFirstLiteral());
+					else if(t > 10_000_000)
+						log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstLiteral(), command.subject,
+								sender.getFirstLiteral());
+					else if(t > 1_000_000)
+						log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstLiteral(), command.subject,
+								sender.getFirstLiteral());
+					else if(t > 100_000)
+						log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstLiteral(), command.subject,
+								sender.getFirstLiteral());
+				}
+
+			} else
 			{
-				log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(), command.subject,
-						sender.getFirstLiteral(), server_thread.resource.stat.count_command, t);
-				if(t > 60_000_000)
-					log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstLiteral(), command.subject,
-							sender.getFirstLiteral());
-				else if(t > 10_000_000)
-					log.trace("command [%s][%s] %s, time > 10 s", command_name.getFirstLiteral(), command.subject,
-							sender.getFirstLiteral());
-				else if(t > 1_000_000)
-					log.trace("command [%s][%s] %s, time > 1 s", command_name.getFirstLiteral(), command.subject,
-							sender.getFirstLiteral());
-				else if(t > 100_000)
-					log.trace("command [%s][%s] %s, time > 100 ms", command_name.getFirstLiteral(), command.subject,
-							sender.getFirstLiteral());
+				results[ii] = new Subject;
+				command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket, from);
 			}
 
 		}
-		else
-		{
-			results[ii] = new Subject;
-			command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket, from);
-		}
-
 	}
 
 	if(trace_msg[8] == 1)
