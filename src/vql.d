@@ -172,74 +172,91 @@ class TTA
 	{
 		if(op == "==")
 		{
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
 
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
 			_bson_append_string(val, ls, rs);
 
-			bson_append_finish_object(val);
+			if (level > 0)
+				bson_append_finish_object(val);
+			
 		} else if(op == ">")
 		{
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
+			
 			_bson_append_start_object(val, ls);
 
 			_bson_append_string(val, "$gt", rs);
 
 			bson_append_finish_object(val);
-			bson_append_finish_object(val);
+			
+			if (level > 0)
+				bson_append_finish_object(val);
 		} else if(op == ">=")
 		{
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
 			_bson_append_start_object(val, ls);
 
 			_bson_append_string(val, "$gte", rs);
 
 			bson_append_finish_object(val);
-			bson_append_finish_object(val);
+
+			if (level > 0)
+				bson_append_finish_object(val);
 		} else if(op == "<")
 		{
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
 			_bson_append_start_object(val, ls);
 
 			_bson_append_string(val, "$lt", rs);
 
 			bson_append_finish_object(val);
-			bson_append_finish_object(val);
+			if (level > 0)
+				bson_append_finish_object(val);
 		} else if(op == ">=")
 		{
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
 			_bson_append_start_object(val, ls);
 
 			_bson_append_string(val, "$lte", rs);
+			
+			bson_append_finish_object(val);
 
-			bson_append_finish_object(val);
-			bson_append_finish_object(val);
+			if (level > 0)
+				bson_append_finish_object(val);
 		} else if(op == "!=")
 		{
 			string ls = L.toMongoBSON(op, val, level + 1);
 			string rs = R.toMongoBSON(op, val, level + 1);
 
-			_bson_append_start_object(val, "");
+			if (level > 0)
+				_bson_append_start_object(val, "");
 			_bson_append_start_object(val, ls);
 
 			_bson_append_string(val, "$ne", rs);
 
 			bson_append_finish_object(val);
-			bson_append_finish_object(val);
+			if (level > 0)
+				bson_append_finish_object(val);
 		} else if(op == "&&" || op == "||")
 		{
 			if(p_op == op)
