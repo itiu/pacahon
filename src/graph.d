@@ -209,17 +209,24 @@ final class GraphCluster
 
 final class Subject
 {
-	bool needReidex = false;
 	string subject = null;
+	private bool needReidex = false;
 	private Predicate[] edges;
-	short count_edges = 0;
-	Predicate exportPredicates; // ? Predicate or DocTemplate
-
+	private short _count_edges = 0;
 	private Predicate[string] edges_of_predicate;
+	
+	// если субьект = документ
+	Predicate exportPredicates; // список экспортируемых предикатов
+	Subject	docTemplate; 		// шаблон документа
 
+	short count_edges ()
+	{
+		return _count_edges;
+	}
+	
 	Predicate[] getPredicates()
 	{
-		return edges[0 .. count_edges];
+		return edges[0 .. _count_edges];
 	}
 
 	string getFirstLiteral(string pname)
@@ -303,16 +310,16 @@ final class Subject
 		if(edges.length == 0)
 			edges = new Predicate[16];
 
-		if(edges.length == count_edges)
+		if(edges.length == _count_edges)
 			edges.length += 16;
-		edges[count_edges] = new Predicate;
-		edges[count_edges].predicate = predicate;
-		edges[count_edges].objects = new Objectz[1];
-		edges[count_edges].count_objects = 1;
-		edges[count_edges].objects[0] = new Objectz();
-		edges[count_edges].objects[0].literal = object;
-		edges[count_edges].objects[0].type = OBJECT_TYPE.URI;
-		count_edges++;
+		edges[_count_edges] = new Predicate;
+		edges[_count_edges].predicate = predicate;
+		edges[_count_edges].objects = new Objectz[1];
+		edges[_count_edges].count_objects = 1;
+		edges[_count_edges].objects[0] = new Objectz();
+		edges[_count_edges].objects[0].literal = object;
+		edges[_count_edges].objects[0].type = OBJECT_TYPE.URI;
+		_count_edges++;
 
 		needReidex = true;
 	}
@@ -323,7 +330,7 @@ final class Subject
 			return;
 
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -340,19 +347,19 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate;
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = new Objectz[1];
-			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz();
-			edges[count_edges].objects[0].literal = object;
-			edges[count_edges].objects[0].lang = lang;
-			edges[count_edges].objects[0].reification = _reification;
-			edges[count_edges].metadata = _metadata;
-			count_edges++;
+			edges[_count_edges] = new Predicate;
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = new Objectz[1];
+			edges[_count_edges].count_objects = 1;
+			edges[_count_edges].objects[0] = new Objectz();
+			edges[_count_edges].objects[0].literal = object;
+			edges[_count_edges].objects[0].lang = lang;
+			edges[_count_edges].objects[0].reification = _reification;
+			edges[_count_edges].metadata = _metadata;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -362,7 +369,7 @@ final class Subject
 		if(object is null)
 			return;
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -379,17 +386,17 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate();
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = new Objectz[1];
-			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz();
-			edges[count_edges].objects[0].literal = object;
-			edges[count_edges].objects[0].lang = lang;
-			count_edges++;
+			edges[_count_edges] = new Predicate();
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = new Objectz[1];
+			edges[_count_edges].count_objects = 1;
+			edges[_count_edges].objects[0] = new Objectz();
+			edges[_count_edges].objects[0].literal = object;
+			edges[_count_edges].objects[0].lang = lang;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -400,7 +407,7 @@ final class Subject
 			return;
 
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -417,17 +424,17 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate;
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = new Objectz[1];
-			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz();
-			edges[count_edges].objects[0].cluster = cluster;
-			edges[count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
-			count_edges++;
+			edges[_count_edges] = new Predicate;
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = new Objectz[1];
+			edges[_count_edges].count_objects = 1;
+			edges[_count_edges].objects[0] = new Objectz();
+			edges[_count_edges].objects[0].cluster = cluster;
+			edges[_count_edges].objects[0].type = OBJECT_TYPE.CLUSTER;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -438,7 +445,7 @@ final class Subject
 			return;
 
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -454,17 +461,17 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate;
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = new Objectz[1];
-			edges[count_edges].count_objects = 1;
-			edges[count_edges].objects[0] = new Objectz();
-			edges[count_edges].objects[0].subject = subject;
-			edges[count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
-			count_edges++;
+			edges[_count_edges] = new Predicate;
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = new Objectz[1];
+			edges[_count_edges].count_objects = 1;
+			edges[_count_edges].objects[0] = new Objectz();
+			edges[_count_edges].objects[0].subject = subject;
+			edges[_count_edges].objects[0].type = OBJECT_TYPE.SUBJECT;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -472,7 +479,7 @@ final class Subject
 	void addPredicate(string predicate, Objectz oo)
 	{
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -488,15 +495,15 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate;
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = new Objectz[1];
-			edges[count_edges].objects[0] = oo;
-			edges[count_edges].count_objects = 1;
-			count_edges++;
+			edges[_count_edges] = new Predicate;
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = new Objectz[1];
+			edges[_count_edges].objects[0] = oo;
+			edges[_count_edges].count_objects = 1;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -504,7 +511,7 @@ final class Subject
 	void addPredicate(string predicate, Objectz[] oo)
 	{
 		Predicate pp;
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			if(edges[i].predicate == predicate)
 			{
@@ -520,14 +527,14 @@ final class Subject
 			if(edges.length == 0)
 				edges = new Predicate[16];
 
-			if(edges.length == count_edges)
+			if(edges.length == _count_edges)
 				edges.length += 16;
 
-			edges[count_edges] = new Predicate;
-			edges[count_edges].predicate = predicate;
-			edges[count_edges].objects = oo;
-			edges[count_edges].count_objects = cast(ushort) oo.length;
-			count_edges++;
+			edges[_count_edges] = new Predicate;
+			edges[_count_edges].predicate = predicate;
+			edges[_count_edges].objects = oo;
+			edges[_count_edges].count_objects = cast(ushort) oo.length;
+			_count_edges++;
 		}
 		needReidex = true;
 	}
@@ -537,20 +544,20 @@ final class Subject
 		if(edges.length == 0)
 			edges = new Predicate[16];
 
-		if(edges.length == count_edges)
+		if(edges.length == _count_edges)
 			edges.length += 16;
 
-		count_edges++;
+		_count_edges++;
 
 		needReidex = true;
 
-		edges[count_edges - 1] = new Predicate;
-		return edges[count_edges - 1];
+		edges[_count_edges - 1] = new Predicate;
+		return edges[_count_edges - 1];
 	}
 
 	private void reindex_predicate()
 	{
-		for(short jj = 0; jj < this.count_edges; jj++)
+		for(short jj = 0; jj < this._count_edges; jj++)
 		{
 			Predicate pp = this.edges[jj];
 
@@ -579,7 +586,7 @@ final class Subject
 		new_subj.subject = this.subject;
 		new_subj.exportPredicates = this.exportPredicates;
 		new_subj.edges = this.edges.dup;
-		new_subj.count_edges = this.count_edges;
+		new_subj._count_edges = this._count_edges;
 		new_subj.edges_of_predicate = this.edges_of_predicate.dup;
 
 		return new_subj;
@@ -589,7 +596,7 @@ final class Subject
 	{
 		string res = this.subject ~ "\n  ";
 
-		for(int i = 0; i < count_edges; i++)
+		for(int i = 0; i < _count_edges; i++)
 		{
 			res ~= "  " ~ edges[i].toString() ~ "\n";
 		}

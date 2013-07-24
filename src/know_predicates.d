@@ -148,6 +148,7 @@ public const string docs__modifier = "docs:modifier";
 //public const string docs__middleName = "docs:middleName";
 public const string docs__version = "docs:version";
 //public const string docs__templateName = "docs:templateName";
+public const string docs__full_text_search = "docs:full-text-search"; // если docs:full-text-search = 0, то полнотекстовая индексация не выполняется
 
 public const string link__importPredicates = "link:importPredicates";
 public const string link__importClass = "link:importClass";

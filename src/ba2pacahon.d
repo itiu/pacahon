@@ -535,6 +535,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 					node.addPredicate(rdf__type, docs__Document);
 					node.addPredicate(dc__identifier, id);
 					node.exportPredicates =  tmplate.get_export_predicates ();
+					node.docTemplate = tmplate.main;
 					node.addPredicate (ba__doctype, objectType);
 					
 					Predicate import_predicate;
