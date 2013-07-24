@@ -638,22 +638,14 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext s
 			return null;
 		}
 
-		Predicate subj_id = ss.getPredicate(rdf__subject);
-		if(subj_id is null || subj_id.getFirstLiteral is null || subj_id.getFirstLiteral.length < 2)
-		{
-			reason = "rdf:subject не указан";
-			isOk = false;
-			return null;
-		}
-
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, subj_id.getFirstLiteral, operation.DELETE, server_context, authorize_reason,
+		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, server_context, authorize_reason,
 				isExistSubject);
 
 		if(result_of_az)
 		{
-			server_context.ts.removeSubject(subj_id.getFirstLiteral);
+			server_context.ts.removeSubject(ss.subject);
 			reason = "команда remove выполнена успешно";
 			isOk = true;
 		} else
