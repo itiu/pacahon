@@ -323,8 +323,14 @@ GraphCluster parse_JSON_LD(T)(T json, int maxDepth = -1) if(isInputRange!T)
 
  private void appendJSONChar(Appender!string* dst, dchar c, scope void delegate(string) error)
  {
-	 if(isControl(c)) 
-		 error("Illegal control character.");
+	 if(c == 9 || c == 10 || c == 13)
+	 {
+		 dst.put(c);
+		 return;
+	 }
+		 
+	 if (isControl(c)) 
+		 error("Illegal control character. code:" ~ text(cast(byte)c));
 	 dst.put(c);
  //      int stride = UTFStride((&c)[0 .. 1], 0);
  //      if(stride == 1) {
