@@ -81,7 +81,8 @@ class ThreadContext: Context
 			db_name = "pacahon";
 
 		ts = connect_to_mongodb_triple_storage(mongodb_port, mongodb_server, db_name, context_name);
-		vql = new VQL(ts);
+		OI from_search = gateways.get("from-search", null);
+		vql = new VQL(ts, from_search);
 
 		writeln(context_name ~ ": connect to mongodb is ok");
 

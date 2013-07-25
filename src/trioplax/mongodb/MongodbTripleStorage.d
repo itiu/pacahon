@@ -1369,7 +1369,7 @@ class MongodbTripleStorage: TripleStorage
 		return true;
 	}
 
-	public void get(ref GraphCluster res, bson* query, ref string[string] fields, int render,
+	public int get(ref GraphCluster res, bson* query, ref string[string] fields, int render, int authorize, int offset,
 			bool function(ref string id) authorizer)
 	{
 		try
@@ -1382,34 +1382,43 @@ class MongodbTripleStorage: TripleStorage
 
 			mongo_cursor* cursor;
 
-			cursor = mongo_find(&conn, docs_collection, query, &b_fields, 10000, 0, 0);
+			// int limit, int skip, int options
+			cursor = mongo_find(&conn, docs_collection, query, &b_fields, authorize, 0, 0);
 
 			if(cursor is null)
 			{
 				log.trace("ex! get:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
 				throw new Exception("get:mongo_find, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
 			}
-
+			
 			auto count_subj = 0;
 			bson_iterator it;
-			while(mongo_cursor_next(cursor) == MONGO_OK)
+			while (mongo_cursor_next(cursor) == MONGO_OK)
 			{				
 				bson_iterator_init(&it, &cursor.current);
 
 				Subject ss = new Subject();
 				
-				bool isOk = false;
+				bool authorizedPass = false;
 				
 				if(count_subj < render)
-					isOk = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, false);
+					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, false);
 				else
-					isOk = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, true);
+					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, true);
 
-				if (isOk)
+				if (authorizedPass)
 					res.addSubject(ss);
 				
 				count_subj ++;
+				
+				if (count_subj >= authorize)
+				{
+					count_subj--;
+					break;
+				}
 			}
+			
+			return count_subj;
 //	!!!		mongo_cursor_destroy(&cursor);
 		} catch(Exception ex)
 		{

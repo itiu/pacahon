@@ -22,7 +22,13 @@
     "gateways":
     [
         {
-        "#alias":"search",
+    	    "alias":"from-search",
+	    "transport":"zmq",
+    	    "point":"tcp:\/\/127.0.0.1:9200"
+        }
+	,
+        {
+        "#alias":"to-search",
 	"transport":"rabbitmq",
     	"hostname":"127.0.0.1",
 	"port":"5672",
@@ -32,7 +38,7 @@
 	    "credentional":"123456"
         },
 	{
-        "#alias":"report",
+        "#alias":"to-report",
 	"transport":"rabbitmq",
     	"hostname":"172.17.1.169",
 	"port":"5672",
