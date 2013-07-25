@@ -30,7 +30,7 @@ void search_event(Subject graph, ThreadContext server_context)
 			docs__active, "true"))
 	{
 		//writeln ("to search !!!");
-		OI search_point = server_context.gateways.get("search", null);
+		OI search_point = server_context.gateways.get("to-search", null);
 
 		if(search_point !is null)
 		{
@@ -50,7 +50,7 @@ void search_event(Subject graph, ThreadContext server_context)
 			log.trace("отправка данных для субьекта [%s] не была выполненна, так как  [%s] не был найден в файле настроек",
 					graph.subject, "search");
 		}
-		OI report_point = server_context.gateways.get("report", null);
+		OI report_point = server_context.gateways.get("to-report", null);
 		if(report_point !is null)
 		{
 			OutBuffer outbuff = new OutBuffer();
