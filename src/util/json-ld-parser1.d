@@ -391,7 +391,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 	{
 		Subject out_message = results[ii];
 		
-		if(out_message !is null && out_message.subject !is null)
+		if(out_message !is null && out_message.subject !is null && out_message.count_edges > 0)
 		{
 			if(ii > 0)
 				outbuff.write(cast(char[]) ",\n");
@@ -429,20 +429,22 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	 ");
 
+	bool jj = 0;
+
 	if(ss.subject !is null)
 	{
 		outbuff.write("\"@\" : \"");
 		outbuff.write(ss.subject);
 		outbuff.write('"');
+		jj = 1;
 	}
 	
-//	bool jj = 0;
 	
 	foreach(pp ; ss.getPredicates())
 	{
-//		if(jj > 0)
+		if(jj > 0)
 			outbuff.write(cast(char[]) ",\n");
-//		jj = 1;
+		jj = 1;
 		
 		for(int i = 0; i < level; i++)
 			outbuff.write(cast(char[]) "	 ");
@@ -457,12 +459,12 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		bool ff = false;
 		foreach(oo; pp.getObjects())
 		{						
-			if(ff == true)
-				outbuff.write(',');
-			ff = true;
-
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
+				if(ff == true)
+					outbuff.write(',');
+				ff = true;
+				
 				//				log.trace ("write literal");
 				//				if(oo.object is null)
 				//					outbuff.write(cast(char[]) "null");
@@ -528,6 +530,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				//				log.trace ("write literal end");
 			} else if(oo.type == OBJECT_TYPE.URI)
 			{
+				if(ff == true)
+					outbuff.write(',');
+				ff = true;
+				
 				if(oo.literal is null)
 				{
 					outbuff.write(cast(char[]) "null");
@@ -539,6 +545,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.SUBJECT)
 			{
+				if(ff == true)
+					outbuff.write(',');
+				ff = true;
+				
 				if(oo.subject is null)
 				{
 					outbuff.write(cast(char[]) "null");
@@ -553,6 +563,10 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				}
 			} else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
+				if(ff == true)
+					outbuff.write(',');
+				ff = true;
+				
 				outbuff.write('[');
 
 				for(int i = 0; i < oo.cluster.length; i++)
@@ -571,14 +585,14 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 			
 		}
 		if(pp.count_objects > 1)
-			outbuff.write(']');
+			outbuff.write(" ]");
 
 	}
 
-//	outbuff.write('\n');
+	outbuff.write('\n');
 
 	for(int i = 0; i < level; i++)
-		outbuff.write(cast(char[]) "	");
+		outbuff.write("	");
 
-	outbuff.write("\n}");
+	outbuff.write("}");
 }

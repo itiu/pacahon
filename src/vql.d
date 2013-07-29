@@ -118,7 +118,7 @@ void process_op (ref stack!TTA st, string op)
 {
 	TTA r = st.popBack();
 	TTA l = st.popBack();
-	writeln ("process_op:op[", op, "], L:", l, ", R:", r);
+	//	writeln ("process_op:op[", op, "], L:", l, ", R:", r);
 	switch (op) 
 	{
 		case "<":  st.pushBack (new TTA (op, l, r));  break;
@@ -274,6 +274,9 @@ class TTA
 
 			} else
 			{
+				if(level > 0)
+					_bson_append_start_object(val, "");
+				
 				if(op == "&&")
 					_bson_append_start_array(val, "$and");
 
@@ -281,15 +284,15 @@ class TTA
 					_bson_append_start_array(val, "$or");
 
 				if(L !is null)
-				{
 					L.toMongoBSON(op, val, level + 1);
-				}
+				
 				if(R !is null)
-				{
 					R.toMongoBSON(op, val, level + 1);
-				}
 
 				bson_append_finish_object(val);
+				
+				if(level > 0)
+					bson_append_finish_object(val);
 			}
 
 		} else
@@ -327,10 +330,8 @@ class TTA
 					JSONValue new_val = void;
 					new_val.type = JSON_TYPE.NULL;
 					R.toMongoJSON(op, &new_val, p_val, level + 1);
-
 					if(new_val.type != JSON_TYPE.NULL)
 						p_val.array ~= new_val;
-
 				}
 
 				if(L !is null)
