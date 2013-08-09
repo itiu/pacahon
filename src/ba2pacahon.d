@@ -105,34 +105,31 @@ void init_ba2pacahon(ThreadContext server_thread)
 	// writeln("loaded ", server_thread.ba2pacahon_records.length, " ba2pacahon map records from storage");
 }
 
-void ba2pacahon(string str_json, ThreadContext server_context)
+void ba2pacahon(string msg_str, ThreadContext server_context)
 {
 	/* Обновляется (документ/шаблон/справочник)
 	 * считаем что связанные документы должны быть в наличии и актуальны,
 	 * если таковых нет, то не заполняем реификацию
 	 */
-
-	JSONValue doc;
-
+	
 	bool is_processed_links = true;
 	bool is_cached = false;
 
 	try
 	{
+		JSONValue doc = parseJSON(msg_str);
 		//		log.trace("start parse json");
 
-		doc = parseJSON(cast(char[]) str_json);
-		//// writeln ("str_json = ",  str_json);
+//		 writeln ("str_json = ",  str_json);
 
-		log.trace("start convert");
+//		log.trace("start convert");
 
 		string subj_UID;
 		string subj_versioned_UID;
 
-		string id = doc.object["id"].str;
-
-		string versionId = get_str(doc, "versionId");
+		string id = get_str (doc, "id");				
 		string objectType = get_str(doc, "objectType");
+		string versionId = get_str(doc, "versionId");
 		string dateCreated = get_str(doc, "dateCreated");
 		string active = get_str(doc, "active");
 		string actual = get_str(doc, "actual");
@@ -147,7 +144,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		Subject node = new Subject();
 		Subject actual_node = null;
 
-		//// writeln("objectType=", objectType);
+		 //writeln("objectType=", objectType);
 		string c_id;
 		if(id.length > 8)
 			c_id = id[0 .. 8];
@@ -160,7 +157,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 		else
 			c_vid = versionId;
 
-		//// writeln(objectType, " id=", id, " c_id=", c_id, "c_vid=", c_vid);
+		 //writeln(objectType, " id=", id, " c_id=", c_id, "c_vid=", c_vid);
 
 		if(objectType == "TEMPLATE")
 		{
@@ -174,7 +171,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 			else
 				subj_UID = id;
 
-			//// writeln(subj_UID);
+			 //writeln(subj_UID);
 
 			node.subject = subj_versioned_UID;
 			node.addPredicate(rdfs__subClassOf, docs__Document);
@@ -258,7 +255,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 						string value = att.get_str("value");
 						string new_code = ba2user_onto(code);
 
-						//// writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "]");
+						 //writeln("\r\n\r\n[" ~ code ~ "]->[" ~ new_code ~ "]");
 
 						string restrictionId;
 						restrictionId = prefix_restriction ~ c_id ~ "_" ~ c_vid ~ "_" ~ new_code;
@@ -291,7 +288,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 								if(el_els.length == 2)
 									descr_els[el_els[0]] = el_els[1];
 							}
-							//// writeln(descr_els);
+							 //writeln(descr_els);
 						}
 
 						attr_node.addPredicate(ba__description, description);
@@ -388,7 +385,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 
 								if(dc_identifier_val !is null && dc_identifier_val.length > 3)
 								{
-									//// writeln("композиция не задана, берем представление по умолчанию у шаблона на который ссылаемся");
+									 //writeln("композиция не задана, берем представление по умолчанию у шаблона на который ссылаемся");
 									DocTemplate _tmpl = getTemplate(dc_identifier_val, null, server_context);
 
 									if(_tmpl !is null)
@@ -701,7 +698,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 				//	core.thread.Thread.sleep(dur!("seconds")(20));
 
 			}
-			// writeln ("#13");
+			 //writeln ("#13");
 
 			if(actual == "1")
 			{
@@ -744,7 +741,7 @@ void ba2pacahon(string str_json, ThreadContext server_context)
 	}
 	catch(Exception ex)
 	{
-		// writeln("Ex:" ~ ex.msg);
+		 writeln("Ex:" ~ ex.msg);
 	}
 
 }

@@ -8,6 +8,7 @@ private import core.stdc.stdlib;
 private import core.memory;
 
 private import std.stdio;
+private import std.string;
 private import std.c.string;
 private import std.json;
 private import std.outbuffer;
@@ -157,7 +158,7 @@ void main(char[][] args)
 
 							if(rabbitmq_connection.is_success() == true)
 							{
-								rabbitmq_connection.set_callback(&get_message_from_rabbit);
+								rabbitmq_connection.set_callback(&get_message);
 
 								ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
 										props, "RABBITMQ");
@@ -196,40 +197,6 @@ enum format: byte
 {
 	JSON_LD = 1,
 	UNKNOWN = -1
-}
-
-void get_message_from_rabbit(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
-{
-	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
-	server_thread.sw.stop();
-	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
-
-	//	if(time_from_last_call < 10)
-	//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
-
-	server_thread.resource.stat.idle_time += time_from_last_call;
-
-	StopWatch sw;
-	sw.start();
-
-	TripleStorage ts = server_thread.resource.ts;
-
-	io_msg.trace_io(true, msg, message_size);
-	//writeln (util.utils.fromStringz (cast(char*)msg, message_size));
-	ba2pacahon(util.utils.fromStringz(cast(char*) msg, message_size), server_thread.resource);
-
-	server_thread.resource.stat.count_message++;
-
-	sw.stop();
-	long t = cast(long) sw.peek().usecs;
-
-	server_thread.resource.stat.worked_time += t;
-
-	if(trace_msg[69] == 1)
-		log.trace("messages count: %d, total time: %d [µs]", server_thread.resource.stat.count_message, t);
-
-	server_thread.sw.reset();
-	server_thread.sw.start();
 }
 
 void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
@@ -276,9 +243,29 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		{
 			if(trace_msg[66] == 1)
 				log.trace("parse from json");
-
-			msg_format = format.JSON_LD;
-			subjects = parse_json_ld_string(cast(char*) msg, message_size);
+			
+			bool tmp_is_ba = true;
+			for (int idx = 0; idx < message_size; idx++)
+			{
+				if (msg[idx] == '@')
+				{
+					tmp_is_ba = false;	
+					break;
+				}
+			}
+			
+			if (tmp_is_ba == true)
+			{
+				string msg_str = util.utils.fromStringz(cast(char*)msg);
+				ba2pacahon(msg_str, server_thread.resource);
+				return;
+			}
+			else
+			{
+				msg_format = format.JSON_LD;
+				subjects = parse_json_ld_string(cast(char*) msg, message_size);
+			}
+			
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from json, ok");
