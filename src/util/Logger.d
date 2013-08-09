@@ -109,11 +109,11 @@ public class Logger
 		
                 version (X86_64)
                 {
-                    fwrite (data , 1 , len - 1, ff);
+                    fwrite (data , 1 , len, ff);
                 }
                 else
                 {
-                    fwrite (data , 1 , cast(uint)len - 1, ff);
+                    fwrite (data , 1 , cast(uint)len, ff);
                 }
 
 		fputc('\r', ff);
