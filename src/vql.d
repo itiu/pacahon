@@ -302,7 +302,7 @@ class TTA
 		return null;
 	}
 
-	public void toMongoJSON(string p_op, JSONValue* val, JSONValue* p_val, int level)
+	public void toElasticJSON(string p_op, JSONValue* val, JSONValue* p_val, int level)
 	{
 		//		string _tab = "                                                                       ";
 		//		string tab = _tab[0 .. level * 2];
@@ -316,8 +316,8 @@ class TTA
 			JSONValue new_val_l = void;
 			JSONValue new_val_r = void;
 
-			L.toMongoJSON(op, &new_val_l, val, level + 1);
-			R.toMongoJSON(op, &new_val_r, val, level + 1);
+			L.toElasticJSON(op, &new_val_l, val, level + 1);
+			R.toElasticJSON(op, &new_val_r, val, level + 1);
 
 			val.object = null;
 			val.object[new_val_l.str] = new_val_r;
@@ -329,7 +329,7 @@ class TTA
 				{
 					JSONValue new_val = void;
 					new_val.type = JSON_TYPE.NULL;
-					R.toMongoJSON(op, &new_val, p_val, level + 1);
+					R.toElasticJSON(op, &new_val, p_val, level + 1);
 					if(new_val.type != JSON_TYPE.NULL)
 						p_val.array ~= new_val;
 				}
@@ -338,7 +338,7 @@ class TTA
 				{
 					JSONValue new_val = void;
 					new_val.type = JSON_TYPE.NULL;
-					L.toMongoJSON(op, &new_val, p_val, level + 1);
+					L.toElasticJSON(op, &new_val, p_val, level + 1);
 					if(new_val.type != JSON_TYPE.NULL)
 						p_val.array ~= new_val;
 				}
@@ -356,7 +356,7 @@ class TTA
 				{
 					JSONValue new_val = void;
 					new_val.type = JSON_TYPE.NULL;
-					R.toMongoJSON(op, &new_val, &val1, level + 1);
+					R.toElasticJSON(op, &new_val, &val1, level + 1);
 					if(new_val.type != JSON_TYPE.NULL)
 						val1.array ~= new_val;
 				}
@@ -365,7 +365,7 @@ class TTA
 				{
 					JSONValue new_val = void;
 					new_val.type = JSON_TYPE.NULL;
-					L.toMongoJSON(op, &new_val, &val1, level + 1);
+					L.toElasticJSON(op, &new_val, &val1, level + 1);
 					if(new_val.type != JSON_TYPE.NULL)
 						val1.array ~= new_val;
 				}
@@ -527,12 +527,31 @@ class VQL
 		{
 			// если найдена секция sort, то запрос делаем к elasticsearch, далее данные в количестве render считываем из mongo 
 
-			//		JSONValue jv = void;
-			//		jv.type = JSON_TYPE.OBJECT;
-			//		jv.object = null;
+			JSONValue full_query = void;
+			full_query.type = JSON_TYPE.OBJECT;
+			full_query.object = null;
+			
+			JSONValue f1 = void;
+			f1.type = JSON_TYPE.STRING;
+			f1.str = "_id";
+			
+			JSONValue fields = void;
+			fields.type = JSON_TYPE.ARRAY;
+			fields.array = null;
+			fields.array ~= f1;
+						
+			JSONValue query = void;
+			query.type = JSON_TYPE.OBJECT;
+			query.object = null;
+						
+			full_query.object["fields"] = fields; 
 
-			//		JSONValue jv1 = void;
-			//		tta.toMongoJSON("", &jv, &jv1, 0);
+			JSONValue jv1 = void;
+			tta.toElasticJSON("", &query, &jv1, 0);
+			full_query.object["query"] = query;
+			
+			writeln ("full_query :", toJSON (&full_query));
+			
 		} else
 		{
 			bson query;
