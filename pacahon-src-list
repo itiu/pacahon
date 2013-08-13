@@ -4,6 +4,11 @@ build/src/util/utils.d
 build/src/mongoc/bson_h.d
 build/src/mongoc/mongo_h.d
 
+build/src/util/meta_x.d
+build/src/util/meta.d
+build/src/util/alloc.d
+build/src/util/container.d
+
 build/src/onto/doc_template.d
 build/src/trioplax/mongodb/ComplexKeys.d 
 build/src/trioplax/mongodb/MongodbTripleStorage.d 
@@ -39,3 +44,5 @@ build/src/util/libchash_h.d
 
 build/src/onto/docs_base.d
 build/src/onto/rdf_base.d
+
+build/src/az/condition.d

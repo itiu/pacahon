@@ -170,12 +170,13 @@ private static string[dchar] translit_table;
 
 static this()
 {
-	translit_table = ['№' : "N", '-': "_", ' ': "_", 'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E", 'Ж': "ZH", 'З': "Z", 'И': "I", 'Й': "I",
-			'К': "K", 'Л': "L", 'М': "M", 'Н': "N", 'О': "O", 'П': "P", 'Р': "R", 'С': "S", 'Т': "T", 'У': "U", 'Ф': "F",
-			'Х': "H", 'Ц': "C", 'Ч': "CH", 'Ш': "SH", 'Щ': "SH", 'Ъ': "'", 'Ы': "Y", 'Ь': "'", 'Э': "E", 'Ю': "U", 'Я': "YA",
-			'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e", 'ж': "zh", 'з': "z", 'и': "i", 'й': "i",
-			'к': "k", 'л': "l", 'м': "m", 'н': "n", 'о': "o", 'п': "p", 'р': "r", 'с': "s", 'т': "t", 'у': "u", 'ф': "f",
-			'х': "h", 'ц': "c", 'ч': "ch", 'ш': "sh", 'щ': "sh", 'ъ': "_", 'ы': "y", 'ь': "_", 'э': "e", 'ю': "u", 'я': "ya"];
+	translit_table = ['№': "N", '-': "_", ' ': "_", 'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E",
+			'Ж': "ZH", 'З': "Z", 'И': "I", 'Й': "I", 'К': "K", 'Л': "L", 'М': "M", 'Н': "N", 'О': "O", 'П': "P", 'Р': "R",
+			'С': "S", 'Т': "T", 'У': "U", 'Ф': "F", 'Х': "H", 'Ц': "C", 'Ч': "CH", 'Ш': "SH", 'Щ': "SH", 'Ъ': "'", 'Ы': "Y",
+			'Ь': "'", 'Э': "E", 'Ю': "U", 'Я': "YA", 'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e",
+			'ж': "zh", 'з': "z", 'и': "i", 'й': "i", 'к': "k", 'л': "l", 'м': "m", 'н': "n", 'о': "o", 'п': "p", 'р': "r",
+			'с': "s", 'т': "t", 'у': "u", 'ф': "f", 'х': "h", 'ц': "c", 'ч': "ch", 'ш': "sh", 'щ': "sh", 'ъ': "_", 'ы': "y",
+			'ь': "_", 'э': "e", 'ю': "u", 'я': "ya"];
 }
 
 /**
@@ -190,4 +191,111 @@ static this()
 public static string toTranslit(string text)
 {
 	return translate(text, translit_table);
+}
+
+public string get_str(JSONValue jv, string field_name)
+{
+	if(field_name in jv.object)
+	{
+		return jv.object[field_name].str;
+	}
+	return null;
+}
+
+public long get_int(JSONValue jv, string field_name)
+{
+	if(field_name in jv.object)
+	{
+		return jv.object[field_name].integer;
+	}
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////
+
+public tm* get_local_time()
+{
+	time_t rawtime;
+	tm* timeinfo;
+
+	time(&rawtime);
+	timeinfo = localtime(&rawtime);
+
+	return timeinfo;
+}
+
+public string get_year(tm* timeinfo)
+{
+	return text(timeinfo.tm_year + 1900);
+}
+
+public string get_month(tm* timeinfo)
+{
+	if(timeinfo.tm_mon < 9)
+		return "0" ~ text(timeinfo.tm_mon + 1);
+	else
+		return text(timeinfo.tm_mon + 1);
+}
+
+public string get_day(tm* timeinfo)
+{
+	if(timeinfo.tm_mday < 10)
+		return "0" ~ text(timeinfo.tm_mday);
+	else
+		return text(timeinfo.tm_mday);
+}
+
+public int cmp_date_with_tm(string date, tm* timeinfo)
+{
+	string today_y = get_year(timeinfo);
+	string today_m = get_month(timeinfo);
+	string today_d = get_day(timeinfo);
+
+	for(int i = 0; i < 4; i++)
+	{
+		if(date[i + 6] > today_y[i])
+		{
+			return 1;
+		} else if(date[i + 6] < today_y[i])
+		{
+			return -1;
+		}
+	}
+
+	for(int i = 0; i < 2; i++)
+	{
+		if(date[i + 3] > today_m[i])
+		{
+			return 1;
+		} else if(date[i + 3] < today_m[i])
+		{
+			return -1;
+		}
+	}
+
+	for(int i = 0; i < 2; i++)
+	{
+		if(date[i] > today_d[i])
+		{
+			return 1;
+		} else if(date[i] < today_d[i])
+		{
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+public bool is_today_in_interval(string from, string to)
+{
+	tm* timeinfo = get_local_time();
+
+	if(from !is null && from.length == 10 && cmp_date_with_tm(from, timeinfo) > 0)
+		return false;
+
+	if(to !is null && to.length == 10 && cmp_date_with_tm(to, timeinfo) < 0)
+		return false;
+
+	return true;
 }

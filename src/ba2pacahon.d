@@ -783,21 +783,3 @@ static string[3] split_lang(string src)
 	}
 	return res;
 }
-
-public string get_str(JSONValue jv, string field_name)
-{
-	if(field_name in jv.object)
-	{
-		return jv.object[field_name].str;
-	}
-	return null;
-}
-
-public long get_int(JSONValue jv, string field_name)
-{
-	if(field_name in jv.object)
-	{
-		return jv.object[field_name].integer;
-	}
-	return 0;
-}

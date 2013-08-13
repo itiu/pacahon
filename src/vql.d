@@ -480,7 +480,7 @@ class VQL
 	TripleStorage ts;
 	OI from_search_point;
 
-	this(TripleStorage _ts, OI _from_search_point)
+	this(TripleStorage _ts, OI _from_search_point = null)
 	{
 		ts = _ts;
 		from_search_point = _from_search_point;

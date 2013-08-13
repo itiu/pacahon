@@ -2,7 +2,7 @@ module pacahon.log_msg;
 
 private import util.Logger;
 
-// last id = 69
+// last id = 70
 
 int m_get_message[] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 61, 62];
 int m_command_preparer[] = [11, 12, 13, 14, 15, 16, 63];
