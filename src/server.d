@@ -1,40 +1,43 @@
 module pacahon.server;
 
-private import myversion;
+private
+{
+	import myversion;
 
-private import core.thread;
-private import core.stdc.stdio;
-private import core.stdc.stdlib;
-private import core.memory;
+	import core.thread;
+	import core.stdc.stdio;
+	import core.stdc.stdlib;
+	import core.memory;
 
-private import std.stdio;
-private import std.string;
-private import std.c.string;
-private import std.json;
-private import std.outbuffer;
-private import std.datetime;
-private import std.conv;
+	import std.stdio;
+	import std.string;
+	import std.c.string;
+	import std.json;
+	import std.outbuffer;
+	import std.datetime;
+	import std.conv;
 
-private import zmq_point_to_poin_client;
-private import zmq_pp_broker_client;
-private import rabbitmq_client;
+	import zmq_point_to_poin_client;
+	import zmq_pp_broker_client;
+	import rabbitmq_client;
 
-//private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+	//private import trioplax.mongodb.triple;
+	import trioplax.mongodb.TripleStorage;
 
-private import util.Logger;
+	import util.Logger;
 
-private import pacahon.graph;
-private import pacahon.json_ld.parser1;
-private import pacahon.command.multiplexor;
-private import pacahon.know_predicates;
-private import pacahon.log_msg;
-private import pacahon.load_info;
-private import pacahon.thread_context;
-private import pacahon.command.event_filter;
-private import pacahon.oi;
-private import pacahon.ba2pacahon;
-private import util.utils;
+	import pacahon.graph;
+	import pacahon.json_ld.parser1;
+	import pacahon.command.multiplexor;
+	import pacahon.know_predicates;
+	import pacahon.log_msg;
+	import pacahon.load_info;
+	import pacahon.thread_context;
+	import pacahon.command.event_filter;
+	import pacahon.oi;
+	import pacahon.ba2pacahon;
+	import util.utils;
+}
 
 Logger log;
 Logger io_msg;
@@ -243,29 +246,27 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		{
 			if(trace_msg[66] == 1)
 				log.trace("parse from json");
-			
+
 			bool tmp_is_ba = true;
-			for (int idx = 0; idx < message_size; idx++)
+			for(int idx = 0; idx < message_size; idx++)
 			{
-				if (msg[idx] == '@')
+				if(msg[idx] == '@')
 				{
-					tmp_is_ba = false;	
+					tmp_is_ba = false;
 					break;
 				}
 			}
-			
-			if (tmp_is_ba == true)
+
+			if(tmp_is_ba == true)
 			{
-				string msg_str = util.utils.fromStringz(cast(char*)msg);
+				string msg_str = util.utils.fromStringz(cast(char*) msg);
 				ba2pacahon(msg_str, server_thread.resource);
 				return;
-			}
-			else
+			} else
 			{
 				msg_format = format.JSON_LD;
 				subjects = parse_json_ld_string(cast(char*) msg, message_size);
 			}
-			
 
 			if(trace_msg[67] == 1)
 				log.trace("parse from json, ok");
@@ -396,6 +397,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 						} else
 						{
 							userId = tt.userId;
+							// продляем тикет
+							
+							tt.end_time = now.stdTime + 3600;
 						}
 					}
 
@@ -540,17 +544,9 @@ class ServerThread: core.thread.Thread
 
 	Ticket foundTicket(string ticket_id)
 	{
-		Ticket tt;
+		Ticket tt = resource.user_of_ticket.get(ticket_id, null);
 
 		//	trace_msg[2] = 0;
-
-		if((ticket_id in resource.user_of_ticket) !is null)
-		{
-			if(trace_msg[17] == 1)
-				log.trace("тикет нашли в кеше, %s", ticket_id);
-
-			tt = resource.user_of_ticket[ticket_id];
-		}
 
 		if(tt is null)
 		{
@@ -583,18 +579,22 @@ class ServerThread: core.thread.Thread
 					if(triple.P == ticket__accessor)
 					{
 						tt.userId = triple.O;
-						if(trace_msg[21] == 1)
-							log.trace("tt.userId=%s", tt.userId);
 					}
-					if(triple.P == ticket__when)
+					else if(triple.P == ticket__when)
+					{
 						when = triple.O;
-
-					if(triple.P == ticket__duration)
+					}
+					else if(triple.P == ticket__duration)
 					{
 						duration = parse!uint(triple.O);
 					}
-					if(tt.userId !is null && when !is null && duration > 10)
-						break;
+					else if(triple.P == ticket__parentUnitOfAccessor)
+					{
+						tt.parentUnitIds ~= triple.O;
+					}
+					
+//					if(tt.userId !is null && when !is null && duration > 10)
+//						break;
 				}
 
 				delete (it);
@@ -624,8 +624,12 @@ class ServerThread: core.thread.Thread
 				// TODO stringToTime очень медленная операция ~ 100 микросекунд
 				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
 
-				resource.user_of_ticket[cast(string) ticket_id] = tt;
+				resource.user_of_ticket[ticket_id] = tt;
 			}
+		} else
+		{
+			if(trace_msg[17] == 1)
+				log.trace("тикет нашли в кеше, %s", ticket_id);
 		}
 
 		return tt;

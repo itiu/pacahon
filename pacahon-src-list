@@ -45,4 +45,5 @@ build/src/util/libchash_h.d
 build/src/onto/docs_base.d
 build/src/onto/rdf_base.d
 
+build/src/az/orgstructure_tree.d
 build/src/az/condition.d

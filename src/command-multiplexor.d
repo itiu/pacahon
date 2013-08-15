@@ -42,8 +42,8 @@ static this()
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk,
-		out string reason)
+Subject get_ticket(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk,
+		out string reason, out Ticket tiket)
 {
 	StopWatch sw;
 	sw.start();
@@ -98,42 +98,53 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 
 		byte[string] readed_predicate;
 		readed_predicate[auth__login] = true;
+		readed_predicate[docs__parentUnit] = true;
 
 		// TODO определится что возвращать null или пустой итератор
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: start getTriplesOfMask search_mask");
 
-		TLIterator it = server_thread.ts.getTriplesOfMask(search_mask, readed_predicate);
+		TLIterator it = thread_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: iterator %x", it);
+
+		Subject new_ticket = new Subject;
 
 		if(it !is null)
 		{
 			foreach(tt; it)
 			{
-				if(trace_msg[65] == 1)
-					log.trace("get_ticket: read triple: %s", tt);
-
-				// такой логин и пароль найдены, формируем тикет
 				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				UUID new_id = randomUUID();
+				if(tt.P == auth__login)
+				{
+					if(trace_msg[65] == 1)
+						log.trace("get_ticket: read triple: %s", tt);
 
-				if(trace_msg[65] == 1)
-					log.trace("get_ticket: store ticket in DB");
+					// такой логин и пароль найдены, формируем тикет
+					UUID new_id = randomUUID();
+					new_ticket.subject = new_id.toString ();
 
+					new_ticket.addPredicate(rdf__type, ticket__Ticket);
+					new_ticket.addPredicate(ticket__accessor, tt.S);
+					new_ticket.addPredicate(ticket__when, getNowAsString());
+					new_ticket.addPredicate(ticket__duration, "40000");
+
+					if(trace_msg[65] == 1)
+						log.trace("get_ticket: store ticket in DB");
+
+				} else if(tt.P == docs__parentUnit)
+				{
+					new_ticket.addPredicate(ticket__parentUnitOfAccessor, tt.O);
+				}
+			}
+
+			if(new_ticket.subject !is null)
+			{
 				// сохраняем в хранилище
-				string ticket_id = "auth:" ~ new_id.toString();//cast(string) generated.toString;
-				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				server_thread.ts.addTriple(new Triple(ticket_id, rdf__type, ticket__Ticket));
-				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				server_thread.ts.addTriple(new Triple(ticket_id, ticket__accessor, tt.S));
+				thread_context.ts.storeSubject(new_ticket, thread_context);
 
-				//						writeln("f.read tr... S:", iterator.triple.s, " P:", iterator.triple.p, " O:", iterator.triple.o);
-				server_thread.ts.addTriple(new Triple(ticket_id, ticket__when, getNowAsString()));
-				server_thread.ts.addTriple(new Triple(ticket_id, ticket__duration, "40000"));
-
-				res.addPredicate(auth__ticket, ticket_id);
+				res.addPredicate(auth__ticket, new_ticket.subject);
 
 				reason = "login и password совпадают";
 				isOk = true;
@@ -176,7 +187,7 @@ Subject get_ticket(Subject message, Predicate sender, string userId, ThreadConte
 	}
 }
 
-public Subject set_message_trace(Subject message, Predicate sender, string userId, ThreadContext server_thread, out bool isOk,
+public Subject set_message_trace(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk,
 		out string reason)
 {
 	Subject res;
@@ -233,7 +244,7 @@ public Subject set_message_trace(Subject message, Predicate sender, string userI
 	return res;
 }
 
-void command_preparer(Subject message, Subject out_message, Predicate sender, string userId, ThreadContext server_thread,
+void command_preparer(Subject message, Subject out_message, Predicate sender, string userId, ThreadContext thread_context,
 		out string local_ticket, out char from)
 {
 	if(trace_msg[11] == 1)
@@ -266,7 +277,7 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 
 				GraphCluster gres = new GraphCluster(STRATEGY.NOINDEXED);
 
-				get(message, sender, userId, server_thread, isOk, reason, gres, from);
+				get(message, sender, userId, thread_context, isOk, reason, gres, from);
 				if(isOk == true)
 				{
 					//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
@@ -277,19 +288,21 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 				if(trace_msg[13] == 1)
 					log.trace("command_preparer, put");
 
-				res = put(message, sender, userId, server_thread, isOk, reason);
+				res = put(message, sender, userId, thread_context, isOk, reason);
 			} else if("remove" in command.objects_of_value)
 			{
 				if(trace_msg[14] == 1)
 					log.trace("command_preparer, remove");
 
-				res = remove(message, sender, userId, server_thread, isOk, reason);
+				res = remove(message, sender, userId, thread_context, isOk, reason);
 			} else if("get_ticket" in command.objects_of_value)
 			{
 				if(trace_msg[15] == 1)
 					log.trace("command_preparer, get_ticket");
 
-				res = get_ticket(message, sender, userId, server_thread, isOk, reason);
+				Ticket ticket;
+
+				res = get_ticket(message, sender, userId, thread_context, isOk, reason, ticket);
 
 				if(isOk)
 				{
@@ -304,19 +317,18 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 			} else if("set_message_trace" in command.objects_of_value)
 			{
 				//			if(trace_msg[63] == 1)
-				res = set_message_trace(message, sender, userId, server_thread, isOk, reason);
-			}
-			else
+				res = set_message_trace(message, sender, userId, thread_context, isOk, reason);
+			} else
 			{
 				reason = "неизвестная команда";
-				out_message.addPredicate(msg__status, "405");		
+				out_message.addPredicate(msg__status, "405");
 				out_message.addPredicate(msg__reason, reason);
 				return;
 			}
-			
+
 			if("get_info" in command.objects_of_value)
 			{
-				Statistic stat = server_thread.stat;
+				Statistic stat = thread_context.stat;
 
 				Subject res1 = new Subject();
 
@@ -324,14 +336,13 @@ void command_preparer(Subject message, Subject out_message, Predicate sender, st
 
 				out_message.addPredicate(msg__result, res1);
 			}
-			
+
 			//		reason = cast(char[]) "запрос выполнен";
 			if(isOk == false && userId is null)
 			{
 				out_message.addPredicate(msg__status, "401");
 				reason = "пользователь не авторизован";
-			}
-			else if(isOk == false)
+			} else if(isOk == false)
 			{
 				out_message.addPredicate(msg__status, "500");
 			} else

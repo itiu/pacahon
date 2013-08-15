@@ -87,6 +87,7 @@ public const string msg__in_reply_to = "msg:in-reply-to";
 
 public const string ticket__Ticket = "ticket:Ticket";
 public const string ticket__accessor = "ticket:accessor";
+public const string ticket__parentUnitOfAccessor = "ticket:parentUnitOfAccessor";
 public const string ticket__when = "ticket:when";
 public const string ticket__duration = "ticket:duration";
 

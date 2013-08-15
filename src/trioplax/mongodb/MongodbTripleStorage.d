@@ -1422,7 +1422,7 @@ class MongodbTripleStorage: TripleStorage
 //	!!!		mongo_cursor_destroy(&cursor);
 		} catch(Exception ex)
 		{
-			log.trace("@exception:%s", ex.msg);
+			log.trace_log_and_console("@exception:%s", ex.msg);
 			throw ex;
 		}
 	}

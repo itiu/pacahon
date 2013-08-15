@@ -13,6 +13,9 @@ private
 	import util.Logger;
 	import pacahon.vql;
 	import ae.utils.container;
+	import pacahon.az.orgstructure_tree;
+	import pacahon.thread_context;
+	import pacahon.context;
 }
 
 enum RightType
@@ -29,7 +32,7 @@ Logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server");
+	log = new Logger("pacahon", "log", "MandatManager");
 }
 
 const byte asObject = 0;
@@ -116,27 +119,36 @@ Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element
 	return oe;
 }
 
-class MandatManager
+class MandatManager : BusEventListener
 {
+	OrgStructureTree ost;
 	TripleStorage ts;
+	VQL vql;
 
 	this(TripleStorage _ts)
 	{
-		ts = ts;
+		ts = _ts;
+		vql = new VQL(ts);
+		ost = new OrgStructureTree(ts);
+		ost.load();
 	}
 
 	Set!Element*[string] whom_4_array_of_condition;
 
-	public void load_mandats()
+	void bus_event (event_type et)
+	{		
+	}
+	
+	
+	public void load()
 	{
-		writeln("start load documents[uid=mandat]");
+		log.trace_log_and_console("start load mandats");
 
-		VQL vql = new VQL(ts);
+		vql = new VQL(ts);
 
 		GraphCluster res = new GraphCluster();
 		vql.get(
 				"return { 'uo:condition'}
-            render { '1000' }
             filter { 'class:identifier' == 'mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
 				res, null);
 
@@ -150,17 +162,22 @@ class MandatManager
 				string condition_text = ss.getFirstLiteral("uo:condition");
 				JSONValue condition_json = parseJSON(condition_text);
 				bool[string] passed_elements;
-				Element root = new Element;
+				Element root = new Element();
 				json2Element(condition_json, passed_elements, root);
 				root.id = mandat_subject;
 
 				Element whom = root.pairs.get("whom", null);
-				Set!Element* array = whom_4_array_of_condition.get(whom.str, new Set!Element);
+				if(whom !is null)
+				{
+					Set!Element* array = whom_4_array_of_condition.get(whom.str, new Set!Element);
 
-				*array ~= root;
+					if(array.size == 0)
+						whom_4_array_of_condition[whom.str] = array;
 
-				printf("found mandat %s\n", mandat_subject);
-				log.trace("found mandat: %s", root.id);
+					*array ~= root;
+
+					log.trace("found mandat: %s", root.id);
+				}
 
 			} catch(Exception ex)
 			{
@@ -170,64 +187,62 @@ class MandatManager
 
 		}
 
-		log.trace("end load documents[mandat], count = %d", res.length);
+		log.trace_log_and_console("end load mandats, count=%d, whom_4_array_of_condition.length=%d", res.length,
+				whom_4_array_of_condition.length);
 	}
 
-	public bool calculate_condition(string user, ref Element mndt, ref Subject doc, ref string[] hierarhical_departments_of_user,
-			uint rightType)
+	public bool calculate_rights(ref Ticket ticket, ref Subject doc, uint rightType)
+	{
+		if(calculate_rights_of_unit(ticket.userId, doc, rightType) == true)
+			return true;
+
+		if(calculate_rights_of_units(ticket.parentUnitIds, doc, rightType) == true)
+			return true;
+
+		return false;
+	}
+
+	private bool calculate_rights_of_units(ref string[] units, ref Subject doc, uint rightType)
+	{
+		// найдем мандаты для этого узла
+		foreach(unit_id; units)
+		{
+			auto mandats = whom_4_array_of_condition.get(unit_id, null);
+			foreach(mandat; mandats.data)
+			{
+				if(calculate_rights_of_mandat(mandat, unit_id, doc, rightType) == true)
+					return true;
+			}
+
+			string[] up_units = ost.node_4_parents.get(unit_id, null);
+			if(up_units !is null)
+			{
+				if(calculate_rights_of_units(up_units, doc, rightType) == true)
+					return true;
+			}
+
+		}
+		return false;
+	}
+
+	private bool calculate_rights_of_unit(string unit, ref Subject doc, uint rightType)
+	{
+		// найдем мандаты для этого узла
+		auto mandats = whom_4_array_of_condition.get(unit, null);
+		foreach(mandat; mandats.data)
+		{
+			if(calculate_rights_of_mandat(mandat, unit, doc, rightType) == true)
+				return true;
+		}
+		return false;
+	}
+
+	private bool calculate_rights_of_mandat(Element mndt, string user, ref Subject doc, uint rightType)
 	{
 		if(mndt is null)
 			return false;
 
 		bool res = false;
-
-		if(("whom" in mndt.pairs) !is null)
-		{
-			string whom;
-			Element _whom = mndt.pairs["whom"];
-
-			if(_whom !is null)
-			{
-				whom = _whom.str;
-
-				if(trace_msg[70] == 1)
-					log.trace("condition: проверим вхождение whom=[%s] в иерархию пользователя ", whom);
-
-				bool is_whom = false;
-
-				// проверим, попадает ли  пользователь под критерий whom (узел на который выданно)
-				//	сначала, проверим самого пользователя
-				if(user == whom)
-				{
-					if(trace_msg[71] == 1)
-						log.trace("condition: да, пользователь попадает в иерархию whom");
-					is_whom = true;
-				} else
-				{
-					foreach(dep_id; hierarhical_departments_of_user)
-					{
-						if(dep_id == whom)
-						{
-							if(trace_msg[72] == 1)
-								log.trace("condition: да, пользователь попадает в иерархию whom");
-							is_whom = true;
-							break;
-						} else
-						{
-							if(trace_msg[72] == 1)
-								log.trace("condition: нет, dep_id = [%s]", dep_id);
-						}
-					}
-				}
-
-				if(is_whom == false)
-				{
-					if(trace_msg[73] == 1)
-						log.trace("condition: нет, пользователь не попадает в иерархию whom");
-					return false;
-				}
-			}
-		}
 
 		if(("condition" in mndt.pairs) !is null)
 		{

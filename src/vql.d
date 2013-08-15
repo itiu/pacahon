@@ -489,7 +489,7 @@ class VQL
 
 	public void get(string query_str, ref GraphCluster res, bool function(ref string id) authorizer)
 	{
-		//		writeln("VQL:get");
+		//writeln("VQL:get");
 
 		StopWatch sw;
 		sw.start();
@@ -505,7 +505,7 @@ class VQL
 
 		tta = parse_filter(found_sections[FILTER]);
 
-		int render = 10;
+		int render = 10000;
 		try
 		{
 			if (found_sections[RENDER] !is null && found_sections[RENDER].length > 0)

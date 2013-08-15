@@ -19,13 +19,15 @@ private import trioplax.mongodb.MongodbTripleStorage;
 private import pacahon.know_predicates;
 
 private import pacahon.vql;
+import pacahon.az.condition;
 
 class Ticket
 {
 	string id;
 	string userId;
+	string[] parentUnitIds = new string[1];
 
-	long end_time;
+	long end_time;	
 }
 
 synchronized class Statistic
@@ -49,6 +51,7 @@ class ThreadContext: Context
 	Ticket[string] user_of_ticket;
 	string[string] cache__subject_creator;
 	TripleStorage ts;
+	MandatManager mandat_manager;
 
 	//	 TODO предусмотреть сброс кэша шаблонов
 	DocTemplate[string][string] templates;
@@ -109,6 +112,9 @@ class ThreadContext: Context
 			}
 		}
 
+		mandat_manager = new MandatManager (ts);
+		mandat_manager.load ();
+		
 		stat = new Statistic();
 	}
 }
