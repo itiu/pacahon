@@ -40,7 +40,7 @@ synchronized class Statistic
 	int size__cache__subject_creator;
 }
 
-class ThreadContext: Context
+class ThreadContext: Context, Authorizer
 {
 	bool IGNORE_EMPTY_TRIPLE = false;
 
@@ -117,7 +117,14 @@ class ThreadContext: Context
 		
 		stat = new Statistic();
 	}
+
+	bool authorize(ref Subject doc)
+	{
+		return false;//mandat_manager.ca;
+	}	
 }
+
+
 
 public static TripleStorage connect_to_mongodb_triple_storage(int mongodb_port, string mongodb_server, string mongodb_collection,
 		string thread_name)

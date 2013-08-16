@@ -54,7 +54,7 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate sender, string userId, ThreadContext server_context, out bool isOk, out string reason)
+Subject put(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
@@ -112,7 +112,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 		if(trace_msg[34] == 1)
 			log.trace("фаза I, добавим основные данные");
 
-		store_graphs(graphs_on_put, userId, server_context, isOk, reason);
+		store_graphs(graphs_on_put, userId, thread_context, isOk, reason);
 
 		if(trace_msg[37] == 1)
 			log.trace("command put is finish");
@@ -123,7 +123,7 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext serv
 	return res;
 }
 
-public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext server_context, out bool isOk, out string reason,
+public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext thread_context, out bool isOk, out string reason,
 		bool prepareEvents = true)
 {
 	// фаза I, добавим основные данные
@@ -149,7 +149,7 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 
 			if(userId !is null)
 			{
-				authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context,
+				authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, thread_context,
 						authorize_reason, subjectIsExist);
 			}
 
@@ -161,14 +161,14 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 					graph.addPredicate(dc__creator, userId);
 				}
 
-				server_context.ts.storeSubject(graph, server_context);
+				thread_context.ts.storeSubject(graph, thread_context);
 
 				if(prepareEvents == true)
 				{
 					if(type.isExistLiteral(event__Event))
 					{
 						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-						server_context.event_filters.addSubject(graph);
+						thread_context.event_filters.addSubject(graph);
 
 						writeln("add new event_filter [", graph.subject, "]");
 					} else
@@ -180,14 +180,14 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 						else
 							event_type = "create subject";
 
-						processed_events(graph, event_type, server_context);
+						processed_events(graph, event_type, thread_context);
 					}
 				}
 
 				reason = "добавление фактов выполнено:" ~ authorize_reason;
 				isOk = true;
 
-				search_event(graph, server_context);
+				search_event(graph, thread_context);
 			} else
 			{
 				reason = "добавление фактов не возможно: " ~ authorize_reason;
@@ -232,9 +232,9 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 						foreach(oo; pp.getObjects())
 						{
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
+								thread_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 							else
-								server_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
+								thread_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
 						}
 					}
 
@@ -250,7 +250,7 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext s
 
 }
 
-public void store_graph(Subject graph, string userId, ThreadContext server_context, out bool isOk, out string reason,
+public void store_graph(Subject graph, string userId, ThreadContext thread_context, out bool isOk, out string reason,
 		bool prepareEvents = true)
 {
 	// фаза I, добавим основные данные
@@ -274,7 +274,7 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 
 		if(userId !is null)
 		{
-			authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, server_context,
+			authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, thread_context,
 					authorize_reason, subjectIsExist);
 		}
 
@@ -286,14 +286,14 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 				graph.addPredicate(dc__creator, userId);
 			}
 
-			server_context.ts.storeSubject(graph, server_context);
+			thread_context.ts.storeSubject(graph, thread_context);
 
 			if(prepareEvents == true)
 			{
 				if(type.isExistLiteral(event__Event))
 				{
 					// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-					server_context.event_filters.addSubject(graph);
+					thread_context.event_filters.addSubject(graph);
 
 					writeln("add new event_filter [", graph.subject, "]");
 				} else
@@ -305,14 +305,14 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 					else
 						event_type = "create subject";
 
-					processed_events(graph, event_type, server_context);
+					processed_events(graph, event_type, thread_context);
 				}
 			}
 
 			reason = "добавление фактов выполнено:" ~ authorize_reason;
 			isOk = true;
 
-			search_event(graph, server_context);
+			search_event(graph, thread_context);
 		} else
 		{
 			reason = "добавление фактов не возможно: " ~ authorize_reason;
@@ -328,12 +328,7 @@ public void store_graph(Subject graph, string userId, ThreadContext server_conte
 
 }
 
-bool authorizer(ref string id)
-{
-	return true;
-}
-
-public void get(Subject message, Predicate sender, string userId, ThreadContext server_context, out bool isOk, out string reason,
+public void get(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason,
 		ref GraphCluster res, out char from_out)
 {
 	// в качестве аргумента - шаблон для выборки, либо запрос на VQL
@@ -392,7 +387,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 				string query = s_query.getFirstLiteral("query");
 				if(query !is null)
 				{
-					server_context.vql.get(query, res, &authorizer);
+					thread_context.vql.get(query, res, thread_context);
 				} else
 				{
 					Subject graph = s_query;
@@ -498,10 +493,10 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 
 						TLIterator it;
 
-						it = server_context.ts.getTriplesOfMask(search_mask, readed_predicate);
+						it = thread_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 						if(trace_msg[56] == 1)
-							log.trace("[56] server_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
+							log.trace("[56] thread_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
 
 						if(trace_msg[57] == 1)
 							log.trace("[57] формируем граф содержащий результаты {");
@@ -513,7 +508,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 								if(trace_msg[57] == 1)
 									log.trace("GET: triple %s", triple);
 
-								if(server_context.IGNORE_EMPTY_TRIPLE == true)
+								if(thread_context.IGNORE_EMPTY_TRIPLE == true)
 								{
 									if(triple.O !is null && triple.O.length > 0)
 									{
@@ -559,7 +554,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 				 count_found_subjects++;
 
 				 bool isExistSubject;
-				 bool result_of_az = authorize(userId, s.subject, operation.READ, server_context, authorize_reason,
+				 bool result_of_az = authorize(userId, s.subject, operation.READ, thread_context, authorize_reason,
 				 isExistSubject);
 
 				 if(result_of_az == false)
@@ -609,7 +604,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 	return;
 }
 
-Subject remove(Subject message, Predicate sender, string userId, ThreadContext server_context, out bool isOk, out string reason)
+Subject remove(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason)
 {
 	if(trace_msg[38] == 1)
 		log.trace("command remove");
@@ -640,12 +635,12 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext s
 
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, server_context, authorize_reason,
+		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, thread_context, authorize_reason,
 				isExistSubject);
 
 		if(result_of_az)
 		{
-			server_context.ts.removeSubject(ss.subject);
+			thread_context.ts.removeSubject(ss.subject);
 			reason = "команда remove выполнена успешно";
 			isOk = true;
 		} else

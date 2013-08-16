@@ -1,5 +1,7 @@
 module pacahon.context;
 
+import pacahon.graph;
+
 interface Context
 {
 }
@@ -14,4 +16,9 @@ enum event_type
 interface BusEventListener
 {
 	void bus_event (event_type et);	
+}
+
+interface Authorizer
+{
+	bool authorize (ref Subject doc);	
 }

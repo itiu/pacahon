@@ -35,7 +35,7 @@ interface TripleStorage
 			int MAX_SIZE_READ_RECORDS = 1000);
 
 	public int get(ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
-			bool function(ref string id) authorizer);
+			Authorizer az);
 
 	public int addTriple(Triple tt, bool isReification = false);
 }

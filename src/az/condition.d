@@ -56,7 +56,7 @@ class Element
 
 			foreach(key; pairs.keys)
 			{
-				qq ~= key ~ " : " ~ pairs[key].toString() ~ "\r";
+				qq ~= key ~ " : " ~ pairs[key].toString() ~ "\n";
 			}
 
 			return qq;
@@ -67,7 +67,7 @@ class Element
 
 			foreach(el; array)
 			{
-				qq ~= el.toString() ~ "\r";
+				qq ~= el.toString() ~ "\n";
 			}
 			return qq;
 		} else if(type == asString)
@@ -96,6 +96,7 @@ Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element
 				oe.pairs[cast(string) key.dup] = json2Element(value, passed_elements);
 			}
 		}
+		oe.type = asObject;
 
 		return oe;
 	} else if(je.type == JSON_TYPE.ARRAY)
@@ -104,6 +105,7 @@ Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element
 		auto arr = je.array;
 
 		oe.array = new Element[arr.length];
+		oe.type = asArray;
 
 		int qq = 0;
 		foreach(aa; arr)
@@ -114,12 +116,22 @@ Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element
 	} else if(je.type == JSON_TYPE.STRING)
 	{
 		oe.str = je.str.dup;
+		oe.type = asString;
 	}
 
 	return oe;
 }
 
-class MandatManager : BusEventListener
+struct ConditionsAndIndexes
+{
+	Set!Element conditions;
+
+	// indexes
+	HashSet!string templateIds;
+	HashSet!string fields;	
+}
+
+class MandatManager: BusEventListener
 {
 	OrgStructureTree ost;
 	TripleStorage ts;
@@ -133,13 +145,12 @@ class MandatManager : BusEventListener
 		ost.load();
 	}
 
-	Set!Element*[string] whom_4_array_of_condition;
+	ConditionsAndIndexes*[string] whom_4_cai;
 
-	void bus_event (event_type et)
-	{		
+	void bus_event(event_type et)
+	{
 	}
-	
-	
+
 	public void load()
 	{
 		log.trace_log_and_console("start load mandats");
@@ -169,12 +180,14 @@ class MandatManager : BusEventListener
 				Element whom = root.pairs.get("whom", null);
 				if(whom !is null)
 				{
-					Set!Element* array = whom_4_array_of_condition.get(whom.str, new Set!Element);
+					ConditionsAndIndexes* cai = whom_4_cai.get(whom.str, new ConditionsAndIndexes);
 
-					if(array.size == 0)
-						whom_4_array_of_condition[whom.str] = array;
+					if(cai.conditions.size == 0)
+						whom_4_cai[whom.str] = cai;
 
-					*array ~= root;
+					cai.conditions ~= root;
+
+					calculate_rights_of_mandat(root, "", null, RightType.READ, whom.str, true);
 
 					log.trace("found mandat: %s", root.id);
 				}
@@ -187,11 +200,19 @@ class MandatManager : BusEventListener
 
 		}
 
+		//		writeln (whom_4_array_of_condition);
+		foreach(key, value; whom_4_cai)
+		{
+			writeln("\n", key);
+			writeln(value.templateIds.keys);
+			writeln(value.fields.keys);
+		}
+
 		log.trace_log_and_console("end load mandats, count=%d, whom_4_array_of_condition.length=%d", res.length,
-				whom_4_array_of_condition.length);
+				whom_4_cai.length);
 	}
 
-	public bool calculate_rights(ref Ticket ticket, ref Subject doc, uint rightType)
+	public bool calculate_rights(Ticket ticket, Subject doc, uint rightType)
 	{
 		if(calculate_rights_of_unit(ticket.userId, doc, rightType) == true)
 			return true;
@@ -202,43 +223,55 @@ class MandatManager : BusEventListener
 		return false;
 	}
 
-	private bool calculate_rights_of_units(ref string[] units, ref Subject doc, uint rightType)
+	private bool calculate_rights_of_units(ref string[] units, Subject doc, uint rightType)
 	{
 		// найдем мандаты для этого узла
-		foreach(unit_id; units)
+		if(units !is null)
 		{
-			auto mandats = whom_4_array_of_condition.get(unit_id, null);
-			foreach(mandat; mandats.data)
+			foreach(unit_id; units)
 			{
-				if(calculate_rights_of_mandat(mandat, unit_id, doc, rightType) == true)
-					return true;
-			}
+				auto cai = whom_4_cai.get(unit_id, null);
+				if(cai !is null)
+				{
+					foreach(mandat; cai.conditions.data)
+					{
+						if(calculate_rights_of_mandat(mandat, unit_id, doc, rightType) == true)
+							return true;
+					}
+				}
 
-			string[] up_units = ost.node_4_parents.get(unit_id, null);
-			if(up_units !is null)
-			{
-				if(calculate_rights_of_units(up_units, doc, rightType) == true)
-					return true;
-			}
+				string[] up_units = ost.node_4_parents.get(unit_id, null);
+				if(up_units !is null)
+				{
+					if(calculate_rights_of_units(up_units, doc, rightType) == true)
+						return true;
+				}
 
+			}
 		}
 		return false;
 	}
 
-	private bool calculate_rights_of_unit(string unit, ref Subject doc, uint rightType)
+	private bool calculate_rights_of_unit(string unit, Subject doc, uint rightType)
 	{
 		// найдем мандаты для этого узла
-		auto mandats = whom_4_array_of_condition.get(unit, null);
-		foreach(mandat; mandats.data)
+		auto cai = whom_4_cai.get(unit, null);
+		if(cai !is null)
 		{
-			if(calculate_rights_of_mandat(mandat, unit, doc, rightType) == true)
-				return true;
+			foreach(mandat; cai.conditions.data)
+			{
+				if(calculate_rights_of_mandat(mandat, unit, doc, rightType) == true)
+					return true;
+			}
 		}
 		return false;
 	}
 
-	private bool calculate_rights_of_mandat(Element mndt, string user, ref Subject doc, uint rightType)
+	private bool calculate_rights_of_mandat(Element mndt, string user, Subject doc, uint rightType, string whom = null,
+			bool isTest = false)
 	{
+		//writeln("\n------------------------------------\n", mndt);
+
 		if(mndt is null)
 			return false;
 
@@ -303,10 +336,11 @@ class MandatManager : BusEventListener
 			{
 				if(condt.type == asString)
 				{
+
 					if(trace_msg[76] == 1)
 						log.trace("eval (%s)", condt.str);
 
-					bool eval_res = eval(condt.str, doc, user);
+					bool eval_res = eval(condt.str, doc, user, whom, isTest);
 					if(trace_msg[77] == 1)
 						log.trace("eval:%s, res=%s", condt.str, eval_res);
 					return eval_res;
@@ -320,8 +354,9 @@ class MandatManager : BusEventListener
 		return res;
 	}
 
-	private bool eval(string expr, ref Subject doc, string user)
+	private bool eval(string expr, ref Subject doc, string user, string whom, bool isTest)
 	{
+		//		writeln ("@1.1.1.1");
 		if(expr == "true")
 			return true;
 
@@ -358,17 +393,37 @@ class MandatManager : BusEventListener
 		int p2 = findOperand(expr, "||");
 
 		if(p1 >= 0)
-			return eval(expr[0 .. p1], doc, user) && eval(expr[p1 + 2 .. $], doc, user);
+		{
+			if(isTest)
+			{
+				eval(expr[0 .. p1], doc, user, whom, isTest);
+				eval(expr[p1 + 2 .. $], doc, user, whom, isTest);
+				return false;
+			} else
+			{
+				return eval(expr[0 .. p1], doc, user, whom, isTest) && eval(expr[p1 + 2 .. $], doc, user, whom, isTest);
+			}
+		}
 
 		if(p2 >= 0)
-			return eval(expr[0 .. p2], doc, user) || eval(expr[p2 + 2 .. $], doc, user);
+		{
+			if(isTest)
+			{
+				eval(expr[0 .. p2], doc, user, whom, isTest);
+				eval(expr[p2 + 2 .. $], doc, user, whom, isTest);
+				return false;
+			} else
+			{
+				return eval(expr[0 .. p2], doc, user, whom, isTest) || eval(expr[p2 + 2 .. $], doc, user, whom, isTest);
+			}
+		}
 
 		if(expr.length > 2 && expr[0] == '(' && expr[$ - 1] == ')')
-			return eval(expr[1 .. $ - 1], doc, user);
+			return eval(expr[1 .. $ - 1], doc, user, whom, isTest);
 
 		// [==] [!=]
 
-		if(doc !is null)
+		//		if(doc !is null)
 		{
 			string A, B;
 
@@ -383,121 +438,24 @@ class MandatManager : BusEventListener
 			string tA = tokens[0];
 			string tB = tokens[2];
 
-			if(tA[0] == '[')
-			{
-				// это адресация к другому документу
-				// считаем документ указанный в конструкции [field1], 
-				// где field1 поле текущего документа содержащее id требуемого нам документа
+			string token_name_A;
+			string token_name_B;
 
-				string[] ttt = split(tA, ".");
-				if(trace_msg[81] == 1)
-					log.trace("A:ttt=%s", ttt);
-
-				if(ttt.length == 2)
-				{
-					// 1. вытащим имя поля и возьмем его значение
-					string docId = doc.getFirstLiteral(ttt[0][1 .. $ - 2]);
-					log.trace("A:docId=%s", docId);
-
-					if(docId !is null && docId.length > 3)
-					{
-						if(ttt[1] == "$rights")
-						{
-							// 2. считаем документ по значению из[2] в: triple_list_element* doc1
-							/*						triple_list_element* data_doc1 = ts.getTriplesUseIndexS1PPOO(null, user.ptr, docId.ptr);
-
-							 if(data_doc1 !is null)
-							 {
-							 A = data_doc1.getFirstLiteral("mo/at/acl#rt");
-							 }
-							 } else
-							 {
-							 // 2. считаем права у документа
-							 triple_list_element* data_doc1 = ts.getTriples(docId.ptr, null, null);
-
-							 if(data_doc1 !is null)
-							 {
-							 A = data_doc1.getFirstLiteral(ttt[1]);
-							 }*/
-						}
-					}
-				}
-			} else if(tA[0] == '\'' || tA[0] == '"' || tA[0] == '`')
-			{
-				// это строка
-				A = tA[1 .. $ - 1];
-			} else if(tA[0] == '$' && tA[1] == 'u' && tA[2] == 's' && tA[3] == 'e' && tA[4] == 'r')
-			{
-				// это проверяемый пользователь
-				A = user;
-			} else
-			{
-				// нужно найти данный предикат tokens[0] в data и взять его значение
-				//			log.trace("нужно найти данный предикат tokens[0] в data и взять его значение");
-				A = doc.getFirstLiteral(tA);
-				if(A !is null)
-					log.trace("%s = %s", tA, A);
-			}
-
-			if(tB[0] == '[')
-			{
-				// это адресация к другому документу
-				// считаем документ указанный в конструкции [field1], 
-				// где field1 поле текущего документа содержащее id требуемого нам документа
-
-				string[] ttt = split(tB, ".");
-				if(trace_msg[82] == 1)
-					log.trace("B:ttt=%s", ttt);
-
-				if(ttt.length == 2)
-				{
-					// 1. вытащим имя поля и возьмем его значение
-					string docId = doc.getFirstLiteral(ttt[0][1 .. $ - 2]);
-
-					// 2. считаем документ по значению из[2] в: triple_list_element* doc1
-					if(docId !is null && docId.length > 3)
-					{
-						if(ttt[1] == "$rights")
-						{
-							// 2. считаем документ по значению из[2] в: triple_list_element* doc1
-							/*						triple_list_element* data_doc1 = ts.getTriplesUseIndexS1PPOO(null, user.ptr, docId.ptr);
-
-							 if(data_doc1 !is null)
-							 {
-							 B = data_doc1.getFirstLiteral("mo/at/acl#rt");
-							 }
-							 } else
-							 {
-							 // 2. считаем права у документа
-							 triple_list_element* data_doc1 = ts.getTriples(docId.ptr, null, null);
-
-							 if(data_doc1 !is null)
-							 {
-							 B = data_doc1.getFirstLiteral(ttt[1]);
-							 } */
-						}
-					}
-
-				}
-			} else if(tB[0] == '\'' || tB[0] == '"' || tB[0] == '`')
-			{
-				// это строка
-				B = tB[1 .. $ - 1];
-			} else if(tB[0] == '$' && tB[1] == 'u' && tB[2] == 's' && tB[3] == 'e' && tB[4] == 'r')
-			{
-				// это проверяемый пользователь
-				B = user;
-			} else
-			{
-				//			log.trace("нужно найти данный предикат tokens[1] в data и взять его значение");
-				// нужно найти данный предикат tokens[1] в data и взять его значение
-				B = doc.getFirstLiteral(tB);
-
-				if(B !is null)
-					log.trace("%s = %s", tB, B);
-			}
+			A = prepare_token(tA, user, token_name_A);
+			B = prepare_token(tB, user, token_name_B);
 
 			//		log.trace ("[A=%s tokens[1]=%s B=%s]", A, tokens[1], B);
+			if(isTest == true)
+			{
+				auto cai = whom_4_cai.get(whom, null);
+				if(cai !is null)
+				{
+					if(token_name_A == "mo/doc#tmplid")
+						cai.templateIds.add(B);
+					else
+						cai.fields.add(token_name_A);
+				}
+			}
 
 			if(tokens[1] == "==")
 				return A == B;
@@ -517,5 +475,75 @@ class MandatManager : BusEventListener
 			log.trace("return false");
 		return false;
 
+	}
+
+	private string prepare_token(string tA, string user, out string token_name)
+	{
+		//		writeln ("@1.1.1.1.1 tA=", tA);
+
+		string A;
+		if(tA[0] == '[')
+		{
+			// это адресация к другому документу
+			// считаем документ указанный в конструкции [field1], 
+			// где field1 поле текущего документа содержащее id требуемого нам документа
+
+			string[] ttt = split(tA, ".");
+			if(trace_msg[81] == 1)
+				log.trace("A:ttt=%s", ttt);
+
+			if(ttt.length == 2)
+			{
+				// 1. вытащим имя поля и возьмем его значение
+				string docId;// = doc.getFirstLiteral(ttt[0][1 .. $ - 2]);
+
+				//used_doc_fields
+
+				log.trace("A:docId=%s", docId);
+
+				if(docId !is null && docId.length > 3)
+				{
+					if(ttt[1] == "$rights")
+					{
+						// 2. считаем документ по значению из[2] в: triple_list_element* doc1
+						/*						triple_list_element* data_doc1 = ts.getTriplesUseIndexS1PPOO(null, user.ptr, docId.ptr);
+
+						 if(data_doc1 !is null)
+						 {
+						 A = data_doc1.getFirstLiteral("mo/at/acl#rt");
+						 }
+						 } else
+						 {
+						 // 2. считаем права у документа
+						 triple_list_element* data_doc1 = ts.getTriples(docId.ptr, null, null);
+
+						 if(data_doc1 !is null)
+						 {
+						 A = data_doc1.getFirstLiteral(ttt[1]);
+						 }*/
+					}
+				}
+			}
+		} else if(tA[0] == '\'' || tA[0] == '"' || tA[0] == '`')
+		{
+			// это строка
+			A = tA[1 .. $ - 1];
+		} else if(tA[0] == '$' && tA[1] == 'u' && tA[2] == 's' && tA[3] == 'e' && tA[4] == 'r')
+		{
+			// это проверяемый пользователь
+			A = user;
+		} else
+		{
+			if(A !is null)
+				log.trace("%s = %s", tA, A);
+
+			token_name = tA;
+
+			//writeln("@1:tA=", tA);
+			// нужно найти данный предикат tokens[0] в data и взять его значение
+			//			log.trace("нужно найти данный предикат tokens[0] в data и взять его значение");
+			//A = doc.getFirstLiteral(tA);
+		}
+		return A;
 	}
 }

@@ -530,7 +530,7 @@ class MongodbTripleStorage: TripleStorage
 		}
 
 		log.trace("connect to mongodb sucessful");
-//		mongo_set_op_timeout(&conn, 1000);
+		//		mongo_set_op_timeout(&conn, 1000);
 	}
 
 	int _tmp_hhh = 0;
@@ -1218,7 +1218,7 @@ class MongodbTripleStorage: TripleStorage
 	}
 
 	private bool bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, bool function(ref string id) authorizer, bool only_id, string predicate_array = null)
+			ref string[string] fields, Authorizer authorizer, bool only_id, string predicate_array = null)
 	{
 		while(bson_iterator_next(it))
 		{
@@ -1226,7 +1226,7 @@ class MongodbTripleStorage: TripleStorage
 
 			switch(type)
 			{
-				
+
 				case bson_type.BSON_STRING:
 				{
 					string name_key;
@@ -1242,10 +1242,16 @@ class MongodbTripleStorage: TripleStorage
 					if(name_key == "@")
 					{
 						//						writeln("prepare_bson @4, value:", value);
-//						if(authorizer(value) == true)
+						if(authorizer !is null)
+						{
+//							if(authorizer.authorize(value) == true)
+//								ss.subject = value;
+//							else
+//								return false;
+						} else
+						{
 							ss.subject = value;
-//						else
-//							return false;
+						}
 					} else if(only_id == false)
 					{
 
@@ -1263,7 +1269,7 @@ class MongodbTripleStorage: TripleStorage
 					}
 					break;
 				}
-				
+
 				case bson_type.BSON_DATE:
 				{
 					string name_key;
@@ -1272,7 +1278,7 @@ class MongodbTripleStorage: TripleStorage
 						name_key = predicate_array;
 					else
 						name_key = fromStringz(bson_iterator_key(it)).dup;
-		
+
 					string value = SysTime((bson_iterator_date(it)) * 10000 + 621355968000000000, tz).toISOExtString();
 
 					//					writeln("prepare_bson @3 name_key:", name_key);
@@ -1292,9 +1298,9 @@ class MongodbTripleStorage: TripleStorage
 						}
 					}
 					break;
-					
+
 				}
-				
+
 				case bson_type.BSON_ARRAY:
 				{
 					string name_key = fromStringz(bson_iterator_key(it)).dup;
@@ -1370,7 +1376,7 @@ class MongodbTripleStorage: TripleStorage
 	}
 
 	public int get(ref GraphCluster res, bson* query, ref string[string] fields, int render, int authorize, int offset,
-			bool function(ref string id) authorizer)
+			Authorizer authorizer)
 	{
 		try
 		{
@@ -1390,36 +1396,36 @@ class MongodbTripleStorage: TripleStorage
 				log.trace("ex! get:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
 				throw new Exception("get:mongo_find, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
 			}
-			
+
 			auto count_subj = 0;
 			bson_iterator it;
-			while (mongo_cursor_next(cursor) == MONGO_OK)
-			{				
+			while(mongo_cursor_next(cursor) == MONGO_OK)
+			{
 				bson_iterator_init(&it, &cursor.current);
 
 				Subject ss = new Subject();
-				
+
 				bool authorizedPass = false;
-				
+
 				if(count_subj < render)
 					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, false);
 				else
 					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, true);
 
-				if (authorizedPass)
+				if(authorizedPass)
 					res.addSubject(ss);
-				
-				count_subj ++;
-				
-				if (count_subj >= authorize)
+
+				count_subj++;
+
+				if(count_subj >= authorize)
 				{
 					count_subj--;
 					break;
 				}
 			}
-			
+
 			return count_subj;
-//	!!!		mongo_cursor_destroy(&cursor);
+			//	!!!		mongo_cursor_destroy(&cursor);
 		} catch(Exception ex)
 		{
 			log.trace_log_and_console("@exception:%s", ex.msg);

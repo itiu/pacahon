@@ -15,6 +15,7 @@ private
 	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
 	import pacahon.oi;	
+	import pacahon.context;	
 }
 
 // filter
@@ -487,7 +488,7 @@ class VQL
 		found_sections = new string[5];
 	}
 
-	public void get(string query_str, ref GraphCluster res, bool function(ref string id) authorizer)
+	public void get(string query_str, ref GraphCluster res, Authorizer authorizer)
 	{
 		//writeln("VQL:get");
 
