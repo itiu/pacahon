@@ -16,7 +16,7 @@ module ae.utils.container;
 /// Unordered array with O(1) insertion and removal
 struct Set(T, uint INITSIZE=64)
 {
-	T[] data;
+	private T[] data;
 	size_t size;
 
 	void opOpAssign(string OP)(T item)
@@ -31,6 +31,11 @@ struct Set(T, uint INITSIZE=64)
 	{
 		assert(index < size);
 		data[index] = data[--size];
+	}
+	
+	void empty()
+	{
+		size = 0;
 	}
 
 	@property T[] items()

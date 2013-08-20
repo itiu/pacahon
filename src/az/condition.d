@@ -35,49 +35,6 @@ static this()
 	log = new Logger("pacahon", "log", "MandatManager");
 }
 
-const byte asObject = 0;
-const byte asArray = 1;
-const byte asString = 2;
-
-class Element
-{
-	Element[string] pairs;
-	Element[] array;
-	string str;
-	string id;
-
-	byte type;
-
-	override string toString()
-	{
-		if(type == asObject)
-		{
-			string qq;
-
-			foreach(key; pairs.keys)
-			{
-				qq ~= key ~ " : " ~ pairs[key].toString() ~ "\n";
-			}
-
-			return qq;
-		}
-		if(type == asArray)
-		{
-			string qq;
-
-			foreach(el; array)
-			{
-				qq ~= el.toString() ~ "\n";
-			}
-			return qq;
-		} else if(type == asString)
-			return str;
-		else
-			return "?";
-	}
-
-}
-
 Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element oe = null)
 {
 	if(oe is null)
@@ -158,7 +115,7 @@ class MandatManager: BusEventListener
 		vql = new VQL(ts);
 
 		GraphCluster res = new GraphCluster();
-		vql.get(
+		vql.get(null, 
 				"return { 'uo:condition'}
             filter { 'class:identifier' == 'mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
 				res, null);
@@ -186,7 +143,6 @@ class MandatManager: BusEventListener
 						whom_4_cai[whom.str] = cai;
 
 					cai.conditions ~= root;
-
 					calculate_rights_of_mandat(root, "", null, RightType.READ, whom.str, true);
 
 					log.trace("found mandat: %s", root.id);
@@ -233,7 +189,7 @@ class MandatManager: BusEventListener
 				auto cai = whom_4_cai.get(unit_id, null);
 				if(cai !is null)
 				{
-					foreach(mandat; cai.conditions.data)
+					foreach(mandat; cai.conditions.items)
 					{
 						if(calculate_rights_of_mandat(mandat, unit_id, doc, rightType) == true)
 							return true;
@@ -258,7 +214,7 @@ class MandatManager: BusEventListener
 		auto cai = whom_4_cai.get(unit, null);
 		if(cai !is null)
 		{
-			foreach(mandat; cai.conditions.data)
+			foreach(mandat; cai.conditions.items)
 			{
 				if(calculate_rights_of_mandat(mandat, unit, doc, rightType) == true)
 					return true;

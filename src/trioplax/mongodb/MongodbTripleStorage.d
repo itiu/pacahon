@@ -11,7 +11,7 @@ private
 
 	import core.stdc.stdio;
 	import core.thread;
-
+	import ae.utils.container;
 	import util.Logger;
 
 	import trioplax.mongodb.ComplexKeys;
@@ -1218,10 +1218,11 @@ class MongodbTripleStorage: TripleStorage
 	}
 
 	private bool bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, Authorizer authorizer, bool only_id, string predicate_array = null)
+			ref string[string] fields, ref HashSet!Element mandats, ref Set!string*[string] fields_of_mandats, 
+			ref HashSet!string templateIds_of_mandats,	Authorizer authorizer, bool only_id, string predicate_array = null)
 	{
 		while(bson_iterator_next(it))
-		{
+		{			
 			bson_type type = bson_iterator_type(it);
 
 			switch(type)
@@ -1242,13 +1243,13 @@ class MongodbTripleStorage: TripleStorage
 					if(name_key == "@")
 					{
 						//						writeln("prepare_bson @4, value:", value);
-						if(authorizer !is null)
-						{
-//							if(authorizer.authorize(value) == true)
-//								ss.subject = value;
-//							else
-//								return false;
-						} else
+//						if(authorizer !is null)
+//						{
+							//							if(authorizer.authorize(value) == true)
+							//								ss.subject = value;
+							//							else
+							//								return false;
+//						} else
 						{
 							ss.subject = value;
 						}
@@ -1259,11 +1260,14 @@ class MongodbTripleStorage: TripleStorage
 							ss.addPredicate(name_key, value);
 						else
 						{
-							string ff = fields.get(name_key, null);
-
-							if(ff !is null)
+							if((name_key in fields) !is null)
 							{
 								ss.addPredicate(name_key, value);
+							}
+							else if (fields_of_mandats !is null && (name_key in fields_of_mandats) !is null)
+							{
+								// заполним хэш с именами полей значениями текущей записи
+								*fields_of_mandats[name_key] ~= value;
 							}
 						}
 					}
@@ -1308,7 +1312,7 @@ class MongodbTripleStorage: TripleStorage
 					bson_iterator it_1;
 					bson_iterator_subiterator(it, &it_1);
 
-					bson2graph(res, &it_1, ss, allfields, fields, authorizer, only_id, name_key);
+					bson2graph(res, &it_1, ss, allfields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, only_id, name_key);
 
 					break;
 				}
@@ -1353,7 +1357,7 @@ class MongodbTripleStorage: TripleStorage
 
 										string mallfield = "*";
 
-										bson2graph(res, &it_2, ss_reif, mallfield, fields, authorizer, only_id);
+										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, only_id);
 
 										res.addSubject(ss_reif);
 									}
@@ -1375,12 +1379,22 @@ class MongodbTripleStorage: TripleStorage
 		return true;
 	}
 
-	public int get(ref GraphCluster res, bson* query, ref string[string] fields, int render, int authorize, int offset,
-			Authorizer authorizer)
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
+			int offset, Authorizer authorizer)
 	{
+		Set!string*[string] fields_of_mandats;		
+		HashSet!string templateIds_of_mandats;		
+		HashSet!Element mandats;		
 		try
 		{
 			string mostAllFields = fields.get("*", null);
+
+			if(mostAllFields is null && authorizer !is null && ticket !is null)
+			{
+				authorizer.get_mandats_4_whom(ticket, mandats, fields_of_mandats, templateIds_of_mandats);
+				//writeln ("mandats=", mandats);
+			}
+
 			bson b_fields;
 
 			bson_init(&b_fields);
@@ -1389,7 +1403,7 @@ class MongodbTripleStorage: TripleStorage
 			mongo_cursor* cursor;
 
 			// int limit, int skip, int options
-			cursor = mongo_find(&conn, docs_collection, query, &b_fields, authorize, 0, 0);
+			cursor = mongo_find(&conn, docs_collection, query, &b_fields, count_authorize, 0, 0);
 
 			if(cursor is null)
 			{
@@ -1405,19 +1419,24 @@ class MongodbTripleStorage: TripleStorage
 
 				Subject ss = new Subject();
 
+				foreach (fields_of_mandat; fields_of_mandats)
+				{
+					fields_of_mandat.empty ();
+				}
+				
 				bool authorizedPass = false;
 
 				if(count_subj < render)
-					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, false);
+					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, false);
 				else
-					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, authorizer, true);
+					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, true);
 
 				if(authorizedPass)
 					res.addSubject(ss);
 
 				count_subj++;
 
-				if(count_subj >= authorize)
+				if(count_subj >= count_authorize)
 				{
 					count_subj--;
 					break;

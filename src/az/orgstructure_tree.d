@@ -20,7 +20,7 @@ static this()
 	log = new Logger("pacahon", "log", "OrgStructureTree");
 }
 
-class OrgStructureTree : BusEventListener
+class OrgStructureTree: BusEventListener
 {
 	//  по узлу можем получить его родителей
 	string[][string] node_4_parents;
@@ -34,8 +34,8 @@ class OrgStructureTree : BusEventListener
 		vql = new VQL(ts);
 	}
 
-	void bus_event (event_type et)
-	{		
+	void bus_event(event_type et)
+	{
 	}
 
 	public void load()
@@ -43,7 +43,7 @@ class OrgStructureTree : BusEventListener
 		log.trace_log_and_console("start load org structure links");
 
 		GraphCluster res = new GraphCluster();
-		vql.get("return { 'docs:parentUnit'}" " filter { 'a' == 'docs:unit_card' }", res, null);
+		vql.get(null, "return { 'docs:parentUnit'}" " filter { 'a' == 'docs:unit_card' }", res, null);
 
 		foreach(ss; res.getArray())
 		{
@@ -52,9 +52,24 @@ class OrgStructureTree : BusEventListener
 
 			foreach(idx, parent; parents)
 			{
-				parent_ids[idx] = parent.literal;
+				// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
+				char[] sscc = parent.literal.dup;
+				if(sscc[7] == '_')
+					sscc = sscc[8..$];
+				else if(sscc[8] == '_')
+					sscc = sscc[9..$];
+
+				parent_ids[idx] = cast(string) sscc;
 			}
-			node_4_parents[ss.subject] = parent_ids;
+			
+			
+			// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
+			char[] sscc = ss.subject.dup;
+			if(sscc[7] == '_')
+				sscc = sscc[8..$];
+			else if(sscc[8] == '_')
+				sscc = sscc[9..$];
+			node_4_parents[cast(string)sscc] = parent_ids;
 		}
 
 		log.trace_log_and_console("end load org structure links, count = %d", res.length);

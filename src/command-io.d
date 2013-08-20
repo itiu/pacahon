@@ -30,6 +30,7 @@ private import util.utils;
 
 private import pacahon.command.event_filter;
 private import pacahon.search;
+private import pacahon.context;
 
 import onto.docs_base;
 
@@ -328,7 +329,7 @@ public void store_graph(Subject graph, string userId, ThreadContext thread_conte
 
 }
 
-public void get(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason,
+public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext thread_context, out bool isOk, out string reason,
 		ref GraphCluster res, out char from_out)
 {
 	// в качестве аргумента - шаблон для выборки, либо запрос на VQL
@@ -387,7 +388,8 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 				string query = s_query.getFirstLiteral("query");
 				if(query !is null)
 				{
-					thread_context.vql.get(query, res, thread_context);
+					writeln ("#1 ticket=", ticket);
+					thread_context.vql.get(ticket, query, res, thread_context);
 				} else
 				{
 					Subject graph = s_query;
@@ -541,7 +543,7 @@ public void get(Subject message, Predicate sender, string userId, ThreadContext 
 				}
 				/////////////////////////////////////////////////////////////////////////////////////////
 				if(trace_msg[58] == 1)
-					log.trace("авторизуем найденные субьекты, для пользователя %s", userId);
+					log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
 
 				// авторизуем найденные субьекты
 				int count_found_subjects = res.length;

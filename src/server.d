@@ -21,8 +21,8 @@ private
 	import zmq_pp_broker_client;
 	import rabbitmq_client;
 
-	//private import trioplax.mongodb.triple;
 	import trioplax.mongodb.TripleStorage;
+	import pacahon.context;
 
 	import util.Logger;
 
@@ -327,7 +327,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		// найдем в массиве triples субьекта с типом msg
 
 		// local_ticket <- здесь может быть тикет для выполнения пакетных операций
-		string local_ticket;
+		Ticket ticket;
 		char from;
 
 		for(int ii = 0; ii < subjects.length; ii++)
@@ -336,7 +336,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			sw_c.start();
 
 			Subject command = subjects[ii];
-
+			
 			if(trace_msg[5] == 1)
 			{
 				log.trace("get_message:subject.count_edges=%d", command.count_edges);
@@ -364,50 +364,52 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			}
 
 			if(type !is null && (msg__Message in type.objects_of_value) !is null)
-			{
+			{				
 				Predicate reciever = command.getPredicate(msg__reciever);
 				Predicate sender = command.getPredicate(msg__sender);
 
 				if(trace_msg[6] == 1)
 					log.trace("message accepted from:%s", sender.getFirstLiteral());
 
-				Predicate ticket = command.getPredicate(msg__ticket);
+				Predicate p_ticket = command.getPredicate(msg__ticket);
 
 				string userId;
 
-				if(ticket !is null && ticket.getObjects() !is null)
+				if(p_ticket !is null && p_ticket.getObjects() !is null)
 				{
-					string ticket_str = ticket.getObjects()[0].literal;
-
-					if(ticket_str == "@local")
-						ticket_str = local_ticket;
-
-					Ticket tt = server_thread.foundTicket(ticket_str);
-
-					// проверим время жизни тикета
-					if(tt !is null)
+					string ticket_id = p_ticket.getObjects()[0].literal;
+					
+					if (ticket_id != "@local")
 					{
-						SysTime now = Clock.currTime();
-						if(now.stdTime > tt.end_time)
+						ticket = server_thread.foundTicket(ticket_id);
+
+						// проверим время жизни тикета
+						if(ticket !is null)
 						{
-							// тикет просрочен
-							if(trace_msg[61] == 1)
-								log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime,
-										tt.end_time);
-						} else
-						{
-							userId = tt.userId;
-							// продляем тикет
+							SysTime now = Clock.currTime();
+							if(now.stdTime > ticket.end_time)
+							{
+								// тикет просрочен
+								if(trace_msg[61] == 1)
+									log.trace("тикет просрочен, now=%s(%d) > tt.end_time=%d", timeToString(now), now.stdTime,
+											ticket.end_time);
+							} else
+							{
+								userId = ticket.userId;
+								// продляем тикет
 							
-							tt.end_time = now.stdTime + 3600;
+								ticket.end_time = now.stdTime + 3600;
+							}
 						}
+
+						if(trace_msg[62] == 1)
+							if(userId !is null)
+								log.trace("пользователь найден, userId=%s", userId);
+
 					}
-
-					if(trace_msg[62] == 1)
-						if(userId !is null)
-							log.trace("пользователь найден, userId=%s", userId);
-
+					
 				}
+				
 
 				if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 				{
@@ -424,8 +426,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 								server_thread.resource.stat.count_message, t);
 						sw.start();
 					}
-
-					command_preparer(command, results[ii], sender, userId, server_thread.resource, local_ticket, from);
+					
+					command_preparer(ticket, command, results[ii], sender, server_thread.resource, ticket, from);
 
 					if(trace_msg[7] == 1)
 					{
@@ -464,7 +466,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			} else
 			{
 				results[ii] = new Subject;
-				command_preparer(command, results[ii], null, null, server_thread.resource, local_ticket, from);
+				//command_preparer(ticket, command, results[ii], null, null, server_thread.resource, ticket, from);
 			}
 
 		}

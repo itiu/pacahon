@@ -20,15 +20,9 @@ private import pacahon.know_predicates;
 
 private import pacahon.vql;
 import pacahon.az.condition;
+import ae.utils.container;
+import std.datetime;
 
-class Ticket
-{
-	string id;
-	string userId;
-	string[] parentUnitIds = new string[1];
-
-	long end_time;	
-}
 
 synchronized class Statistic
 {
@@ -112,19 +106,72 @@ class ThreadContext: Context, Authorizer
 			}
 		}
 
-		mandat_manager = new MandatManager (ts);
-		mandat_manager.load ();
-		
+		mandat_manager = new MandatManager(ts);
+		mandat_manager.load();
+
 		stat = new Statistic();
 	}
 
-	bool authorize(ref Subject doc)
+	bool authorize(Ticket ticket, Subject doc)
 	{
 		return false;//mandat_manager.ca;
-	}	
+	}
+
+	void get_mandats_4_whom(Ticket ticket, ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds)
+	{
+		writeln ("&0 ticket.parentUnitIds=", ticket.parentUnitIds);
+		StopWatch sw_c;
+		sw_c.start();
+		
+		if (ticket is null)
+			return;
+					
+		mrf (ticket.userId, mandats, fields, templateIds, false);
+		
+		foreach (unit ; ticket.parentUnitIds)
+			mrf (unit, mandats, fields, templateIds, true);
+		
+		sw_c.stop();
+		
+		writeln ("время вычисления требуемых полей документа в шаблонах, time=", sw_c.peek().usecs);
+		writeln ("&1 fields=", fields);
+		writeln ("&2 templateIds=", templateIds.data.keys);
+		
+		return;
+	}
+	
+	private void mrf (string unitId, ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds, bool recursive = false)
+	{		
+//		writeln ("unitId=", unitId);
+		string[] parent_ids;
+		
+		if (recursive == true)
+		{
+			parent_ids = mandat_manager.ost.node_4_parents.get(unitId, null);
+//			writeln ("parentsId=", parent_ids);
+			
+			foreach(unit_id; parent_ids)
+			{				
+				mrf (unit_id, mandats, fields, templateIds, recursive);
+			}
+		}
+		
+		auto cai = mandat_manager.whom_4_cai.get (unitId, null);
+		if(cai !is null)
+		{
+			//writeln ("cai.conditions=", cai.conditions.items, "\n");
+			foreach (mandat; cai.conditions.items)
+				mandats.add (mandat);
+			
+			foreach (field; cai.fields.data.keys)
+				fields[field] = new Set!string;
+			
+			foreach (templateId; cai.templateIds.data.keys)
+				templateIds.add (templateId);
+			
+		}		
+	}
 }
-
-
 
 public static TripleStorage connect_to_mongodb_triple_storage(int mongodb_port, string mongodb_server, string mongodb_collection,
 		string thread_name)

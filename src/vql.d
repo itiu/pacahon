@@ -488,9 +488,9 @@ class VQL
 		found_sections = new string[5];
 	}
 
-	public void get(string query_str, ref GraphCluster res, Authorizer authorizer)
+	public void get(Ticket ticket, string query_str, ref GraphCluster res, Authorizer authorizer)
 	{
-		//writeln("VQL:get");
+		//writeln("VQL:get ticket=", ticket);
 
 		StopWatch sw;
 		sw.start();
@@ -631,7 +631,7 @@ class VQL
 			//		writeln (fields);
 			int offset = 0;
 
-			ts.get(res, &query, fields, render, authorize, offset, authorizer);
+			ts.get(ticket, res, &query, fields, render, authorize, offset, authorizer);
 
 			bson_destroy(&query);
 		}

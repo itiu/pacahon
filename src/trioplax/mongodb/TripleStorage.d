@@ -34,7 +34,7 @@ interface TripleStorage
 	public TLIterator getTriplesOfMask(ref Triple[] mask_triples, byte[string] reading_predicates,
 			int MAX_SIZE_READ_RECORDS = 1000);
 
-	public int get(ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
 			Authorizer az);
 
 	public int addTriple(Triple tt, bool isReification = false);
