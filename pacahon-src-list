@@ -21,13 +21,13 @@ src/util/oi.d
 src/util/libchash_h.d
 src/util/load_info.d 
 
-src/onto/doc_template.d
-src/onto/docs_base.d
-src/onto/rdf_base.d
-
 src/trioplax/mongodb/ComplexKeys.d 
 src/trioplax/mongodb/MongodbTripleStorage.d 
 src/trioplax/mongodb/TripleStorage.d 
+
+src/onto/doc_template.d
+src/onto/docs_base.d
+src/onto/rdf_base.d
 
 src/az/orgstructure_tree.d
 src/az/condition.d

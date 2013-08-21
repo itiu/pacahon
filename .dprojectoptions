@@ -1,0 +1,8 @@
+[compileoptions]
+buildtype = EXECUTABLE
+out = bin
+outname = pacahon
+buildtool = $DEEBUILDER.COMPILEREXEPATH @build.rf
+extraOptions = -od$DEEBUILDER.OUTPUTPATH\n-of$DEEBUILDER.OUTPUTEXE\n$DEEBUILDER.SRCLIBS.-I\n$DEEBUILDER.SRCFOLDERS.-I\n$DEEBUILDER.SRCMODULES lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/libmongoc.a lib64/libbson.a lib64/libchash.o lib64/librabbitmq.a lib64/libutils.a
+
+
