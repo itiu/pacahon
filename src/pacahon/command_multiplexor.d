@@ -21,7 +21,7 @@ private
 
 	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
-	import pacahon.json_ld.parser1;
+	import util.json_ld.parser1;
 
 	import pacahon.authorization;
 	import pacahon.know_predicates;

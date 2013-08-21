@@ -71,7 +71,7 @@ class Element
 
 }
 
-interface Authorizer
+public interface Authorizer
 {
 	bool authorize (Ticket ticket, Subject doc);	
 	void get_mandats_4_whom (Ticket ticket,  ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds);

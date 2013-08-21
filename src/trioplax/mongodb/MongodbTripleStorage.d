@@ -23,7 +23,7 @@ private
 	import pacahon.graph;
 
 	import onto.doc_template;
-	//	import onto.docs_base;
+	import pacahon.az.condition;
 
 	import pacahon.context;
 	import trioplax.mongodb.TripleStorage;
@@ -1249,7 +1249,7 @@ class MongodbTripleStorage: TripleStorage
 							//								ss.subject = value;
 							//							else
 							//								return false;
-//						} else
+//						} else												
 						{
 							ss.subject = value;
 						}
@@ -1431,6 +1431,14 @@ class MongodbTripleStorage: TripleStorage
 				else
 					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, true);
 
+				foreach (mandat ; mandats)
+				{
+					bool res = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ, null);
+					if (res == true)
+						break;
+//					writeln ("mandat=", mandat, ", res=", res);
+				}
+				
 				if(authorizedPass)
 					res.addSubject(ss);
 

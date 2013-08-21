@@ -2,13 +2,10 @@ module pacahon.server;
 
 private
 {
-	import myversion;
-
 	import core.thread;
 	import core.stdc.stdio;
 	import core.stdc.stdlib;
 	import core.memory;
-
 	import std.stdio;
 	import std.string;
 	import std.c.string;
@@ -22,12 +19,13 @@ private
 	import rabbitmq_client;
 
 	import trioplax.mongodb.TripleStorage;
-	import pacahon.context;
 
 	import util.Logger;
+	import util.json_ld.parser1;
+	import util.utils;
 
+	import pacahon.context;
 	import pacahon.graph;
-	import pacahon.json_ld.parser1;
 	import pacahon.command.multiplexor;
 	import pacahon.know_predicates;
 	import pacahon.log_msg;
@@ -36,7 +34,6 @@ private
 	import pacahon.command.event_filter;
 	import pacahon.oi;
 	import pacahon.ba2pacahon;
-	import util.utils;
 }
 
 Logger log;
@@ -52,8 +49,8 @@ void main(char[][] args)
 {
 	try
 	{
-		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", myversion.major, myversion.minor,
-				myversion.patch, myversion.hash, myversion.date);
+		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
+				pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
 
 		{
 			JSONValue props;

@@ -8,7 +8,7 @@ private import util.Logger;
 
 private import pacahon.graph;
 private import pacahon.oi;
-private import pacahon.json_ld.parser1;
+private import util.json_ld.parser1;
 
 private import onto.doc_template;
 private import std.json;
@@ -131,8 +131,7 @@ class ThreadContext: Context, Authorizer
 		foreach (unit ; ticket.parentUnitIds)
 			mrf (unit, mandats, fields, templateIds, true);
 		
-		sw_c.stop();
-		
+		sw_c.stop();		
 		writeln ("время вычисления требуемых полей документа в шаблонах, time=", sw_c.peek().usecs);
 		writeln ("&1 fields=", fields);
 		writeln ("&2 templateIds=", templateIds.data.keys);

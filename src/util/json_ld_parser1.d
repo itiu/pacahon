@@ -1,4 +1,4 @@
-module pacahon.json_ld.parser1;
+module util.json_ld.parser1;
 
 private import std.outbuffer;
 private import std.stdio;

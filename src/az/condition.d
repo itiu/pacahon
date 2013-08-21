@@ -14,8 +14,9 @@ private
 	import pacahon.vql;
 	import ae.utils.container;
 	import pacahon.az.orgstructure_tree;
-	import pacahon.thread_context;
+//	import pacahon.thread_context;
 	import pacahon.context;
+	import std.datetime;	
 }
 
 enum RightType
@@ -143,7 +144,7 @@ class MandatManager: BusEventListener
 						whom_4_cai[whom.str] = cai;
 
 					cai.conditions ~= root;
-					calculate_rights_of_mandat(root, "", null, RightType.READ, whom.str, true);
+					calculate_rights_of_mandat(root, whom.str, null, RightType.READ, &whom_4_cai);
 
 					log.trace("found mandat: %s", root.id);
 				}
@@ -167,71 +168,19 @@ class MandatManager: BusEventListener
 		log.trace_log_and_console("end load mandats, count=%d, whom_4_array_of_condition.length=%d", res.length,
 				whom_4_cai.length);
 	}
+}
 
-	public bool calculate_rights(Ticket ticket, Subject doc, uint rightType)
+	public bool calculate_rights_of_mandat(Element mndt, string whom, Subject doc, RightType rightType, ConditionsAndIndexes*[string]* whom_4_cai)
 	{
-		if(calculate_rights_of_unit(ticket.userId, doc, rightType) == true)
-			return true;
-
-		if(calculate_rights_of_units(ticket.parentUnitIds, doc, rightType) == true)
-			return true;
-
-		return false;
-	}
-
-	private bool calculate_rights_of_units(ref string[] units, Subject doc, uint rightType)
-	{
-		// найдем мандаты для этого узла
-		if(units !is null)
-		{
-			foreach(unit_id; units)
-			{
-				auto cai = whom_4_cai.get(unit_id, null);
-				if(cai !is null)
-				{
-					foreach(mandat; cai.conditions.items)
-					{
-						if(calculate_rights_of_mandat(mandat, unit_id, doc, rightType) == true)
-							return true;
-					}
-				}
-
-				string[] up_units = ost.node_4_parents.get(unit_id, null);
-				if(up_units !is null)
-				{
-					if(calculate_rights_of_units(up_units, doc, rightType) == true)
-						return true;
-				}
-
-			}
-		}
-		return false;
-	}
-
-	private bool calculate_rights_of_unit(string unit, Subject doc, uint rightType)
-	{
-		// найдем мандаты для этого узла
-		auto cai = whom_4_cai.get(unit, null);
-		if(cai !is null)
-		{
-			foreach(mandat; cai.conditions.items)
-			{
-				if(calculate_rights_of_mandat(mandat, unit, doc, rightType) == true)
-					return true;
-			}
-		}
-		return false;
-	}
-
-	private bool calculate_rights_of_mandat(Element mndt, string user, Subject doc, uint rightType, string whom = null,
-			bool isTest = false)
-	{
+		bool res = false;
+		StopWatch sw_c;
+		sw_c.start();
+		
 		//writeln("\n------------------------------------\n", mndt);
-
+		try
+		{		
 		if(mndt is null)
 			return false;
-
-		bool res = false;
 
 		if(("condition" in mndt.pairs) !is null)
 		{
@@ -296,7 +245,7 @@ class MandatManager: BusEventListener
 					if(trace_msg[76] == 1)
 						log.trace("eval (%s)", condt.str);
 
-					bool eval_res = eval(condt.str, doc, user, whom, isTest);
+					bool eval_res = eval(condt.str, doc, whom, whom_4_cai);
 					if(trace_msg[77] == 1)
 						log.trace("eval:%s, res=%s", condt.str, eval_res);
 					return eval_res;
@@ -306,11 +255,38 @@ class MandatManager: BusEventListener
 
 		if(trace_msg[78] == 1)
 			log.trace("calculate_condition return res=%s", res);
-
+		}
+		finally
+		{
+		sw_c.stop();		
+		writeln ("мандат =", mndt);
+		writeln ("время вычисления мандата, time=", sw_c.peek().usecs);
+		}
 		return res;
 	}
 
-	private bool eval(string expr, ref Subject doc, string user, string whom, bool isTest)
+	static int findOperand(string s, string op1)
+	{
+		int parens = 0;
+		foreach_reverse(p, c; s)
+		{
+			char c2 = 0;
+
+			if(p > 0)
+				c2 = s[p - 1];
+
+			if((c == op1[1] && c2 == op1[0]) && parens == 0)
+				return cast(int) (p - 1);
+
+			else if(c == ')')
+				parens++;
+			else if(c == '(')
+				parens--;
+		}
+		return -1;
+	}
+
+	private bool eval(string expr, ref Subject doc, string whom, ConditionsAndIndexes*[string]* whom_4_cai)
 	{
 		//		writeln ("@1.1.1.1");
 		if(expr == "true")
@@ -321,61 +297,40 @@ class MandatManager: BusEventListener
 		if(trace_msg[79] == 1)
 			log.trace("expr: %s", expr);
 
-		static int findOperand(string s, string op1)
-		{
-			int parens = 0;
-			foreach_reverse(p, c; s)
-			{
-				char c2 = 0;
-
-				if(p > 0)
-					c2 = s[p - 1];
-
-				if((c == op1[1] && c2 == op1[0]) && parens == 0)
-					return cast(int) (p - 1);
-
-				else if(c == ')')
-					parens++;
-				else if(c == '(')
-					parens--;
-			}
-			return -1;
-		}
-
 		// [&&]
 		// [||]
 
 		int p1 = findOperand(expr, "&&");
 		int p2 = findOperand(expr, "||");
-
+		
 		if(p1 >= 0)
 		{
-			if(isTest)
+			if(whom_4_cai !is null)
 			{
-				eval(expr[0 .. p1], doc, user, whom, isTest);
-				eval(expr[p1 + 2 .. $], doc, user, whom, isTest);
+				eval(expr[0 .. p1], doc, whom, whom_4_cai);
+				eval(expr[p1 + 2 .. $], doc, whom, whom_4_cai);
 				return false;
 			} else
 			{
-				return eval(expr[0 .. p1], doc, user, whom, isTest) && eval(expr[p1 + 2 .. $], doc, user, whom, isTest);
+				return eval(expr[0 .. p1], doc, whom, whom_4_cai) && eval(expr[p1 + 2 .. $], doc, whom, whom_4_cai);
 			}
 		}
 
 		if(p2 >= 0)
 		{
-			if(isTest)
+			if(whom_4_cai is null)
 			{
-				eval(expr[0 .. p2], doc, user, whom, isTest);
-				eval(expr[p2 + 2 .. $], doc, user, whom, isTest);
+				eval(expr[0 .. p2], doc, whom, whom_4_cai);
+				eval(expr[p2 + 2 .. $], doc, whom, whom_4_cai);
 				return false;
 			} else
 			{
-				return eval(expr[0 .. p2], doc, user, whom, isTest) || eval(expr[p2 + 2 .. $], doc, user, whom, isTest);
+				return eval(expr[0 .. p2], doc, whom, whom_4_cai) || eval(expr[p2 + 2 .. $], doc, whom, whom_4_cai);
 			}
 		}
 
 		if(expr.length > 2 && expr[0] == '(' && expr[$ - 1] == ')')
-			return eval(expr[1 .. $ - 1], doc, user, whom, isTest);
+			return eval(expr[1 .. $ - 1], doc, whom, whom_4_cai);
 
 		// [==] [!=]
 
@@ -397,11 +352,11 @@ class MandatManager: BusEventListener
 			string token_name_A;
 			string token_name_B;
 
-			A = prepare_token(tA, user, token_name_A);
-			B = prepare_token(tB, user, token_name_B);
+			A = prepare_token(tA, whom, token_name_A);
+			B = prepare_token(tB, whom, token_name_B);
 
 			//		log.trace ("[A=%s tokens[1]=%s B=%s]", A, tokens[1], B);
-			if(isTest == true)
+			if(whom_4_cai !is null)
 			{
 				auto cai = whom_4_cai.get(whom, null);
 				if(cai !is null)
@@ -415,7 +370,7 @@ class MandatManager: BusEventListener
 
 			if(tokens[1] == "==")
 				return A == B;
-
+			
 			if(tokens[1] == "*=")
 			{
 				foreach(ch; B)
@@ -502,4 +457,3 @@ class MandatManager: BusEventListener
 		}
 		return A;
 	}
-}
