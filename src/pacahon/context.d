@@ -2,6 +2,7 @@ module pacahon.context;
 
 import ae.utils.container;
 import pacahon.graph;
+import pacahon.vel;
 
 interface Context
 {
@@ -32,47 +33,16 @@ const byte asObject = 0;
 const byte asArray = 1;
 const byte asString = 2;
 
-class Element
+struct Mandat
 {
-	Element[string] pairs;
-	Element[] array;
-	string str;
 	string id;
-
-	byte type;
-
-	override string toString()
-	{
-		if(type == asObject)
-		{
-			string qq;
-
-			foreach(key; pairs.keys)
-			{
-				qq ~= key ~ " : " ~ pairs[key].toString() ~ "\n";
-			}
-
-			return qq;
-		}
-		if(type == asArray)
-		{
-			string qq;
-
-			foreach(el; array)
-			{
-				qq ~= el.toString() ~ "\n";
-			}
-			return qq;
-		} else if(type == asString)
-			return str;
-		else
-			return "?";
-	}
-
-}
+	string whom;
+	string right;
+	TTA expression;	
+} 
 
 public interface Authorizer
 {
 	bool authorize (Ticket ticket, Subject doc);	
-	void get_mandats_4_whom (Ticket ticket,  ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds);
+	void get_mandats_4_whom (Ticket ticket,  ref HashSet!Mandat mandats, ref Set!string*[string] fields, ref HashSet!string templateIds);
 }

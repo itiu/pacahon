@@ -45,7 +45,7 @@ class VQL
 
 	public void get(Ticket ticket, string query_str, ref GraphCluster res, Authorizer authorizer)
 	{
-		//writeln("VQL:get ticket=", ticket);
+		// writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
 
 		StopWatch sw;
 		sw.start();

@@ -299,3 +299,58 @@ public bool is_today_in_interval(string from, string to)
 
 	return true;
 }
+
+public class stack(T)
+{
+
+	T[] data;
+	int pos;
+
+	this()
+	{
+		data = new T[100];
+		pos = 0;
+	}
+
+	T back()
+	{
+		//		writeln("stack:back:pos=", pos, ", data=", data[pos]);
+		return data[pos];
+	}
+
+	T popBack()
+	{
+		if(pos > 0)
+		{
+			//			writeln("stack:popBack:pos=", pos, ", data=", data[pos]);
+			pos--;
+			return data[pos + 1];
+		}
+		return data[pos];
+	}
+
+	void pushBack(T val)
+	{
+		//		writeln("stack:pushBack:pos=", pos, ", val=", val);
+		pos++;
+		data[pos] = val;
+	}
+
+	bool empty()
+	{
+		return pos == 0;
+	}
+
+}
+
+string _tmp_correct_link (string link)
+{
+     // TODO убрать корректировки ссылок в organization: временная коррекция ссылок
+      char[] sscc = link.dup;
+      if(sscc[7] == '_')
+        sscc = sscc[8..$];
+      else if(sscc[8] == '_')
+        sscc = sscc[9..$];
+        return cast(string)sscc;
+}
+

@@ -15,18 +15,17 @@ private
 	import util.Logger;
 
 	import trioplax.mongodb.ComplexKeys;
+	import trioplax.mongodb.TripleStorage;
+
+	import onto.doc_template;
 
 	import mongoc.bson_h;
 	import mongoc.mongo_h;
 
 	import pacahon.know_predicates;
 	import pacahon.graph;
-
-	import onto.doc_template;
 	import pacahon.az.condition;
-
-	import pacahon.context;
-	import trioplax.mongodb.TripleStorage;
+	import pacahon.context;	
 }
 
 import core.vararg;
@@ -1217,8 +1216,8 @@ class MongodbTripleStorage: TripleStorage
 			log.trace("add_to_query return");
 	}
 
-	private bool bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, ref HashSet!Element mandats, ref Set!string*[string] fields_of_mandats, 
+	private void bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
+			ref string[string] fields, ref HashSet!Mandat mandats, ref Set!string*[string] fields_of_mandats, 
 			ref HashSet!string templateIds_of_mandats,	Authorizer authorizer, bool only_id, string predicate_array = null)
 	{
 		while(bson_iterator_next(it))
@@ -1237,22 +1236,12 @@ class MongodbTripleStorage: TripleStorage
 					else
 						name_key = fromStringz(bson_iterator_key(it)).dup;
 
-					//					writeln("prepare_bson @3 name_key:", name_key);
 					string value = fromStringz(bson_iterator_string(it)).dup;
 
 					if(name_key == "@")
 					{
 						//						writeln("prepare_bson @4, value:", value);
-//						if(authorizer !is null)
-//						{
-							//							if(authorizer.authorize(value) == true)
-							//								ss.subject = value;
-							//							else
-							//								return false;
-//						} else												
-						{
-							ss.subject = value;
-						}
+						ss.subject = value;
 					} else if(only_id == false)
 					{
 
@@ -1263,14 +1252,18 @@ class MongodbTripleStorage: TripleStorage
 							if((name_key in fields) !is null)
 							{
 								ss.addPredicate(name_key, value);
-							}
-							else if (fields_of_mandats !is null && (name_key in fields_of_mandats) !is null)
-							{
-								// заполним хэш с именами полей значениями текущей записи
-								*fields_of_mandats[name_key] ~= value;
-							}
+							}							
 						}
 					}
+					
+					if (name_key != "@" && fields_of_mandats !is null && (name_key in fields_of_mandats) !is null)
+					{
+						// заполним хэш с именами полей значениями текущей записи
+						//writeln (name_key, ":", value);
+						value = util.utils._tmp_correct_link(value);
+						*fields_of_mandats[name_key] ~= value;
+					}
+					
 					break;
 				}
 
@@ -1376,7 +1369,6 @@ class MongodbTripleStorage: TripleStorage
 
 			}
 		}
-		return true;
 	}
 
 	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
@@ -1384,7 +1376,7 @@ class MongodbTripleStorage: TripleStorage
 	{
 		Set!string*[string] fields_of_mandats;		
 		HashSet!string templateIds_of_mandats;		
-		HashSet!Element mandats;		
+		HashSet!Mandat mandats;		
 		try
 		{
 			string mostAllFields = fields.get("*", null);
@@ -1427,16 +1419,24 @@ class MongodbTripleStorage: TripleStorage
 				bool authorizedPass = false;
 
 				if(count_subj < render)
-					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, false);
+					bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, false);
 				else
-					authorizedPass = bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, true);
-
-				foreach (mandat ; mandats)
+					bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, true);
+				
+				if(authorizer !is null)
+					authorizedPass = authorizer.authorize(ticket, ss);
+				else
+					authorizedPass = true;
+				
+				if (authorizedPass == false)
 				{
-					bool res = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ, null);
-					if (res == true)
-						break;
+					foreach (mandat ; mandats)
+					{
+						authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, fields_of_mandats, RightType.READ);
+						if (authorizedPass == true)
+							break;
 //					writeln ("mandat=", mandat, ", res=", res);
+					}
 				}
 				
 				if(authorizedPass)

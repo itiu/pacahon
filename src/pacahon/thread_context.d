@@ -117,7 +117,7 @@ class ThreadContext: Context, Authorizer
 		return false;//mandat_manager.ca;
 	}
 
-	void get_mandats_4_whom(Ticket ticket, ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds)
+	void get_mandats_4_whom(Ticket ticket, ref HashSet!Mandat mandats, ref Set!string*[string] fields, ref HashSet!string templateIds)
 	{
 		writeln ("&0 ticket.parentUnitIds=", ticket.parentUnitIds);
 		StopWatch sw_c;
@@ -139,7 +139,7 @@ class ThreadContext: Context, Authorizer
 		return;
 	}
 	
-	private void mrf (string unitId, ref HashSet!Element mandats, ref Set!string*[string] fields, ref HashSet!string templateIds, bool recursive = false)
+	private void mrf (string unitId, ref HashSet!Mandat mandats, ref Set!string*[string] fields, ref HashSet!string templateIds, bool recursive = false)
 	{		
 //		writeln ("unitId=", unitId);
 		string[] parent_ids;

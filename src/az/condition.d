@@ -6,17 +6,22 @@ private
 	import std.stdio;
 	import std.string;
 	import std.array;
+	import std.datetime;	
+
+	import ae.utils.container;
+
 	import util.utils;
+	import util.Logger;
+
 	import trioplax.mongodb.TripleStorage;
+	
+	import pacahon.know_predicates;
 	import pacahon.graph;
 	import pacahon.oi;
-	import util.Logger;
 	import pacahon.vql;
-	import ae.utils.container;
 	import pacahon.az.orgstructure_tree;
-//	import pacahon.thread_context;
 	import pacahon.context;
-	import std.datetime;	
+	import pacahon.vel;	
 }
 
 enum RightType
@@ -36,53 +41,10 @@ static this()
 	log = new Logger("pacahon", "log", "MandatManager");
 }
 
-Element json2Element(ref JSONValue je, ref bool[string] passed_elements, Element oe = null)
-{
-	if(oe is null)
-		oe = new Element;
-
-	if(je.type == JSON_TYPE.OBJECT)
-	{
-		auto atts = je.object;
-
-		int i = 0;
-		foreach(key, value; atts)
-		{
-			if((key in passed_elements) is null)
-			{
-				passed_elements[key] = true;
-				oe.pairs[cast(string) key.dup] = json2Element(value, passed_elements);
-			}
-		}
-		oe.type = asObject;
-
-		return oe;
-	} else if(je.type == JSON_TYPE.ARRAY)
-	{
-
-		auto arr = je.array;
-
-		oe.array = new Element[arr.length];
-		oe.type = asArray;
-
-		int qq = 0;
-		foreach(aa; arr)
-		{
-			oe.array[qq] = json2Element(aa, passed_elements);
-			qq++;
-		}
-	} else if(je.type == JSON_TYPE.STRING)
-	{
-		oe.str = je.str.dup;
-		oe.type = asString;
-	}
-
-	return oe;
-}
-
 struct ConditionsAndIndexes
 {
-	Set!Element conditions;
+//	Set!Element conditions;
+	Set!Mandat conditions;
 
 	// indexes
 	HashSet!string templateIds;
@@ -122,34 +84,44 @@ class MandatManager: BusEventListener
 				res, null);
 
 		int count = 0;
+		JSONValue nil;
 
 		foreach(ss; res.getArray())
 		{
 			try
 			{
-				string mandat_subject = ss.subject;
 				string condition_text = ss.getFirstLiteral("uo:condition");
 				JSONValue condition_json = parseJSON(condition_text);
-				bool[string] passed_elements;
-				Element root = new Element();
-				json2Element(condition_json, passed_elements, root);
-				root.id = mandat_subject;
-
-				Element whom = root.pairs.get("whom", null);
-				if(whom !is null)
+				Mandat mandat = void; 
+				
+				if (condition_json.type == JSON_TYPE.OBJECT)
 				{
-					ConditionsAndIndexes* cai = whom_4_cai.get(whom.str, new ConditionsAndIndexes);
-
+					mandat.id = ss.subject;
+					JSONValue el = condition_json.object.get ("whom", nil);
+					if (el != nil)
+						mandat.whom = el.str;
+					
+					el = condition_json.object.get ("right", nil);
+					if (el != nil)
+						mandat.right = el.str;
+					
+					el = condition_json.object.get ("condition", nil);
+					if (el != nil)
+					{
+						mandat.expression = parse_expr(el.str);
+						writeln ("TTA=", mandat.expression);
+					}
+										
+					ConditionsAndIndexes* cai = whom_4_cai.get(mandat.whom, new ConditionsAndIndexes);					
 					if(cai.conditions.size == 0)
-						whom_4_cai[whom.str] = cai;
-
-					cai.conditions ~= root;
-					calculate_rights_of_mandat(root, whom.str, null, RightType.READ, &whom_4_cai);
-
-					log.trace("found mandat: %s", root.id);
+						whom_4_cai[mandat.whom] = cai;
+					
+					found_templateIds_and_doc_fields (mandat.expression, "", cai.templateIds, cai.fields);
+					
+					cai.conditions ~= mandat;
 				}
-
-			} catch(Exception ex)
+			} 
+			catch(Exception ex)
 			{
 
 				writeln("error:load mandat :", ex.msg);
@@ -170,9 +142,58 @@ class MandatManager: BusEventListener
 	}
 }
 
-	public bool calculate_rights_of_mandat(Element mndt, string whom, Subject doc, RightType rightType, ConditionsAndIndexes*[string]* whom_4_cai)
-	{
+	public bool calculate_rights_of_mandat(Mandat mndt, string userId, Subject doc, ref Set!string*[string] fields, RightType rightType)
+	{		
+//		StopWatch sw_c;
+//		sw_c.start();
 		bool res = false;
+//		writeln ("	MANDAT=", mndt.id);
+		try
+		{
+			string tmp;
+			bool f_rigth_type = false;
+
+			foreach(ch; mndt.right)
+			{
+				if(ch == 'c' && rightType == RightType.CREATE)
+				{
+					f_rigth_type = true;
+					break;
+				} else if(ch == 'r' && rightType == RightType.READ)
+				{
+					f_rigth_type = true;
+					break;
+				} else if(ch == 'w' && rightType == RightType.WRITE)
+				{
+					f_rigth_type = true;
+					break;
+				} else if(ch == 'u' && rightType == RightType.UPDATE)
+				{
+					f_rigth_type = true;
+					break;
+				} else if(ch == 'a')
+				{
+					f_rigth_type = true;
+					break;
+				}
+			}
+
+			if(f_rigth_type == false)
+				return false;
+		
+		
+		res = eval(userId, mndt.expression , "", doc, fields, tmp);		
+		}
+		finally
+		{
+//		sw_c.stop();		
+//		writeln ("мандат =", mndt);
+//		writeln (res, ", время вычисления мандата, time=", sw_c.peek().usecs);
+		}
+		
+		return res;
+	}
+/*		
 		StopWatch sw_c;
 		sw_c.start();
 		
@@ -240,8 +261,7 @@ class MandatManager: BusEventListener
 			if(condt !is null)
 			{
 				if(condt.type == asString)
-				{
-
+				{					
 					if(trace_msg[76] == 1)
 						log.trace("eval (%s)", condt.str);
 
@@ -262,6 +282,7 @@ class MandatManager: BusEventListener
 		writeln ("мандат =", mndt);
 		writeln ("время вычисления мандата, time=", sw_c.peek().usecs);
 		}
+		
 		return res;
 	}
 
@@ -417,7 +438,7 @@ class MandatManager: BusEventListener
 					if(ttt[1] == "$rights")
 					{
 						// 2. считаем документ по значению из[2] в: triple_list_element* doc1
-						/*						triple_list_element* data_doc1 = ts.getTriplesUseIndexS1PPOO(null, user.ptr, docId.ptr);
+												triple_list_element* data_doc1 = ts.getTriplesUseIndexS1PPOO(null, user.ptr, docId.ptr);
 
 						 if(data_doc1 !is null)
 						 {
@@ -431,7 +452,7 @@ class MandatManager: BusEventListener
 						 if(data_doc1 !is null)
 						 {
 						 A = data_doc1.getFirstLiteral(ttt[1]);
-						 }*/
+						 }
 					}
 				}
 			}
@@ -457,3 +478,100 @@ class MandatManager: BusEventListener
 		}
 		return A;
 	}
+*/
+
+Set!string* empty_list_of_field;
+
+public bool eval(string userId, TTA tta, string p_op, Subject doc, ref Set!string*[string] fields, out string token, int level = 0)
+{
+	if(tta.op == "==" || tta.op == "!=")
+	{
+		string A;
+		eval(userId, tta.L, tta.op, doc, fields, A, level + 1);
+		string B;
+		eval(userId, tta.R, tta.op, doc, fields, B, level + 1);
+//		writeln ("\ndoc=", doc);
+//		writeln ("fields=", fields);
+//		writeln (A, " == ", B);
+		
+		string ff;
+		if (A == "mo/doc#tmplid")
+			ff = class__identifier;
+		else		
+			ff = "uo:" ~ A;
+
+		if (B == "$user")
+			B = userId;
+			
+//		writeln ("ff=", ff);
+//		writeln ("fields.get (ff).items=", fields.get (ff, empty_list_of_field).items);
+		
+		foreach (field ; fields.get (ff, empty_list_of_field).items)
+		{
+//			writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
+			if (tta.op == "==" && field == B)
+				return true;
+				
+			if (tta.op == "!=" && field != B)
+				return true;
+		}
+			
+		return false;		
+	} else if(tta.op == "&&")
+	{
+		bool A = false, B = false;
+		
+		if(tta.R !is null)
+			A = eval(userId, tta.R, tta.op, doc, fields, token, level + 1);
+
+		if(tta.L !is null)
+			B = eval(userId, tta.L, tta.op, doc, fields, token, level + 1);
+			
+		return A && B; 		
+	}
+	else if(tta.op == "||")
+	{
+		bool A = false, B = false;
+
+		if(tta.R !is null)
+			A = eval(userId, tta.R, tta.op, doc, fields, token, level + 1);
+
+		if(tta.L !is null)
+			B = eval(userId, tta.L, tta.op, doc, fields, token, level + 1);
+					
+		return A || B; 		
+	} else
+	{
+		token = tta.op;
+	}
+	return false;
+}
+
+public string found_templateIds_and_doc_fields(TTA tta, string p_op, ref HashSet!string templateIds, ref HashSet!string fields, int level = 0)
+{
+	if(tta.op == "==" || tta.op == "!=")
+	{
+		string A = found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);
+		string B = found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
+		//writeln (A, " == ", B);
+		if (A == "mo/doc#tmplid" || A == class__identifier)
+		{
+			templateIds.add (B);
+			fields.add (class__identifier);
+		}
+		else			
+			fields.add ("uo:" ~ A);
+		
+	} else if(tta.op == "&&" || tta.op == "||")
+	{
+		if(tta.R !is null)
+			found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
+
+		if(tta.L !is null)
+			found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);		
+	} else
+	{
+		return tta.op;
+	}
+	return "";
+}

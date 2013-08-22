@@ -12,66 +12,26 @@ private
 	import std.json;
 	import std.outbuffer;
 	import std.c.string;
+	
+	import util.utils;
+	
 	import pacahon.graph;
 }
 
-// expression
-// "==", "!=" 
-// "=*" : полнотекстовый поиск
-// "=+" : полнотекстовый поиск в реификации
-// "&&", "||", 
-// ">", "<", ">=", "<=", 
-// "->" : переход по ссылке на другой документ 
+//  expression
+//  "==", "!=" 
+//  "=*" : полнотекстовый поиск
+//  "=+" : полнотекстовый поиск в реификации
+//  "&&", "||", 
+//  ">", "<", ">=", "<=", 
+//  "->" : переход по ссылке на другой документ 
 
-class stack(T)
-{
-
-	T[] data;
-	int pos;
-
-	this()
-	{
-		data = new T[100];
-		pos = 0;
-	}
-
-	T back()
-	{
-		//		writeln("stack:back:pos=", pos, ", data=", data[pos]);
-		return data[pos];
-	}
-
-	T popBack()
-	{
-		if(pos > 0)
-		{
-			//			writeln("stack:popBack:pos=", pos, ", data=", data[pos]);
-			pos--;
-			return data[pos + 1];
-		}
-		return data[pos];
-	}
-
-	void pushBack(T val)
-	{
-		//		writeln("stack:pushBack:pos=", pos, ", val=", val);
-		pos++;
-		data[pos] = val;
-	}
-
-	bool empty()
-	{
-		return pos == 0;
-	}
-
-}
-
-bool delim(char c)
+private bool delim(char c)
 {
 	return c == ' ';
 }
 
-string is_op(string c)
+private string is_op(string c)
 {
 	//    writeln (c);
 
@@ -95,7 +55,7 @@ string is_op(string c)
 	return null;
 }
 
-int priority(string op)
+private int priority(string op)
 {
 	if(op == "<" || op == "<=" || op == ">" || op == "=>")
 		return 4;
@@ -112,7 +72,7 @@ int priority(string op)
 	return -1;
 }
 
-void process_op (ref stack!TTA st, string op) 
+private void process_op (ref stack!TTA st, string op) 
 {
 	TTA r = st.popBack();
 	TTA l = st.popBack();
@@ -169,7 +129,7 @@ class TTA
 	}
 }
 
-TTA parse_expr(string s)
+public TTA parse_expr(string s)
 {
 	stack!TTA st = new stack!TTA();
 	stack!string op = new stack!string();
@@ -221,6 +181,19 @@ TTA parse_expr(string s)
 						//				    writeln ("	operand=", operand);
 
 						st.pushBack(new TTA(operand, null, null));
+					}
+					else if(s[i] == '`')
+					{
+						i++;
+						int bp = i;
+
+						while(i < s.length && s[i] != '`')
+							i++;
+
+						operand = s[bp .. i];
+						//				    writeln ("	operand=", operand);
+
+						st.pushBack(new TTA(operand, null, null));
 					} else if(s[i] == '[')
 					{
 						i++;
@@ -233,6 +206,18 @@ TTA parse_expr(string s)
 						//				    writeln ("	operand=", operand);
 
 						st.pushBack(new TTA(operand, null, null));
+					}
+					else 
+					{
+						int bp = i;
+
+						while(i < s.length && s[i] != ' ' && s[i] != '&' && s[i] != '|' && s[i] != '='&& s[i] != '<'&& s[i] != '>'&& s[i] != '!' && s[i] != '-' && s[i] != ' ')
+							i++;
+
+						operand = s[bp .. i];
+						//				    writeln ("	operand=", operand);
+
+						st.pushBack(new TTA(operand, null, null));						
 					}
 
 				}

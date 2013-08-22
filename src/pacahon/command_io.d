@@ -388,7 +388,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 				string query = s_query.getFirstLiteral("query");
 				if(query !is null)
 				{
-					writeln ("#1 ticket=", ticket);
+					//writeln ("#1 ticket=", ticket);
 					thread_context.vql.get(ticket, query, res, thread_context);
 				} else
 				{
