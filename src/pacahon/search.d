@@ -3,16 +3,12 @@ module pacahon.search;
 private import std.outbuffer;
 private import std.stdio;
 
+private import util.oi;
+private import util.Logger;
 private import pacahon.know_predicates;
-
 private import pacahon.graph;
 private import pacahon.thread_context;
-private import pacahon.oi;
 private import onto.doc_template;
-
-//private import pacahon.json_ld.parser1;
-
-private import util.Logger;
 
 Logger log;
 

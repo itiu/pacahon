@@ -20,6 +20,7 @@ src/util/json_ld_parser1.d
 src/util/oi.d 
 src/util/libchash_h.d
 src/util/load_info.d 
+src/util/bangdb_header.d
 
 src/trioplax/mongodb/ComplexKeys.d 
 src/trioplax/mongodb/MongodbTripleStorage.d 

@@ -10,21 +10,15 @@ private import std.exception;
 private import std.datetime;
 private import std.uuid;
 private import std.array: appender;
-
-private import pacahon.graph;
-private import pacahon.thread_context;
-
-//private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
-private import util.Logger;
-
-private import pacahon.know_predicates;
-
 private import std.regex;
 
+private import trioplax.mongodb.TripleStorage;
+private import util.Logger;
 private import util.utils;
-
-private import pacahon.oi;
+private import util.oi;
+private import pacahon.know_predicates;
+private import pacahon.graph;
+private import pacahon.thread_context;
 
 Logger log;
 

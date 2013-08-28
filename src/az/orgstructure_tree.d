@@ -43,11 +43,12 @@ class OrgStructureTree: BusEventListener
 		log.trace_log_and_console("start load org structure links");
 
 		GraphCluster res = new GraphCluster();
-		vql.get(null, "return { 'docs:parentUnit'}" " filter { 'a' == 'docs:unit_card' }", res, null);
+		vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res, null);
 
 		foreach(ss; res.getArray())
 		{
 			Objectz[] parents = ss.getObjects("docs:parentUnit");
+			//writeln ("# PARENTS:", parents);
 			string[] parent_ids = new string[parents.length];
 
 			foreach(idx, parent; parents)
@@ -70,6 +71,8 @@ class OrgStructureTree: BusEventListener
 			else if(sscc[8] == '_')
 				sscc = sscc[9..$];
 			node_4_parents[cast(string)sscc] = parent_ids;
+			
+			//writeln ("# [", cast(string)sscc, "]=", parent_ids);
 		}
 
 		log.trace_log_and_console("end load org structure links, count = %d", res.length);

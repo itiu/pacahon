@@ -1,4 +1,4 @@
-module pacahon.oi;
+module util.oi;
 
 private import mq_client;
 private import util.Logger;
@@ -25,19 +25,27 @@ class OI
 	{
 	}
 
-	void connect(string[string] params)
+	int connect(string[string] params)
 	{
 		_alias = params.get("alias", null);
 		string transport = params.get("transport", "zmq");
 
-		writeln("gateway:" ~ _alias ~ ", transport:" ~ transport ~ ", params:" ~ params.values);
 		if(transport == "zmq")
 			client = new zmq_point_to_poin_client();
 
 		else if(transport == "rabbitmq")
 			client = new rabbitmq_client();
 		
-		client.connect_as_req(params);
+		int code = client.connect_as_req(params);
+		if (code == 0)
+			log.trace_log_and_console("success connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
+		else	
+		{			
+			log.trace_log_and_console("fail connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
+			return -1;
+		}
+			
+		return 0;	
 	}
 
 	void send(string msg)

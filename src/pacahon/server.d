@@ -23,6 +23,7 @@ private
 	import util.Logger;
 	import util.json_ld.parser1;
 	import util.utils;
+	import util.oi;
 
 	import pacahon.context;
 	import pacahon.graph;
@@ -32,8 +33,7 @@ private
 	import pacahon.load_info;
 	import pacahon.thread_context;
 	import pacahon.command.event_filter;
-	import pacahon.oi;
-	import pacahon.ba2pacahon;
+	import pacahon.ba2pacahon;	
 }
 
 Logger log;
@@ -44,6 +44,7 @@ static this()
 	log = new Logger("pacahon", "log", "server");
 	io_msg = new Logger("pacahon", "io", "server");
 }
+
 
 void main(char[][] args)
 {

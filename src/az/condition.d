@@ -10,6 +10,7 @@ private
 
 	import ae.utils.container;
 
+	import util.oi;
 	import util.utils;
 	import util.Logger;
 
@@ -17,7 +18,6 @@ private
 	
 	import pacahon.know_predicates;
 	import pacahon.graph;
-	import pacahon.oi;
 	import pacahon.vql;
 	import pacahon.az.orgstructure_tree;
 	import pacahon.context;
@@ -109,7 +109,7 @@ class MandatManager: BusEventListener
 					if (el != nil)
 					{
 						mandat.expression = parse_expr(el.str);
-						writeln ("TTA=", mandat.expression);
+						//writeln ("TTA=", mandat.expression);
 					}
 										
 					ConditionsAndIndexes* cai = whom_4_cai.get(mandat.whom, new ConditionsAndIndexes);					
@@ -130,27 +130,28 @@ class MandatManager: BusEventListener
 		}
 
 		//		writeln (whom_4_array_of_condition);
-		foreach(key, value; whom_4_cai)
-		{
-			writeln("\n", key);
-			writeln(value.templateIds.keys);
-			writeln(value.fields.keys);
-		}
+		//foreach(key, value; whom_4_cai)
+		//{
+		//	writeln("\n", key);
+		//	writeln(value.templateIds.keys);
+		//	writeln(value.fields.keys);
+		//}
 
 		log.trace_log_and_console("end load mandats, count=%d, whom_4_array_of_condition.length=%d", res.length,
 				whom_4_cai.length);
+		}
 	}
-}
 
-	public bool calculate_rights_of_mandat(Mandat mndt, string userId, Subject doc, ref Set!string*[string] fields, RightType rightType)
+	public bool calculate_rights_of_mandat(Mandat mndt, string userId, Subject doc, RightType rightType)
 	{		
 //		StopWatch sw_c;
 //		sw_c.start();
 		bool res = false;
-//		writeln ("	MANDAT=", mndt.id);
+		//writeln ("	DOC=", doc);
+		//writeln ("	MANDAT=", mndt);
 		try
 		{
-			string tmp;
+			string dummy;
 			bool f_rigth_type = false;
 
 			foreach(ch; mndt.right)
@@ -182,17 +183,134 @@ class MandatManager: BusEventListener
 				return false;
 		
 		
-		res = eval(userId, mndt.expression , "", doc, fields, tmp);		
+			res = eval(userId, mndt.expression , "", doc, dummy);		
 		}
 		finally
 		{
-//		sw_c.stop();		
-//		writeln ("мандат =", mndt);
+//		sw_c.stop();
+//		if (res == true)
+//		{		
+		//writeln ("мандат =", mndt);		
 //		writeln (res, ", время вычисления мандата, time=", sw_c.peek().usecs);
+//		}
 		}
 		
 		return res;
 	}
+
+	public bool eval(string userId, TTA tta, string p_op, Subject doc, out string token, int level = 0)
+	{
+		if(tta.op == "==" || tta.op == "!=")
+		{
+			string A;
+			eval(userId, tta.L, tta.op, doc, A, level + 1);
+			string B;
+			eval(userId, tta.R, tta.op, doc, B, level + 1);
+//			writeln ("\ndoc=", doc);
+//			writeln ("fields=", fields);
+//			writeln (A, " == ", B);
+		
+			string ff;
+			if (A == "mo/doc#tmplid")
+				ff = class__identifier;
+			else		
+				ff = "uo:" ~ A;
+
+			if (B == "$user")
+				B = userId;
+			
+		//writeln ("ff=", ff);
+		//writeln ("fields.get (ff).items=", doc.getObjects(ff));
+		
+			foreach (field_i ; doc.getObjects(ff))
+			{
+				string field = field_i.literal;
+				if (field[3] == ':')
+				{
+					if (field[7] == '_')
+						field = field[8..$];
+					else if (field[8] == '_')
+						field = field[9..$];
+				}	
+			
+				//writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
+				if (tta.op == "==" && field == B)
+					return true;
+				
+				if (tta.op == "!=" && field != B)
+					return true;
+			}
+			
+			return false;		
+		} else if(tta.op == "&&")
+		{
+			bool A = false, B = false;
+		
+			if(tta.R !is null)
+				A = eval(userId, tta.R, tta.op, doc, token, level + 1);
+
+			if(tta.L !is null)
+				B = eval(userId, tta.L, tta.op, doc, token, level + 1);
+			
+			return A && B; 		
+		}
+		else if(tta.op == "||")
+		{
+			bool A = false, B = false;
+
+			if(tta.R !is null)
+				A = eval(userId, tta.R, tta.op, doc, token, level + 1);
+				
+			if (A == true)
+				return true;	
+
+			if(tta.L !is null)
+				B = eval(userId, tta.L, tta.op, doc, token, level + 1);
+					
+			return A || B; 		
+		} else
+		{
+			token = tta.op;
+		}
+		return false;
+	}
+
+	public string found_templateIds_and_doc_fields(TTA tta, string p_op, ref HashSet!string templateIds, ref HashSet!string fields, int level = 0)
+	{
+		if(tta.op == "==" || tta.op == "!=")
+		{
+			string A = found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);
+			string B = found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
+			//writeln (A, " == ", B);
+			if (A == "mo/doc#tmplid" || A == class__identifier)
+			{
+				templateIds.add (B);
+				fields.add (class__identifier);
+			}
+			else			
+				fields.add ("uo:" ~ A);
+		
+		} 
+		else if(tta.op == "&&" || tta.op == "||")
+		{
+			if(tta.R !is null)
+				found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
+
+			if(tta.L !is null)
+				found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);		
+		} 
+		else
+		{
+			return tta.op;
+		}
+		
+		return "";
+	}
+
+
+
+
+
 /*		
 	private bool eval(string expr, ref Subject doc, string whom, ConditionsAndIndexes*[string]* whom_4_cai)
 	{
@@ -366,99 +484,3 @@ class MandatManager: BusEventListener
 		return A;
 	}
 */
-
-Set!string* empty_list_of_field;
-
-public bool eval(string userId, TTA tta, string p_op, Subject doc, ref Set!string*[string] fields, out string token, int level = 0)
-{
-	if(tta.op == "==" || tta.op == "!=")
-	{
-		string A;
-		eval(userId, tta.L, tta.op, doc, fields, A, level + 1);
-		string B;
-		eval(userId, tta.R, tta.op, doc, fields, B, level + 1);
-//		writeln ("\ndoc=", doc);
-//		writeln ("fields=", fields);
-//		writeln (A, " == ", B);
-		
-		string ff;
-		if (A == "mo/doc#tmplid")
-			ff = class__identifier;
-		else		
-			ff = "uo:" ~ A;
-
-		if (B == "$user")
-			B = userId;
-			
-//		writeln ("ff=", ff);
-//		writeln ("fields.get (ff).items=", fields.get (ff, empty_list_of_field).items);
-		
-		foreach (field ; fields.get (ff, empty_list_of_field).items)
-		{
-//			writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
-			if (tta.op == "==" && field == B)
-				return true;
-				
-			if (tta.op == "!=" && field != B)
-				return true;
-		}
-			
-		return false;		
-	} else if(tta.op == "&&")
-	{
-		bool A = false, B = false;
-		
-		if(tta.R !is null)
-			A = eval(userId, tta.R, tta.op, doc, fields, token, level + 1);
-
-		if(tta.L !is null)
-			B = eval(userId, tta.L, tta.op, doc, fields, token, level + 1);
-			
-		return A && B; 		
-	}
-	else if(tta.op == "||")
-	{
-		bool A = false, B = false;
-
-		if(tta.R !is null)
-			A = eval(userId, tta.R, tta.op, doc, fields, token, level + 1);
-
-		if(tta.L !is null)
-			B = eval(userId, tta.L, tta.op, doc, fields, token, level + 1);
-					
-		return A || B; 		
-	} else
-	{
-		token = tta.op;
-	}
-	return false;
-}
-
-public string found_templateIds_and_doc_fields(TTA tta, string p_op, ref HashSet!string templateIds, ref HashSet!string fields, int level = 0)
-{
-	if(tta.op == "==" || tta.op == "!=")
-	{
-		string A = found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);
-		string B = found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
-		//writeln (A, " == ", B);
-		if (A == "mo/doc#tmplid" || A == class__identifier)
-		{
-			templateIds.add (B);
-			fields.add (class__identifier);
-		}
-		else			
-			fields.add ("uo:" ~ A);
-		
-	} else if(tta.op == "&&" || tta.op == "||")
-	{
-		if(tta.R !is null)
-			found_templateIds_and_doc_fields(tta.R, tta.op, templateIds, fields, level + 1);
-
-		if(tta.L !is null)
-			found_templateIds_and_doc_fields(tta.L, tta.op, templateIds, fields, level + 1);		
-	} else
-	{
-		return tta.op;
-	}
-	return "";
-}

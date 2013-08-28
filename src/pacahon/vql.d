@@ -15,9 +15,11 @@ private
 	import std.c.string;
 	import mongoc.bson_h;
 
+	import ae.utils.container;
+	import util.oi;
+
 	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
-	import pacahon.oi;
 	import pacahon.context;
 }
 
@@ -47,8 +49,8 @@ class VQL
 	{
 		// writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
 
-		StopWatch sw;
-		sw.start();
+		//StopWatch sw;
+		//sw.start();
 
 		split_on_section(query_str);
 		//		sw.stop();
@@ -70,7 +72,7 @@ class VQL
 		{
 		}
 
-		int authorize = 1000;
+		int authorize = 10000;
 		try
 		{
 			if (found_sections[AUTHORIZE] !is null && found_sections[AUTHORIZE].length > 0)
@@ -82,7 +84,7 @@ class VQL
 		if(section_is_found[SORT] == true && from_search_point !is null)
 		{
 			// если найдена секция sort, то запрос делаем к elasticsearch, далее данные в количестве render считываем из mongo 
-
+			writeln ("SEARCH FROM ELASTIC");
 			JSONValue full_query = void;
 			full_query.type = JSON_TYPE.OBJECT;
 			full_query.object = null;
@@ -102,12 +104,31 @@ class VQL
 
 			full_query.object["fields"] = fields;
 
-			JSONValue jv1 = void;
-			toElasticJSON(tta, "", &query, &jv1, 0);
+			JSONValue _must = void;
+			_must.type = JSON_TYPE.ARRAY;
+			_must.array = null;
+
+			JSONValue _filter = void;
+			_filter.type = JSON_TYPE.ARRAY;
+			_filter.array = null;
+
+			prepare_for_Elastic(tta, "", &_must, &_filter);
+			
+			JSONValue _bool = void;
+			_bool.type = JSON_TYPE.OBJECT;
+			_bool.object = null;
+
+
+			_bool.object["must"] = _must; 
+
+			query.object["bool"] = _bool; 
+
+//			JSONValue jv1 = void;
+//			toElasticJSON(tta, "", &query, &jv1, 0);
 			full_query.object["query"] = query;
 
+			
 			writeln("full_query :", toJSON(&full_query));
-
 		} else
 		{
 			bson query;
@@ -176,8 +197,8 @@ class VQL
 				}
 			}
 
-			sw.stop();
-			long t = cast(long) sw.peek().usecs;
+			//sw.stop();
+			//long t = cast(long) sw.peek().usecs;
 
 			//		writeln("convert to mongo query:", t, " µs");
 
@@ -379,6 +400,60 @@ public string toMongoBSON(TTA tta, string p_op, bson* val, int level)
 		}
 
 	} else
+	{
+		return tta.op;
+	}
+	return null;
+}
+
+///////////////////////////////////////////////////////////////////////
+
+public string prepare_for_Elastic(TTA tta, string prev_op, JSONValue* must, JSONValue* filter)
+{
+	if(tta.op == "==")
+	{
+		string ls = prepare_for_Elastic(tta.L, tta.op, must, filter);
+		string rs = prepare_for_Elastic(tta.R, tta.op, must, filter);
+		
+
+		JSONValue term = void;
+		term.type = JSON_TYPE.OBJECT;
+		term.object = null;
+
+		JSONValue cond = void;
+		cond.type = JSON_TYPE.OBJECT;
+		cond.object = null;
+
+		JSONValue val = void;
+		val.type = JSON_TYPE.STRING;
+		val.str = rs;								
+
+		cond.object[ls] = val;
+			
+		term.object["term"] = cond;
+
+		if (prev_op == "&&")
+			must.array ~= term;
+		else if (prev_op == "||")
+			filter.array ~= term;
+	} 
+	else if(tta.op == "&&")
+	{
+		if(tta.R !is null)
+			prepare_for_Elastic(tta.R, tta.op, must, filter);
+
+		if(tta.L !is null)
+			prepare_for_Elastic(tta.L, tta.op, must, filter);
+	}
+	else if (tta.op == "||")
+	{
+		if(tta.R !is null)
+			prepare_for_Elastic(tta.R, tta.op, must, filter);
+
+		if(tta.L !is null)
+			prepare_for_Elastic(tta.L, tta.op, must, filter);
+	}
+	else
 	{
 		return tta.op;
 	}

@@ -44,5 +44,5 @@ struct Mandat
 public interface Authorizer
 {
 	bool authorize (Ticket ticket, Subject doc);	
-	void get_mandats_4_whom (Ticket ticket,  ref HashSet!Mandat mandats, ref Set!string*[string] fields, ref HashSet!string templateIds);
+	void get_mandats_4_whom (Ticket ticket,  ref HashSet!Mandat mandats);
 }

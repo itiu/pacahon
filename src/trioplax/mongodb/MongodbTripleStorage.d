@@ -8,9 +8,10 @@ private
 	import std.string;
 	import std.outbuffer;
 	import std.conv;
-
+	import std.format;
 	import core.stdc.stdio;
 	import core.thread;
+	
 	import ae.utils.container;
 	import util.Logger;
 
@@ -25,7 +26,9 @@ private
 	import pacahon.know_predicates;
 	import pacahon.graph;
 	import pacahon.az.condition;
-	import pacahon.context;	
+	import pacahon.context;
+	
+	import util.bangdb_header;	
 }
 
 import core.vararg;
@@ -37,449 +40,40 @@ void eo(...)
 }
 
 Logger log;
+TripleStorage _tss[];
 
 static this()
 {
 	log = new Logger("pacahon", "log", "");
+	_tss = new TripleStorage[0];
 }
+version (linux) import std.c.linux.linux;
+private import std.process;
+private import core.runtime;
 
-class TripleStorageMongoDBIterator: TLIterator
+// Called upon a signal from Linux
+extern (C) public void sighandler1(int sig) nothrow @system
 {
-	mongo_cursor* cursor;
-	byte[string] reading_predicates;
-	bool is_query_all_predicates = false;
-	bool is_get_all = false;
-	bool is_get_all_reifed = false;
-
-	this(mongo_cursor* _cursor)
-	{
-		cursor = _cursor;
-	}
-
-	this(mongo_cursor* _cursor, ref byte[string] _reading_predicates)
-	{
-		cursor = _cursor;
-		reading_predicates = _reading_predicates;
-
-		if(reading_predicates.length > 0)
-		{
-			byte* type_of_getting_field = (query__all_predicates in reading_predicates);
-
-			if(type_of_getting_field !is null)
-			{
-				is_query_all_predicates = true;
-				if(*type_of_getting_field == field.GET)
-				{
-					is_get_all = true;
-				} else if(*type_of_getting_field == field.GET_REIFED)
-				{
-					is_get_all_reifed = true;
-				}
-
-			}
-		}
-
-	}
-
-	~this()
-	{
-		if(cursor !is null)
-		{
-			mongo_cursor_destroy(cursor);
-		}
-	}
-
-	int opApply(int delegate(ref Triple) dg)
-	{
-		if(cursor is null)
-			return -1;
-
-		int result = 0;
-
-		string S;
-		string P;
-		string O;
-
-		Triple[][FKeys] reif_triples;
-		int count_of_reifed_data = 0;
-
-		if(trace_msg[1007] == 1)
-			log.trace("opApply:TripleStorageMongoDBIterator:cursor %x", cursor);
-
-		if(trace_msg[1007] == 1)
-			log.trace("opApply:TripleStorageMongoDBIterator:reading_predicates %s", reading_predicates);
-
-		while(mongo_cursor_next(cursor) == MONGO_OK)
-		{
-			if(trace_msg[1007] == 1)
-				log.trace("while(mongo_cursor_next(cursor) == MONGO_OK)");
-
-			bson_iterator it;
-			bson_iterator_init(&it, &cursor.current);
-
-			short count_fields = 0;
-			while(bson_iterator_next(&it))
-			{
-				//					// writeln ("it++");
-				bson_type type = bson_iterator_type(&it);
-
-				if(trace_msg[1007] == 1)
-					log.trace("TripleStorageMongoDBIterator:next key, TYPE=%d", type);
-
-				switch(type)
-				{
-					case bson_type.BSON_STRING:
-					{
-						string _name_key = fromStringz(bson_iterator_key(&it));
-
-						if(trace_msg[1008] == 1)
-							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
-
-						// если не указанны требуемые предикаты, то берем какие были считанны
-						byte* type_of_getting_field = null;
-						if(is_query_all_predicates == false && reading_predicates.length > 0)
-						{
-							type_of_getting_field = (_name_key in reading_predicates);
-
-							if(type_of_getting_field is null)
-								break;
-						}
-
-						string _value = fromStringz(bson_iterator_string(&it));
-
-						if(trace_msg[1009] == 1)
-							log.trace("TripleStorageMongoDBIterator:_value:%s", _value);
-
-						if(_name_key == "@")
-						{
-							S = _value;
-						} else if(_name_key[0] != '_')
-						{
-							P = _name_key;
-							O = _value;
-
-							if(O !is null)
-							{
-								Triple tt000 = new Triple(S, P, O);
-
-								result = dg(tt000);
-								if(result)
-									return -1;
-							}
-							//							}
-
-							// проверим есть ли для этого триплета реифицированные данные
-							if(is_get_all_reifed == true || type_of_getting_field !is null && *type_of_getting_field == field.GET_REIFED)
-							{
-								FKeys t3 = new FKeys(S, P, O);
-
-								Triple[]* vv = t3 in reif_triples;
-								if(vv !is null)
-								{
-									Triple[] r1_reif_triples = *vv;
-
-									if(r1_reif_triples !is null && r1_reif_triples.length > 0)
-									{
-										Triple tt0 = new Triple(r1_reif_triples[0].S, "a", "rdf:Statement");
-
-										result = dg(tt0);
-										if(result)
-											return 1;
-
-										tt0 = new Triple(r1_reif_triples[0].S, "rdf:subject", S);
-
-										result = dg(tt0);
-										if(result)
-											return 1;
-
-										tt0 = new Triple(r1_reif_triples[0].S, "rdf:predicate", P);
-										result = dg(tt0);
-										if(result)
-											return 1;
-
-										tt0 = new Triple(r1_reif_triples[0].S, "rdf:object", O);
-										result = dg(tt0);
-										if(result)
-											return 1;
-
-										foreach(tt; r1_reif_triples)
-										{
-											// можно добавлять в список
-											//											if(trace_msg[1010] == 1)
-											//												log.trace("reif : %s", tt);
-
-											result = dg(tt);
-											if(result)
-												return 1;
-										}
-									}
-								}
-							}
-
-						}
-
-						break;
-					}
-
-					case bson_type.BSON_ARRAY:
-					{
-						string _name_key = fromStringz(bson_iterator_key(&it));
-
-						if(trace_msg[1008] == 1)
-							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
-
-						if(_name_key != "@" && _name_key[0] != '_')
-						{
-
-							// если не указанны требуемые предикаты, то берем какие были считанны
-							byte* type_of_getting_field = null;
-							if(is_query_all_predicates == false && reading_predicates.length > 0)
-							{
-								type_of_getting_field = (_name_key in reading_predicates);
-
-								if(type_of_getting_field is null)
-									break;
-							}
-
-							bson_iterator i_1;
-							bson_iterator_subiterator(&it, &i_1);
-
-							while(bson_iterator_next(&i_1))
-							{
-								switch(bson_iterator_type(&i_1))
-								{
-									case bson_type.BSON_STRING:
-									{
-										string A_value = fromStringz(bson_iterator_string(&i_1));
-
-										if(A_value.length > 0)
-										{
-											Triple tt0 = new Triple(S, _name_key, A_value);
-											result = dg(tt0);
-											if(result)
-												return 1;
-										}
-									}
-									default:
-									break;
-								}
-
-							}
-						}
-						break;
-					}
-
-					case bson_type.BSON_OBJECT:
-					{
-						string _name_key = fromStringz(bson_iterator_key(&it));
-
-						if(trace_msg[1008] == 1)
-							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
-
-						// если не указанны требуемые предикаты, то берем какие были считанны
-						byte* type_of_getting_field = null;
-						if(is_query_all_predicates == false && reading_predicates.length > 0)
-						{
-							type_of_getting_field = (_name_key in reading_predicates);
-
-							if(type_of_getting_field is null)
-								break;
-						}
-
-						if(_name_key[0] == '_' && _name_key[1] == 'r' && _name_key[2] == 'e' && _name_key[3] == 'i')
-						{
-							string s_reif_parent_triple = S;
-							string p_reif_parent_triple = _name_key[6 .. $];
-
-							// это реифицированные данные, восстановим факты его образующие
-							// добавим в список:
-							//	_new_node_uid a fdr:Statement
-							//	_new_node_uid rdf:subject [$S]
-							//	_new_node_uid rdf:predicate [$_name_key[6..]]
-							//	_new_node_uid rdf:object [?]
-
-							Triple[] r_triples = new Triple[10];
-							int last_r_triples = 0;
-
-							//							if(trace_msg[1013] == 1)
-							//								log.trace("TripleStorageMongoDBIterator:REIFFF _name_key:%s", _name_key);
-
-							//							char* val = bson_iterator_value(&it);
-							bson_iterator i_L1;
-							bson_iterator_subiterator(&it, &i_L1);
-							//							bson_iterator_init(&i_L1, val);
-
-							while(bson_iterator_next(&i_L1))
-							{
-								switch(bson_iterator_type(&i_L1))
-								{
-
-									case bson_type.BSON_OBJECT:
-									{
-										count_of_reifed_data++; //???
-
-										string reifed_data_subj = "_:R_" ~ text(count_of_reifed_data);
-										//										log.trace("TripleStorageMongoDBIterator: # <, count_of_reifed_data=%s", reifed_data_subj);										
-
-										string _name_key_L1 = fromStringz(bson_iterator_key(&i_L1));
-										string o_reif_parent_triple = _name_key_L1;
-
-										if(trace_msg[1014] == 1)
-											log.trace("TripleStorageMongoDBIterator:_name_key_L1 %s", _name_key_L1);
-
-										//										char* val_L2 = bson_iterator_value(&i_L1);
-
-										//										log.trace("TripleStorageMongoDBIterator: val_L2 %s", fromStringz(val_L2));
-
-										bson_iterator i_L2;
-										//										bson_iterator_init(&i_L2, val_L2);
-										bson_iterator_subiterator(&i_L1, &i_L2);
-
-										//										log.trace("TripleStorageMongoDBIterator: # {");
-
-										while(bson_iterator_next(&i_L2))
-										{
-											switch(bson_iterator_type(&i_L2))
-											{
-												case bson_type.BSON_STRING:
-												{
-													string _name_key_L2 = fromStringz(bson_iterator_key(&i_L2));
-
-													if(trace_msg[1015] == 1)
-														log.trace("TripleStorageMongoDBIterator:_name_key_L2=%s", _name_key_L2);
-
-													string _name_val_L2 = fromStringz(bson_iterator_string(&i_L2));
-
-													if(trace_msg[1016] == 1)
-														log.trace("TripleStorageMongoDBIterator:_name_val_L2L=%s", _name_val_L2);
-
-													//	r_triple.P = _name_key_L2;
-													//	r_triple.O = _name_val_L2;
-													//	r_triple.S = cast(immutable) reifed_data_subj;
-
-													Triple r_triple = new Triple(reifed_data_subj, _name_key_L2, _name_val_L2);
-													//													log.trace("++ triple %s", r_triple);
-
-													if(last_r_triples >= r_triples.length)
-														r_triples.length += 50;
-
-													r_triples[last_r_triples] = r_triple;
-
-													last_r_triples++;
-
-													break;
-												}
-
-												case bson_type.BSON_ARRAY:
-												{
-													string _name_key_L2 = fromStringz(bson_iterator_key(&i_L2));
-
-													//													val = bson_iterator_value(&i_L2);
-
-													bson_iterator i_1;
-													bson_iterator_subiterator(&i_L2, &i_1);
-													//													bson_iterator_init(&i_1, val);
-
-													while(bson_iterator_next(&i_1))
-													{
-														switch(bson_iterator_type(&i_1))
-														{
-															case bson_type.BSON_STRING:
-															{
-																string A_value = fromStringz(bson_iterator_string(&i_1));
-
-																Triple r_triple = new Triple(reifed_data_subj, _name_key_L2,
-																		A_value);
-
-																if(last_r_triples >= r_triples.length)
-																	r_triples.length += 50;
-
-																r_triples[last_r_triples] = r_triple;
-
-																last_r_triples++;
-															}
-															default:
-															break;
-														}
-
-													}
-
-													break;
-												}
-
-												default:
-												break;
-											}
-										}
-
-										//										log.trace("TripleStorageMongoDBIterator: # }");
-
-										r_triples.length = last_r_triples;
-
-										//										log.trace("TripleStorageMongoDBIterator: #9 last_r_triples=%d, _name_key_L1=[%s]", last_r_triples, cast(immutable) _name_key_L1);
-
-										//										if (reif_triples is null)
-										//											log.trace("TripleStorageMongoDBIterator: reif_triples is null");																					
-
-										FKeys reifed_composite_key = new FKeys(s_reif_parent_triple, p_reif_parent_triple,
-												o_reif_parent_triple);
-										reif_triples[reifed_composite_key] = r_triples;
-
-										//										log.trace("TripleStorageMongoDBIterator: #10 reifed_composite_key=%s", reifed_composite_key);
-
-										break;
-									}
-									/*
-									 case bson_type.bson_eoo:
-									 {
-									 char[] _name_val_L1 = fromStringz(bson_iterator_string(&i_L1));
-
-									 if(trace_msg[0][18] == 1)
-									 log.trace("getTriplesOfMask:bson_type.bson_eoo QQQ L1 VAL=%s", _name_val_L1);
-
-									 r_triples.length = last_r_triples;
-									 reif_triples[cast(immutable) _name_key_L1] = r_triples;
-
-									 break;
-									 }
-									 */
-									default:
-									break;
-								}
-
-							}
-
-						}
-
-						break;
-					}
-
-					default:
-						{
-							if(trace_msg[1019] == 1)
-							{
-								string _name_key = fromStringz(bson_iterator_key(&it));
-								//								log.trace("TripleStorageMongoDBIterator:def:_name_key:", _name_key);
-							}
-						}
-					break;
-
-				}
-			}
-		}
-
-		//		log.trace("mongo_cursor_destroy(cursor)");
-
-		mongo_cursor_destroy(cursor);
-		cursor = null;
-
-		return 0;
-	}
-
+        printf("signal %d caught...\n", sig);
+        try
+        {
+        	foreach (ts; _tss)
+        		destroy (ts);
+            system ("kill -kill " ~ text (getpid()));
+            Runtime.terminate();
+        }
+        catch (Exception ex)
+        {
+        }
 }
+
 
 class MongodbTripleStorage: TripleStorage
 {
+  	private BangConnection BC; 
+  	private BangDatabase BD;
+  	private BangTable BT;  		
+	
 	auto tz = UTC();
 	string query_log_filename = "triple-storage-io";
 
@@ -498,8 +92,43 @@ class MongodbTripleStorage: TripleStorage
 
 	private mongo conn;
 
-	this(string host, int port, string db_name)
+	~this()
 	{
+		writeln ("DESTROY MongodbTripleStorage object BD=", cast(void*)BD);
+		BC.closeConnection ();
+		BD.closeDatabase ();		
+	}
+
+	this(string host, int port, string db_name, string context_name)
+	{
+		_tss ~= this;
+        version (linux)
+        {
+           // установим обработчик сигналов прерывания процесса
+           signal(SIGABRT, &sighandler1);
+           signal(SIGTERM, &sighandler1);
+           signal(SIGQUIT, &sighandler1);
+           signal(SIGINT, &sighandler1);
+        }
+		
+		try
+		{
+			BD = newBangDatabase(cast(char*)("cache-" ~ context_name));
+			if (BD !is null)
+				BT = BD.getTable(cast(char*)"pacahon", 0);				
+			if (BT !is null)
+				BC = BT.getConnection ();	
+						
+			writeln ("BD=", cast(void*)BD);
+			writeln ("BT=", cast(void*)BT);
+			writeln ("BC=", cast(void*)BC);
+		}
+		catch (Exception ex)
+		{
+			writeln (ex.msg);
+		}
+		
+		
 		dbname = cast(char*) db_name;
 		docs_collection = cast(char*) (db_name ~ ".simple");
 
@@ -530,6 +159,353 @@ class MongodbTripleStorage: TripleStorage
 
 		log.trace("connect to mongodb sucessful");
 		//		mongo_set_op_timeout(&conn, 1000);
+	}
+	
+	//Set!string result_ids;
+	
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
+			int offset, Authorizer authorizer)
+	{
+		//Set!string*[string] fields_of_mandats;		
+		//HashSet!string templateIds_of_mandats;		
+		HashSet!Mandat mandats;		
+	
+		string mostAllFields = fields.get("*", null);
+
+		auto count_subj = 0;
+
+//		bool to_result_ids = false;
+//		if (result_ids.size < 10000)
+//		{
+		if(authorizer !is null && ticket !is null)
+		{
+			authorizer.get_mandats_4_whom(ticket, mandats);
+			//writeln ("mandats=", mandats);
+		}
+
+			//writeln ("# result_ids need empty, prev size:", result_ids.size);
+			//result_ids.empty ();
+			//to_result_ids = true;
+				
+		try
+		{
+			bson b_fields;
+
+			bson_init(&b_fields);
+			bson_finish(&b_fields);
+
+			mongo_cursor* cursor;
+
+			// int limit, int skip, int options
+			cursor = mongo_find(&conn, docs_collection, query, &b_fields, count_authorize, 0, 0);
+
+			if(cursor is null)
+			{
+				log.trace("ex! get:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
+				throw new Exception("get:mongo_find, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
+			}
+
+			bson_iterator it;
+			while(mongo_cursor_next(cursor) == MONGO_OK)
+			{
+				bson_iterator_init(&it, &cursor.current);
+
+				Subject ss = new Subject();
+
+				//foreach (fields_of_mandat; fields_of_mandats)
+				//{
+				//	fields_of_mandat.empty ();
+				//}				
+				
+				bool authorizedPass = false;
+
+				Subject ss1;
+
+				if(count_subj < render)
+					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, false);
+				else
+					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, true);
+								
+//				writeln ("ET:", ss);
+				if (ss1 is null)
+				{
+					string bin_subject = ss.toBSON;
+  					if(BC.put(cast(char*)ss.subject, ss.subject.length, cast(char*)bin_subject, bin_subject.length, insertOptions.INSERT_UNIQUE) < 0)
+  						writeln("BANGDB put error, ss.subject=",ss.subject);
+  				}	
+				else
+				{
+					ss = ss1;
+					// writeln ("ss1:", ss1);					
+				}
+				
+				if(authorizer !is null)
+					authorizedPass = authorizer.authorize(ticket, ss);
+				else
+					authorizedPass = true;
+					//authorizedPass = true;
+					
+				if (authorizedPass == false)
+				{
+					foreach (mandat ; mandats)
+					{
+				//writeln ("#!3");					
+						authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ);
+						if (authorizedPass == true)
+							break;
+					//writeln ("mandat=", mandat, ", res=", res);
+					}
+				}
+				
+				//if (to_result_ids)
+				//	result_ids ~= ss.subject;
+				
+				if(authorizedPass)
+					res.addSubject(ss);
+
+				count_subj++;
+
+				if(count_subj >= count_authorize)
+				{
+					count_subj--;
+					break;
+				}
+				
+			}
+			
+
+			return count_subj;
+			//	!!!		mongo_cursor_destroy(&cursor);
+		} catch(Exception ex)
+		{
+			log.trace_log_and_console("@exception:%s", ex.msg);
+			throw ex;
+		}
+/*		
+		}
+		else
+		{
+		StopWatch sw_c;
+		sw_c.start();
+			
+			
+			foreach (id ; result_ids.items)
+			{
+				bool authorizedPass = false;
+				
+				Subject ss;
+						void *val;
+						uint *size_ptr;
+	
+						int count = BC.get (cast(char*)id, id.length, &val, &size_ptr);
+						
+						if (count == 1)
+						{
+//							writeln ("size=", *size);
+							string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
+//							writeln ("bson=", bson);
+							ss =  Subject.fromBSON (bson);
+						
+						
+				if(authorizer !is null)
+					authorizedPass = authorizer.authorize(ticket, ss);
+				else
+					authorizedPass = true;
+//					authorizedPass = true;
+					
+				if (authorizedPass == false)
+				{
+					foreach (mandat ; mandats)
+					{
+				//writeln ("#!3");					
+						authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ);
+						if (authorizedPass == true)
+							break;
+//					writeln ("mandat=", mandat, ", res=", res);
+					}
+				}
+						
+						
+						if(authorizedPass)
+					res.addSubject(ss);
+
+				count_subj++;
+}
+				if(count_subj >= count_authorize)
+				{
+					count_subj--;
+					break;
+				}				
+			}
+			
+		sw_c.stop();
+		writeln (res, ", время считывания документов из кеша, time=", sw_c.peek().usecs);
+			
+			return count_subj;
+					
+		}
+*/		
+	}	
+
+	private Subject bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
+			ref string[string] fields, ref HashSet!Mandat mandats, 	Authorizer authorizer, bool only_id, string predicate_array = null)
+	{
+		while(bson_iterator_next(it))
+		{			
+			bson_type type = bson_iterator_type(it);
+
+			switch(type)
+			{
+
+				case bson_type.BSON_STRING:
+				{
+					string name_key;
+
+					if(predicate_array !is null)
+						name_key = predicate_array;
+					else
+						name_key = fromStringz(bson_iterator_key(it)).dup;
+
+					string value = fromStringz(bson_iterator_string(it)).dup;
+
+					if(name_key == "@")
+					{
+						//						writeln("prepare_bson @4, value:", value);
+						ss.subject = value;
+						
+						void *val;
+						uint *size_ptr;
+	
+						int count = BC.get (cast(char*)value, value.length, &val, &size_ptr);
+						
+						if (count == 1)
+						{
+//							writeln ("size=", *size);
+							string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
+//							writeln ("bson=", bson);
+							return Subject.fromBSON (bson);
+						}
+						//writeln ("count from bangdb:", count);
+					} else if(only_id == false)
+					{
+
+						if(allfields !is null)
+							ss.addPredicate(name_key, value);
+						else
+						{
+							if((name_key in fields) !is null)
+							{
+								ss.addPredicate(name_key, value);
+							}							
+						}
+					}
+										
+					break;
+				}
+
+				case bson_type.BSON_DATE:
+				{
+					string name_key;
+
+					if(predicate_array !is null)
+						name_key = predicate_array;
+					else
+						name_key = fromStringz(bson_iterator_key(it)).dup;
+
+					string value = SysTime((bson_iterator_date(it)) * 10000 + 621355968000000000, tz).toISOExtString();
+
+					//					writeln("prepare_bson @3 name_key:", name_key);
+					if(only_id == false)
+					{
+
+						if(allfields !is null)
+							ss.addPredicate(name_key, value);
+						else
+						{
+							string ff = fields.get(name_key, null);
+
+							if(ff !is null)
+							{
+								ss.addPredicate(name_key, value);
+							}
+						}
+					}
+					break;
+
+				}
+
+				case bson_type.BSON_ARRAY:
+				{
+					string name_key = fromStringz(bson_iterator_key(it)).dup;
+
+					bson_iterator it_1;
+					bson_iterator_subiterator(it, &it_1);
+
+					bson2graph(res, &it_1, ss, allfields, fields, mandats, authorizer, only_id, name_key);
+
+					break;
+				}
+				case bson_type.BSON_OBJECT:
+				{
+					string name_key = fromStringz(bson_iterator_key(it)).dup;
+					if(name_key[0] == '_' && name_key[1] == 'r' && name_key[2] == 'e' && name_key[3] == 'i')
+					{
+						//						writeln("prepare_bson @10");
+
+						string p_reif = name_key[6 .. $];
+
+						if(allfields == "reif" || fields.get(p_reif, "") == "reif")
+						{
+
+							string s_reif = "_:R_" ~ text(res.length + 1);
+
+							bson_iterator it_1;
+							bson_iterator_subiterator(it, &it_1);
+
+							while(bson_iterator_next(&it_1))
+							{
+								//								writeln("prepare_bson @11");
+								bson_type type_1 = bson_iterator_type(&it_1);
+
+								switch(type_1)
+								{
+									case bson_type.BSON_OBJECT:
+									{
+										Subject ss_reif = new Subject();
+										//										writeln("prepare_bson @12");
+										string o_reif = fromStringz(bson_iterator_key(&it_1)).dup;
+										ss_reif.subject = s_reif;
+
+										ss_reif.addPredicate(rdf__type, rdf__Statement);
+										ss_reif.addPredicate(rdf__subject, ss.subject);
+										ss_reif.addPredicate(rdf__predicate, p_reif);
+										ss_reif.addPredicate(rdf__object, o_reif);
+
+										bson_iterator it_2;
+										bson_iterator_subiterator(&it_1, &it_2);
+
+										string mallfield = "*";
+
+										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, authorizer, only_id);
+
+										res.addSubject(ss_reif);
+									}
+
+									default:
+									break;
+								}
+							}
+						}
+					}
+					break;
+				}
+
+				default:
+				break;
+
+			}
+		}
+		return null;
 	}
 
 	int _tmp_hhh = 0;
@@ -1216,248 +1192,442 @@ class MongodbTripleStorage: TripleStorage
 			log.trace("add_to_query return");
 	}
 
-	private void bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, ref HashSet!Mandat mandats, ref Set!string*[string] fields_of_mandats, 
-			ref HashSet!string templateIds_of_mandats,	Authorizer authorizer, bool only_id, string predicate_array = null)
+
+
+
+}
+
+class TripleStorageMongoDBIterator: TLIterator
+{
+	mongo_cursor* cursor;
+	byte[string] reading_predicates;
+	bool is_query_all_predicates = false;
+	bool is_get_all = false;
+	bool is_get_all_reifed = false;
+
+	this(mongo_cursor* _cursor)
 	{
-		while(bson_iterator_next(it))
-		{			
-			bson_type type = bson_iterator_type(it);
+		cursor = _cursor;
+	}
 
-			switch(type)
+	this(mongo_cursor* _cursor, ref byte[string] _reading_predicates)
+	{
+		cursor = _cursor;
+		reading_predicates = _reading_predicates;
+
+		if(reading_predicates.length > 0)
+		{
+			byte* type_of_getting_field = (query__all_predicates in reading_predicates);
+
+			if(type_of_getting_field !is null)
 			{
-
-				case bson_type.BSON_STRING:
+				is_query_all_predicates = true;
+				if(*type_of_getting_field == field.GET)
 				{
-					string name_key;
-
-					if(predicate_array !is null)
-						name_key = predicate_array;
-					else
-						name_key = fromStringz(bson_iterator_key(it)).dup;
-
-					string value = fromStringz(bson_iterator_string(it)).dup;
-
-					if(name_key == "@")
-					{
-						//						writeln("prepare_bson @4, value:", value);
-						ss.subject = value;
-					} else if(only_id == false)
-					{
-
-						if(allfields !is null)
-							ss.addPredicate(name_key, value);
-						else
-						{
-							if((name_key in fields) !is null)
-							{
-								ss.addPredicate(name_key, value);
-							}							
-						}
-					}
-					
-					if (name_key != "@" && fields_of_mandats !is null && (name_key in fields_of_mandats) !is null)
-					{
-						// заполним хэш с именами полей значениями текущей записи
-						//writeln (name_key, ":", value);
-						value = util.utils._tmp_correct_link(value);
-						*fields_of_mandats[name_key] ~= value;
-					}
-					
-					break;
-				}
-
-				case bson_type.BSON_DATE:
+					is_get_all = true;
+				} else if(*type_of_getting_field == field.GET_REIFED)
 				{
-					string name_key;
-
-					if(predicate_array !is null)
-						name_key = predicate_array;
-					else
-						name_key = fromStringz(bson_iterator_key(it)).dup;
-
-					string value = SysTime((bson_iterator_date(it)) * 10000 + 621355968000000000, tz).toISOExtString();
-
-					//					writeln("prepare_bson @3 name_key:", name_key);
-					if(only_id == false)
-					{
-
-						if(allfields !is null)
-							ss.addPredicate(name_key, value);
-						else
-						{
-							string ff = fields.get(name_key, null);
-
-							if(ff !is null)
-							{
-								ss.addPredicate(name_key, value);
-							}
-						}
-					}
-					break;
-
+					is_get_all_reifed = true;
 				}
-
-				case bson_type.BSON_ARRAY:
-				{
-					string name_key = fromStringz(bson_iterator_key(it)).dup;
-
-					bson_iterator it_1;
-					bson_iterator_subiterator(it, &it_1);
-
-					bson2graph(res, &it_1, ss, allfields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, only_id, name_key);
-
-					break;
-				}
-				case bson_type.BSON_OBJECT:
-				{
-					string name_key = fromStringz(bson_iterator_key(it)).dup;
-					if(name_key[0] == '_' && name_key[1] == 'r' && name_key[2] == 'e' && name_key[3] == 'i')
-					{
-						//						writeln("prepare_bson @10");
-
-						string p_reif = name_key[6 .. $];
-
-						if(allfields == "reif" || fields.get(p_reif, "") == "reif")
-						{
-
-							string s_reif = "_:R_" ~ text(res.length + 1);
-
-							bson_iterator it_1;
-							bson_iterator_subiterator(it, &it_1);
-
-							while(bson_iterator_next(&it_1))
-							{
-								//								writeln("prepare_bson @11");
-								bson_type type_1 = bson_iterator_type(&it_1);
-
-								switch(type_1)
-								{
-									case bson_type.BSON_OBJECT:
-									{
-										Subject ss_reif = new Subject();
-										//										writeln("prepare_bson @12");
-										string o_reif = fromStringz(bson_iterator_key(&it_1)).dup;
-										ss_reif.subject = s_reif;
-
-										ss_reif.addPredicate(rdf__type, rdf__Statement);
-										ss_reif.addPredicate(rdf__subject, ss.subject);
-										ss_reif.addPredicate(rdf__predicate, p_reif);
-										ss_reif.addPredicate(rdf__object, o_reif);
-
-										bson_iterator it_2;
-										bson_iterator_subiterator(&it_1, &it_2);
-
-										string mallfield = "*";
-
-										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, only_id);
-
-										res.addSubject(ss_reif);
-									}
-
-									default:
-									break;
-								}
-							}
-						}
-					}
-					break;
-				}
-
-				default:
-				break;
 
 			}
+		}
+
+	}
+
+	~this()
+	{
+		if(cursor !is null)
+		{
+			mongo_cursor_destroy(cursor);
 		}
 	}
 
-	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
-			int offset, Authorizer authorizer)
+	int opApply(int delegate(ref Triple) dg)
 	{
-		Set!string*[string] fields_of_mandats;		
-		HashSet!string templateIds_of_mandats;		
-		HashSet!Mandat mandats;		
-		try
+		if(cursor is null)
+			return -1;
+
+		int result = 0;
+
+		string S;
+		string P;
+		string O;
+
+		Triple[][FKeys] reif_triples;
+		int count_of_reifed_data = 0;
+
+		if(trace_msg[1007] == 1)
+			log.trace("opApply:TripleStorageMongoDBIterator:cursor %x", cursor);
+
+		if(trace_msg[1007] == 1)
+			log.trace("opApply:TripleStorageMongoDBIterator:reading_predicates %s", reading_predicates);
+
+		while(mongo_cursor_next(cursor) == MONGO_OK)
 		{
-			string mostAllFields = fields.get("*", null);
+			if(trace_msg[1007] == 1)
+				log.trace("while(mongo_cursor_next(cursor) == MONGO_OK)");
 
-			if(mostAllFields is null && authorizer !is null && ticket !is null)
-			{
-				authorizer.get_mandats_4_whom(ticket, mandats, fields_of_mandats, templateIds_of_mandats);
-				//writeln ("mandats=", mandats);
-			}
-
-			bson b_fields;
-
-			bson_init(&b_fields);
-			bson_finish(&b_fields);
-
-			mongo_cursor* cursor;
-
-			// int limit, int skip, int options
-			cursor = mongo_find(&conn, docs_collection, query, &b_fields, count_authorize, 0, 0);
-
-			if(cursor is null)
-			{
-				log.trace("ex! get:mongo_find, err=%s", mongo_error_str[mongo_get_error(&conn)]);
-				throw new Exception("get:mongo_find, err=" ~ mongo_error_str[mongo_get_error(&conn)]);
-			}
-
-			auto count_subj = 0;
 			bson_iterator it;
-			while(mongo_cursor_next(cursor) == MONGO_OK)
+			bson_iterator_init(&it, &cursor.current);
+
+			short count_fields = 0;
+			while(bson_iterator_next(&it))
 			{
-				bson_iterator_init(&it, &cursor.current);
+				//					// writeln ("it++");
+				bson_type type = bson_iterator_type(&it);
 
-				Subject ss = new Subject();
+				if(trace_msg[1007] == 1)
+					log.trace("TripleStorageMongoDBIterator:next key, TYPE=%d", type);
 
-				foreach (fields_of_mandat; fields_of_mandats)
+				switch(type)
 				{
-					fields_of_mandat.empty ();
-				}
-				
-				bool authorizedPass = false;
-
-				if(count_subj < render)
-					bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, false);
-				else
-					bson2graph(res, &it, ss, mostAllFields, fields, mandats, fields_of_mandats, templateIds_of_mandats, authorizer, true);
-				
-				if(authorizer !is null)
-					authorizedPass = authorizer.authorize(ticket, ss);
-				else
-					authorizedPass = true;
-				
-				if (authorizedPass == false)
-				{
-					foreach (mandat ; mandats)
+					case bson_type.BSON_STRING:
 					{
-						authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, fields_of_mandats, RightType.READ);
-						if (authorizedPass == true)
-							break;
-//					writeln ("mandat=", mandat, ", res=", res);
+						string _name_key = fromStringz(bson_iterator_key(&it));
+
+						if(trace_msg[1008] == 1)
+							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
+
+						// если не указанны требуемые предикаты, то берем какие были считанны
+						byte* type_of_getting_field = null;
+						if(is_query_all_predicates == false && reading_predicates.length > 0)
+						{
+							type_of_getting_field = (_name_key in reading_predicates);
+
+							if(type_of_getting_field is null)
+								break;
+						}
+
+						string _value = fromStringz(bson_iterator_string(&it));
+
+						if(trace_msg[1009] == 1)
+							log.trace("TripleStorageMongoDBIterator:_value:%s", _value);
+
+						if(_name_key == "@")
+						{
+							S = _value;
+						} else if(_name_key[0] != '_')
+						{
+							P = _name_key;
+							O = _value;
+
+							if(O !is null)
+							{
+								Triple tt000 = new Triple(S, P, O);
+
+								result = dg(tt000);
+								if(result)
+									return -1;
+							}
+							//							}
+
+							// проверим есть ли для этого триплета реифицированные данные
+							if(is_get_all_reifed == true || type_of_getting_field !is null && *type_of_getting_field == field.GET_REIFED)
+							{
+								FKeys t3 = new FKeys(S, P, O);
+
+								Triple[]* vv = t3 in reif_triples;
+								if(vv !is null)
+								{
+									Triple[] r1_reif_triples = *vv;
+
+									if(r1_reif_triples !is null && r1_reif_triples.length > 0)
+									{
+										Triple tt0 = new Triple(r1_reif_triples[0].S, "a", "rdf:Statement");
+
+										result = dg(tt0);
+										if(result)
+											return 1;
+
+										tt0 = new Triple(r1_reif_triples[0].S, "rdf:subject", S);
+
+										result = dg(tt0);
+										if(result)
+											return 1;
+
+										tt0 = new Triple(r1_reif_triples[0].S, "rdf:predicate", P);
+										result = dg(tt0);
+										if(result)
+											return 1;
+
+										tt0 = new Triple(r1_reif_triples[0].S, "rdf:object", O);
+										result = dg(tt0);
+										if(result)
+											return 1;
+
+										foreach(tt; r1_reif_triples)
+										{
+											// можно добавлять в список
+											//											if(trace_msg[1010] == 1)
+											//												log.trace("reif : %s", tt);
+
+											result = dg(tt);
+											if(result)
+												return 1;
+										}
+									}
+								}
+							}
+
+						}
+
+						break;
 					}
-				}
-				
-				if(authorizedPass)
-					res.addSubject(ss);
 
-				count_subj++;
+					case bson_type.BSON_ARRAY:
+					{
+						string _name_key = fromStringz(bson_iterator_key(&it));
 
-				if(count_subj >= count_authorize)
-				{
-					count_subj--;
+						if(trace_msg[1008] == 1)
+							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
+
+						if(_name_key != "@" && _name_key[0] != '_')
+						{
+
+							// если не указанны требуемые предикаты, то берем какие были считанны
+							byte* type_of_getting_field = null;
+							if(is_query_all_predicates == false && reading_predicates.length > 0)
+							{
+								type_of_getting_field = (_name_key in reading_predicates);
+
+								if(type_of_getting_field is null)
+									break;
+							}
+
+							bson_iterator i_1;
+							bson_iterator_subiterator(&it, &i_1);
+
+							while(bson_iterator_next(&i_1))
+							{
+								switch(bson_iterator_type(&i_1))
+								{
+									case bson_type.BSON_STRING:
+									{
+										string A_value = fromStringz(bson_iterator_string(&i_1));
+
+										if(A_value.length > 0)
+										{
+											Triple tt0 = new Triple(S, _name_key, A_value);
+											result = dg(tt0);
+											if(result)
+												return 1;
+										}
+									}
+									default:
+									break;
+								}
+
+							}
+						}
+						break;
+					}
+
+					case bson_type.BSON_OBJECT:
+					{
+						string _name_key = fromStringz(bson_iterator_key(&it));
+
+						if(trace_msg[1008] == 1)
+							log.trace("TripleStorageMongoDBIterator:string:_name_key:%s", _name_key);
+
+						// если не указанны требуемые предикаты, то берем какие были считанны
+						byte* type_of_getting_field = null;
+						if(is_query_all_predicates == false && reading_predicates.length > 0)
+						{
+							type_of_getting_field = (_name_key in reading_predicates);
+
+							if(type_of_getting_field is null)
+								break;
+						}
+
+						if(_name_key[0] == '_' && _name_key[1] == 'r' && _name_key[2] == 'e' && _name_key[3] == 'i')
+						{
+							string s_reif_parent_triple = S;
+							string p_reif_parent_triple = _name_key[6 .. $];
+
+							// это реифицированные данные, восстановим факты его образующие
+							// добавим в список:
+							//	_new_node_uid a fdr:Statement
+							//	_new_node_uid rdf:subject [$S]
+							//	_new_node_uid rdf:predicate [$_name_key[6..]]
+							//	_new_node_uid rdf:object [?]
+
+							Triple[] r_triples = new Triple[10];
+							int last_r_triples = 0;
+
+							//							if(trace_msg[1013] == 1)
+							//								log.trace("TripleStorageMongoDBIterator:REIFFF _name_key:%s", _name_key);
+
+							//							char* val = bson_iterator_value(&it);
+							bson_iterator i_L1;
+							bson_iterator_subiterator(&it, &i_L1);
+							//							bson_iterator_init(&i_L1, val);
+
+							while(bson_iterator_next(&i_L1))
+							{
+								switch(bson_iterator_type(&i_L1))
+								{
+
+									case bson_type.BSON_OBJECT:
+									{
+										count_of_reifed_data++; //???
+
+										string reifed_data_subj = "_:R_" ~ text(count_of_reifed_data);
+										//										log.trace("TripleStorageMongoDBIterator: # <, count_of_reifed_data=%s", reifed_data_subj);										
+
+										string _name_key_L1 = fromStringz(bson_iterator_key(&i_L1));
+										string o_reif_parent_triple = _name_key_L1;
+
+										if(trace_msg[1014] == 1)
+											log.trace("TripleStorageMongoDBIterator:_name_key_L1 %s", _name_key_L1);
+
+										//										char* val_L2 = bson_iterator_value(&i_L1);
+
+										//										log.trace("TripleStorageMongoDBIterator: val_L2 %s", fromStringz(val_L2));
+
+										bson_iterator i_L2;
+										//										bson_iterator_init(&i_L2, val_L2);
+										bson_iterator_subiterator(&i_L1, &i_L2);
+
+										//										log.trace("TripleStorageMongoDBIterator: # {");
+
+										while(bson_iterator_next(&i_L2))
+										{
+											switch(bson_iterator_type(&i_L2))
+											{
+												case bson_type.BSON_STRING:
+												{
+													string _name_key_L2 = fromStringz(bson_iterator_key(&i_L2));
+
+													if(trace_msg[1015] == 1)
+														log.trace("TripleStorageMongoDBIterator:_name_key_L2=%s", _name_key_L2);
+
+													string _name_val_L2 = fromStringz(bson_iterator_string(&i_L2));
+
+													if(trace_msg[1016] == 1)
+														log.trace("TripleStorageMongoDBIterator:_name_val_L2L=%s", _name_val_L2);
+
+													//	r_triple.P = _name_key_L2;
+													//	r_triple.O = _name_val_L2;
+													//	r_triple.S = cast(immutable) reifed_data_subj;
+
+													Triple r_triple = new Triple(reifed_data_subj, _name_key_L2, _name_val_L2);
+													//													log.trace("++ triple %s", r_triple);
+
+													if(last_r_triples >= r_triples.length)
+														r_triples.length += 50;
+
+													r_triples[last_r_triples] = r_triple;
+
+													last_r_triples++;
+
+													break;
+												}
+
+												case bson_type.BSON_ARRAY:
+												{
+													string _name_key_L2 = fromStringz(bson_iterator_key(&i_L2));
+
+													//													val = bson_iterator_value(&i_L2);
+
+													bson_iterator i_1;
+													bson_iterator_subiterator(&i_L2, &i_1);
+													//													bson_iterator_init(&i_1, val);
+
+													while(bson_iterator_next(&i_1))
+													{
+														switch(bson_iterator_type(&i_1))
+														{
+															case bson_type.BSON_STRING:
+															{
+																string A_value = fromStringz(bson_iterator_string(&i_1));
+
+																Triple r_triple = new Triple(reifed_data_subj, _name_key_L2,
+																		A_value);
+
+																if(last_r_triples >= r_triples.length)
+																	r_triples.length += 50;
+
+																r_triples[last_r_triples] = r_triple;
+
+																last_r_triples++;
+															}
+															default:
+															break;
+														}
+
+													}
+
+													break;
+												}
+
+												default:
+												break;
+											}
+										}
+
+										//										log.trace("TripleStorageMongoDBIterator: # }");
+
+										r_triples.length = last_r_triples;
+
+										//										log.trace("TripleStorageMongoDBIterator: #9 last_r_triples=%d, _name_key_L1=[%s]", last_r_triples, cast(immutable) _name_key_L1);
+
+										//										if (reif_triples is null)
+										//											log.trace("TripleStorageMongoDBIterator: reif_triples is null");																					
+
+										FKeys reifed_composite_key = new FKeys(s_reif_parent_triple, p_reif_parent_triple,
+												o_reif_parent_triple);
+										reif_triples[reifed_composite_key] = r_triples;
+
+										//										log.trace("TripleStorageMongoDBIterator: #10 reifed_composite_key=%s", reifed_composite_key);
+
+										break;
+									}
+									/*
+									 case bson_type.bson_eoo:
+									 {
+									 char[] _name_val_L1 = fromStringz(bson_iterator_string(&i_L1));
+
+									 if(trace_msg[0][18] == 1)
+									 log.trace("getTriplesOfMask:bson_type.bson_eoo QQQ L1 VAL=%s", _name_val_L1);
+
+									 r_triples.length = last_r_triples;
+									 reif_triples[cast(immutable) _name_key_L1] = r_triples;
+
+									 break;
+									 }
+									 */
+									default:
+									break;
+								}
+
+							}
+
+						}
+
+						break;
+					}
+
+					default:
+						{
+							if(trace_msg[1019] == 1)
+							{
+								string _name_key = fromStringz(bson_iterator_key(&it));
+								//								log.trace("TripleStorageMongoDBIterator:def:_name_key:", _name_key);
+							}
+						}
 					break;
+
 				}
 			}
-
-			return count_subj;
-			//	!!!		mongo_cursor_destroy(&cursor);
-		} catch(Exception ex)
-		{
-			log.trace_log_and_console("@exception:%s", ex.msg);
-			throw ex;
 		}
+
+		//		log.trace("mongo_cursor_destroy(cursor)");
+
+		mongo_cursor_destroy(cursor);
+		cursor = null;
+
+		return 0;
 	}
 
 }
