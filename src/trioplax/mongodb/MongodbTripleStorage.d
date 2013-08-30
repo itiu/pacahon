@@ -25,10 +25,10 @@ private
 
 	import pacahon.know_predicates;
 	import pacahon.graph;
-	import pacahon.az.condition;
 	import pacahon.context;
 	
-	import util.bangdb_header;	
+	import util.bangdb_header;
+	import az.condition;	
 }
 
 import core.vararg;
@@ -54,17 +54,17 @@ private import core.runtime;
 // Called upon a signal from Linux
 extern (C) public void sighandler1(int sig) nothrow @system
 {
-        printf("signal %d caught...\n", sig);
-        try
-        {
-        	foreach (ts; _tss)
-        		destroy (ts);
-            system ("kill -kill " ~ text (getpid()));
-            Runtime.terminate();
-        }
-        catch (Exception ex)
-        {
-        }
+  printf("signal %d caught...\n", sig);
+  try
+  {
+  	foreach (ts; _tss)
+    	destroy (ts);
+    system ("kill -kill " ~ text (getpid()));
+    Runtime.terminate();
+  }
+  catch (Exception ex)
+  {
+  }
 }
 
 
@@ -161,14 +161,72 @@ class MongodbTripleStorage: TripleStorage
 		//		mongo_set_op_timeout(&conn, 1000);
 	}
 	
-	//Set!string result_ids;
+	public Subject get(Ticket ticket, string subject_id, ref string[string] fields, Authorizer authorizer, ref HashSet!Mandat mandats)
+	{		
+		Subject res;
+
+		if (subject_id is null || subject_id.length == 0)
+			return res;
+		
+		void *val;
+		uint *size_ptr;
 	
+		int count = BC.get (cast(char*)subject_id, subject_id.length, &val, &size_ptr);
+						
+		if (count == 1)
+		{			
+			string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
+			Subject ss = Subject.fromBSON (bson);
+			
+			bool authorizedPass = false;
+			
+			if(authorizer !is null)
+				authorizedPass = authorizer.authorize(ticket, ss);
+			else
+				authorizedPass = true;
+			if (authorizedPass == false)
+			{
+				foreach (mandat ; mandats)
+				{
+					authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ);
+					if (authorizedPass == true)
+						break;
+				}
+			}
+			
+			if(authorizedPass)
+				return ss;
+			else
+				return null;
+		}
+		
+		
+		bson query;
+		bson_init(&query);
+		_bson_append_string(&query, "@", subject_id);
+		bson_finish(&query);
+		
+		GraphCluster res_array = new GraphCluster; 
+		
+		count = get(ticket, res_array, &query, fields, 1, 1, 0, authorizer, false);
+		bson_destroy(&query);
+		
+		if (count == 1)
+		{
+			res = res_array.getArray[0];
+		}
+		
+		return res;
+	}
+	
+	
+	//Set!string result_ids;
+		
 	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
-			int offset, Authorizer authorizer)
+			int offset, Authorizer authorizer, bool find_in_cache = true)
 	{
 		//Set!string*[string] fields_of_mandats;		
 		//HashSet!string templateIds_of_mandats;		
-		HashSet!Mandat mandats;		
 	
 		string mostAllFields = fields.get("*", null);
 
@@ -177,6 +235,7 @@ class MongodbTripleStorage: TripleStorage
 //		bool to_result_ids = false;
 //		if (result_ids.size < 10000)
 //		{
+		HashSet!Mandat mandats;		
 		if(authorizer !is null && ticket !is null)
 		{
 			authorizer.get_mandats_4_whom(ticket, mandats);
@@ -222,11 +281,11 @@ class MongodbTripleStorage: TripleStorage
 				Subject ss1;
 
 				if(count_subj < render)
-					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, false);
+					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, false, find_in_cache);
 				else
-					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, true);
+					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, true, find_in_cache);
 								
-//				writeln ("ET:", ss);
+				//writeln ("ET:", ss);
 				if (ss1 is null)
 				{
 					string bin_subject = ss.toBSON;
@@ -243,23 +302,15 @@ class MongodbTripleStorage: TripleStorage
 					authorizedPass = authorizer.authorize(ticket, ss);
 				else
 					authorizedPass = true;
-					//authorizedPass = true;
-					
 				if (authorizedPass == false)
 				{
 					foreach (mandat ; mandats)
 					{
-				//writeln ("#!3");					
 						authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ);
 						if (authorizedPass == true)
 							break;
-					//writeln ("mandat=", mandat, ", res=", res);
 					}
 				}
-				
-				//if (to_result_ids)
-				//	result_ids ~= ss.subject;
-				
 				if(authorizedPass)
 					res.addSubject(ss);
 
@@ -273,7 +324,6 @@ class MongodbTripleStorage: TripleStorage
 				
 			}
 			
-
 			return count_subj;
 			//	!!!		mongo_cursor_destroy(&cursor);
 		} catch(Exception ex)
@@ -348,7 +398,7 @@ class MongodbTripleStorage: TripleStorage
 	}	
 
 	private Subject bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, ref HashSet!Mandat mandats, 	Authorizer authorizer, bool only_id, string predicate_array = null)
+			ref string[string] fields, ref HashSet!Mandat mandats, 	Authorizer authorizer, bool only_id, bool find_in_cache, string predicate_array = null)
 	{
 		while(bson_iterator_next(it))
 		{			
@@ -372,20 +422,20 @@ class MongodbTripleStorage: TripleStorage
 					{
 						//						writeln("prepare_bson @4, value:", value);
 						ss.subject = value;
-						
-						void *val;
-						uint *size_ptr;
 	
-						int count = BC.get (cast(char*)value, value.length, &val, &size_ptr);
-						
-						if (count == 1)
+						if (find_in_cache == true)
 						{
-//							writeln ("size=", *size);
-							string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
-//							writeln ("bson=", bson);
-							return Subject.fromBSON (bson);
+							void *val;
+							uint *size_ptr;
+	
+							int count = BC.get (cast(char*)value, value.length, &val, &size_ptr);
+						
+							if (count == 1)
+							{
+								string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
+								return Subject.fromBSON (bson);
+							}
 						}
-						//writeln ("count from bangdb:", count);
 					} else if(only_id == false)
 					{
 
@@ -441,7 +491,7 @@ class MongodbTripleStorage: TripleStorage
 					bson_iterator it_1;
 					bson_iterator_subiterator(it, &it_1);
 
-					bson2graph(res, &it_1, ss, allfields, fields, mandats, authorizer, only_id, name_key);
+					bson2graph(res, &it_1, ss, allfields, fields, mandats, authorizer, only_id, find_in_cache, name_key);
 
 					break;
 				}
@@ -486,7 +536,7 @@ class MongodbTripleStorage: TripleStorage
 
 										string mallfield = "*";
 
-										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, authorizer, only_id);
+										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, authorizer, only_id, find_in_cache);
 
 										res.addSubject(ss_reif);
 									}

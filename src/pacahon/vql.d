@@ -4,7 +4,6 @@ module pacahon.vql;
 
 private    
 {
-	import pacahon.vel;
 	import std.string;
 	import std.array;
 	import std.stdio;
@@ -20,7 +19,9 @@ private
 
 	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
+	import pacahon.vel;
 	import pacahon.context;
+	import az.condition;
 }
 
 class VQL
@@ -31,12 +32,12 @@ class VQL
 	const int RENDER = 3;
 	const int AUTHORIZE = 4;
 
-	string[] sections = ["return", "filter", "sort", "render", "authorize"];
-	bool[] section_is_found = [false, false, false, false, false];
-	string[] found_sections;
+	private string[] sections = ["return", "filter", "sort", "render", "authorize"];
+	private bool[] section_is_found = [false, false, false, false, false];
+	private string[] found_sections;
 
-	TripleStorage ts;
-	OI from_search_point;
+	private TripleStorage ts;
+	private OI from_search_point;
 
 	this(TripleStorage _ts, OI _from_search_point = null)
 	{
@@ -81,10 +82,35 @@ class VQL
 		{
 		}
 
+		string[string] fields;
+
+		string returns[];
+
+		if(section_is_found[RETURN] == true)
+		{
+			returns = split(found_sections[RETURN], ",");
+			
+			foreach(field; returns)
+			{
+				long bp = indexOf(field, '\'');
+				long ep = lastIndexOf(field, '\'');
+				long rp = lastIndexOf(field, " reif");
+				if(ep > bp && ep - bp > 0)
+				{
+					string key = field[bp + 1 .. ep];
+					if(rp > ep)
+						fields[key] = "reif";
+					else
+						fields[key] = "1";
+				}
+			}
+		}
+
 		if(section_is_found[SORT] == true && from_search_point !is null)
 		{
+			//writeln ("найдена секция SORT");
 			// если найдена секция sort, то запрос делаем к elasticsearch, далее данные в количестве render считываем из mongo 
-			writeln ("SEARCH FROM ELASTIC");
+			//writeln ("SEARCH FROM ELASTIC");
 			JSONValue full_query = void;
 			full_query.type = JSON_TYPE.OBJECT;
 			full_query.object = null;
@@ -93,16 +119,37 @@ class VQL
 			f1.type = JSON_TYPE.STRING;
 			f1.str = "_id";
 
-			JSONValue fields = void;
-			fields.type = JSON_TYPE.ARRAY;
-			fields.array = null;
-			fields.array ~= f1;
+			JSONValue qfields = void;
+			qfields.type = JSON_TYPE.ARRAY;
+			qfields.array = null;
+			qfields.array ~= f1;
 
 			JSONValue query = void;
 			query.type = JSON_TYPE.OBJECT;
 			query.object = null;
 
-			full_query.object["fields"] = fields;
+			full_query.object["fields"] = qfields;
+
+			JSONValue s1 = void;
+			s1.type = JSON_TYPE.STRING;
+			s1.str = "asc";
+
+			JSONValue vs1 = void;
+			vs1.type = JSON_TYPE.OBJECT;
+			vs1.object = null;
+			vs1.object["order"] = s1;
+
+			JSONValue vvs1 = void;
+			vvs1.type = JSON_TYPE.OBJECT;
+			vvs1.object = null;
+			vvs1.object["doc1.dc:created.dateTime"] = vs1;
+			
+			JSONValue qsort = void;
+			qsort.type = JSON_TYPE.ARRAY;
+			qsort.array = null;
+			qsort.array ~= vvs1;
+
+			full_query.object["sort"] = qsort;
 
 			JSONValue _must = void;
 			_must.type = JSON_TYPE.ARRAY;
@@ -126,9 +173,51 @@ class VQL
 //			JSONValue jv1 = void;
 //			toElasticJSON(tta, "", &query, &jv1, 0);
 			full_query.object["query"] = query;
-
 			
-			writeln("full_query :", toJSON(&full_query));
+			JSONValue _size = void;
+			_size.type = JSON_TYPE.STRING;
+			_size.str = text(authorize);
+			full_query.object["size"] = _size;
+
+			string elastic_query = "GET_IDs|pacahon/doc1/_search|" ~ toJSON(&full_query); 
+			//writeln("full_query :", elastic_query);
+			
+			from_search_point.send (elastic_query);
+			string res_from_elastic = from_search_point.reciev();
+			
+			HashSet!Mandat mandats;		
+			if(authorizer !is null && ticket !is null)
+			{
+				authorizer.get_mandats_4_whom(ticket, mandats);
+				//writeln ("mandats=", mandats);
+			}
+			
+			int pos = 0;
+			int count=0;
+			while (pos < res_from_elastic.length)
+			{
+				int b, e; 
+				b = pos;
+				while (pos < res_from_elastic.length && res_from_elastic[pos] != ',')
+				  pos++;
+				e = pos;
+				  
+				if (e-b > 2 && e-b < 64)
+				{
+					string id = res_from_elastic[b..e-1];
+				
+					Subject ss = ts.get (ticket, id, fields, authorizer, mandats);
+					
+					if (ss !is null)
+					{
+						res.addSubject (ss);
+						count++;
+					}
+				}
+				pos++;  	
+			}
+						
+			//writeln("res_from_elastic :", res_from_elastic);
 		} else
 		{
 			bson query;
@@ -172,30 +261,6 @@ class VQL
 
 			//		sw.stop();
 			//		long t = cast(long) sw.peek().usecs;
-			string[string] fields;
-
-			string returns[];
-
-			if(section_is_found[RETURN] == true)
-			{
-				returns = split(found_sections[RETURN], ",");
-
-				foreach(field; returns)
-				{
-					long bp = indexOf(field, '\'');
-					long ep = lastIndexOf(field, '\'');
-					long rp = lastIndexOf(field, " reif");
-					if(ep > bp && ep - bp > 0)
-					{
-						string key = field[bp + 1 .. ep];
-
-						if(rp > ep)
-							fields[key] = "reif";
-						else
-							fields[key] = "1";
-					}
-				}
-			}
 
 			//sw.stop();
 			//long t = cast(long) sw.peek().usecs;
@@ -458,89 +523,4 @@ public string prepare_for_Elastic(TTA tta, string prev_op, JSONValue* must, JSON
 		return tta.op;
 	}
 	return null;
-}
-
-public void toElasticJSON(TTA tta, string p_op, JSONValue* val, JSONValue* p_val, int level)
-{
-	//		string _tab = "                                                                       ";
-	//		string tab = _tab[0 .. level * 2];
-
-	//	writeln (tab, "count:", count, " ,", op, ", prev:", p_op);
-
-	if(tta.op == "==")
-	{
-		val.type = JSON_TYPE.OBJECT;
-
-		JSONValue new_val_l = void;
-		JSONValue new_val_r = void;
-
-		toElasticJSON(tta.L, tta.op, &new_val_l, val, level + 1);
-		toElasticJSON(tta.R, tta.op, &new_val_r, val, level + 1);
-
-		val.object = null;
-		val.object[new_val_l.str] = new_val_r;
-	} else if(tta.op == "&&" || tta.op == "||")
-	{
-		if(p_op == tta.op)
-		{
-			if(tta.R !is null)
-			{
-				JSONValue new_val = void;
-				new_val.type = JSON_TYPE.NULL;
-				toElasticJSON(tta.R, tta.op, &new_val, p_val, level + 1);
-				if(new_val.type != JSON_TYPE.NULL)
-					p_val.array ~= new_val;
-			}
-
-			if(tta.L !is null)
-			{
-				JSONValue new_val = void;
-				new_val.type = JSON_TYPE.NULL;
-				toElasticJSON(tta.L, tta.op, &new_val, p_val, level + 1);
-				if(new_val.type != JSON_TYPE.NULL)
-					p_val.array ~= new_val;
-			}
-
-		} else
-		{
-			val.type = JSON_TYPE.OBJECT;
-			val.object = null;
-
-			JSONValue val1 = void;
-			val1.type = JSON_TYPE.ARRAY;
-			val1.array = null;
-
-			if(tta.R !is null)
-			{
-				JSONValue new_val = void;
-				new_val.type = JSON_TYPE.NULL;
-				toElasticJSON(tta.R, tta.op, &new_val, &val1, level + 1);
-				if(new_val.type != JSON_TYPE.NULL)
-					val1.array ~= new_val;
-			}
-
-			if(tta.L !is null)
-			{
-				JSONValue new_val = void;
-				new_val.type = JSON_TYPE.NULL;
-				toElasticJSON(tta.L, tta.op, &new_val, &val1, level + 1);
-				if(new_val.type != JSON_TYPE.NULL)
-					val1.array ~= new_val;
-			}
-
-			if(tta.op == "&&")
-				val.object["$and"] = val1;
-
-			if(tta.op == "||")
-				val.object["$or"] = val1;
-		}
-	} else
-	{
-		//	    writeln (tab,"#4");
-		val.type = JSON_TYPE.STRING;
-		val.str = tta.op;
-	}
-
-	//	writeln (tab,"#5");
-	//	return val;
 }

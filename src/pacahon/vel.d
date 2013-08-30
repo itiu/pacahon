@@ -76,6 +76,7 @@ private void process_op (ref stack!TTA st, string op)
 {
 	TTA r = st.popBack();
 	TTA l = st.popBack();
+	
 //	writeln ("process_op:op[", op, "], L:", l, ", R:", r);
 	switch (op) 
 	{

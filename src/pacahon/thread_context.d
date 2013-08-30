@@ -7,7 +7,7 @@ private
 	import std.format;
 	import std.datetime;
 
-	import mq_client;
+	import mq.mq_client;
 
 	import ae.utils.container;
 	import util.json_ld.parser1;
@@ -24,7 +24,7 @@ private
 	import pacahon.command.event_filter;
 	import pacahon.know_predicates;
 	import pacahon.vql;
-	import pacahon.az.condition;
+	import az.condition;
 }
 
 synchronized class Statistic

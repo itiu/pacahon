@@ -4,11 +4,12 @@ build/src/mongoc/mongo_h.d
 build/src/Log.d 
 build/src/libczmq_header.d 
 build/src/libzmq_header.d 
-build/src/mq_client.d 
-build/src/zmq_point_to_poin_client.d 
-build/src/zmq_pp_broker_client.d
 build/src/librabbitmq_headers.d
-build/src/rabbitmq_client.d
+
+src/mq/mq_client.d 
+src/mq/zmq_point_to_poin_client.d 
+src/mq/zmq_pp_broker_client.d
+src/mq/rabbitmq_client.d
 
 src/util/Logger.d 
 src/util/utils.d 

@@ -1,4 +1,4 @@
-module pacahon.az.orgstructure_tree;
+module az.orgstructure_tree;
 
 private
 {

@@ -1,16 +1,21 @@
 module trioplax.mongodb.TripleStorage;
 
-private import pacahon.graph;
-private import pacahon.context;
+private import std.outbuffer;
+private import std.c.string;
 private import std.array;
 private import std.conv;
 private import std.stdio;
 private import std.format;
-private import util.Logger;
-private import pacahon.know_predicates;
+
 private import mongoc.bson_h;
-private import std.outbuffer;
-private import std.c.string;
+
+private import util.Logger;
+
+private import pacahon.know_predicates;
+private import pacahon.graph;
+private import pacahon.context;
+
+	import ae.utils.container;
 
 /////////////////////////////////// TRIPLE STORAGE
 enum field: byte
@@ -21,23 +26,26 @@ enum field: byte
 
 interface TripleStorage
 {
-	public TLIterator getTriples(string s, string p, string o, int MAX_SIZE_READ_RECORDS = 1000, int OFFSET = 0);
+	public bool isExistSubject(string subject);
+
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
+			Authorizer az, bool find_in_cache = true);
+
+	public Subject get(Ticket ticket, string subject_id, ref string[string] fields, Authorizer az, ref HashSet!Mandat mandats);
 
 	public bool removeSubject(string s);
 
 	public void storeSubject(Subject graph, Context server_context);
 
-	public bool isExistSubject(string subject);
-
+	public int addTriple(Triple tt, bool isReification = false);
+	
+	// depricated ?
 	public void addTripleToReifedData(Triple reif, string p, string o, byte lang);
 
 	public TLIterator getTriplesOfMask(ref Triple[] mask_triples, byte[string] reading_predicates,
 			int MAX_SIZE_READ_RECORDS = 1000);
 
-	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
-			Authorizer az);
-
-	public int addTriple(Triple tt, bool isReification = false);
+	public TLIterator getTriples(string s, string p, string o, int MAX_SIZE_READ_RECORDS = 1000, int OFFSET = 0);
 }
 
 interface TLIterator
@@ -153,6 +161,8 @@ public void add_fulltext_to_query(string fulltext_param, bson* bb)
 	bson_append_finish_object(bb);
 	bson_append_finish_object(bb);
 }
+
+//// utils
 
 char[] bson_to_string(bson* b)
 {

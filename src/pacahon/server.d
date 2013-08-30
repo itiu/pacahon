@@ -14,9 +14,10 @@ private
 	import std.datetime;
 	import std.conv;
 
-	import zmq_point_to_poin_client;
-	import zmq_pp_broker_client;
-	import rabbitmq_client;
+	import mq.zmq_point_to_poin_client;
+	import mq.zmq_pp_broker_client;
+	import mq.mq_client;
+	import mq.rabbitmq_client;
 
 	import trioplax.mongodb.TripleStorage;
 

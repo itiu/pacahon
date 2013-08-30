@@ -1,11 +1,11 @@
 module util.oi;
 
-private import mq_client;
-private import util.Logger;
-private import zmq_point_to_poin_client;
-private import rabbitmq_client;
 private import std.json;
 private import std.stdio;
+private import mq.mq_client;
+private import mq.zmq_point_to_poin_client;
+private import mq.rabbitmq_client;
+private import util.Logger;
 
 Logger log;
 Logger oi_msg;
@@ -98,10 +98,15 @@ class OI
 			return null;
 
 		string msg;
+		//writeln ("#1");
 		msg = client.reciev();
+		//writeln ("#2 msg:", msg);
+		
+		//if (msg !is null)
+		//	oi_msg.trace_io(true, cast(byte*) msg, msg.length);
 
-		oi_msg.trace_io(true, cast(byte*) msg, msg.length);
-
+		//writeln ("#3");
+		
 		return msg;
 	}
 }

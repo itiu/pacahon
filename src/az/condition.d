@@ -1,4 +1,4 @@
-module pacahon.az.condition;
+module az.condition;
 
 private
 {
@@ -19,9 +19,10 @@ private
 	import pacahon.know_predicates;
 	import pacahon.graph;
 	import pacahon.vql;
-	import pacahon.az.orgstructure_tree;
 	import pacahon.context;
 	import pacahon.vel;	
+
+	import az.orgstructure_tree;
 }
 
 enum RightType
