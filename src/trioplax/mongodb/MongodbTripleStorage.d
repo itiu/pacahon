@@ -174,49 +174,50 @@ class MongodbTripleStorage: TripleStorage
 		int count = BC.get (cast(char*)subject_id, subject_id.length, &val, &size_ptr);
 						
 		if (count == 1)
-		{			
-			string bson = cast(string)val[0 .. cast(ulong)*size_ptr];
-			Subject ss = Subject.fromBSON (bson);
-			
+		{		
+			string bson = cast(string)val[0 .. cast(ulong)*size_ptr];					
+			res = Subject.fromBSON (bson);			
+
 			bool authorizedPass = false;
 			
 			if(authorizer !is null)
-				authorizedPass = authorizer.authorize(ticket, ss);
+				authorizedPass = authorizer.authorize(ticket, res);
 			else
 				authorizedPass = true;
 			if (authorizedPass == false)
 			{
 				foreach (mandat ; mandats)
 				{
-					authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, ss, RightType.READ);
+					authorizedPass = calculate_rights_of_mandat(mandat, ticket.userId, res, RightType.READ);
 					if (authorizedPass == true)
 						break;
 				}
 			}
 			
 			if(authorizedPass)
-				return ss;
+				return res;
 			else
-				return null;
+				return null;		
 		}
+		else
+		{		
+			bson query;
+			bson_init(&query);
+			_bson_append_string(&query, "@", subject_id);
+			bson_finish(&query);
 		
+			GraphCluster res_array = new GraphCluster; 
 		
-		bson query;
-		bson_init(&query);
-		_bson_append_string(&query, "@", subject_id);
-		bson_finish(&query);
+			count = get(ticket, res_array, &query, fields, 1, 1, 0, authorizer, false);
+			bson_destroy(&query);
 		
-		GraphCluster res_array = new GraphCluster; 
-		
-		count = get(ticket, res_array, &query, fields, 1, 1, 0, authorizer, false);
-		bson_destroy(&query);
-		
-		if (count == 1)
-		{
-			res = res_array.getArray[0];
+			if (res_array.length > 0)
+			{
+				res = res_array.getArray[0];
+				return res; 
+			}
 		}
-		
-		return res;
+		return null;
 	}
 	
 	
@@ -302,6 +303,7 @@ class MongodbTripleStorage: TripleStorage
 					authorizedPass = authorizer.authorize(ticket, ss);
 				else
 					authorizedPass = true;
+					
 				if (authorizedPass == false)
 				{
 					foreach (mandat ; mandats)
