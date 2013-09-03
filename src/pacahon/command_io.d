@@ -1,4 +1,4 @@
-module pacahon.command_io;
+module pacahon.command.io;
 
 private import core.stdc.stdio;
 private import core.stdc.stdlib;
@@ -385,13 +385,11 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 
 			foreach(s_query; queries)
 			{
-				int count_found_subjects;				
-				
 				string query = s_query.getFirstLiteral("query");
 				if(query !is null)
 				{
 					//writeln ("#1 ticket=", ticket);
-					count_found_subjects = thread_context.vql.get(ticket, query, res, thread_context);
+					thread_context.vql.get(ticket, query, res, thread_context);
 				} else
 				{
 					Subject graph = s_query;
@@ -548,6 +546,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 					log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
 
 				// авторизуем найденные субьекты
+				int count_found_subjects = res.length;
 				int count_authorized_subjects = res.length;
 
 				string authorize_reason;
@@ -582,7 +581,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ text(count_found_subjects);
 				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
 				{
-					reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text (count_authorized_subjects);
+					reason = "запрос выполнен: не все найденные субьекты " ~ text(count_found_subjects) ~ " успешно авторизованны";
 				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
 				{
 					reason = "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
