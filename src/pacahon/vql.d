@@ -16,12 +16,20 @@ private
 
 	import ae.utils.container;
 	import util.oi;
+	import util.Logger;	
 
 	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
 	import pacahon.vel;
 	import pacahon.context;
-	import az.condition;
+	//import az.condition;
+}
+
+Logger log;
+
+static this()
+{
+	log = new Logger("pacahon", "log", "VQL");
 }
 
 class VQL
@@ -46,10 +54,12 @@ class VQL
 		found_sections = new string[5];
 	}
 
+	static string ELASTIC_LIST_OK_HEADER = "200|OK|";
+
 	public int get(Ticket ticket, string query_str, ref GraphCluster res, Authorizer authorizer)
 	{
-		if (ticket !is null)
-		writeln ("userId=", ticket.userId);
+//		if (ticket !is null)
+//		writeln ("userId=", ticket.userId);
 
 		 //writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
 
@@ -200,9 +210,11 @@ class VQL
 			_size.str = text(authorize);
 			full_query.object["size"] = _size;
 
-			string elastic_query = "GET_IDs|pacahon/doc1/_search|" ~ toJSON(&full_query); 
-			writeln("full_query :", elastic_query);
+			string elastic_query = "GET_IDs|pacahon/doc1/_search|" ~ toJSON(&full_query);
 			
+		 	if(trace_msg[71] == 1)
+			 	log.trace("query to elastic:[%s]", elastic_query);
+
 			from_search_point.send (elastic_query);
 			string res_from_elastic = from_search_point.reciev();
 			
@@ -213,9 +225,12 @@ class VQL
 				//writeln ("mandats=", mandats);
 			}
 			
-			int pos = 0;
+			int pos = cast(int)ELASTIC_LIST_OK_HEADER.length;
 			int count = 0;
 			int read_count = 0;
+			
+			if (res_from_elastic !is null && res_from_elastic.length > 10 &&  res_from_elastic[0..ELASTIC_LIST_OK_HEADER.length] == "200|OK|")
+			{
 			while (pos < res_from_elastic.length)
 			{
 				int b, e; 
@@ -227,19 +242,25 @@ class VQL
 				if (e-b > 2 && e-b < 64)
 				{
 					string id = res_from_elastic[b..e-1];
-				
+
+					if (id !is null && id.length > 3 && id.length < 52)
+					{
+					//	writeln ("[", id, "]");
 					Subject ss = ts.get (ticket, id, fields, authorizer, mandats);
 					read_count++;
+					
+					remove_predicates (ss, fields);
 										
 					if (ss !is null)
 					{
 						res.addSubject (ss);
 						count++;
 					}
+					}
 				}
 				pos++;  	
 			}
-			
+			}
 			return read_count;
 			//writeln ("read count:", read_count, ", count:", count);			
 			//writeln("res_from_elastic :", res_from_elastic);
@@ -302,6 +323,22 @@ class VQL
 			return read_count;
 		}
 	}
+
+	private void remove_predicates (Subject ss, ref string[string] fields)
+	{
+		if (ss is null || ("*" in fields) !is null)
+			return;
+			
+		foreach (pp ; ss.getPredicates)
+		{
+//		writeln ("pp=", pp);
+			if ((pp.predicate in fields) is null)
+			{
+				pp.count_objects = 0;
+			}
+		}
+	}
+
 
 	private void split_on_section(string query)
 	{
