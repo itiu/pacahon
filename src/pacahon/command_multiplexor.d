@@ -107,8 +107,8 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 
 		TLIterator it = thread_context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
-		if(trace_msg[65] == 1)
-			log.trace("get_ticket: iterator %x", it);
+		//if(trace_msg[65] == 1)
+		//	log.trace("get_ticket: iterator %x", it);
 
 		Subject new_ticket = new Subject;
 
@@ -127,7 +127,16 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 					new_ticket.subject = new_id.toString ();
 
 					new_ticket.addPredicate(rdf__type, ticket__Ticket);
-					new_ticket.addPredicate(ticket__accessor, tt.S);
+					
+				// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
+				char[] sscc = tt.S.dup;
+				if(sscc[7] == '_')
+					sscc = sscc[8..$];
+				else if(sscc[8] == '_')
+					sscc = sscc[9..$];
+					
+					
+					new_ticket.addPredicate(ticket__accessor, cast(string)sscc);
 					new_ticket.addPredicate(ticket__when, getNowAsString());
 					new_ticket.addPredicate(ticket__duration, "40000");
 
@@ -136,7 +145,15 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 
 				} else if(tt.P == docs__parentUnit)
 				{
-					new_ticket.addPredicate(ticket__parentUnitOfAccessor, tt.O);
+					// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
+					char[] sscc = tt.O.dup;
+					if(sscc[7] == '_')
+						sscc = sscc[8..$];
+					else if(sscc[8] == '_')
+						sscc = sscc[9..$];
+					
+					
+					new_ticket.addPredicate(ticket__parentUnitOfAccessor, cast(string)sscc);
 				}
 			}
 
@@ -148,27 +165,12 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 				res.addPredicate(auth__ticket, new_ticket.subject);
 				
 				ticket = new Ticket ();
-				
-				// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
-				char[] sscc = new_ticket.getFirstLiteral(ticket__accessor).dup;
-				if(sscc[7] == '_')
-					sscc = sscc[8..$];
-				else if(sscc[8] == '_')
-					sscc = sscc[9..$];
-				
-				ticket.userId = cast(string)sscc;
+				ticket.userId = new_ticket.getFirstLiteral(ticket__accessor);
 				
 				foreach (unit; new_ticket.getObjects(ticket__parentUnitOfAccessor))
 				{
-					// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
-					sscc = unit.literal.dup;
-					if(sscc[7] == '_')
-						sscc = sscc[8..$];
-					else if(sscc[8] == '_')
-						sscc = sscc[9..$];
-					
-					ticket.parentUnitIds ~= cast(string)sscc;
-				}
+					ticket.parentUnitIds ~= unit.literal;
+				}	
 				
 				reason = "login и password совпадают";
 				isOk = true;
