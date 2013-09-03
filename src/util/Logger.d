@@ -2,13 +2,13 @@ module util.Logger;
 
 private import std.format;
 private import std.c.stdio;
-import std.datetime;
+private import std.datetime;
 
-import std.array: appender;
+private import std.array: appender;
 
 private import std.stdio;
 private import std.datetime;
-import std.c.linux.linux;
+private import std.c.linux.linux;
 
 shared byte trace_msg[1100];
 
