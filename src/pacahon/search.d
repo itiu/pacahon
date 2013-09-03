@@ -22,8 +22,7 @@ void search_event(Subject graph, ThreadContext server_context)
 	if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate (docs__full_text_search, "0"))
 	    return;
 	    
-	if(graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true") && graph.isExsistsPredicate(
-			docs__active, "true"))
+	if(graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true"))
 	{
 		//writeln ("to search !!!");
 		OI search_point = server_context.gateways.get("to-search", null);
