@@ -1,7 +1,7 @@
 module pacahon.ba2pacahon;
 
 private import core.thread;
-private import core.vararg;
+import core.vararg;
 
 private import std.stdio;
 private import std.csv;
@@ -28,7 +28,7 @@ private import onto.rdf_base;
 private import onto.docs_base;
 private import onto.doc_template;
 
-private import pacahon.command_io;
+private import pacahon.command.io;
 
 string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;

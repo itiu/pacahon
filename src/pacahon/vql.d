@@ -46,12 +46,9 @@ class VQL
 		found_sections = new string[5];
 	}
 
-	public int get(Ticket ticket, string query_str, ref GraphCluster res, Authorizer authorizer)
+	public void get(Ticket ticket, string query_str, ref GraphCluster res, Authorizer authorizer)
 	{
-		if (ticket !is null)
-		writeln ("userId=", ticket.userId);
-
-		 //writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
+		// writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
 
 		//StopWatch sw;
 		//sw.start();
@@ -133,41 +130,25 @@ class VQL
 
 			full_query.object["fields"] = qfields;
 
-			// sort
+			JSONValue s1 = void;
+			s1.type = JSON_TYPE.STRING;
+			s1.str = "asc";
+
+			JSONValue vs1 = void;
+			vs1.type = JSON_TYPE.OBJECT;
+			vs1.object = null;
+			vs1.object["order"] = s1;
+
+			JSONValue vvs1 = void;
+			vvs1.type = JSON_TYPE.OBJECT;
+			vvs1.object = null;
+			vvs1.object["doc1.dc:created.dateTime"] = vs1;
+			
 			JSONValue qsort = void;
 			qsort.type = JSON_TYPE.ARRAY;
 			qsort.array = null;
-								
-			foreach(field; split(found_sections[SORT], ","))
-			{
-				long bp = indexOf(field, '\'');
-				long ep = lastIndexOf(field, '\'');
-				long dp = lastIndexOf(field, " desc");
-			
-				if(ep > bp && ep - bp > 0)
-				{
-					string key = field[bp + 1 .. ep];
-					
-					JSONValue s1 = void;
-					s1.type = JSON_TYPE.STRING;
-					if(dp > ep)
-						s1.str = "desc";						
-					else
-						s1.str = "asc";											
+			qsort.array ~= vvs1;
 
-					JSONValue vs1 = void;
-					vs1.type = JSON_TYPE.OBJECT;
-					vs1.object = null;
-					vs1.object["order"] = s1;
-					
-					JSONValue vvs1 = void;
-					vvs1.type = JSON_TYPE.OBJECT;
-					vvs1.object = null;
-					vvs1.object["doc1." ~ key] = vs1;
-					
-					qsort.array ~= vvs1;
-				}	
-			}
 			full_query.object["sort"] = qsort;
 
 			JSONValue _must = void;
@@ -178,9 +159,7 @@ class VQL
 			_filter.type = JSON_TYPE.ARRAY;
 			_filter.array = null;
 
-			string dummy;
-
-			prepare_for_Elastic(tta, "", &_must, &_filter, dummy, dummy);
+			prepare_for_Elastic(tta, "", &_must, &_filter);
 			
 			JSONValue _bool = void;
 			_bool.type = JSON_TYPE.OBJECT;
@@ -201,7 +180,7 @@ class VQL
 			full_query.object["size"] = _size;
 
 			string elastic_query = "GET_IDs|pacahon/doc1/_search|" ~ toJSON(&full_query); 
-			writeln("full_query :", elastic_query);
+			//writeln("full_query :", elastic_query);
 			
 			from_search_point.send (elastic_query);
 			string res_from_elastic = from_search_point.reciev();
@@ -214,8 +193,7 @@ class VQL
 			}
 			
 			int pos = 0;
-			int count = 0;
-			int read_count = 0;
+			int count=0;
 			while (pos < res_from_elastic.length)
 			{
 				int b, e; 
@@ -229,8 +207,7 @@ class VQL
 					string id = res_from_elastic[b..e-1];
 				
 					Subject ss = ts.get (ticket, id, fields, authorizer, mandats);
-					read_count++;
-										
+					
 					if (ss !is null)
 					{
 						res.addSubject (ss);
@@ -239,9 +216,7 @@ class VQL
 				}
 				pos++;  	
 			}
-			
-			return read_count;
-			//writeln ("read count:", read_count, ", count:", count);			
+						
 			//writeln("res_from_elastic :", res_from_elastic);
 		} else
 		{
@@ -296,10 +271,10 @@ class VQL
 
 			//		writeln (fields);
 			int offset = 0;
-			int read_count = ts.get(ticket, res, &query, fields, render, authorize, offset, authorizer);
+
+			ts.get(ticket, res, &query, fields, render, authorize, offset, authorizer);
 
 			bson_destroy(&query);
-			return read_count;
 		}
 	}
 
@@ -498,57 +473,13 @@ public string toMongoBSON(TTA tta, string p_op, bson* val, int level)
 
 ///////////////////////////////////////////////////////////////////////
 
-public string prepare_for_Elastic(TTA tta, string prev_op, JSONValue* must, JSONValue* filter, out string l_token, out string op)
-{	
-	string dummy;
-	if(tta.op == ">" || tta.op == "<")
-	{		
-		string ls = prepare_for_Elastic(tta.L, tta.op, must, filter, dummy, dummy);
-		string rs = prepare_for_Elastic(tta.R, tta.op, must, filter, dummy, dummy);
-
-		if (rs.length == 19 && rs[4] == '-' && rs[7] == '-' && rs[10] == 'T' && rs[13] == ':' && rs[16] == ':')
-		{
-			// это дата
-			l_token = "doc1." ~ ls ~ ".dateTime";
-			op = tta.op;
-			return rs;
-		}
-		else
-		{
-			bool is_digit = false;
-			try
-			{
-				auto b = parse!double(rs);
-				is_digit = true;
-			}
-			catch (Exception ex)
-			{
-				
-			}
-			
-//			bool is_digit = true;
-//			foreach (rr ; rs)
-//			{
-//				if (isDigit (rr) == false)
-//				{
-//					is_digit = false;
-//					break;	
-//				}
-//			}
-			
-			if (is_digit)
-			{
-				// это число
-				l_token = "doc1." ~ ls ~ ".decimal";
-				op = tta.op;
-				return rs;				
-			}
-		}	
-	} 
-	else if(tta.op == "==")
+public string prepare_for_Elastic(TTA tta, string prev_op, JSONValue* must, JSONValue* filter)
+{
+	if(tta.op == "==")
 	{
-		string ls = prepare_for_Elastic(tta.L, tta.op, must, filter, dummy, dummy);
-		string rs = prepare_for_Elastic(tta.R, tta.op, must, filter, dummy, dummy);		
+		string ls = prepare_for_Elastic(tta.L, tta.op, must, filter);
+		string rs = prepare_for_Elastic(tta.R, tta.op, must, filter);
+		
 
 		JSONValue term = void;
 		term.type = JSON_TYPE.OBJECT;
@@ -573,91 +504,19 @@ public string prepare_for_Elastic(TTA tta, string prev_op, JSONValue* must, JSON
 	} 
 	else if(tta.op == "&&")
 	{
-		string t_op_l;
-		string t_op_r;
-		string token_L;
-		string tta_R;		
 		if(tta.R !is null)
-			tta_R = prepare_for_Elastic(tta.R, tta.op, must, filter, token_L, t_op_r);
+			prepare_for_Elastic(tta.R, tta.op, must, filter);
 
-			if (t_op_r !is null)
-				op = t_op_r;
-
-		string tta_L;	
 		if(tta.L !is null)
-			tta_L = prepare_for_Elastic(tta.L, tta.op, must, filter, dummy, t_op_l);
-
-			if (t_op_l !is null)
-				op = t_op_l;
-			
-		if (token_L !is null && tta_L !is null)
-		{	
-		//writeln ("token_L=", token_L);	
-		//writeln ("tta_R=", tta_R);	
-		//writeln ("tta_L=", tta_L);	
-		//writeln ("t_op_l=", t_op_l);	
-		//writeln ("t_op_r=", t_op_r);	
-		
-		string c_to, c_from;
-		
-		if (t_op_r == ">")
-			c_from = tta_R;
-		if (t_op_r == "<")
-			c_to = tta_R;
-
-		if (t_op_l == ">")
-			c_from = tta_L;
-		if (t_op_l == "<")
-			c_to = tta_L;
-		
-		JSONValue range = void;
-		range.type = JSON_TYPE.OBJECT;
-		range.object = null;
-
-		JSONValue cond = void;
-		cond.type = JSON_TYPE.OBJECT;
-		cond.object = null;
-
-		JSONValue delta = void;
-		delta.type = JSON_TYPE.OBJECT;
-		delta.object = null;
-
-		JSONValue val_from = void;
-		val_from.type = JSON_TYPE.STRING;
-		val_from.str = c_from;								
-
-		JSONValue val_to = void;
-		val_to.type = JSON_TYPE.STRING;
-		val_to.str = c_to;								
-
-		delta.object["from"] = val_from; 
-		delta.object["to"] = val_to; 
-
-		cond.object[token_L] = delta;
-			
-		range.object["range"] = cond;
-
-//		if (prev_op == "&&")
-			must.array ~= range;
-//		else if (prev_op == "||")
-//			filter.array ~= term;
-		
-		}
-		if (tta_R !is null && tta_L is null)		
-		 return tta_R;
-		 
-		if (tta_L !is null && tta_R is null)		
-		 return tta_L;
-		 
-		
+			prepare_for_Elastic(tta.L, tta.op, must, filter);
 	}
 	else if (tta.op == "||")
 	{
 		if(tta.R !is null)
-			prepare_for_Elastic(tta.R, tta.op, must, filter, dummy, dummy);
+			prepare_for_Elastic(tta.R, tta.op, must, filter);
 
 		if(tta.L !is null)
-			prepare_for_Elastic(tta.L, tta.op, must, filter, dummy, dummy);
+			prepare_for_Elastic(tta.L, tta.op, must, filter);
 	}
 	else
 	{
