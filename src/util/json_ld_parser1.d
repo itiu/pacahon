@@ -442,6 +442,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 	
 	foreach(pp ; ss.getPredicates())
 	{
+		if (pp.count_objects == 0)
+			continue;
+		
 		if(jj > 0)
 			outbuff.write(cast(char[]) ",\n");
 		jj = 1;
