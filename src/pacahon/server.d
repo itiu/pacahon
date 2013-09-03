@@ -620,7 +620,7 @@ class ServerThread: core.thread.Thread
 			if(when !is null)
 			{
 				if(trace_msg[24] == 1)
-					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", ticket_id, tt.userId, when, duration);
+					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when, duration, text(tt.parentUnitIds));
 
 				// TODO stringToTime очень медленная операция ~ 100 микросекунд
 				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
