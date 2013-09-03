@@ -28,7 +28,7 @@ private
 
 private bool delim(char c)
 {
-	return c == ' ' || c == '	' || c == '\r' || c == '\n';
+	return c == ' ';
 }
 
 private string is_op(string c)
