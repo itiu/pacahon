@@ -318,8 +318,12 @@ class VQL
 			//		writeln (fields);
 			int offset = 0;
 			int read_count = ts.get(ticket, res, &query, render, authorize, offset, authorizer);
-
 			bson_destroy(&query);
+			
+			foreach (ss ; res.getArray())
+				remove_predicates (ss, fields);
+
+
 			return read_count;
 		}
 	}
