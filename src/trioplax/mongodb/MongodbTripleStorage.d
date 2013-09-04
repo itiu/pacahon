@@ -165,7 +165,7 @@ class MongodbTripleStorage: TripleStorage
 		//		mongo_set_op_timeout(&conn, 1000);
 	}
 	
-	public Subject get(Ticket ticket, string subject_id, ref string[string] fields, Authorizer authorizer, ref HashSet!Mandat mandats)
+	public Subject get(Ticket ticket, string subject_id, Authorizer authorizer, ref HashSet!Mandat mandats)
 	{		
 		Subject res;
 
@@ -216,7 +216,7 @@ class MongodbTripleStorage: TripleStorage
 		
 			GraphCluster res_array = new GraphCluster; 
 		
-			count = get(ticket, res_array, &query, fields, 1, 1, 0, authorizer, false);
+			count = get(ticket, res_array, &query, 1, 1, 0, authorizer, false);
 			bson_destroy(&query);
 		
 			if (res_array.length > 0)
@@ -231,13 +231,13 @@ class MongodbTripleStorage: TripleStorage
 	
 	//Set!string result_ids;
 		
-	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int count_authorize,
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, int render, int count_authorize,
 			int offset, Authorizer authorizer, bool find_in_cache = true)
 	{
 		//Set!string*[string] fields_of_mandats;		
 		//HashSet!string templateIds_of_mandats;		
 	
-		string mostAllFields = fields.get("*", null);
+//		string mostAllFields = fields.get("*", null);
 
 		auto count_subj = 0;
 
@@ -290,9 +290,9 @@ class MongodbTripleStorage: TripleStorage
 				Subject ss1;
 
 				if(count_subj < render)
-					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, false, find_in_cache);
+					ss1 = bson2graph(res, &it, ss, mandats, authorizer, false, find_in_cache);
 				else
-					ss1 = bson2graph(res, &it, ss, mostAllFields, fields, mandats, authorizer, true, find_in_cache);
+					ss1 = bson2graph(res, &it, ss, mandats, authorizer, true, find_in_cache);
 								
 				//writeln ("ET:", ss);
 				if (ss1 is null)
@@ -410,8 +410,8 @@ class MongodbTripleStorage: TripleStorage
 */		
 	}	
 
-	private Subject bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref string allfields,
-			ref string[string] fields, ref HashSet!Mandat mandats, 	Authorizer authorizer, bool only_id, bool find_in_cache, string predicate_array = null)
+	private Subject bson2graph(ref GraphCluster res, bson_iterator* it, ref Subject ss, ref HashSet!Mandat mandats, 
+		Authorizer authorizer, bool only_id, bool find_in_cache, string predicate_array = null)
 	{
 		while(bson_iterator_next(it))
 		{			
@@ -451,16 +451,7 @@ class MongodbTripleStorage: TripleStorage
 						}
 					} else if(only_id == false)
 					{
-
-						if(allfields !is null)
-							ss.addPredicate(name_key, value);
-						else
-						{
-							if((name_key in fields) !is null)
-							{
-								ss.addPredicate(name_key, value);
-							}							
-						}
+						ss.addPredicate(name_key, value);
 					}
 										
 					break;
@@ -480,18 +471,7 @@ class MongodbTripleStorage: TripleStorage
 					//					writeln("prepare_bson @3 name_key:", name_key);
 					if(only_id == false)
 					{
-
-						if(allfields !is null)
-							ss.addPredicate(name_key, value);
-						else
-						{
-							string ff = fields.get(name_key, null);
-
-							if(ff !is null)
-							{
-								ss.addPredicate(name_key, value);
-							}
-						}
+						ss.addPredicate(name_key, value);
 					}
 					break;
 
@@ -504,7 +484,7 @@ class MongodbTripleStorage: TripleStorage
 					bson_iterator it_1;
 					bson_iterator_subiterator(it, &it_1);
 
-					bson2graph(res, &it_1, ss, allfields, fields, mandats, authorizer, only_id, find_in_cache, name_key);
+					bson2graph(res, &it_1, ss, mandats, authorizer, only_id, find_in_cache, name_key);
 
 					break;
 				}
@@ -517,7 +497,8 @@ class MongodbTripleStorage: TripleStorage
 
 						string p_reif = name_key[6 .. $];
 
-						if(allfields == "reif" || fields.get(p_reif, "") == "reif")
+//						if(allfields == "reif" || fields.get(p_reif, "") == "reif")
+						if (false)
 						{
 
 							string s_reif = "_:R_" ~ text(res.length + 1);
@@ -546,12 +527,13 @@ class MongodbTripleStorage: TripleStorage
 
 										bson_iterator it_2;
 										bson_iterator_subiterator(&it_1, &it_2);
+										
+										Objectz oo = ss.getObject ( p_reif, o_reif);
+										oo.reification = ss_reif;
+										
+										bson2graph(res, &it_2, ss_reif, mandats, authorizer, only_id, find_in_cache);
 
-										string mallfield = "*";
-
-										bson2graph(res, &it_2, ss_reif, mallfield, fields, mandats, authorizer, only_id, find_in_cache);
-
-										res.addSubject(ss_reif);
+										//res.addSubject(ss_reif);
 									}
 
 									default:

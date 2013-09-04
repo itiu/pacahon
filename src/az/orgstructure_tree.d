@@ -66,11 +66,16 @@ class OrgStructureTree: BusEventListener
 			
 			// TODO убрать корректировки ссылок в organization: временная коррекция ссылок
 			char[] sscc = ss.subject.dup;
-			if(sscc[7] == '_')
-				sscc = sscc[8..$];
-			else if(sscc[8] == '_')
-				sscc = sscc[9..$];
-			node_4_parents[cast(string)sscc] = parent_ids;
+			if (ss.subject.length > 10)
+			{
+				// ссылки на реификации игнорируем
+				if(sscc[7] == '_')
+					sscc = sscc[8..$];
+				else if(sscc[8] == '_')
+					sscc = sscc[9..$];
+				
+				node_4_parents[cast(string)sscc] = parent_ids;
+			}
 			
 			//writeln ("# [", cast(string)sscc, "]=", parent_ids);
 		}

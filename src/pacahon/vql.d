@@ -246,7 +246,7 @@ class VQL
 					if (id !is null && id.length > 3 && id.length < 52)
 					{
 					//	writeln ("[", id, "]");
-					Subject ss = ts.get (ticket, id, fields, authorizer, mandats);
+					Subject ss = ts.get (ticket, id, authorizer, mandats);
 					read_count++;
 					
 					remove_predicates (ss, fields);
@@ -317,7 +317,7 @@ class VQL
 
 			//		writeln (fields);
 			int offset = 0;
-			int read_count = ts.get(ticket, res, &query, fields, render, authorize, offset, authorizer);
+			int read_count = ts.get(ticket, res, &query, render, authorize, offset, authorizer);
 
 			bson_destroy(&query);
 			return read_count;

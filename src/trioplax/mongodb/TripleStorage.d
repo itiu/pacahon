@@ -28,10 +28,10 @@ interface TripleStorage
 {
 	public bool isExistSubject(string subject);
 
-	public int get(Ticket ticket, ref GraphCluster res, bson* query, ref string[string] fields, int render, int limit, int offset,
+	public int get(Ticket ticket, ref GraphCluster res, bson* query, int render, int limit, int offset,
 			Authorizer az, bool find_in_cache = true);
 
-	public Subject get(Ticket ticket, string subject_id, ref string[string] fields, Authorizer az, ref HashSet!Mandat mandats);
+	public Subject get(Ticket ticket, string subject_id, Authorizer az, ref HashSet!Mandat mandats);
 
 	public bool removeSubject(string s);
 
