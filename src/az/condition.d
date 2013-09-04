@@ -110,6 +110,8 @@ class MandatManager: BusEventListener
 					if (el != nil)
 					{
 						mandat.expression = parse_expr(el.str);
+						//writeln ("\nmandat.id=", mandat.id);
+						//writeln ("str=", el.str);
 						//writeln ("TTA=", mandat.expression);
 					}
 										
@@ -149,7 +151,7 @@ class MandatManager: BusEventListener
 //		sw_c.start();
 		bool res = false;
 		//writeln ("	DOC=", doc);
-		//writeln ("	MANDAT=", mndt);
+		//writeln ("\n	MANDAT=", mndt);
 		try
 		{
 			string dummy;
@@ -269,7 +271,11 @@ class MandatManager: BusEventListener
 				B = eval(userId, tta.L, tta.op, doc, token, level + 1);
 					
 			return A || B; 		
-		} else
+		} else if(tta.op == "true")
+		{
+			return true;
+		} 
+		else
 		{
 			token = tta.op;
 		}

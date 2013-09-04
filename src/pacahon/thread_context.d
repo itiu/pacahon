@@ -127,7 +127,8 @@ class ThreadContext: Context, Authorizer
 
 	void get_mandats_4_whom(Ticket ticket, ref HashSet!Mandat mandats)
 	{
-//		writeln ("&0 ticket.parentUnitIds=", ticket.parentUnitIds);
+//		writeln ("&0 ticket.userId=", ticket.userId);
+//		writeln ("&1 ticket.parentUnitIds=", ticket.parentUnitIds);
 //		StopWatch sw_c;
 //		sw_c.start();
 		
@@ -135,15 +136,16 @@ class ThreadContext: Context, Authorizer
 			return;
 					
 		mrf (ticket.userId, mandats, false);
+//		writeln ("&2 mandats:", mandats);
 		
 		foreach (unit ; ticket.parentUnitIds)
 			mrf (unit, mandats, true);
+//		writeln ("&3 mandats:", mandats);
 		
 //		sw_c.stop();		
 //		writeln ("время вычисления требуемых полей документа в шаблонах, time=", sw_c.peek().usecs);
 //		writeln ("&1 fields=", fields);
 //		writeln ("&2 templateIds=", templateIds.data.keys);
-		
 		return;
 	}
 	

@@ -329,6 +329,7 @@ class VQL
 		if (ss is null || ("*" in fields) !is null)
 			return;
 			
+		// TODO возможно не оптимальная фильтрация	
 		foreach (pp ; ss.getPredicates)
 		{
 //		writeln ("pp=", pp);
