@@ -70,9 +70,9 @@ extern (C) public void sighandler1(int sig) nothrow @system
 
 class MongodbTripleStorage: TripleStorage
 {
-  	private BangConnection BC; 
-  	private BangDatabase BD;
-  	private BangTable BT;  		
+  	private BangConnection BC = null; 
+  	private BangDatabase BD = null;
+  	private BangTable BT = null;  		
 	
 	auto tz = UTC();
 	string query_log_filename = "triple-storage-io";
@@ -95,11 +95,13 @@ class MongodbTripleStorage: TripleStorage
 	~this()
 	{
 		writeln ("DESTROY MongodbTripleStorage object BD=", cast(void*)BD);
-		BC.closeConnection ();
-		BD.closeDatabase ();		
+		if (BC !is null)
+			BC.closeConnection ();
+		if (BD !is null)	
+			BD.closeDatabase ();		
 	}
 
-	this(string host, int port, string db_name, string context_name)
+	this(string host, int port, string db_name, string context_name, bool use_caching_of_documents)
 	{
 		_tss ~= this;
         version (linux)
@@ -111,23 +113,25 @@ class MongodbTripleStorage: TripleStorage
            signal(SIGINT, &sighandler1);
         }
 		
-		try
+		if (use_caching_of_documents == true)
 		{
-			BD = newBangDatabase(cast(char*)("cache-" ~ context_name));
-			if (BD !is null)
-				BT = BD.getTable(cast(char*)"pacahon", 0);				
-			if (BT !is null)
-				BC = BT.getConnection ();	
+			try
+			{
+				BD = newBangDatabase(cast(char*)("cache-" ~ context_name));
+				if (BD !is null)
+					BT = BD.getTable(cast(char*)"pacahon", 0);				
+				if (BT !is null)
+					BC = BT.getConnection ();	
 						
-			writeln ("BD=", cast(void*)BD);
-			writeln ("BT=", cast(void*)BT);
-			writeln ("BC=", cast(void*)BC);
+				writeln ("BD=", cast(void*)BD);
+				writeln ("BT=", cast(void*)BT);
+				writeln ("BC=", cast(void*)BC);
+			}
+			catch (Exception ex)
+			{
+				writeln (ex.msg);
+			}
 		}
-		catch (Exception ex)
-		{
-			writeln (ex.msg);
-		}
-		
 		
 		dbname = cast(char*) db_name;
 		docs_collection = cast(char*) (db_name ~ ".simple");
@@ -168,10 +172,14 @@ class MongodbTripleStorage: TripleStorage
 		if (subject_id is null || subject_id.length == 0)
 			return res;
 		
+		int count = 0;
 		void *val;
 		uint *size_ptr;
-	
-		int count = BC.get (cast(char*)subject_id, subject_id.length, &val, &size_ptr);
+		
+		if (BC !is null)
+		{
+			count = BC.get (cast(char*)subject_id, subject_id.length, &val, &size_ptr);
+		}
 						
 		if (count == 1)
 		{		
@@ -289,9 +297,12 @@ class MongodbTripleStorage: TripleStorage
 				//writeln ("ET:", ss);
 				if (ss1 is null)
 				{
-					string bin_subject = ss.toBSON;
-  					if(BC.put(cast(char*)ss.subject, ss.subject.length, cast(char*)bin_subject, bin_subject.length, insertOptions.INSERT_UNIQUE) < 0)
-  						writeln("BANGDB put error, ss.subject=",ss.subject);
+					 if (BC !is null)
+					 {
+					 	string bin_subject = ss.toBSON;
+					 	if(BC.put(cast(char*)ss.subject, ss.subject.length, cast(char*)bin_subject, bin_subject.length, insertOptions.INSERT_UNIQUE) < 0)
+					 		writeln("BANGDB put error, ss.subject=",ss.subject);
+					 }
   				}	
 				else
 				{
@@ -425,7 +436,7 @@ class MongodbTripleStorage: TripleStorage
 						//						writeln("prepare_bson @4, value:", value);
 						ss.subject = value;
 	
-						if (find_in_cache == true)
+						if (find_in_cache == true && BC !is null)
 						{
 							void *val;
 							uint *size_ptr;

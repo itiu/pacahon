@@ -89,7 +89,7 @@ void main(char[][] args)
 			//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
 			string behavior = "all";
 			if(("behavior" in props.object) !is null)
-				behavior = props.object["behavior"].str;
+				behavior = props.object["behavior"].str;								
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
 			JSONValue[] _listeners;
@@ -539,7 +539,8 @@ class ServerThread: core.thread.Thread
 	this(void delegate() _dd, JSONValue props, string context_name)
 	{
 		super(_dd);
-		resource = new ThreadContext(props, context_name);
+		resource = new ThreadContext(props, context_name);				
+		
 		sw.start();
 	}
 

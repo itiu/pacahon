@@ -39,6 +39,7 @@ synchronized class Statistic
 
 class ThreadContext: Context, Authorizer
 {
+	bool use_caching_of_documents = false;
 	bool IGNORE_EMPTY_TRIPLE = false;
 
 	Statistic stat;
@@ -64,6 +65,13 @@ class ThreadContext: Context, Authorizer
 		event_filters = new GraphCluster();
 		ba2pacahon_records = new GraphCluster();
 
+		// использование кеша документов
+		if(("use_caching_of_documents" in props.object) !is null)
+		{
+			if (props.object["use_caching_of_documents"].str == "true")
+				use_caching_of_documents = true;
+		}	
+
 		// адрес базы данных mongodb
 		string mongodb_server = "localhost";
 		if(("mongodb_server" in props.object) !is null)
@@ -80,7 +88,7 @@ class ThreadContext: Context, Authorizer
 		else
 			db_name = "pacahon";
 
-		ts = connect_to_mongodb_triple_storage(mongodb_port, mongodb_server, db_name, context_name);
+		ts = connect_to_mongodb_triple_storage(mongodb_port, mongodb_server, db_name, context_name, use_caching_of_documents);
 		
 
 		JSONValue[] _gateways;
@@ -184,7 +192,7 @@ class ThreadContext: Context, Authorizer
 }
 
 public static TripleStorage connect_to_mongodb_triple_storage(int mongodb_port, string mongodb_server, string mongodb_collection,
-		string context_name)
+		string context_name, bool use_caching_of_documents)
 {
 	writeln("connect to mongodb, thread:", context_name);
 	writeln("	port:", mongodb_port);
@@ -194,7 +202,7 @@ public static TripleStorage connect_to_mongodb_triple_storage(int mongodb_port, 
 	MongodbTripleStorage ts;
 	try
 	{
-		ts = new MongodbTripleStorage(mongodb_server, mongodb_port, mongodb_collection, context_name);
+		ts = new MongodbTripleStorage(mongodb_server, mongodb_port, mongodb_collection, context_name, use_caching_of_documents);
 
 		ts.define_predicate_as_multiple(rdf__type);
 		ts.define_predicate_as_multiple(rdfs__subClassOf);
