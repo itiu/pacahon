@@ -497,6 +497,8 @@ void ba2pacahon(string msg_str, ThreadContext server_context)
 		}
 		else
 		{
+			//////////////////// D O C U M E N T ///////////////////////
+			
 			if(get_str(doc, "is-processed-links") == "N")
 				is_processed_links = false;
 
@@ -605,84 +607,83 @@ void ba2pacahon(string msg_str, ThreadContext server_context)
 							foreach(att; attributes)
 							{
 								// writeln ("#5.1");
-
 								string code = att.object["code"].str;
-								string value = att.get_str("value");
+								JSONValue[] values = get_array(att, "value");
 
 								// writeln ("#5 code=", code);
 								// writeln ("#5 value=", value);
 
-								if(value !is null && value.length > 0)
+								if(values !is null && values.length > 0)
 								{
 									//writeln ("#6");
-
 									string new_code = ba2user_onto(code);
 									//writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
 									Subject metadata = tmplate.data.find_subject(owl__onProperty, new_code);
 									Subject reif;
 
-									if(metadata !is null)
+									string type = att.get_str("type");
+									string description = att.get_str("description");
+									string[string] descr_els;
+									if(description !is null)
 									{
-										//writeln ("#7 metadata=", metadata);
-
-										string description = att.get_str("description");
-
-										string[string] descr_els;
-										if(description !is null)
+										if(description.indexOf("$") >= 0)
 										{
-											if(description.indexOf("$") >= 0)
+											string[] els = description.split(";");
+											foreach(el; els)
 											{
-												string[] els = description.split(";");
-												foreach(el; els)
+												string[] el_els = el.split("=");
+												if(el_els.length == 2)
+													descr_els[el_els[0]] = el_els[1];
+											}
+											//// writeln(descr_els);
+										}
+									}
+
+									foreach (el; values)
+									{
+										string value = get_str(el, "value");
+										if(metadata !is null)
+										{
+											//writeln ("#7 metadata=", metadata);
+										
+											if((type == "LINK" || type == "ORGANIZATION" || type == "DICTIONARY"))
+											{
+												value = prefix_doc ~ value;
+												if(is_processed_links == true)
 												{
-													string[] el_els = el.split("=");
-													if(el_els.length == 2)
-														descr_els[el_els[0]] = el_els[1];
+													reif = get_reification_subject_of_link(subj_versioned_UID, new_code, value,
+															server_context, doc_cache, import_predicate, metadata.getPredicate(
+																	link__exportPredicates));
+
+													if(reif is null)
+														log.trace("doc[%s], linked field [%s:%s]=%s not found", id, new_code, type,
+															value);
 												}
-												//// writeln(descr_els);
+												node.addPredicate(new_code, value, metadata, reif);										
+											}
+											else if (type == "TEXT" || type == "STRING")
+											{
+												string att_name[3] = split_lang(value);
+											
+												if (att_name[LANG.RU] !is null)
+													node.addPredicate(new_code, att_name[LANG.RU], metadata, reif, LANG.RU);
+												else if (att_name[LANG.EN] !is null)
+													node.addPredicate(new_code, att_name[LANG.EN], metadata, reif, LANG.EN);
+											
+												if (att_name[LANG.RU] is null && att_name[LANG.EN] is null)
+													node.addPredicate(new_code, value, metadata, reif, LANG.RU);												
+											}
+											else 
+											{
+												node.addPredicate(new_code, value, metadata, reif);																					
 											}
 										}
-
-										string type = att.get_str("type");
-
-										if((type == "LINK" || type == "ORGANIZATION" || type == "DICTIONARY"))
+										else
 										{
-											value = prefix_doc ~ value;
-											if(is_processed_links == true)
-											{
-												reif = get_reification_subject_of_link(subj_versioned_UID, new_code, value,
-														server_context, doc_cache, import_predicate, metadata.getPredicate(
-																link__exportPredicates));
-
-												if(reif is null)
-													log.trace("doc[%s], linked field [%s:%s]=%s not found", id, new_code, type,
-															value);
-											}
 											node.addPredicate(new_code, value, metadata, reif);										
 										}
-										else if (type == "TEXT" || type == "STRING")
-										{
-											string att_name[3] = split_lang(value);
-											
-											if (att_name[LANG.RU] !is null)
-												node.addPredicate(new_code, att_name[LANG.RU], metadata, reif, LANG.RU);
-											else if (att_name[LANG.EN] !is null)
-												node.addPredicate(new_code, att_name[LANG.EN], metadata, reif, LANG.EN);
-											
-											if (att_name[LANG.RU] is null && att_name[LANG.EN] is null)
-												node.addPredicate(new_code, value, metadata, reif, LANG.RU);												
-										}
-										else 
-										{
-											node.addPredicate(new_code, value, metadata, reif);																					
-										}
 									}
-									else
-									{
-										node.addPredicate(new_code, value, metadata, reif);										
-									}
-										
 								}
 
 							}

@@ -193,6 +193,15 @@ public static string toTranslit(string text)
 	return translate(text, translit_table);
 }
 
+public JSONValue[] get_array(JSONValue jv, string field_name)
+{
+	if(field_name in jv.object)
+	{
+		return jv.object[field_name].array;
+	}
+	return null;
+}
+
 public string get_str(JSONValue jv, string field_name)
 {
 	if(field_name in jv.object)
