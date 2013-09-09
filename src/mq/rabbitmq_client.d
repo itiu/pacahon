@@ -70,6 +70,7 @@ class rabbitmq_client: mq_client
 		//			return -1;
 		//		} else
 		//		{
+		log.trace_log_and_console ("connect to rabbit:" ~ text (params), "");		
 		
 		conn = amqp_new_connection();
 

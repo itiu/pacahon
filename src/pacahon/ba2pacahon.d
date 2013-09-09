@@ -608,7 +608,7 @@ void ba2pacahon(string msg_str, ThreadContext server_context)
 							{
 								// writeln ("#5.1");
 								string code = att.object["code"].str;
-								JSONValue[] values = get_array(att, "value");
+								JSONValue[] values = get_array(att, "values");
 
 								// writeln ("#5 code=", code);
 								// writeln ("#5 value=", value);

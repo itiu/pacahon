@@ -19,12 +19,16 @@ static this()
 
 void search_event(Subject graph, ThreadContext server_context)
 {
+//	writeln ("#search_event 1");
+	
 	if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate (docs__full_text_search, "0"))
 	    return;
 	    
+//	writeln ("#search_event 2 ", graph);
+	    
 	if(graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true"))
 	{
-		//writeln ("to search !!!");
+//		writeln ("#to search !!!");
 		OI search_point = server_context.gateways.get("to-search", null);
 
 		if(search_point !is null)
@@ -42,8 +46,8 @@ void search_event(Subject graph, ThreadContext server_context)
 			//		writeln (res);
 		} else
 		{
-			log.trace("отправка данных для субьекта [%s] не была выполненна, так как  [%s] не был найден в файле настроек",
-					graph.subject, "search");
+			log.trace("отправка данных по субьекту [%s] не была выполненна, так как  [%s] не был найден в файле настроек",
+					graph.subject, "to-search");
 		}
 		OI report_point = server_context.gateways.get("to-report", null);
 		if(report_point !is null)
@@ -56,8 +60,8 @@ void search_event(Subject graph, ThreadContext server_context)
 			//report_point.reciev();
 		} else
 		{
-			log.trace("отправка данных для субьекта [%s] не была выполненна, так как  [%s] не был найден в файле настроек",
-					graph.subject, "report");
+			log.trace("отправка данных по субьекту [%s] не была выполненна, так как  [%s] не был найден в файле настроек",
+					graph.subject, "to-report");
 		}
 
 	}
@@ -67,10 +71,12 @@ void search_event(Subject graph, ThreadContext server_context)
 void toJson_search(Subject ss, ref OutBuffer outbuff, int level, bool is_reification, string reifed_value,
 		ThreadContext server_context)
 {
+//	writeln ("#1");
 	if(ss.subject is null && ss.count_edges == 0)
 	{
 		return;
 	}
+//	writeln ("#2");
 
 	for(int i = 0; i < level; i++)
 		outbuff.write(cast(char[]) "	");
@@ -497,6 +503,8 @@ void toJson_search(Subject ss, ref OutBuffer outbuff, int level, bool is_reifica
 	}
 
 	outbuff.write("\n}");
+//		writeln ("#end");
+
 }
 
 private void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)

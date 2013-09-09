@@ -105,6 +105,8 @@ void main(char[][] args)
 					if(params.get("transport", "") == "zmq")
 					{
 						string zmq_connect_type = params.get("zmq_connect_type", "server");
+						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
+
 
 						if(zmq_connect_type == "server")
 						{
@@ -151,7 +153,7 @@ void main(char[][] args)
 					} else if(params.get("transport", "") == "rabbitmq")
 					{
 						// прием данных по каналу rabbitmq
-						writeln("connect to rabbitmq");
+						log.trace_log_and_console("LISTENER: connect to rabbitmq");
 
 						try
 						{
