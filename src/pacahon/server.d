@@ -3,9 +3,9 @@ module pacahon.server;
 private
 {
 	import core.thread;
-	import core.stdc.stdio;
-	import core.stdc.stdlib;
-	import core.memory;
+//	import core.stdc.stdio;
+//	import core.stdc.stdlib;
+//	import core.memory;
 	import std.stdio;
 	import std.string;
 	import std.c.string;
@@ -13,28 +13,35 @@ private
 	import std.outbuffer;
 	import std.datetime;
 	import std.conv;
+	import std.concurrency;
 
 	import mq.zmq_point_to_poin_client;
 	import mq.zmq_pp_broker_client;
 	import mq.mq_client;
 	import mq.rabbitmq_client;
 
-	import trioplax.mongodb.TripleStorage;
+	import storage.acl;
+	import storage.ticket;
+	import storage.subject;
+	//import trioplax.mongodb.TripleStorage;
 
 	import util.Logger;
 	import util.json_ld.parser1;
+	import util.turtle_parser;
 	import util.utils;
 	import util.oi;
-
+	
 	import pacahon.context;
 	import pacahon.graph;
-	import pacahon.command.multiplexor;
+	import pacahon.multiplexor;
 	import pacahon.know_predicates;
 	import pacahon.log_msg;
 	import pacahon.load_info;
 	import pacahon.thread_context;
-	import pacahon.command.event_filter;
-	import pacahon.ba2pacahon;	
+	import pacahon.event_filter;
+	import pacahon.define;
+	import search.ba2pacahon;	
+	import search.xapian;
 }
 
 Logger log;
@@ -46,9 +53,18 @@ static this()
 	io_msg = new Logger("pacahon", "io", "server");
 }
 
-
 void main(char[][] args)
 {
+	Tid tid_ticket_manager = spawn (&ticket_manager);
+	Tid tid_subject_manager = spawn (&subject_manager);	
+	Tid tid_acl_manager = spawn (&acl_manager); 
+			
+    Tid tid_xapian_indexer = spawn (&xapian_indexer, tid_subject_manager);	
+    spawn (&xapian_indexer_commiter, tid_xapian_indexer);
+    
+    Tid tid_statistic_data_accumulator = spawn (&statistic_data_accumulator);
+    spawn (&print_statistic, tid_statistic_data_accumulator);    	
+    	    	
 	try
 	{
 		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
@@ -92,6 +108,9 @@ void main(char[][] args)
 				behavior = props.object["behavior"].str;								
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
+			spawn (&pacahon.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);	
+			
+			
 			JSONValue[] _listeners;
 			if(("listeners" in props.object) !is null)
 			{
@@ -131,7 +150,8 @@ void main(char[][] args)
 						if(zmq_connection !is null)
 						{
 							zmq_connection.set_callback(&get_message);
-							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ");
+							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ", 
+									tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
 
 							if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
 							{
@@ -146,8 +166,8 @@ void main(char[][] args)
 							writeln("start zmq listener");
 							thread_listener_for_zmq.start();
 
-							LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
-							load_info_thread.start();
+//							LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
+//							load_info_thread.start();
 						}
 
 					} else if(params.get("transport", "") == "rabbitmq")
@@ -165,14 +185,15 @@ void main(char[][] args)
 								rabbitmq_connection.set_callback(&get_message);
 
 								ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
-										props, "RABBITMQ");
+										props, "RABBITMQ", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager,
+										tid_statistic_data_accumulator);
 
 								init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
 								thread_listener_for_rabbitmq.start();
 
-								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
-								load_info_thread1.start();
+//								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
+//								load_info_thread1.start();
 
 							} else
 							{
@@ -185,6 +206,8 @@ void main(char[][] args)
 					}
 
 				}
+
+				
 
 				while(true)
 					core.thread.Thread.sleep(dur!("seconds")(1000));
@@ -199,31 +222,28 @@ void main(char[][] args)
 
 enum format: byte
 {
+	TURTLE = 0,
 	JSON_LD = 1,
 	UNKNOWN = -1
 }
 
-void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data)
+void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[] out_data, Context context = null)
 {
-	ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
-	server_thread.sw.stop();
-	long time_from_last_call = cast(long) server_thread.sw.peek().usecs;
-
-	//	if(time_from_last_call < 10)
-	//		printf("microseconds passed from the last call: %d\n", time_from_last_call);
-
-	server_thread.resource.stat.idle_time += time_from_last_call;
-
 	StopWatch sw;
 	sw.start();
 
+	if (context is null)
+	{
+		ServerThread server_thread = cast(ServerThread) core.thread.Thread.getThis();
+		context = server_thread.resource;
+	}
+	
 	byte msg_format = format.UNKNOWN;
-
+	
 	if(trace_msg[1] == 1)
-		log.trace("get message, count:[%d], message_size:[%d]", server_thread.resource.stat.count_message, message_size);
-
-	//	from_client.get_counts(count_message, count_command);
-	TripleStorage ts = server_thread.resource.ts;
+	{
+		log.trace("get message, count:[%d], message_size:[%d]", context.count_command, message_size);
+	}	
 
 	Subject[] subjects;
 
@@ -240,7 +260,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	bool is_parse_success = true;
 	string parse_error;
-
+	
 	if(*msg == '{' || *msg == '[')
 	{
 		try
@@ -251,7 +271,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			bool tmp_is_ba = true;
 			for(int idx = 0; idx < message_size; idx++)
 			{
-				if(msg[idx] == '@')
+				if(msg[idx] == '\"' && msg[idx + 1] == '@' && msg[idx + 2] == '\"')
 				{
 					tmp_is_ba = false;
 					break;
@@ -261,7 +281,21 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			if(tmp_is_ba == true)
 			{
 				string msg_str = util.utils.fromStringz(cast(char*) msg);
-				ba2pacahon(msg_str, server_thread.resource);
+				ba2pacahon(msg_str, context);
+
+				send(context.tid_statistic_data_accumulator, PUT, COUNT_COMMAND, 1);
+
+				sw.stop();
+				int t = cast(int) sw.peek().usecs;
+
+				send(context.tid_statistic_data_accumulator, PUT, WORKED_TIME, t);
+
+				if(trace_msg[69] == 1)
+					log.trace("messages, total time: %d [µs]", t);
+
+				context.sw.reset();
+				context.sw.start();
+				
 				return;
 			} else
 			{
@@ -278,7 +312,25 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			log.trace("Exception in parse_json_ld_string:[%s]", ex.msg);
 
 		}
-	} /*
+	}
+	else
+	{
+		//msg_format = format.TURTLE;
+		msg_format = format.JSON_LD;
+		subjects = parse_turtle_string(cast(char*) msg, message_size);
+		
+//		OutBuffer outbuff = new OutBuffer();
+//		toJson_ld(subjects, outbuff, true);
+//		outbuff.write(0);
+//		ubyte[] bb = outbuff.toBytes();
+//		io_msg.trace_io(true, cast(byte*) bb, bb.length);
+		
+	}
+	
+	if (subjects is null)
+		subjects = new Subject[0];
+	
+	 /*
 	 {
 	 sw.stop();
 	 long t = cast(long) sw.peek().usecs;
@@ -290,7 +342,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	if(trace_msg[3] == 1)
 	{
 		OutBuffer outbuff = new OutBuffer();
-		toJson_ld(subjects, outbuff);
+		toJson_ld(subjects, outbuff, true);
 		outbuff.write(0);
 		ubyte[] bb = outbuff.toBytes();
 		io_msg.trace_io(true, cast(byte*) bb, bb.length);
@@ -328,16 +380,15 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		// найдем в массиве triples субьекта с типом msg
 
 		// local_ticket <- здесь может быть тикет для выполнения пакетных операций
-		Ticket ticket;
+		Ticket *ticket;
 		char from;
 
-		for(int ii = 0; ii < subjects.length; ii++)
+		int ii = 0;
+		foreach (command ; subjects)
 		{
 			StopWatch sw_c;
 			sw_c.start();
 
-			Subject command = subjects[ii];
-			
 			if(trace_msg[5] == 1)
 			{
 				log.trace("get_message:subject.count_edges=%d", command.count_edges);
@@ -364,6 +415,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					log.trace("command type: unknown");
 			}
 
+
 			if(type !is null && (msg__Message in type.objects_of_value) !is null)
 			{				
 				Predicate reciever = command.getPredicate(msg__reciever);
@@ -373,7 +425,6 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					log.trace("message accepted from:%s", sender.getFirstLiteral());
 
 				Predicate p_ticket = command.getPredicate(msg__ticket);
-
 				string userId;
 
 				if(p_ticket !is null && p_ticket.getObjects() !is null)
@@ -382,7 +433,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					
 					if (ticket_id != "@local")
 					{
-						ticket = server_thread.foundTicket(ticket_id);
+						ticket = context.foundTicket(ticket_id);
 
 						// проверим время жизни тикета
 						if(ticket !is null)
@@ -410,46 +461,23 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 					}
 					
 				}
-				
 
 				if(type !is null && reciever !is null && ("pacahon" in reciever.objects_of_value) !is null)
 				{
-					//				Predicat* sender = command.getEdge(msg__sender);
-					//				Subject out_message = new Subject;
 					results[ii] = new Subject;
-
-					if(trace_msg[6] == 1)
-					{
-						sw.stop();
-						long t = cast(long) sw.peek().usecs;
-
-						log.trace("messages count: %d, %d [µs] start: command_preparer",
-								server_thread.resource.stat.count_message, t);
-						sw.start();
-					}
 					
-					command_preparer(ticket, command, results[ii], sender, server_thread.resource, ticket, from);
-
-					if(trace_msg[7] == 1)
-					{
-						sw.stop();
-						long t = cast(long) sw.peek().usecs;
-						log.trace("messages count: %d, %d [µs] end: command_preparer", server_thread.resource.stat.count_message,
-								t);
-						sw.start();
-					}
-					//				results[ii] = out_message;
+					command_preparer(ticket, command, results[ii], sender, context, ticket, from);
 				}
 
 				Predicate command_name = command.getPredicate(msg__command);
-				server_thread.resource.stat.count_command++;
+				send(context.tid_statistic_data_accumulator, PUT, COUNT_COMMAND, 1);
 				sw_c.stop();
 				long t = cast(long) sw_c.peek().usecs;
 
 				if(trace_msg[68] == 1)
 				{
 					log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(),
-							command.subject, sender.getFirstLiteral(), server_thread.resource.stat.count_command, t);
+							command.subject, sender.getFirstLiteral(), context.count_command, t);
 					if(t > 60_000_000)
 						log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstLiteral(), command.subject,
 								sender.getFirstLiteral());
@@ -469,8 +497,10 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				results[ii] = new Subject;
 				//command_preparer(ticket, command, results[ii], null, null, server_thread.resource, ticket, from);
 			}
-
+//				writeln ("##6");
+			ii++;
 		}
+		
 	}
 
 	if(trace_msg[8] == 1)
@@ -479,9 +509,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	OutBuffer outbuff = new OutBuffer();
 
 	if(msg_format == format.JSON_LD)
-		toJson_ld(results, outbuff);
+		toJson_ld(results, outbuff, false);
 
-	//	outbuff.write(0);
+	//outbuff.write(0);
 
 	out_data = outbuff.toBytes();
 
@@ -499,21 +529,18 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		if(out_data !is null)
 			io_msg.trace_io(false, cast(byte*) out_data, out_data.length);
 	}
-
-	server_thread.resource.stat.count_message++;
-	server_thread.resource.stat.size__user_of_ticket = cast(uint) server_thread.resource.user_of_ticket.length;
-	server_thread.resource.stat.size__cache__subject_creator = cast(uint) server_thread.resource.cache__subject_creator.length;
-
+		
+	send(context.tid_statistic_data_accumulator, PUT, COUNT_MESSAGE, 1);
+		
 	sw.stop();
-	long t = cast(long) sw.peek().usecs;
-
-	server_thread.resource.stat.worked_time += t;
+	int t = cast(int) sw.peek().usecs;
+	send(context.tid_statistic_data_accumulator, PUT, WORKED_TIME, t);
 
 	if(trace_msg[69] == 1)
-		log.trace("messages count: %d, total time: %d [µs]", server_thread.resource.stat.count_message, t);
+		log.trace("messages count: %d, total time: %d [µs]", context.count_message, t);
 
-	server_thread.sw.reset();
-	server_thread.sw.start();
+//	context.sw.reset();
+//	context.sw.start();
 	/*
 	 if ((server_thread.stat.count_message % 10_000) == 0)
 	 {
@@ -529,114 +556,13 @@ class ServerThread: core.thread.Thread
 {
 	ThreadContext resource;
 
-	StopWatch sw;
-
-	//	Statistic stat;
-
-	Statistic getStatistic()
-	{
-		return resource.stat;
-	}
-
-	this(void delegate() _dd, JSONValue props, string context_name)
+	this(void delegate() _dd, JSONValue props, string context_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
 	{
 		super(_dd);
-		resource = new ThreadContext(props, context_name);				
+		resource = new ThreadContext(props, context_name, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);				
 		
-		sw.start();
+		resource.sw.start();
 	}
 
-	Ticket foundTicket(string ticket_id)
-	{
-		Ticket tt = resource.user_of_ticket.get(ticket_id, null);
-
-		//	trace_msg[2] = 0;
-
-		if(tt is null)
-		{
-			tt = new Ticket;
-			tt.id = ticket_id;
-
-			if(trace_msg[18] == 1)
-			{
-				log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
-				//			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
-			}
-
-			string when = null;
-			int duration = 0;
-
-			// найдем пользователя по сессионному билету и проверим просрочен билет или нет
-			if(ticket_id !is null && ticket_id.length > 10)
-			{
-				TLIterator it = resource.ts.getTriples(ticket_id, null, null);
-
-				if(trace_msg[19] == 1)
-					if(it is null)
-						log.trace("сессионный билет не найден");
-
-				foreach(triple; it)
-				{
-					if(trace_msg[20] == 1)
-						log.trace("foundTicket: %s %s %s", triple.S, triple.P, triple.O);
-
-					if(triple.P == ticket__accessor)
-					{
-						tt.userId = triple.O;
-					}
-					else if(triple.P == ticket__when)
-					{
-						when = triple.O;
-					}
-					else if(triple.P == ticket__duration)
-					{
-						duration = parse!uint(triple.O);
-					}
-					else if(triple.P == ticket__parentUnitOfAccessor)
-					{
-						tt.parentUnitIds ~= triple.O;
-					}
-					
-//					if(tt.userId !is null && when !is null && duration > 10)
-//						break;
-				}
-
-				delete (it);
-			}
-
-			if(trace_msg[20] == 1)
-				log.trace("foundTicket end");
-
-			if(tt.userId is null)
-			{
-				if(trace_msg[22] == 1)
-					log.trace("найденный сессионный билет не полон, пользователь не найден");
-			}
-
-			if(tt.userId !is null && (when is null || duration < 10))
-			{
-				if(trace_msg[23] == 1)
-					log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
-				tt.userId = null;
-			}
-
-			if(when !is null)
-			{
-				if(trace_msg[24] == 1)
-					log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when, duration, text(tt.parentUnitIds));
-
-				// TODO stringToTime очень медленная операция ~ 100 микросекунд
-				tt.end_time = stringToTime(when) + duration * 100_000_000_000; //? hnsecs?
-
-				resource.user_of_ticket[ticket_id] = tt;
-			}
-		} else
-		{
-			if(trace_msg[17] == 1)
-				log.trace("тикет нашли в кеше, %s", ticket_id);
-		}
-
-		return tt;
-	}
 
 }

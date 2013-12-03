@@ -10,8 +10,8 @@ Runtime библиотека:
     phobos.
 Транспортный уровень: 
     zeromq.
-Хранилище триплетов: 
-    mongodb.
+Хранилище и поиск: 
+    lmdb + xapian.
 
 
 2. УСТАНОВКА
@@ -21,13 +21,10 @@ NB: Описание сборки / установки приведено для
 2.1. Требуемое ПО:
 
 - Клиент системы контроля версий GIT.
-- Digital mars D2 compiler dmd 2.063 ( http://www.digitalmars.com/d )
-- mongodb v2.4.4 ( http://www.mongodb.com )
+- Digital mars D2 compiler dmd 2.064.2 ( http://dlang.org/ )
 
-используемые библиотеки и обьектные файлы (находятся в lib32 и lib64):
-- libzmq.a: zeromq v2.2.0 ( http://www.zeromq.com )
-- libchash.o: sparsehash 2.0.1 ( http://code.google.com/p/sparsehash )
-- libmongoc.a, libbson.a: mongo-c-driver 0.4 ( http://github.com/mongodb/mongo-c-driver )
+используемые библиотеки и обьектные файлы (находятся в lib64):
+- libzmq.a: zeromq v4.2.0 ( http://www.zeromq.com )
 
 2.2. Процедура сборки / установки:
 
@@ -40,7 +37,7 @@ linux:
     git clone git@github.com:itiu/pacahon.git
     cd pacahon
     ./get-dependencies.sh
-    ./build-dmd32.sh или ./build-dmd64.sh
+    ./build-dmd64.sh
 
 После компиляции в каталоге появится исполняемый файл Pacahon
 

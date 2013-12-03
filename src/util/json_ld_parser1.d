@@ -382,7 +382,7 @@ class JSONException: Exception
 	}
 }
 
-void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
+void toJson_ld(Subject[] results, ref OutBuffer outbuff, bool use_reif, int level = 0)
 {
 	if(results.length > 1)
 		outbuff.write(cast(char[]) "[\n");
@@ -396,7 +396,7 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 			if(ii > 0)
 				outbuff.write(cast(char[]) ",\n");
 
-			toJson_ld(out_message, outbuff, level);
+			toJson_ld(out_message, outbuff, use_reif, level);
 		}
 	}
 
@@ -406,40 +406,29 @@ void toJson_ld(Subject[] results, ref OutBuffer outbuff, int level = 0)
 		outbuff.write(' ');
 }
 
-void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
+void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
 {
-	// A: перевод triple-tree в json-tree, а затем серилизация с помощью метода - string toJSON(in JSONValue* root); 
-	// (-) затратная операция, память на json-tree и процесс перевода
-	// (+) стандартное формирование JSON
-	//
-	// B: запись строки в формате JSON напрямую из triple-tree
-	// (+) быстрое по сравнением с вариантом A
-
-	// вариант В
 	if(ss is null || ss.subject is null && ss.count_edges == 0)
-	{
 		return;
-	}
 
 	for(int i = 0; i < level; i++)
-		outbuff.write(cast(char[]) "	");
+		outbuff.write('\t');
 
 	outbuff.write("{\n");
-
-	for(int i = 0; i < level; i++)
-		outbuff.write(cast(char[]) "	 ");
 
 	bool jj = 0;
 
 	if(ss.subject !is null)
 	{
+		for(int i = 0; i < level; i++)
+			outbuff.write('\t');
+
 		outbuff.write("\"@\" : \"");
 		outbuff.write(ss.subject);
 		outbuff.write('"');
 		jj = 1;
 	}
-	
-	
+		
 	foreach(pp ; ss.getPredicates())
 	{
 		if (pp.count_objects == 0)
@@ -450,7 +439,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 		jj = 1;
 		
 		for(int i = 0; i < level; i++)
-			outbuff.write(cast(char[]) "	 ");
+			outbuff.write('\t');
 
 		outbuff.write('"');		
 		outbuff.write(pp.predicate);
@@ -461,7 +450,19 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 
 		bool ff = false;
 		foreach(oo; pp.getObjects())
-		{						
+		{		
+			bool is_write_reif;
+			
+			if ((oo.reification !is null) && use_reif)
+				is_write_reif = true;
+								
+			if (is_write_reif)
+			{
+					outbuff.write("{\n");
+					for(int i = 0; i < level + 1; i++)
+						outbuff.write('\t');
+			}						
+										
 			if(oo.type == OBJECT_TYPE.LITERAL)
 			{
 				if(ff == true)
@@ -529,6 +530,13 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 					}
 
 					outbuff.write('"');
+					
+					if (is_write_reif)
+					{
+						outbuff.write(":\n");
+						toJson_ld(oo.reification, outbuff, false, level + 1);
+					}	
+					
 				}
 				//				log.trace ("write literal end");
 			} else if(oo.type == OBJECT_TYPE.URI)
@@ -562,7 +570,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 				} else
 				{
 					outbuff.write('\n');
-					toJson_ld(oo.subject, outbuff, level + 1);
+					toJson_ld(oo.subject, outbuff, use_reif, level + 1);
 				}
 			} else if(oo.type == OBJECT_TYPE.CLUSTER)
 			{
@@ -580,22 +588,23 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, int level = 0)
 							outbuff.write(',');
 						outbuff.write('\n');
 						
-						toJson_ld(oo.cluster.getArray[i], outbuff, level + 1);
+						toJson_ld(oo.cluster.getArray[i], outbuff, use_reif, level + 1);
 					}
 				}
 				outbuff.write(']');
 			}
-			
+		
+			if (is_write_reif)
+					outbuff.write('}');				
+		
 		}
 		if(pp.count_objects > 1)
-			outbuff.write(" ]");
-
+			outbuff.write(']');
 	}
-
 	outbuff.write('\n');
 
 	for(int i = 0; i < level; i++)
-		outbuff.write("	");
+		outbuff.write('\t');
 
 	outbuff.write("}");
 }

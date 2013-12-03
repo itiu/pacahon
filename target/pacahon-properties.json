@@ -29,6 +29,7 @@
 	,
         {
         "#alias":"to-search",
+	"db-type":"elastic", 
 	"transport":"rabbitmq",
     	"hostname":"127.0.0.1",
 	"port":"5672",
@@ -36,6 +37,11 @@
 	    "vhost":"bigarchive",
 	    "login":"ba",
 	    "credentional":"123456"
+        }
+	,
+        {
+        "alias":"to-search",
+	"db-type":"xapian" 
         },
 	{
         "#alias":"to-report",

@@ -2,10 +2,18 @@ module util.oi;
 
 private import std.json;
 private import std.stdio;
+import std.concurrency;
+import std.conv;
+	
 private import mq.mq_client;
 private import mq.zmq_point_to_poin_client;
 private import mq.rabbitmq_client;
 private import util.Logger;
+
+private import pacahon.graph;
+
+        import std.datetime;
+
 
 Logger log;
 Logger oi_msg;
@@ -20,15 +28,40 @@ class OI
 {
 	private string _alias;
 	private mq_client client;
+	private string[string] params;
+	private string _db_type;
+	Tid embedded_gateway;
+	bool is_embedded = false;
 
 	this()
 	{
 	}
 
-	int connect(string[string] params)
+	public string get_alias ()
 	{
+	    return _alias;
+	}
+
+	public string get_db_type ()
+	{
+		return _db_type;
+	}
+
+	int connect(string[string] _params)
+	{
+		writeln ("OI: connect use params:", params.keys, " : ", params.values);
+		params = _params;
+		
 		_alias = params.get("alias", null);
 		string transport = params.get("transport", "zmq");
+		
+		_db_type = params.get("db-type", "");
+
+		if (_db_type == "xapian")
+		{
+			is_embedded = true;
+			return 0;	
+		}
 
 		if(transport == "zmq")
 			client = new zmq_point_to_poin_client();
@@ -36,20 +69,80 @@ class OI
 		else if(transport == "rabbitmq")
 			client = new rabbitmq_client();
 		
-		int code = client.connect_as_req(params);
-		if (code == 0)
-			log.trace_log_and_console("success connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
-		else	
-		{			
-			log.trace_log_and_console("fail connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
-			return -1;
-		}
-			
-		return 0;	
+		if (client !is null)
+		{	
+			int code = client.connect_as_req(params);
+			if (code == 0)
+				log.trace_log_and_console("success connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
+			else	
+			{			
+				log.trace_log_and_console("fail connect to gateway: %s, transport:%s, params:%s", _alias, transport, params.values);
+				return -1;
+			}
+		}	
+		return -1;	
 	}
 
+	void send(Subject graph)
+	{
+//		writeln ("@0 embedded_gateway=", embedded_gateway);
+//		writeln ("@1 graph=", graph);
+		
+		if (is_embedded == true)
+		{			
+//			writeln ("@2");
+//			string doc_id = "doc_id";
+//			string field = "FFFF1";
+//			string val = "sdfgdsgsgddsgds";
+//			string ff;
+//			string vv;
+			
+//        StopWatch sw;
+//        sw.start();
+
+		//Subject[] metadata = graph.get_metadata ();
+
+		// отправляем данные документа
+        string data = graph.toBSON ();
+		std.concurrency.send (embedded_gateway, data);
+/*        
+		// отправляем метаданные
+        foreach (mm ; metadata)
+        {
+        	if (mm !is null)
+        	{
+        		string mmstr = mm.toBSON ();         	
+        		std.concurrency.send (embedded_gateway, mmstr);
+//        		writeln ("send metadata");
+			}
+        }
+*/        
+//			for (int i = 0; i < 100; i++)
+//				ff ~= "," ~ field;
+				
+//			for (int i = 0; i < 100; i++)
+//				vv ~= "," ~ val;
+			
+				
+//        sw.stop();
+//        long t = cast(long) sw.peek().usecs;
+
+//        writeln ("#16 [µs]", t);
+				
+//			writeln ("@3");
+			return;
+		}	
+	}
+	
 	void send(string msg)
 	{
+		if (is_embedded == true)
+		{			
+			std.concurrency.send (embedded_gateway, msg);
+			oi_msg.trace_io(false, cast(byte*) msg, msg.length);			
+			return;
+		}	
+
 		if(client is null)
 			return;
 
@@ -66,6 +159,13 @@ class OI
 
 	void send(ubyte[] msg)
 	{
+		if (is_embedded == true)
+		{			
+			std.concurrency.send (embedded_gateway, cast(immutable)msg);
+			oi_msg.trace_io(false, cast(byte*) msg, msg.length);			
+			return;
+		}	
+		
 		if(client is null)
 			return;
 

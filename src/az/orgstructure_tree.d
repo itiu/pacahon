@@ -7,8 +7,7 @@ private
 	import std.array;
 	import util.utils;
 	import util.Logger;
-	import pacahon.vql;
-	import trioplax.mongodb.TripleStorage;
+	import search.vql;
 	import pacahon.graph;
 	import pacahon.context;
 }
@@ -22,16 +21,16 @@ static this()
 
 class OrgStructureTree: BusEventListener
 {
+	Context thread_context;
 	//  по узлу можем получить его родителей
 	string[][string] node_4_parents;
 
-	TripleStorage ts;
 	VQL vql;
 
-	this(TripleStorage _ts)
+	this(Context _thread_context)
 	{
-		ts = _ts;
-		vql = new VQL(ts);
+		thread_context = _thread_context;
+		vql = new VQL();
 	}
 
 	void bus_event(event_type et)
@@ -43,7 +42,7 @@ class OrgStructureTree: BusEventListener
 		log.trace_log_and_console("start load org structure links");
 
 		GraphCluster res = new GraphCluster();
-		vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res, null);
+		vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res, null, thread_context);
 
 		foreach(ss; res.getArray())
 		{

@@ -1,16 +1,19 @@
-build/src/mongoc/bson_h.d
-build/src/mongoc/mongo_h.d
+src/bind/libczmq_header.d 
+src/bind/libzmq_header.d 
+src/bind/librabbitmq_headers.d
+src/bind/lmdb_header.d
+src/bind/nanomsg_header.d
+src/bind/xapian_d_header.d
 
-build/src/Log.d 
-build/src/libczmq_header.d 
-build/src/libzmq_header.d 
-build/src/librabbitmq_headers.d
+src/pacahon/define.d
 
 src/mq/mq_client.d 
 src/mq/zmq_point_to_poin_client.d 
 src/mq/zmq_pp_broker_client.d
 src/mq/rabbitmq_client.d
+src/pacahon/nanomsg_listener.d
 
+src/util/turtle_parser.d 
 src/util/Logger.d 
 src/util/utils.d 
 src/util/meta_x.d
@@ -19,13 +22,11 @@ src/util/alloc.d
 src/util/container.d
 src/util/json_ld_parser1.d 
 src/util/oi.d 
-src/util/libchash_h.d
 src/util/load_info.d 
-src/util/bangdb_header.d
 
-src/trioplax/mongodb/ComplexKeys.d 
-src/trioplax/mongodb/MongodbTripleStorage.d 
-src/trioplax/mongodb/TripleStorage.d 
+src/storage/ticket.d
+src/storage/subject.d
+src/storage/acl.d
 
 src/onto/doc_template.d
 src/onto/docs_base.d
@@ -34,18 +35,22 @@ src/onto/rdf_base.d
 src/az/orgstructure_tree.d
 src/az/condition.d
 
-src/pacahon/ba2pacahon.d
 src/pacahon/authorization.d 
 src/pacahon/command_io.d 
 src/pacahon/command_multiplexor.d 
 src/pacahon/event_filter.d 
 src/pacahon/graph.d 
-src/pacahon/search.d 
 src/pacahon/know_predicates.d 
 src/pacahon/log_msg.d 
 src/pacahon/thread_context.d 
 src/pacahon/context.d 
-src/pacahon/vql.d
-src/pacahon/vel.d
 src/pacahon/myversion.d
 src/pacahon/server.d 
+
+src/search/ba2pacahon.d
+src/search/search_event.d 
+src/search/xapian.d
+src/search/vql.d
+src/search/vel.d
+
+

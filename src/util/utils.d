@@ -13,10 +13,17 @@ private import std.format;
 private import std.stdio;
 private import std.conv;
 private import std.string;
+private import std.outbuffer;
 
 string getNowAsString()
 {
 	SysTime sysTime = Clock.currTime();
+	return sysTime.toISOExtString();
+}
+
+string timeToString(long tm)
+{
+	SysTime sysTime = SysTime (tm);
 	return sysTime.toISOExtString();
 }
 
@@ -27,11 +34,23 @@ string timeToString(SysTime sysTime)
 
 long stringToTime(string str)
 {
-	SysTime st = SysTime.fromISOExtString(str);
-	return st.stdTime;
+	try
+	{
+		if (str.length == 28)
+		{
+			str = str[0..23];
+		}			
+		
+		SysTime st = SysTime.fromISOExtString(str);	
+		return st.stdTime;
+	}
+	catch (Exception ex)
+	{
+		return 0;
+	}	
 }
 
-JSONValue get_props(string file_name)
+public JSONValue get_props(string file_name)
 {
 	JSONValue res;
 
@@ -170,7 +189,7 @@ private static string[dchar] translit_table;
 
 static this()
 {
-	translit_table = ['№': "N", '-': "_", ' ': "_", 'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E",
+	translit_table = ['№': "N", ',': "_", '-': "_", ' ': "_", 'А': "A", 'Б': "B", 'В': "V", 'Г': "G", 'Д': "D", 'Е': "E", 'Ё': "E",
 			'Ж': "ZH", 'З': "Z", 'И': "I", 'Й': "I", 'К': "K", 'Л': "L", 'М': "M", 'Н': "N", 'О': "O", 'П': "P", 'Р': "R",
 			'С': "S", 'Т': "T", 'У': "U", 'Ф': "F", 'Х': "H", 'Ц': "C", 'Ч': "CH", 'Ш': "SH", 'Щ': "SH", 'Ъ': "'", 'Ы': "Y",
 			'Ь': "'", 'Э': "E", 'Ю': "U", 'Я': "YA", 'а': "a", 'б': "b", 'в': "v", 'г': "g", 'д': "d", 'е': "e", 'ё': "e",
@@ -361,5 +380,98 @@ string _tmp_correct_link (string link)
       else if(sscc[8] == '_')
         sscc = sscc[9..$];
         return cast(string)sscc;
+}
+
+string escaping_or_uuid2search(string in_text)
+{
+	OutBuffer outbuff = new OutBuffer ();
+	escaping_or_uuid2search(in_text, outbuff);
+	return outbuff.toString;
+}
+
+void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
+{
+	int count_s = 0;
+
+	bool need_prepare = false;
+	bool is_uuid = false;
+
+	int idx = 0;
+	foreach(ch; in_text)
+	{		
+		if(ch == '-')
+		{
+			count_s++;
+			if(count_s == 4 && in_text.length > 36 && in_text.length < 48)
+			{
+				is_uuid = true;
+				need_prepare = true;
+				break;
+			}
+		}
+		if(ch == '"' || ch == '\n' || ch == '\\' || ch == '\t' || (ch == ':' && idx < 5))
+		{
+			need_prepare = true;
+//			break;
+		}
+		idx++;
+	}
+
+	bool fix_uuid_2_doc = false;
+
+	// TODO: временная корректировка ссылок в org
+	if(is_uuid == true)
+	{
+		if(in_text[0] == 'z' && in_text[1] == 'd' && in_text[2] == 'b' && in_text[3] == ':' && ((in_text[4] == 'd' && in_text[5] == 'e' && in_text[6] == 'p') || (in_text[4] == 'o' && in_text[5] == 'r' && in_text[6] == 'g')))
+			fix_uuid_2_doc = true;
+	}
+
+	if(need_prepare)
+	{
+		int len = cast(uint) in_text.length;
+
+		for(int i = 0; i < len; i++)
+		{
+			if(i >= len)
+				break;
+
+			char ch = in_text[i];
+
+			if((ch == '"' || ch == '\\'))
+			{
+				outbuff.write('\\');
+				outbuff.write(ch);
+			} else if(ch == '\n')
+			{
+				outbuff.write("\\n");
+			} else if(ch == '\t')
+			{
+				outbuff.write("\\t");
+			} else
+			{
+				if((ch == '-' && is_uuid == true) || ch == ':')
+					outbuff.write('_');
+				else
+				{
+					if(fix_uuid_2_doc)
+					{
+						if(i == 4)
+							outbuff.write('d');
+						else if(i == 5)
+							outbuff.write('o');
+						else if(i == 6)
+							outbuff.write('c');
+						else
+							outbuff.write(ch);
+					} else
+						outbuff.write(ch);
+				}
+			}
+		}
+	} else
+	{
+		outbuff.write(in_text);
+	}
+
 }
 

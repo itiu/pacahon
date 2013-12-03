@@ -2,18 +2,19 @@
 module mq.mq_client;
 
 private import std.outbuffer;
+private import pacahon.context;
 
 interface mq_client
 {
 	// set callback function for listener ()
-	void set_callback(void function(byte* data, int size, mq_client from_client, ref ubyte[]) _message_acceptor);
+	void set_callback(void function(byte* data, int size, mq_client from_client, ref ubyte[], Context context = null) _message_acceptor);
 
 	void get_count(out int cnt);
 
 	void listener();
 
-        int connect_as_listener(string[string] params);
-        int connect_as_req(string[string] params);
+    int connect_as_listener(string[string] params);
+    int connect_as_req(string[string] params);
 
 	int send(char* messagebody, int message_size, bool send_more);
 	string reciev();	

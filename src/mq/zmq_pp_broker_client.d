@@ -1,11 +1,10 @@
 module mq.zmq_pp_broker_client;
 
-private import std.c.string;
-private import std.stdio;
 private import core.stdc.stdlib;
 private import core.thread;
-
 private import core.runtime;
+private import std.c.string;
+private import std.stdio;
 private import std.process;
 private import std.conv;
 
@@ -13,10 +12,10 @@ version (linux) import std.c.linux.linux;
 
 private import std.datetime;
 
-private import libzmq_header;
-private import libczmq_header;
+private import bind.libzmq_header;
+private import bind.libczmq_header;
 
-private import Log;
+private import util.Logger;
 
 private import mq.mq_client;
 
@@ -24,6 +23,7 @@ private import std.outbuffer;
 
 private import core.stdc.stdio;
 private import std.uuid;
+private import pacahon.context;
 
 alias void listener_result;
 
@@ -89,7 +89,7 @@ class zmq_pp_broker_client: mq_client
 	ulong heartbeat_at;
 	char* bind_to;
 
-	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) message_acceptor;
+	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) message_acceptor;
 
 	int count = 0;
 	bool isSend = false;
@@ -143,7 +143,7 @@ class zmq_pp_broker_client: mq_client
 	}
 
 	// set callback function for listener ()
-	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) _message_acceptor)
+	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
 	{
 		message_acceptor = _message_acceptor;
 	}

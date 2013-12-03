@@ -10,7 +10,7 @@ module pacahon.graph;
  * 		└─Predicate[]
  * 			└─Objectz[]	
  * 
- * доступные возможности: 
+ * функции: 
  * - сборка графа из фактов или их частей
  * - навигация по графу
  * - серилизации графа в строку
@@ -24,10 +24,12 @@ private import std.conv;
 private import std.stdio;
 private import util.utils;
 
+private import pacahon.know_predicates;
+
 enum OBJECT_TYPE: byte
 {
 	LITERAL = 0,
-	SUBJECT = 1,
+	SUBJECT = 1, 
 	URI = 2,
 	CLUSTER = 3
 }
@@ -364,10 +366,11 @@ final class Subject
 		needReidex = true;
 	}
 
-	void addPredicate(string predicate, string object, byte lang = LANG.NONE)
+	Objectz addPredicate(string predicate, string object, byte lang = LANG.NONE)
 	{
 		if(object is null)
-			return;
+			return null;
+
 		Predicate pp;
 		for(int i = 0; i < _count_edges; i++)
 		{
@@ -380,7 +383,8 @@ final class Subject
 
 		if(pp !is null)
 		{
-			pp.addLiteral(object, lang);
+			needReidex = true;
+			return pp.addLiteral(object, lang);
 		} else
 		{
 			if(edges.length == 0)
@@ -397,8 +401,10 @@ final class Subject
 			edges[_count_edges].objects[0].literal = object;
 			edges[_count_edges].objects[0].lang = lang;
 			_count_edges++;
+
+			needReidex = true;
+			return edges[_count_edges-1].objects[0];
 		}
-		needReidex = true;
 	}
 
 	void addPredicate(string predicate, GraphCluster cluster)
@@ -508,6 +514,20 @@ final class Subject
 		needReidex = true;
 	}
 
+	void addPredicate(Predicate pp)
+	{
+		if(edges.length == 0)
+			edges = new Predicate[16];
+
+		if(edges.length == _count_edges)
+			edges.length += 16;
+
+		edges[_count_edges] = pp;
+		_count_edges++;
+		
+		needReidex = true;
+	}
+
 	void addPredicate(string predicate, Objectz[] oo)
 	{
 		Predicate pp;
@@ -603,58 +623,106 @@ final class Subject
 
 		return res;
 	}
+	
+	Subject[] get_metadata ()
+	{
+		Subject[] array = new Subject[_count_edges]; 
+		for(int i = 0; i < _count_edges; i++)
+		{
+			array[i] = edges[i].metadata;
+		}		
+		return array;
+	}
 
 	string toBSON()
 	{
 		OutBuffer outbuff = new OutBuffer();
-		outbuff.write (0xFFFFFFFF);
+		toBSON(outbuff);
+		return outbuff.toString;//.toBytes;
+	}
+	
+	void toBSON(ref OutBuffer outbuff, bool is_reification = false)
+	{
+		int start_pos = cast(int)outbuff.offset;
+		outbuff.write ("\0\0\0\0");
 		outbuff.write (cast(byte)0x2);
 		outbuff.write ("@");
 		outbuff.write (cast(byte)0);
-		outbuff.write (0xFFFFFFFF);
+		outbuff.write ("\0\0\0\0");
+//		writeln (subject, ":", cast(void*)outbuff);
 		int_to_buff (outbuff.data, cast(int)outbuff.offset - 4, cast(int)subject.length);
 		outbuff.write (subject);
 		outbuff.write (cast(byte)0);
 
 		for(int i = 0; i < _count_edges; i++)
 		{
-			edges[i].toBSON (outbuff);
+			if ((is_reification == true) && (edges[i].predicate == rdf__predicate ||  edges[i].predicate == rdf__subject || edges[i].predicate == rdf__object))
+				continue;
+
+			edges[i].toBSON (outbuff);			
 		}
-
-		int_to_buff (outbuff.data, 0, cast(int)outbuff.offset);
+//		writeln (subject, ":", cast(void*)outbuff);
+//		writeln (outbuff.data);
+		int_to_buff (outbuff.data, start_pos, cast(int)(outbuff.offset - start_pos - 4));
+		//writeln ("TO BSON ", subject);
 		outbuff.write (cast(byte)0);
-
-		return outbuff.toString;//.toBytes;
 	}
 	
 	private static int prepare_bson_element (string bson, Subject subject, int pos, Predicate pp)
 	{
+//				writeln ("fromBSON #1 bson.len=", bson.length);
+		Objectz oo;
 		while (pos < bson.length)
 		{
 			byte type = bson[pos];
+//				writeln ("fromBSON:type", type);
 			pos++;
 
-			if (type == 0x02 || type == 0x04)
+			if (type == 0x02 || type == 0x03 || type == 0x04)
 			{
-				//writeln ("fromBSON:type", type);
 				int bp = pos;
 				while (bson[pos] != 0)
 					pos++;
 					
 				string key = bson[bp..pos];
-				//writeln (bson[bp..pos]); 
+				//writeln ("key=",bson[bp..pos]); 
 				pos++;
-
-				if (type == 0x02)
+				
+				bp = pos;
+				int len = int_from_buff (bson, pos);
+				//writeln ("LEN:", len);
+				
+				if (len > bson.length)
 				{
-					int len = int_from_buff (bson, pos);
-					bp = pos + 4;
-
-					//writeln ("bson[", bp-1, "]:", bson[bp-1]);
-					//writeln ("bson[", bp, "]:", bson[bp]);
-					//writeln ("bson[", bp+1, "]:", bson[bp+1]);
-					//writeln ("LEN:", len);
-
+					writeln ("!@!#!@#!@%#$@!&% len > bson.length, len=", len, ", bson.length=", bson.length);					
+				}
+				
+				
+				if (type == 0x03)
+				{
+//					    writeln ("*1:key=", key);
+					    pos += 4;
+											
+					Subject inner = new Subject ();
+					//writeln ("		!!!!!!!!! read subject of metadata, len=", len, ", pos=", pos, ", bson.len=", bson.length);
+					pos += prepare_bson_element (bson[pos..pos+len], inner, 4, null);
+					//writeln ("		!!!!!!!! ok, len=", len);
+					if (key == "M")
+					{
+					    if (pp !is null)
+						pp.metadata = inner;
+					}
+					else if (key == "R")
+					{
+					    //writeln ("INNER:", inner, ", oo=", oo);
+					    if (oo !is null)
+						oo.reification = inner;
+					}    						
+				}
+				else 
+				if (type == 0x02)
+				{										
+					bp = pos + 4;					
 					if (bp+len > bson.length)
 						len = cast(int)bson.length - bp;
 			
@@ -666,18 +734,21 @@ final class Subject
 						string val = bson[bp..bp+len-1];
 						byte lang = bson[bp+len];
 						
+//						writeln ("val:", val);
+//						print_dump (bp+len, bson);						
+						
+						//writeln ("lang:", cast(byte)bson[bp+len+2]);
 					 	if (pp !is null)
-					 		pp.addLiteral (val, lang);
+					 		oo = pp.addLiteral (val, lang);
 					 	else	
-					 		subject.addPredicate (key, val, lang);
+					 		oo = subject.addPredicate (key, val, lang);
 					}
 					
 					//writeln (bson[bp..bp+len]);	
-					pos=bp+len + 1;		
+					pos=bp+len+1;		
 				}
 				else if (type == 0x04)
 				{
-					int len = int_from_buff (bson, pos);
 					pos += 4;
 			
 					Predicate npp = subject.addPredicate();
@@ -758,10 +829,10 @@ class Predicate
 		return null;
 	}
 
-	void addLiteral(string val, Subject reification, byte lang = LANG.NONE)
+	Objectz addLiteral(string val, Subject reification, byte lang = LANG.NONE)
 	{
 		if(val is null)
-			return;
+			return null;
 
 		if(objects.length == count_objects)
 			objects.length += 16;
@@ -770,12 +841,13 @@ class Predicate
 		objects[count_objects].reification = reification;
 		objects[count_objects].lang = lang;
 		count_objects++;
+		return objects[count_objects-1];
 	}
 
-	void addLiteral(string val, byte lang = LANG.NONE)
+	Objectz addLiteral(string val, byte lang = LANG.NONE)
 	{
 		if(val is null)
-			return;
+			return null;
 
 		if(objects.length == count_objects)
 			objects.length += 16;
@@ -783,6 +855,7 @@ class Predicate
 		objects[count_objects].literal = val;
 		objects[count_objects].lang = lang;
 		count_objects++;
+		return objects[count_objects-1];
 	}
 
 	void addCluster(GraphCluster cl)
@@ -846,9 +919,9 @@ class Predicate
 					if (objz.literal !is null)
 					{
 						if (zpt == true)
-							res ~= ",";
+							res ~= ", ";
 						
-						res ~= " " ~ objz.literal;
+						res ~= objz.literal;
 						zpt = true;
 					}
 				}
@@ -863,22 +936,26 @@ class Predicate
 	{
 		ulong offset_length_value;
 		
-		if (count_objects > 1)
+		bool as_array = count_objects > 1 || metadata !is null;
+		
+		if (as_array)
 			outbuff.write (cast(byte)0x04);
 		else	
 			outbuff.write (cast(byte)0x02);
 
 		outbuff.write (predicate);
 		outbuff.write (cast(byte)0);
-		if (count_objects > 1)
+				
+		if (as_array)
 		{
 			offset_length_value = outbuff.offset;			
 			outbuff.write (0xFFFFFFFF);
 		}	
-				
-		foreach(idx, oo; objects[0 .. count_objects])
+		
+		int idx = 0;		
+		foreach(oo; objects[0 .. count_objects])
 		{
-			if (count_objects > 1)
+			if (as_array)
 			{
 				outbuff.write (cast(byte)0x02);
 				outbuff.write (text(idx));
@@ -886,55 +963,54 @@ class Predicate
 			}
 			oo.toBSON (outbuff);
 			outbuff.write (cast(byte)0);
+			idx++;
+		}
+		if	(metadata !is null)
+		{
+			outbuff.write (cast(byte)0x03);
+			outbuff.write ("M");
+			outbuff.write (cast(byte)0);
+			metadata.toBSON (outbuff);
+//			writeln (metadata);
+			outbuff.write (cast(byte)0);
 		}
 		
-		if (count_objects > 1)
+		if (as_array)
 		{
 			int value_length = 0;
-			value_length = cast(int)(outbuff.offset - offset_length_value - 4);		
+			value_length = cast(int)(outbuff.offset - offset_length_value - 4);	
+				
+//			if (metadata !is null)
+//				value_length += 3;
+				
+			//writeln ("TO BSON ", " ", predicate, ", value_length=", value_length);
 			int_to_buff (outbuff.data, cast(int)offset_length_value, value_length);
 		}
 		outbuff.write (cast(byte)0);
 	}
 }
 
-int int_from_buff (string buff, int pos)
+private int int_from_buff (string buff, int pos)
 {
-//	writeln ("0:", cast(ubyte)buff[pos+0]);
-//	writeln ("1:", cast(ubyte)buff[pos+1], ", ", (cast(uint)buff[pos+1]) << 8);
-//	writeln ("2:", cast(ubyte)buff[pos+2], ", ", (cast(uint)buff[pos+2]) << 16);
-//	writeln ("3:", cast(ubyte)buff[pos+3], ", ", (cast(uint)buff[pos+3]) << 24);
-	
 	int res = buff[pos+0] + ((cast(uint)buff[pos+1]) << 8) + ((cast(uint)buff[pos+2]) << 16) + ((cast(uint)buff[pos+3]) << 24);
 	 
-//	ubyte* res_ptr = cast(ubyte*)&res;
-//	*(value_length_ptr + 3) = buff[pos+0]; 
-//	*(value_length_ptr + 2) = buff[pos+1]; 
-//	*(value_length_ptr + 1) = buff[pos+2]; 
-//	*(value_length_ptr + 0) = buff[pos+3]; 	
-//	 writeln ("RES:",res);
 	return res;
 }
 
-void int_to_buff (ubyte[] buff, int pos, int dd)
+private void int_to_buff (ref ubyte[] buff, int pos, int dd)
 {
-//	writeln ("POS:", pos);
 	ubyte* value_length_ptr = cast(ubyte*)&dd;
 	buff[pos+0] = *(value_length_ptr + 0); 
 	buff[pos+1] = *(value_length_ptr + 1); 
 	buff[pos+2] = *(value_length_ptr + 2); 
-	buff[pos+3] = *(value_length_ptr + 3); 	
-//	buff[pos+0] = 1; 
-//	buff[pos+1] = 2; 
-//	buff[pos+2] = 3; 
-//	buff[pos+3] = 4; 	
+	buff[pos+3] = *(value_length_ptr + 3); 		
 }
 
 class Objectz
 {
-	string literal; // если type == LITERAL
-	Subject subject; // если type == SUBJECT
-	GraphCluster cluster; // если type == CLUSTER
+	string literal; 		// если type == LITERAL
+	Subject subject; 		// если type == SUBJECT
+	GraphCluster cluster; 	// если type == CLUSTER
 
 	Subject reification = null; // реификация для данного значения
 
@@ -955,10 +1031,38 @@ class Objectz
 			int offset_length_value = cast(int)outbuff.offset;
 			outbuff.write (0xFFFFFFFF);
 			outbuff.write (literal);
-			outbuff.write (cast(byte)lang);
+			outbuff.write (lang);
 			outbuff.write (cast(byte)0);
 			 
 			int_to_buff (outbuff.data, offset_length_value, value_length);
+			
+			if	(reification !is null)
+			{
+				outbuff.write (cast(byte)0x03);
+				outbuff.write ("R");
+				outbuff.write (cast(byte)0);
+				reification.toBSON (outbuff, true);
+//				writeln (metadata);
+				outbuff.write (cast(byte)0);
+			}
+			
 		}
 	}	
 }
+
+private static void print_dump (int bp, string bson)
+{				
+	writeln ("*******");
+
+	long ep = bp + 8;
+	long sp = bp - 8;
+	
+	if (sp < 0) sp = 0;
+	if (ep > bson.length) ep = bson.length -1; 			
+				
+	for (long i = sp; i < ep; i++)
+		writeln ("bson ", (i - bp) , "[", i, "]:", bson[i], ", ", cast(uint)bson[i]);
+						
+	writeln ("*******");
+}			
+

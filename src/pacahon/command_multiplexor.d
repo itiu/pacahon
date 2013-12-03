@@ -1,6 +1,6 @@
 // TODO reason -> exception ?
 
-module pacahon.command.multiplexor;
+module pacahon.multiplexor;
 
 private 
 {
@@ -14,21 +14,22 @@ private
 	import std.datetime;
 	import std.conv;
 	import std.uuid;
+	import std.concurrency;
+
+	import storage.ticket;
 
 	import pacahon.command_io;
-	import pacahon.command.event_filter;
+	import pacahon.event_filter;
 	import pacahon.context;
-
-	import trioplax.mongodb.TripleStorage;
 	import pacahon.graph;
-	import util.json_ld.parser1;
-
 	import pacahon.authorization;
 	import pacahon.know_predicates;
 	import pacahon.log_msg;
-	import util.utils;
-	import pacahon.thread_context;
+	import pacahon.define;
+	import pacahon.context;
 
+	import util.utils;
+	import util.json_ld.parser1;	
 	import util.Logger;
 }
 
@@ -43,8 +44,9 @@ static this()
  * команда получения тикета
  */
 
-Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_context, out bool isOk,
-		out string reason, out Ticket ticket)
+import storage.subject;
+Subject get_ticket(Subject message, Predicate sender, Context context, out bool isOk,
+		out string reason, out Ticket *ticket)
 {
 	StopWatch sw;
 	sw.start();
@@ -91,7 +93,7 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 			isOk = false;
 			return null;
 		}
-
+/*
 		Triple[] search_mask = new Triple[2];
 
 		search_mask[0] = new Triple(null, auth__login, login.getFirstLiteral);
@@ -105,7 +107,7 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 		if(trace_msg[65] == 1)
 			log.trace("get_ticket: start getTriplesOfMask search_mask");
 
-		TLIterator it = thread_context.ts.getTriplesOfMask(search_mask, readed_predicate);
+		TLIterator it = context.ts.getTriplesOfMask(search_mask, readed_predicate);
 
 		//if(trace_msg[65] == 1)
 		//	log.trace("get_ticket: iterator %x", it);
@@ -159,9 +161,11 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 
 			if(new_ticket.subject !is null)
 			{
+				
 				// сохраняем в хранилище
-				thread_context.ts.storeSubject(new_ticket, thread_context);
-
+				send (context.tid_ticket_manager, STORE, new_ticket.toBSON (), thisTid);
+				string ticket_str = receiveOnly!(string);
+								
 				res.addPredicate(auth__ticket, new_ticket.subject);
 				
 				ticket = new Ticket ();
@@ -171,7 +175,7 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 				{
 					ticket.parentUnitIds ~= unit.literal;
 				}	
-				
+			
 				reason = "login и password совпадают";
 				isOk = true;
 			}
@@ -183,6 +187,7 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 			isOk = false;
 			return null;
 		}
+*/		
 		return res;
 	} catch(Exception ex)
 	{
@@ -213,7 +218,7 @@ Subject get_ticket(Subject message, Predicate sender, ThreadContext thread_conte
 	}
 }
 
-public Subject set_message_trace(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk,
+public Subject set_message_trace(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk,
 		out string reason)
 {
 	Subject res;
@@ -270,8 +275,8 @@ public Subject set_message_trace(Subject message, Predicate sender, string userI
 	return res;
 }
 
-void command_preparer(Ticket exist_ticket, Subject message, Subject out_message, Predicate sender, ThreadContext thread_context,
-		out Ticket new_ticket, out char from)
+void command_preparer(Ticket *exist_ticket, Subject message, Subject out_message, Predicate sender, Context context,
+		out Ticket *new_ticket, out char from)
 {
 	if(trace_msg[11] == 1)
 		log.trace("command_preparer start");
@@ -300,10 +305,9 @@ void command_preparer(Ticket exist_ticket, Subject message, Subject out_message,
 			{
 				if(trace_msg[14] == 1)
 					log.trace("command_preparer, get");
-
 				GraphCluster gres = new GraphCluster(STRATEGY.NOINDEXED);
 
-				get(exist_ticket, message, sender, thread_context, isOk, reason, gres, from);
+				get(exist_ticket, message, sender, context, isOk, reason, gres, from);
 				if(isOk == true)
 				{
 					//				out_message.addPredicate(msg__result, fromStringz(toTurtle (gres)));
@@ -314,19 +318,19 @@ void command_preparer(Ticket exist_ticket, Subject message, Subject out_message,
 				if(trace_msg[13] == 1)
 					log.trace("command_preparer, put");
 
-				res = put(message, sender, exist_ticket.userId, thread_context, isOk, reason);
+				res = put(message, sender, exist_ticket, context, isOk, reason);
 			} else if("remove" in command.objects_of_value)
 			{
 				if(trace_msg[14] == 1)
 					log.trace("command_preparer, remove");
 
-				res = remove(message, sender, exist_ticket.userId, thread_context, isOk, reason);
+				res = remove(message, sender, exist_ticket, context, isOk, reason);
 			} else if("get_ticket" in command.objects_of_value)
 			{
 				if(trace_msg[15] == 1)
 					log.trace("command_preparer, get_ticket");
 
-				res = get_ticket(message, sender, thread_context, isOk, reason, new_ticket);
+				res = get_ticket(message, sender, context, isOk, reason, new_ticket);
 
 				if(isOk)
 				{
@@ -340,24 +344,13 @@ void command_preparer(Ticket exist_ticket, Subject message, Subject out_message,
 			} else if("set_message_trace" in command.objects_of_value)
 			{
 				//			if(trace_msg[63] == 1)
-				res = set_message_trace(message, sender, exist_ticket.userId, thread_context, isOk, reason);
+				res = set_message_trace(message, sender, exist_ticket, context, isOk, reason);
 			} else
 			{
 				reason = "неизвестная команда";
 				out_message.addPredicate(msg__status, "405");
 				out_message.addPredicate(msg__reason, reason);
 				return;
-			}
-
-			if("get_info" in command.objects_of_value)
-			{
-				Statistic stat = thread_context.stat;
-
-				Subject res1 = new Subject();
-
-				res1.addPredicate("count_messages", text(stat.count_message));
-
-				out_message.addPredicate(msg__result, res1);
 			}
 
 			//		reason = cast(char[]) "запрос выполнен";

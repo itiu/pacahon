@@ -4,13 +4,10 @@ private import core.stdc.stdio;
 private import std.datetime;
 private import std.stdio;
 
-//private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
-
 private import pacahon.graph;
 private import pacahon.know_predicates;
 private import pacahon.log_msg;
-private import pacahon.thread_context;
+private import pacahon.context;
 
 private import util.Logger;
 
@@ -37,7 +34,7 @@ enum operation
  * 	userId - запросивший права
  * 	targetId - обьект охраны
  * 	op - список запрашиваемых операций
- *	server_thread - контекст приложения
+ *	context - контекст приложения
  * }
  * out
  * {
@@ -47,7 +44,7 @@ enum operation
  * }    
  */
 
-bool authorize(string userId, string targetId, short op, ThreadContext server_thread, out string reason, out bool subjectIsExist)
+bool authorize(string userId, string targetId, short op, Context context, out string reason, out bool subjectIsExist)
 {
 	StopWatch sw;
 	sw.start();
@@ -82,9 +79,6 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 	try
 	{
-		if(server_thread.ts is null)
-			throw new Exception("TripleStorage ts == null");
-
 		if(targetId is null)
 			throw new Exception("char[] targetId == null");
 
@@ -100,15 +94,17 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 		string subject_creator = null;
 
 		subjectIsExist = false;
-		if((targetId in server_thread.cache__subject_creator) !is null)
+		
+		subject_creator = context.get_subject_creator (targetId);
+		
+		if (subject_creator !is null)
 		{
 			subjectIsExist = true;
-			subject_creator = server_thread.cache__subject_creator[targetId];
 			if(trace_msg[25] == 1)
 				log.trace("субьект найден в кэше");
 		} else
 		{
-			subjectIsExist = server_thread.ts.isExistSubject(targetId);
+//			subjectIsExist = context.ts.isExistSubject(targetId);
 
 			if(trace_msg[25] == 1)
 			{
@@ -137,27 +133,6 @@ bool authorize(string userId, string targetId, short op, ThreadContext server_th
 
 				if(subject_creator is null)
 				{
-					TLIterator it = server_thread.ts.getTriples(targetId, dc__creator, userId);
-
-					if(it !is null)
-					{
-						if(trace_msg[27] == 1)
-							log.trace("dc:creator найден");
-
-						reason = "пользователь известен, он создатель данного субьекта";
-
-						server_thread.cache__subject_creator[targetId] = userId;
-						res = true;
-
-						delete (it);
-					} else
-					{
-						if(trace_msg[28] == 1)
-							log.trace("creator  не найден");
-
-						reason = "пользователь известен, но не является создателем данного субьекта";
-						res = false;
-					}
 				} else
 				{
 					if(subject_creator == userId)

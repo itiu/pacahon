@@ -14,13 +14,12 @@ private
 	import util.utils;
 	import util.Logger;
 
-	import trioplax.mongodb.TripleStorage;
-	
 	import pacahon.know_predicates;
 	import pacahon.graph;
-	import pacahon.vql;
 	import pacahon.context;
-	import pacahon.vel;	
+
+	import search.vel;	
+	import search.vql;
 
 	import az.orgstructure_tree;
 }
@@ -55,14 +54,14 @@ struct ConditionsAndIndexes
 class MandatManager: BusEventListener
 {
 	OrgStructureTree ost;
-	TripleStorage ts;
 	VQL vql;
+	Context thread_context;
 
-	this(TripleStorage _ts)
+	this(Context _thread_context)
 	{
-		ts = _ts;
-		vql = new VQL(ts);
-		ost = new OrgStructureTree(ts);
+		thread_context = _thread_context;
+		vql = new VQL();
+		ost = new OrgStructureTree(_thread_context);
 		ost.load();
 	}
 
@@ -76,13 +75,13 @@ class MandatManager: BusEventListener
 	{
 		log.trace_log_and_console("start load mandats");
 
-		vql = new VQL(ts);
+		vql = new VQL();
 
 		GraphCluster res = new GraphCluster();
 		vql.get(null, 
 				"return { 'uo:condition'}
             filter { 'class:identifier' == 'mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
-				res, null);
+				res, null, thread_context);
 
 		int count = 0;
 		JSONValue nil;

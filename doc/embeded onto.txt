@@ -1,4 +1,0 @@
-встроенные онтологии:
-
-    ACL: http://www.w3.org/2001/02/acls/ns# (http://www.w3.org/2001/04/ACLS/Schema)
-

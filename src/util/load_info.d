@@ -1,17 +1,21 @@
 module pacahon.load_info;
 
-private import core.thread;
-private import std.array: appender;
-private import std.format;
-private import std.stdio;
-private import std.datetime;
+private 
+{
+	import core.thread;
+	import std.array: appender;
+	import std.format;
+	import std.stdio;
+	import std.datetime;
+	import std.concurrency;
+	import std.datetime;
 
-private import pacahon.thread_context;
-private import util.utils;
+	import util.utils;
+	import util.Logger;
 
-private import util.Logger;
-
-private import std.datetime;
+	import pacahon.context;
+	import pacahon.define;
+}  
 
 public bool cinfo_exit = false;
 
@@ -31,112 +35,115 @@ static this()
 {
 	log = new Logger("server-statistics", "log", "");
 }
-
-class LoadInfoThread: Thread
+	
+void statistic_data_accumulator ()
 {
-	Statistic delegate() get_statistic;
-
-	this(Statistic delegate() _get_statistic)
+	long[] stat = new long[3];
+	writeln ("START THREAD: statistic_data_accumulator");
+	while (true)
 	{
-		get_statistic = _get_statistic;
-		super(&run);
-	}
-
-	private:
-
-		void run()
-		{
-			long sleep_time = 1;
-			Thread.sleep(dur!("seconds")(sleep_time));
-
-			int prev_count = 0;
-			int prev_idle_time = 0;
-			int prev_worked_time = 0;
-
-			//			bool ff = false;
-			while(!cinfo_exit)
+		receive(
+			(byte cmd, byte idx, int delta) 
 			{
-				sleep_time = 1;
-
-				Statistic stat = get_statistic();
-
-				int msg_count = stat.count_message;
-				int cmd_count = stat.count_command;
-				int idle_time = stat.idle_time;
-				int worked_time = stat.worked_time;
-
-				int delta_count = msg_count - prev_count;
-
-				float p100 = 3000;
-				
-				if(delta_count > 0)
-				// || ff == false)
+				if (cmd == PUT)
 				{
-					int delta_idle_time = idle_time - prev_idle_time;
-					prev_idle_time = idle_time;
-					int delta_worked_time = worked_time - prev_worked_time;
-					prev_worked_time = worked_time;
-
-//					int d_delta_count = delta_count / 5 + 1;
-//					wchar[] sdc = new wchar[d_delta_count];
-//					for(int i = 0; i < d_delta_count; i++)
-//					{
-//						sdc[i] = ' ';
-//					}
-
-					char[] now = cast(char[]) getNowAsString();
-					now[10] = ' ';
-					now.length = 19;
-					
-					float cps = 0.1f;
-					float wt = (cast(float)delta_worked_time)/1000/1000;
-					if (wt > 0)
-						cps = delta_count/wt;
-					
-					
-            		auto writer = appender!string();
-			        formattedWrite(writer, "%s | msg cnt:%5d | cmd cnt:%5d | cps:%6.1f | usr of tk:%4d | size csc:%5d | idle time:%7d | work time:%6d", 
-			        		now, msg_count, cmd_count, cps, stat.size__user_of_ticket, stat.size__cache__subject_creator, delta_idle_time / 1000, delta_worked_time / 1000);
-//			                writer.put(cast(char) 0);
-			        
-			        log.trace ("cps:%6.1f", cps);
-			        
-			        string set_bar_color; 
-			                
-			        if (cps < 3000)
-			        {
-			        	p100 = 3000;
-			        	set_bar_color = set_bar_color_1;
-			        }
-			        else if (cps >= 3000 && cps < 6000)
-			        {
-			        	p100 = 6000;
-			        	set_bar_color = set_bar_color_2;
-			        }
-			        else if (cps >= 6000 && cps < 10000)
-			        {
-			        	p100 = 10000;
-			        	set_bar_color = set_bar_color_3;
-			        }
-			        else if (cps >= 10000 && cps < 20000)
-			        {
-			        	p100 = 20000;
-			        	set_bar_color = set_bar_color_4;
-			        }
-			        
-					int d_cps_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * cps + 1);	
-					if (d_cps_count > 0)
-						writeln(set_bar_color, writer.data[0..d_cps_count], set_all_attribute_off, writer.data[d_cps_count..$]);
+					stat[idx] += delta;
 				}
+			},		
+			(byte cmd, Tid tid_sender) 
+			{
+				if (cmd == GET)
+				{
+					 send(tid_sender, cast (immutable) stat.dup);	
+				}								
+			});
+	}
+}
 
-				//				if(delta_count > 0)
-				//					ff = false;
-				//				else
-				//					ff = true;
+void print_statistic (Tid _statistic_data_accumulator)
+{
+	writeln ("START THREAD: print_statistic");
+	
+	long sleep_time = 1;
+	Thread.sleep(dur!("seconds")(sleep_time));
 
-				prev_count = msg_count;
-				Thread.sleep(dur!("seconds")(sleep_time));
-			}
-			writeln("exit form thread cinfo");
+	long prev_count = 0;
+	long prev_worked_time = 0;
+
+	while(!cinfo_exit)
+	{
+		sleep_time = 1;
+
+		send(_statistic_data_accumulator, GET, thisTid);
+		const_long_array stat = receiveOnly!(const_long_array);
+
+		long msg_count = stat[COUNT_MESSAGE];
+		long cmd_count = stat[COUNT_COMMAND];
+		long worked_time = stat[WORKED_TIME];
+
+		long delta_count = msg_count - prev_count;
+
+		float p100 = 3000;
+				
+		if(delta_count > 0)
+		{
+			long delta_worked_time = worked_time - prev_worked_time;
+			prev_worked_time = worked_time;
+
+			char[] now = cast(char[]) getNowAsString();
+			now[10] = ' ';
+			now.length = 19;
+					
+			float cps = 0.1f;
+			float wt = (cast(float)delta_worked_time)/1000/1000;
+			if (wt > 0)
+				cps = delta_count/wt;
+					
+					
+       		auto writer = appender!string();
+	        formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps:%6.1f | work time:%6d µs | t.w.t. : %7d ms", 
+			        		now, msg_count, cmd_count, cps, delta_worked_time, worked_time/1000);
+			        
+	        log.trace ("cps:%6.1f", cps);
+			        
+	        string set_bar_color; 
+		                
+	        if (cps < 3000)
+	        {
+	        	p100 = 3000;
+	        	set_bar_color = set_bar_color_1;
+	        }
+	        else if (cps >= 3000 && cps < 6000)
+	        {
+	        	p100 = 6000;
+	        	set_bar_color = set_bar_color_2;
+	        }
+	        else if (cps >= 6000 && cps < 10000)
+	        {
+	        	p100 = 10000;
+	        	set_bar_color = set_bar_color_3;
+	        }
+	        else if (cps >= 10000 && cps < 20000)
+	        {
+	        	p100 = 20000;
+	        	set_bar_color = set_bar_color_4;
+	        }
+			        
+			int d_cps_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * cps + 1);
+				
+			if (d_cps_count > 0)
+			{
+				if (d_cps_count >= writer.data.length)
+					d_cps_count = cast(int)(writer.data.length - 1);
+					
+				writeln(set_bar_color, writer.data[0..d_cps_count], set_all_attribute_off, writer.data[d_cps_count..$]);
+			}	
 		}
+
+		prev_count = msg_count;
+		Thread.sleep(dur!("seconds")(sleep_time));
+	}
+	
+	writeln("exit form thread print_statistic");
+		
 }

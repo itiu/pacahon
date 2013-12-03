@@ -5,16 +5,12 @@ private import core.stdc.stdlib;
 private import std.c.string;
 private import std.string;
 private import std.conv;
-
 private import std.datetime;
-
 private import std.stdio;
 private import std.outbuffer;
-
 private import std.datetime;
-
-//private import trioplax.mongodb.triple;
-private import trioplax.mongodb.TripleStorage;
+private import std.base64;
+private import std.digest.sha;
 
 private import pacahon.graph;
 
@@ -23,13 +19,13 @@ private import util.json_ld.parser1;
 private import pacahon.authorization;
 private import pacahon.know_predicates;
 private import pacahon.log_msg;
-private import pacahon.thread_context;
+private import pacahon.context;
 
 private import util.Logger;
 private import util.utils;
 
-private import pacahon.command.event_filter;
-private import pacahon.search;
+private import pacahon.event_filter;
+private import search.search_event;
 private import pacahon.context;
 
 import onto.docs_base;
@@ -55,13 +51,12 @@ static this()
  * комманда добавления / изменения фактов в хранилище 
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
-Subject put(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason)
+Subject put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
 {
 	if(trace_msg[31] == 1)
 		log.trace("command put");
 
 	isOk = false;
-
 	reason = "добавление фактов не возможно";
 
 	Subject res;
@@ -74,9 +69,6 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext thre
 	foreach(arg; args.getObjects)
 	{
 		Subject[] graphs_on_put = null;
-
-		if(trace_msg[33] == 1)
-			log.trace("args.objects.type = %s", text(arg.type));
 
 		try
 		{
@@ -96,35 +88,21 @@ Subject put(Subject message, Predicate sender, string userId, ThreadContext thre
 		if(trace_msg[34] == 1)
 			log.trace("arguments has been read");
 
-		if(trace_msg[64] == 1)
-		{
-			OutBuffer outbuff = new OutBuffer();
-			toJson_ld(graphs_on_put, outbuff);
-			outbuff.write(0);
-			ubyte[] bb = outbuff.toBytes();
-			log.trace_io(true, cast(byte*) bb, bb.length);
-		}
-
 		if(graphs_on_put is null)
 		{
 			reason = "в сообщении нет фактов которые следует поместить в хранилище";
 		}
 
-		if(trace_msg[34] == 1)
-			log.trace("фаза I, добавим основные данные");
-
-		store_graphs(graphs_on_put, userId, thread_context, isOk, reason);
+		store_graphs(graphs_on_put, ticket, context, isOk, reason);
 
 		if(trace_msg[37] == 1)
 			log.trace("command put is finish");
-
-		//		return res;
 	}
 
 	return res;
 }
 
-public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext thread_context, out bool isOk, out string reason,
+public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context context, out bool isOk, out string reason,
 		bool prepareEvents = true)
 {
 	// фаза I, добавим основные данные
@@ -134,6 +112,25 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 
 		if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
 		{
+			if (auth__Authenticated in type.objects_of_value)
+			{
+				writeln ("!1 graph=", graph);
+				Predicate acr = graph.getPredicate (auth__credential);
+				
+				Objectz oo = acr.getObjects()[0];
+				
+				// это добавление пользовательской учетки
+				string credential_64 = oo.literal;
+				
+				// сделаем хэш из пароля и сохраним
+				ubyte[] credential = Base64.decode(credential_64);
+				ubyte[20] hash = sha1Of(credential);
+				credential_64 = Base64.encode(hash);
+				
+				oo.literal = credential_64;				
+				writeln ("!6 graph=", graph);
+			}
+			
 			if(trace_msg[35] == 1)
 				log.trace("[35.1] adding subject=%s", graph.subject);
 
@@ -148,28 +145,28 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 
 			bool authorization_res = false;
 
-			if(userId !is null)
+			if(ticket !is null)
 			{
-				authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, thread_context,
+				authorization_res = authorize(ticket.userId, graph.subject, operation.CREATE | operation.UPDATE, context,
 						authorize_reason, subjectIsExist);
 			}
 
-			if(authorization_res == true || userId is null)
+			if(authorization_res == true || ticket is null)
 			{
-				if(userId !is null && graph.isExsistsPredicate(dc__creator) == false)
+				if(ticket !is null && graph.isExsistsPredicate(dc__creator) == false)
 				{
 					// добавим признак dc:creator
-					graph.addPredicate(dc__creator, userId);
+					graph.addPredicate(dc__creator, ticket.userId);
 				}
 
-				thread_context.ts.storeSubject(graph, thread_context);
+				//context.ts.storeSubject(graph, context);
 
 				if(prepareEvents == true)
 				{
 					if(type.isExistLiteral(event__Event))
 					{
 						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-						thread_context.event_filters.addSubject(graph);
+						context.event_filters.addSubject(graph);
 
 						writeln("add new event_filter [", graph.subject, "]");
 					} else
@@ -181,14 +178,14 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 						else
 							event_type = "create subject";
 
-						processed_events(graph, event_type, thread_context);
+						processed_events(graph, event_type, context);
 					}
 				}
 
 				reason = "добавление фактов выполнено:" ~ authorize_reason;
 				isOk = true;
 
-				search_event(graph, thread_context);
+				search_event(graph, context);
 			} else
 			{
 				reason = "добавление фактов не возможно: " ~ authorize_reason;
@@ -224,6 +221,7 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 
 			if(r_subject !is null && r_predicate !is null && r_object !is null)
 			{
+/*				
 				Triple reif = new Triple(r_subject.getFirstLiteral(), r_predicate.getFirstLiteral(), r_object.getFirstLiteral());
 
 				foreach(pp; graph.getPredicates)
@@ -233,13 +231,14 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 						foreach(oo; pp.getObjects())
 						{
 							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								thread_context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
+								context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
 							else
-								thread_context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
+								context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
 						}
 					}
 
 				}
+*/			
 			}
 		} else
 		{
@@ -251,7 +250,7 @@ public void store_graphs(Subject[] graphs_on_put, string userId, ThreadContext t
 
 }
 
-public void store_graph(Subject graph, string userId, ThreadContext thread_context, out bool isOk, out string reason,
+public void store_graph(Subject graph, string userId, Context context, out bool isOk, out string reason,
 		bool prepareEvents = true)
 {
 	// фаза I, добавим основные данные
@@ -275,7 +274,7 @@ public void store_graph(Subject graph, string userId, ThreadContext thread_conte
 
 		if(userId !is null)
 		{
-			authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, thread_context,
+			authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, context,
 					authorize_reason, subjectIsExist);
 		}
 
@@ -287,14 +286,14 @@ public void store_graph(Subject graph, string userId, ThreadContext thread_conte
 				graph.addPredicate(dc__creator, userId);
 			}
 
-			thread_context.ts.storeSubject(graph, thread_context);
+			//context.ts.storeSubject(graph, context);
 
 			if(prepareEvents == true)
 			{
 				if(type.isExistLiteral(event__Event))
 				{
 					// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-					thread_context.event_filters.addSubject(graph);
+					context.event_filters.addSubject(graph);
 
 					writeln("add new event_filter [", graph.subject, "]");
 				} else
@@ -306,14 +305,14 @@ public void store_graph(Subject graph, string userId, ThreadContext thread_conte
 					else
 						event_type = "create subject";
 
-					processed_events(graph, event_type, thread_context);
+					processed_events(graph, event_type, context);
 				}
 			}
 
 			reason = "добавление фактов выполнено:" ~ authorize_reason;
 			isOk = true;
 
-			search_event(graph, thread_context);
+			search_event(graph, context);
 		} else
 		{
 			reason = "добавление фактов не возможно: " ~ authorize_reason;
@@ -329,7 +328,7 @@ public void store_graph(Subject graph, string userId, ThreadContext thread_conte
 
 }
 
-public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext thread_context, out bool isOk, out string reason,
+public void get(Ticket *ticket, Subject message, Predicate sender, Context context, out bool isOk, out string reason,
 		ref GraphCluster res, out char from_out)
 {
 	// в качестве аргумента - шаблон для выборки, либо запрос на VQL
@@ -350,7 +349,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 	if(trace_msg[42] == 1)
 	{
 		OutBuffer outbuff = new OutBuffer();
-		toJson_ld(message, outbuff);
+		toJson_ld(message, outbuff, true);
 		log.trace("[42] command get, cmd=%s", outbuff.toString);
 	}
 
@@ -391,158 +390,10 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 				if(query !is null)
 				{
 					//writeln ("#1 ticket=", ticket);
-					count_found_subjects = thread_context.vql.get(ticket, query, res, thread_context);
-				} else
-				{
-					Subject graph = s_query;
-
-					//					read_from_mongo++;
-					//					log.trace("MONGO:%d", read_from_mongo);
-					from_out = 'D';
-
-					// считываем данные из mongodb
-
-					byte[string] readed_predicate;
-					Triple[] search_mask = new Triple[graph.count_edges];
-					int search_mask_length = 0;
-
-					// найдем предикаты, которые следует вернуть
-					foreach(pp; graph.getPredicates)
-					{
-						if(trace_msg[46] == 1)
-							log.trace("[46.1] pp0=%s", pp.predicate);
-
-						Triple statement = null;
-
-						foreach(oo; pp.getObjects())
-						{
-							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-							{
-								if(trace_msg[46] == 1)
-									log.trace("[46.2] pp1=%s", pp.predicate);
-
-								// if(oo.literal.length > 0)
-								{
-									if(oo.literal == "query:get_reifed")
-									{
-										// требуются так-же реифицированные данные по этому полю
-										// данный предикат добавить в список возвращаемых
-										if(trace_msg[47] == 1)
-											log.trace(
-													"[47] данный предикат и реифицированные данные добавим в список возвращаемых: %s",
-													pp.predicate);
-
-										readed_predicate[cast(string) pp.predicate] = field.GET_REIFED;
-
-										if(trace_msg[48] == 1)
-											log.trace("[48] readed_predicate.length=%d", readed_predicate.length);
-									} else if(oo.literal == "query:get")
-									{
-										// данный предикат добавить в список возвращаемых
-										if(trace_msg[49] == 1)
-											log.trace("[49] данный предикат добавим в список возвращаемых: %s", pp.predicate);
-
-										readed_predicate[cast(string) pp.predicate] = field.GET;
-
-										if(trace_msg[50] == 1)
-											log.trace("[50] readed_predicate.length=%d", readed_predicate.length);
-									} else
-									{
-										// это условие ограничивающее результаты выборки
-										if(statement is null)
-											statement = new Triple(null, pp.predicate, oo.literal);
-
-										if(trace_msg[51] == 1)
-											log.trace("[51] statement: p=%s o=%s", statement.P, statement.O);
-									}
-								}
-							}
-
-						}
-
-						if(graph.subject != "query:any" && (statement !is null || search_mask_length == 0))
-						{
-							if(trace_msg[53] == 1)
-							{
-								log.trace("[53] subject=%s", graph.subject);
-								//							log.trace("statement=%X", statement);
-							}
-
-							if(statement is null)
-								statement = new Triple(graph.subject, null, null);
-							else
-								statement.S = graph.subject;
-
-							if(trace_msg[54] == 1)
-								log.trace("[54] s=%s", statement.S);
-						}
-
-						if(statement !is null)
-						{
-							search_mask[search_mask_length] = statement;
-							search_mask_length++;
-
-							if(trace_msg[55] == 1)
-								log.trace("[55] search_mask_length=%d", search_mask_length);
-						}
-
-					}
-
-					if(search_mask_length > 0)
-					{
-						search_mask.length = search_mask_length;
-
-						//					if(trace_msg[56] == 1)
-						//						log.trace("search_mask.length=[%d] search_mask=[%s]", search_mask.length, search_mask);
-
-						TLIterator it;
-
-						it = thread_context.ts.getTriplesOfMask(search_mask, readed_predicate);
-
-						if(trace_msg[56] == 1)
-							log.trace("[56] thread_context.ts.getTriplesOfMask(search_mask, readed_predicate) is ok");
-
-						if(trace_msg[57] == 1)
-							log.trace("[57] формируем граф содержащий результаты {");
-
-						if(it !is null)
-						{
-							foreach(triple; it)
-							{
-								if(trace_msg[57] == 1)
-									log.trace("GET: triple %s", triple);
-
-								if(thread_context.IGNORE_EMPTY_TRIPLE == true)
-								{
-									if(triple.O !is null && triple.O.length > 0)
-									{
-										//									log.trace("DB: addTriple [%s %s %s]", triple.S, triple.P, triple.O);									
-										res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-									}
-								} else
-								{
-									res.addTriple(triple.S, triple.P, triple.O, triple.lang);
-								}
-
-							}
-							sw.stop();
-
-							delete it;
-						}
-					}
-
-					if(trace_msg[61] == 1)
-					{
-						sw.stop();
-						long t = cast(long) sw.peek().usecs;
-
-						log.trace("get, read data time: %d [µs]", t);
-						sw.start();
-					}
-
-					if(trace_msg[57] == 1)
-						log.trace("}");
-				}
+					count_found_subjects = context.vql.get(ticket, query, res, null, context);
+					
+					reason = "";
+				} 
 				/////////////////////////////////////////////////////////////////////////////////////////
 				if(trace_msg[58] == 1)
 					log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
@@ -557,7 +408,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 				 count_found_subjects++;
 
 				 bool isExistSubject;
-				 bool result_of_az = authorize(userId, s.subject, operation.READ, thread_context, authorize_reason,
+				 bool result_of_az = authorize(userId, s.subject, operation.READ, context, authorize_reason,
 				 isExistSubject);
 
 				 if(result_of_az == false)
@@ -607,7 +458,7 @@ public void get(Ticket ticket, Subject message, Predicate sender, ThreadContext 
 	return;
 }
 
-Subject remove(Subject message, Predicate sender, string userId, ThreadContext thread_context, out bool isOk, out string reason)
+Subject remove(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
 {
 	if(trace_msg[38] == 1)
 		log.trace("command remove");
@@ -638,12 +489,18 @@ Subject remove(Subject message, Predicate sender, string userId, ThreadContext t
 
 		string authorize_reason;
 		bool isExistSubject;
-		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, thread_context, authorize_reason,
+		
+		string userId;
+		
+		if (ticket !is null)
+			userId = ticket.userId;
+		
+		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, context, authorize_reason,
 				isExistSubject);
 
 		if(result_of_az)
 		{
-			thread_context.ts.removeSubject(ss.subject);
+			//context.ts.removeSubject(ss.subject);
 			reason = "команда remove выполнена успешно";
 			isOk = true;
 		} else

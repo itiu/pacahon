@@ -1,36 +1,127 @@
 module util.Logger;
 
-private import std.format;
-private import std.c.stdio;
-private import std.datetime;
+// TODO: ++ module core.sys.posix.syslog;
 
-private import std.array: appender;
-
-private import std.stdio;
-private import std.datetime;
-private import std.c.linux.linux;
-
-shared byte trace_msg[1100];
-
-version (X86_64)
+private 
 {
-    alias long _time;
+	import std.format;
+	import std.c.stdio;
+	import std.datetime;
+
+	import std.array: appender;
+
+	import std.stdio;
+	import std.datetime;
+	import std.c.linux.linux;
+	import std.concurrency;
 }
-else
+
+void logger ()
 {
-    alias int _time;
+	writeln ("SPAWN Logger");
+	LoggerQueue llq = null; 
+	
+	while (true)
+	{
+		// Receive a message from the owner thread.
+		auto msg = receiveOnly! (char, string, string, string, string) ();
+		
+		char cmd = msg[0];
+		
+		if (llq is null)
+			llq = new LoggerQueue (msg[1], msg[2], msg[3]);	
+		
+		if (cmd == 'T')
+			llq.trace (msg[4]);
+		else if (cmd == 'C')
+			llq.trace_log_and_console (msg[4]);
+		else if (cmd == 'I')
+			llq.trace_io (true, msg[4]);
+		else if (cmd == 'O')
+			llq.trace_io (false, msg[4]);
+			
+	}	
+	
 }
+
 
 
 public class Logger
 {
+	private string log_name = "app";
+	private string ext = "log";
+	private string src = "";
+	Tid tid_logger;
+	bool isSpawn = false;
+	
+	this(string _log_name, string _ext, string _src)
+	{		
+		log_name = _log_name;
+		src = _src;
+		ext = _ext;
+	}
+	
+	void trace(Char, A...)(in Char[] fmt, A args)
+	{		
+		if (isSpawn == false)
+		{
+			tid_logger = spawn(&logger);
+			isSpawn = true;
+		}	
+				
+		auto writer = appender!string();
+		formattedWrite(writer, fmt, args);		
+		send (tid_logger, 'T', log_name, ext, src, writer.data);		
+	}
+	
+	void trace_log_and_console(Char, A...)(in Char[] fmt, A args)
+	{		
+		if (isSpawn == false)
+		{
+			tid_logger = spawn(&logger);
+			isSpawn = true;
+		}	
+		
+		auto writer = appender!string();
+		formattedWrite(writer, fmt, args);		
+		send (tid_logger, 'C', log_name, ext, src, writer.data);		
+	}
+	
+	void trace_io(bool io, byte* data, ulong length)
+	{		
+		if (isSpawn == false)
+		{
+			tid_logger = spawn(&logger);
+			isSpawn = true;
+		}	
+		
+		if (io == true)
+			send (tid_logger, 'I', log_name, ext, src, cast(immutable)(cast(char*)data)[0..length]);		
+		else
+			send (tid_logger, 'O', log_name, ext, src, cast(immutable)(cast(char*)data)[0..length]);		
+	}
+	
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+shared byte trace_msg[1100];
+
+alias long _time;
+
+
+public class LoggerQueue
+{
 	private int count = 0;
 	private int prev_time = 0; 
+
 	private string trace_logfilename = "app";
 	private string ext = "log";
+	private string src = "";
+
 	
 	private FILE* ff = null;
-	private string src = "";
 
 	this(string log_name, string _ext, string _src)
 	{		
@@ -71,9 +162,9 @@ public class Logger
 		ff = fopen(writer.data.ptr, "aw");
 	}
 	
-	void trace_io(bool io, byte* data, ulong len)
+	void trace_io(bool io, string data)
 	{	
-		if (len <= 0)
+		if (data.length <= 0)
 			return;
 		
 		string str_io;
@@ -105,16 +196,9 @@ public class Logger
 
 		formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d]\n%s\n", year, month, day, hour, minute, second, usecs, str_io);
 
-		fwrite (cast(char*)writer.data , 1 , writer.data.length , ff);
+		fwrite (cast(char*)writer.data, 1, writer.data.length, ff);
 		
-                version (X86_64)
-                {
-                    fwrite (data , 1 , len, ff);
-                }
-                else
-                {
-                    fwrite (data , 1 , cast(uint)len, ff);
-                }
+        fwrite (cast(char*)data, 1, data.length, ff);
 
 		fputc('\r', ff);
 		
@@ -123,7 +207,7 @@ public class Logger
 		prev_time = day;		
 	}
 
-	string trace(Char, A...)(in Char[] fmt, A args)
+	string trace(string arg)
 	{
 		_time tt = time(null);
 		tm* ptm = localtime(&tt);
@@ -150,7 +234,7 @@ public class Logger
 		else
 		    formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] ", year, month, day, hour, minute, second, usecs);
 
-		formattedWrite(writer, fmt, args);
+		writer.put (arg);
 		writer.put(cast(char) 0);
 
 		fputs(cast(char*) writer.data, ff);
@@ -166,8 +250,8 @@ public class Logger
 		return writer.data;
 	}
 
-	void trace_log_and_console(Char, A...)(in Char[] fmt, A args)
+	void trace_log_and_console(string arg)
 	{
-		write(trace(fmt, args), "\n");
+		write(trace(arg), "\n");
 	}
 }

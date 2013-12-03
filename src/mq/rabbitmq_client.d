@@ -1,8 +1,8 @@
 module mq.rabbitmq_client;
 
-private import Log;
+private import util.Logger;
 
-import std.stdio;
+private import std.stdio;
 private import std.c.string;
 private import std.c.stdlib;
 private import std.datetime;
@@ -12,10 +12,10 @@ private import std.conv;
 
 //private import core.stdc.stdio;
 private import core.thread;
+private import bind.librabbitmq_headers;
 
-private import Log;
 private import mq.mq_client;
-private import librabbitmq_headers;
+private import pacahon.context;
 
 alias void listener_result;
 
@@ -45,7 +45,7 @@ class rabbitmq_client: mq_client
 		return fail;
 	}
 
-	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) message_acceptor;
+	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) message_acceptor;
 
 	int count = 0;
 	bool isSend = false;
@@ -58,7 +58,7 @@ class rabbitmq_client: mq_client
 	{
 		die_on_amqp_error(amqp_channel_close(&conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
 		die_on_amqp_error(amqp_connection_close(&conn, AMQP_REPLY_SUCCESS), "Closing connection");
-		die_on_error(amqp_destroy_connection(&conn), "Ending connection");
+//		die_on_error(amqp_destroy_connection(&conn), "Ending connection");
 	}
 
 	int connect_as_listener(string[string] params)
@@ -89,7 +89,16 @@ class rabbitmq_client: mq_client
 
 		amqp_basic_consume_ok_t* state = amqp_basic_consume(&conn, 1, queuename, amqp_empty_bytes, 0, 0, 0, amqp_empty_table);
 
-		die_on_amqp_error(amqp_get_rpc_reply(&conn), "Consuming");
+		if (state is null)
+		{
+			writeln ("listner:amqp consume is fail, redeclare queue [", queuename, "]");
+			amqp_queue_declare(&conn, 1, queuename, 0, 0, 0, 0, amqp_empty_table);
+			//amqp_queue_bind(&conn, 1, queuename, amqp_cstring_bytes(cast(char[])"amq.direct\0"), amqp_cstring_bytes(cast(char[])"hello\0"), amqp_empty_table);
+			
+			state = amqp_basic_consume(&conn, 1, queuename, amqp_empty_bytes, 0, 0, 0, amqp_empty_table);			
+		}
+
+		die_on_amqp_error(amqp_get_rpc_reply(&conn), "AMQP Consuming");
 		is_success_status = true;
 		return 0;
 		//		}
@@ -104,9 +113,9 @@ class rabbitmq_client: mq_client
 		//			return -1;
 		//		} else
 		//		{
-		conn = amqp_new_connection();
-
 		int port = to!(int)(params["port"]);
+
+		conn = amqp_new_connection();
 
 		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (immutable char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
 
@@ -126,13 +135,32 @@ class rabbitmq_client: mq_client
 		amqp_basic_consume(&conn, 1, queuename, amqp_empty_bytes, 0, 0, 0, amqp_empty_table);
 
 		die_on_amqp_error(amqp_get_rpc_reply(&conn), "Consuming");
+
+		// закрываем
+		die_on_amqp_error(amqp_channel_close(&conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
+		die_on_amqp_error(amqp_connection_close(&conn, AMQP_REPLY_SUCCESS), "Closing connection");
+//		die_on_error(amqp_destroy_connection(&conn), "Ending connection");
+
+		// открываем уже без опции consume
+		conn = amqp_new_connection();
+
+		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (immutable char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
+
+		amqp_set_sockfd(&conn, sockfd);
+		die_on_amqp_error(amqp_login(&conn, cast(char*) (params["vhost"] ~ "\0"), 0, 131072, 0,
+				amqp_sasl_method_enum.AMQP_SASL_METHOD_PLAIN, cast(char*) (params["login"] ~ "\0"),
+				cast(char*) (params["credentional"] ~ "\0")), "Logging in");
+		amqp_channel_open(&conn, 1);
+		die_on_amqp_error(amqp_get_rpc_reply(&conn), "Opening channel");
+
+
 		is_success_status = true;
 		return 0;
 		//		}
 	}
 
 	// set callback function for listener ()
-	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) _message_acceptor)
+	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
 	{
 		message_acceptor = _message_acceptor;
 	}

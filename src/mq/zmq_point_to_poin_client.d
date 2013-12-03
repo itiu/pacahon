@@ -5,15 +5,16 @@ private import std.c.string;
 private import std.stdio;
 private import std.outbuffer;
 
-private import libzmq_header;
+private import bind.libzmq_header;
 private import mq.mq_client;
-private import Log;
+private import util.Logger;
 
 private import core.stdc.stdio;
 
-	import std.datetime;
+private import std.datetime;
 private import std.process;
 private import std.conv;
+private import pacahon.context;
 
 alias void listener_result;
 
@@ -46,7 +47,7 @@ class zmq_point_to_poin_client: mq_client
 
 	bool need_resend_msg = false;
 
-	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) message_acceptor;
+	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) message_acceptor;
 
 	int connect_as_listener(string[string] params)
 	{
@@ -106,7 +107,7 @@ class zmq_point_to_poin_client: mq_client
 		cnt = count;
 	}
 
-	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data) _message_acceptor)
+	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
 	{
 		message_acceptor = _message_acceptor;
 	}

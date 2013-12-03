@@ -1,6 +1,6 @@
 // TODO - event:when = before
 
-module pacahon.command.event_filter;
+module pacahon.event_filter;
 
 private import std.stdio;
 private import std.string;
@@ -12,13 +12,14 @@ private import std.uuid;
 private import std.array: appender;
 private import std.regex;
 
-private import trioplax.mongodb.TripleStorage;
+private import ae.utils.container;
+
 private import util.Logger;
 private import util.utils;
 private import util.oi;
 private import pacahon.know_predicates;
 private import pacahon.graph;
-private import pacahon.thread_context;
+private import pacahon.context;
 
 Logger log;
 
@@ -27,23 +28,23 @@ static this()
 	log = new Logger("pacahon", "log", "event-filter");
 }
 
-void load_events(ThreadContext server_thread)
+void load_events(Context context)
 {
-	TLIterator it = server_thread.ts.getTriples(null, rdf__type, event__Event);
-	foreach(triple; it)
-	{
-		server_thread.event_filters.addTriple(triple.S, triple.P, triple.O, triple.lang);
-	}
+//	TLIterator it = context.ts.getTriples(null, rdf__type, event__Event);
+//	foreach(triple; it)
+//	{
+//		context.event_filters.addTriple(triple.S, triple.P, triple.O, triple.lang);
+//	}
 
-	delete (it);
-	log.trace("loaded (%d) filter(s)", server_thread.event_filters.length);
+//	delete (it);
+	log.trace("loaded (%d) filter(s)", context.event_filters.length);
 }
 
-void processed_events(Subject subject, string type, ThreadContext server_thread)
+void processed_events(Subject subject, string type, Context context)
 {
 	//writeln("info:processed_events ", type, ":", subject);
 
-	foreach(ef; server_thread.event_filters.getArray)
+	foreach(ef; context.event_filters.getArray)
 	{
 		string to = ef.getFirstLiteral(event__to);
 
@@ -165,13 +166,14 @@ void processed_events(Subject subject, string type, ThreadContext server_thread)
 									//						writeln(writer.data);
 
 									//	сообщение сформированно, отправляем согласно event:to	
-
-									OI gateway = server_thread.gateways.get(to, null);
-
-									if(gateway !is null)
+									Set!OI gateways = context.get_gateways (to); 
+									if(gateways.size > 0)
 									{
-										gateway.send(writer.data);
-										string res = gateway.reciev();
+										foreach (gateway; gateways.items)
+										{
+											gateway.send(writer.data);
+											gateway.reciev();
+										}	
 									} else
 									{
 										log.trace("filter [%s] skipped, for gateway [%s] not found config", ef.subject,
