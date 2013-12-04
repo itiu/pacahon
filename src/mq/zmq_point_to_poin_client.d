@@ -1,28 +1,26 @@
 module mq.zmq_point_to_poin_client;
 
 private import core.thread;
+private import core.stdc.stdio;
 private import std.c.string;
 private import std.stdio;
 private import std.outbuffer;
-
-private import bind.libzmq_header;
-private import mq.mq_client;
-private import util.Logger;
-
-private import core.stdc.stdio;
-
 private import std.datetime;
 private import std.process;
 private import std.conv;
+
+private import bind.libzmq_header;
+private import mq.mq_client;
+private import util.logger;
 private import pacahon.context;
 
 alias void listener_result;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("zmq", "log", null);
+	log = new logger("zmq", "log", null);
 }
 
 class zmq_point_to_poin_client: mq_client
@@ -220,14 +218,14 @@ class zmq_point_to_poin_client: mq_client
 					rc = zmq_msg_init_size(&msg, 1);
 					if(rc != 0)
 					{
-						log.trace_log_and_console("error in #1 zmq_msg_init_size: %s", zmq_error2string(zmq_errno()));
+						log.trace_log_and_console("error in zmq_msg_init_size: %s", zmq_error2string(zmq_errno()));
 						break;
 					}
 
 					rc = zmq_send(soc, &msg, 0);
 					if(rc != 0)
 					{
-						log.trace_log_and_console("error in #1 zmq_msg_send: %s", zmq_error2string(zmq_errno()));
+						log.trace_log_and_console("error in zmq_msg_send: %s", zmq_error2string(zmq_errno()));
 						zmq_msg_close(&msg);
 						break;
 					}
@@ -235,7 +233,7 @@ class zmq_point_to_poin_client: mq_client
 					rc = zmq_msg_close(&msg);
 					if(rc != 0)
 					{
-						log.trace_log_and_console("error in #1 zmq_msg_close: %s", zmq_error2string(zmq_errno()));
+						log.trace_log_and_console("error in zmq_msg_close: %s", zmq_error2string(zmq_errno()));
 						zmq_msg_close(&msg);
 						break;
 					}

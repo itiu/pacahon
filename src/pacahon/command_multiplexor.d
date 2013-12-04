@@ -30,14 +30,14 @@ private
 
 	import util.utils;
 	import util.json_ld.parser1;	
-	import util.Logger;
+	import util.logger;
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "multiplexor");
+	log = new logger("pacahon", "log", "multiplexor");
 }
 
 /*

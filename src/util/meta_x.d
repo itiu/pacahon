@@ -59,5 +59,3 @@ unittest
 	mixin(INSTALL_MEANING_OF_LIFE(VAR));
 	assert(aoeu == 42);
 }
-
-

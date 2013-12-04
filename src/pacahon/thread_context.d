@@ -13,7 +13,7 @@ private
 
 	import ae.utils.container;
 	import util.json_ld.parser1;
-	import util.Logger;
+	import util.logger;
 	import util.oi:OI;
 	import util.utils;	
 	
@@ -34,11 +34,11 @@ private
 	import az.condition:MandatManager;
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server");
+	log = new logger("pacahon", "log", "server");
 }
 
 

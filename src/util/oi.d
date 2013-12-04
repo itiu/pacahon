@@ -8,20 +8,20 @@ import std.conv;
 private import mq.mq_client;
 private import mq.zmq_point_to_poin_client;
 private import mq.rabbitmq_client;
-private import util.Logger;
+private import util.logger;
 
 private import pacahon.graph;
 
         import std.datetime;
 
 
-Logger log;
-Logger oi_msg;
+logger log;
+logger oi_msg;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server");
-	oi_msg = new Logger("pacahon", "oi", "server");
+	log = new logger("pacahon", "log", "server");
+	oi_msg = new logger("pacahon", "oi", "server");
 }
 
 class OI

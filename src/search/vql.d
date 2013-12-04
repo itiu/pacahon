@@ -16,7 +16,7 @@ private
 
 	import ae.utils.container;
 	import util.oi;
-	import util.Logger;	
+	import util.logger;	
 
 	import bind.xapian_d_header;
 
@@ -29,11 +29,11 @@ private
 	//import az.condition;	
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "VQL");
+	log = new logger("pacahon", "log", "VQL");
 }
 
 class VQL

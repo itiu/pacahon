@@ -6,18 +6,18 @@ private import std.stdio;
 private import ae.utils.container;
 
 private import util.oi;
-private import util.Logger;
+private import util.logger;
 private import util.utils;
 private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.context;
 private import onto.doc_template;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("2search", "log", "2search");
+	log = new logger("2search", "log", "2search");
 }
 
 void search_event(Subject graph, Context context)

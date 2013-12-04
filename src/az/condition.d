@@ -12,7 +12,7 @@ private
 
 	import util.oi;
 	import util.utils;
-	import util.Logger;
+	import util.logger;
 
 	import pacahon.know_predicates;
 	import pacahon.graph;
@@ -34,11 +34,11 @@ enum RightType
 	ADMIN = 5
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "MandatManager");
+	log = new logger("pacahon", "log", "MandatManager");
 }
 
 struct ConditionsAndIndexes

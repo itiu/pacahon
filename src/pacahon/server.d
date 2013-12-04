@@ -25,7 +25,7 @@ private
 	import storage.subject;
 	//import trioplax.mongodb.TripleStorage;
 
-	import util.Logger;
+	import util.logger;
 	import util.json_ld.parser1;
 	import util.turtle_parser;
 	import util.utils;
@@ -44,13 +44,13 @@ private
 	import search.xapian;
 }
 
-Logger log;
-Logger io_msg;
+logger log;
+logger io_msg;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server");
-	io_msg = new Logger("pacahon", "io", "server");
+	log = new logger("pacahon", "log", "server");
+	io_msg = new logger("pacahon", "io", "server");
 }
 
 void main(char[][] args)
@@ -507,6 +507,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
 	OutBuffer outbuff = new OutBuffer();
+	outbuff.reserve(results.length * 1500); 	
 
 	if(msg_format == format.JSON_LD)
 		toJson_ld(results, outbuff, false);

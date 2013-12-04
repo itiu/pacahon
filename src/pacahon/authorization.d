@@ -9,13 +9,13 @@ private import pacahon.know_predicates;
 private import pacahon.log_msg;
 private import pacahon.context;
 
-private import util.Logger;
+private import util.logger;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "authorization");
+	log = new logger("pacahon", "log", "authorization");
 }
 
 enum operation

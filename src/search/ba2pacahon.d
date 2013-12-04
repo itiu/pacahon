@@ -15,7 +15,7 @@ private import pacahon.command_io;
 //private import pacahon.json_ld.parser;
 
 private import util.utils;
-private import util.Logger;
+private import util.logger;
 
 private import onto.rdf_base;
 private import onto.docs_base;
@@ -26,13 +26,13 @@ string[string][string][string] map_ba2onto;
 string[string][string][string] map_onto2ba;
 Subject[string] doc_cache;
 
-Logger log;
+logger log;
 
 int count = 0;
 
 static this()
 {
-	log = new Logger("ba2pacahon", "log", "ba2pacahon");
+	log = new logger("ba2pacahon", "log", "ba2pacahon");
 }
 
 /*

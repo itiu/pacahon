@@ -1,4 +1,4 @@
-module util.Logger;
+module util.logger;
 
 // TODO: ++ module core.sys.posix.syslog;
 
@@ -16,7 +16,7 @@ private
 	import std.concurrency;
 }
 
-void logger ()
+void logger_process ()
 {
 	writeln ("SPAWN Logger");
 	LoggerQueue llq = null; 
@@ -46,7 +46,7 @@ void logger ()
 
 
 
-public class Logger
+public class logger
 {
 	private string log_name = "app";
 	private string ext = "log";
@@ -65,7 +65,7 @@ public class Logger
 	{		
 		if (isSpawn == false)
 		{
-			tid_logger = spawn(&logger);
+			tid_logger = spawn(&logger_process);
 			isSpawn = true;
 		}	
 				
@@ -78,7 +78,7 @@ public class Logger
 	{		
 		if (isSpawn == false)
 		{
-			tid_logger = spawn(&logger);
+			tid_logger = spawn(&logger_process);
 			isSpawn = true;
 		}	
 		
@@ -91,7 +91,7 @@ public class Logger
 	{		
 		if (isSpawn == false)
 		{
-			tid_logger = spawn(&logger);
+			tid_logger = spawn(&logger_process);
 			isSpawn = true;
 		}	
 		

@@ -21,7 +21,7 @@ private import pacahon.know_predicates;
 private import pacahon.log_msg;
 private import pacahon.context;
 
-private import util.Logger;
+private import util.logger;
 private import util.utils;
 
 private import pacahon.event_filter;
@@ -30,7 +30,7 @@ private import pacahon.context;
 
 import onto.docs_base;
 
-Logger log;
+logger log;
 //char[] buff;
 char[] buff1;
 string[] reifed_data_subj;
@@ -42,7 +42,7 @@ static this()
 {
 	//	buff = new char[21];
 	buff1 = new char[6];
-	log = new Logger("pacahon", "log", "command-io");
+	log = new logger("pacahon", "log", "command-io");
 	reifed_data_subj = new string[1];
 	reifed_data_subj[0] = "_:R__01";
 }

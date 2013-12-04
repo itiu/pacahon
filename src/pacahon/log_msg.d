@@ -1,6 +1,6 @@
 module pacahon.log_msg;
 
-private import util.Logger;
+private import util.logger;
 
 // last id = 71
 

@@ -6,17 +6,17 @@ private
 	import std.string;
 	import std.array;
 	import util.utils;
-	import util.Logger;
+	import util.logger;
 	import search.vql;
 	import pacahon.graph;
 	import pacahon.context;
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "OrgStructureTree");
+	log = new logger("pacahon", "log", "OrgStructureTree");
 }
 
 class OrgStructureTree: BusEventListener

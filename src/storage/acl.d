@@ -6,7 +6,7 @@ private
 	import std.concurrency;
 	import std.file;
 	
-	import util.Logger;
+	import util.logger;
 	import util.utils;	
 
 	import bind.lmdb_header;	
@@ -15,11 +15,11 @@ private
 	import pacahon.define;
 }
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "server");
+	log = new logger("pacahon", "log", "server");
 }
 
 //////////////// ACLManager
@@ -36,7 +36,6 @@ static this()
 ключи:
 1. [кому]+[на что]+[право] : подтверждение права, значение [byte]
 2. [кому]+[на что] : уникальные по значению записи о правах
-
 
 *********************************************************************/
 

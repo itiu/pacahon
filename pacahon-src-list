@@ -14,7 +14,7 @@ src/mq/rabbitmq_client.d
 src/pacahon/nanomsg_listener.d
 
 src/util/turtle_parser.d 
-src/util/Logger.d 
+src/util/logger.d 
 src/util/utils.d 
 src/util/meta_x.d
 src/util/meta.d

@@ -9,13 +9,13 @@ private import std.utf;
 private import std.conv;
 //private import pacahon.know_predicates;
 
-private import util.Logger;
+private import util.logger;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "pacahon.json_ld.parser1");
+	log = new logger("pacahon", "log", "pacahon.json_ld.parser1");
 }
 
 /**

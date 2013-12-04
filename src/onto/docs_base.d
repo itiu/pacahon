@@ -6,17 +6,17 @@ private import std.datetime;
 private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.context;
-private import util.Logger;
+private import util.logger;
 private import onto.rdf_base;
 private import onto.doc_template;
 
 byte[string] indexedPredicates;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("ba2pacahon", "log", "ba2pacahon");
+	log = new logger("ba2pacahon", "log", "ba2pacahon");
 }
 
 //Logger log;

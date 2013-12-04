@@ -1,7 +1,6 @@
 module mq.rabbitmq_client;
 
-private import util.Logger;
-
+private import core.thread;
 private import std.stdio;
 private import std.c.string;
 private import std.c.stdlib;
@@ -10,20 +9,18 @@ private import std.outbuffer;
 private import std.uuid;
 private import std.conv;
 
-//private import core.stdc.stdio;
-private import core.thread;
 private import bind.librabbitmq_headers;
-
 private import mq.mq_client;
+private import util.logger;
 private import pacahon.context;
 
 alias void listener_result;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("rabbitmq", "log", null);
+	log = new logger("rabbitmq", "log", null);
 }
 
 class rabbitmq_client: mq_client

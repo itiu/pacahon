@@ -14,18 +14,18 @@ private import std.regex;
 
 private import ae.utils.container;
 
-private import util.Logger;
+private import util.logger;
 private import util.utils;
 private import util.oi;
 private import pacahon.know_predicates;
 private import pacahon.graph;
 private import pacahon.context;
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("pacahon", "log", "event-filter");
+	log = new logger("pacahon", "log", "event-filter");
 }
 
 void load_events(Context context)

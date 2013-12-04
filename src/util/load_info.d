@@ -11,7 +11,7 @@ private
 	import std.datetime;
 
 	import util.utils;
-	import util.Logger;
+	import util.logger;
 
 	import pacahon.context;
 	import pacahon.define;
@@ -29,11 +29,11 @@ private string set_text_color_blue = "\x1B[34m";
 private string set_all_attribute_off = "\x1B[0m";
 private string set_cursor_in_begin_string = "\x1B[0E";
 
-Logger log;
+logger log;
 
 static this()
 {
-	log = new Logger("server-statistics", "log", "");
+	log = new logger("server-statistics", "log", "");
 }
 	
 void statistic_data_accumulator ()
