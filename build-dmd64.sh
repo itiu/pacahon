@@ -1,8 +1,8 @@
 DMD=dmd
 
 VERSION_MAJOR=1
-VERSION_MINOR=34
-VERSION_PATCH=2
+VERSION_MINOR=35
+VERSION_PATCH=0
 
 #cp -r src/* build/src
 
@@ -14,7 +14,7 @@ rm *.log
 rm *.io
 rm *.oi
 
-libs="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a lib64/libutils.a"
+libs="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a lib64/libutils.a"
 
 $DMD -m64 -O -g -release \
 @pacahon-src-list $libs -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
