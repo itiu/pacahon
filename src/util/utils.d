@@ -1,19 +1,25 @@
 module util.utils;
 
-private import std.file;
+private 
+{
+ import core.stdc.stdio;
+ import std.file;
+ import std.datetime;
+ import std.json;
+ import std.c.string;
+ import std.c.linux.linux;
+ import std.format;
+ import std.stdio;
+ import std.conv;
+ import std.string;
+ import std.outbuffer;
+ import std.concurrency;
 
-private import std.datetime;
+ import ae.utils.container;
+ import pacahon.know_predicates;
+ import pacahon.context;
+}
 
-private import std.json;
-private import core.stdc.stdio;
-private import std.c.string;
-private import std.c.linux.linux;
-
-private import std.format;
-private import std.stdio;
-private import std.conv;
-private import std.string;
-private import std.outbuffer;
 
 string getNowAsString()
 {
@@ -475,3 +481,161 @@ void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
 
 }
 
+//////////////////////////////////////////////////////////////////////////////
+void print_2 (ref Set!string*[string] res)
+{
+	writeln ("***");
+	foreach (key ; res.keys)
+	{
+		writeln (key, ":");
+		Set!string* ss = res[key];
+		foreach (aa ; ss.items)
+		{
+			writeln ("	", aa);			
+		}
+	}
+}
+
+private static bool is_link_on_subject (string val)
+{
+	if (val.length > 12)
+	{
+		if (val[0] == '#')
+			return true;
+			
+		if (val[0] == 'z' && val[1] == 'd' && val[2] == 'b' && val[3] == ':' && val[4] == 'd' && val[5] == 'o')
+			return true;
+	}
+	return false;			
+}				
+
+enum : byte
+{
+	TYPE = 1,
+	LINKS = 2,
+	ALL = 4
+}
+
+Set!string*[string] get_subject_from_BSON (string bson, byte fields = ALL)
+{
+	Set!string*[string] out_set;
+	Set!string *ooz = new Set!string; 
+	ooz.resize (1);	
+	prepare_bson_element (bson, out_set, 4, ooz, 0, 0, fields);
+	return out_set;
+} 
+
+private static int prepare_bson_element (string bson, ref Set!string*[string] res, int pos, Set!string *ooz, byte parent_type, int level, byte fields)
+{
+//	send_request_on_find = 0;
+	
+		//writeln ("fromBSON #1 bson.len=", bson.length);
+		while (pos < bson.length)
+		{
+			byte type = bson[pos];
+//			writeln ("fromBSON:type", type);
+			pos++;
+
+			if (type == 0x02 || type == 0x03 || type == 0x04)
+			{
+				int bp = pos;
+				while (bson[pos] != 0)
+					pos++;
+					
+				string key = bson[bp..pos];
+				//writeln ("key=", bson[bp..pos]); 
+				pos++;
+				
+				bp = pos;
+				int len = int_from_buff (bson, pos);
+				//writeln ("LEN:", len);
+				
+				if (len > bson.length)
+				{
+					writeln ("!@!#!@#!@%#$@!&% len > bson.length, len=", len, ", bson.length=", bson.length);					
+				}
+				
+				
+				if (type == 0x03)
+				{
+					//writeln ("*1:key=", key);
+					pos += 4;
+											
+					//writeln ("		!!!!!!!!! read subject of metadata, len=", len, ", pos=", pos, ", bson.len=", bson.length);
+					pos += prepare_bson_element (bson[pos..pos+len], res, 4, ooz, type, level + 1, fields);
+					//writeln ("		!!!!!!!! ok, len=", len);
+				}
+				else 
+				if (type == 0x02)
+				{										
+					bp = pos + 4;					
+					if (bp+len > bson.length)
+						len = cast(int)bson.length - bp;
+			
+					//writeln ("LEN2:", len);			
+					string val = bson[bp..bp+len-1];
+					byte lang = bson[bp+len];
+						
+//					writeln ("val:", val);
+//						print_dump (bp+len, bson);						
+						
+//					writeln ("lang:", cast(byte)bson[bp+len+2]);
+
+					if (parent_type != 0x03)
+					{
+//						writeln ("#0 level:", level, ", ooz=", ooz);
+						
+						if (fields == ALL || 
+							(fields == LINKS && is_link_on_subject (val)) ||
+							fields == TYPE)
+						{
+							if (level == 0)
+							{
+								ooz = new Set!string;
+								ooz.resize (1);
+							}	
+												
+							*ooz ~= val;
+										
+							if (level == 0)
+								res[key] = ooz;
+						}	
+					}								
+					
+					//writeln (bson[bp..bp+len]);	
+					pos = bp+len+1;		
+				}
+				else if (type == 0x04)
+				{
+					pos += 4;
+					Set!string* inner_ooz = new Set!string; 
+					inner_ooz.resize (4);
+					
+					pos += prepare_bson_element (bson[pos..pos+len], res, 0, inner_ooz, type, level + 1, fields);
+					if ((*inner_ooz).size > 0)
+						res[key] = inner_ooz;
+					
+					if (level == 0 && fields == TYPE && key == rdf__type)
+						return 0;
+				}
+			}
+		}
+		
+	return pos;		
+}
+
+public int int_from_buff (string buff, int pos)
+{
+	int res = buff[pos+0] + ((cast(uint)buff[pos+1]) << 8) + ((cast(uint)buff[pos+2]) << 16) + ((cast(uint)buff[pos+3]) << 24);
+	 
+	return res;
+}
+
+public void int_to_buff (ref ubyte[] buff, int pos, int dd)
+{
+	ubyte* value_length_ptr = cast(ubyte*)&dd;
+	buff[pos+0] = *(value_length_ptr + 0); 
+	buff[pos+1] = *(value_length_ptr + 1); 
+	buff[pos+2] = *(value_length_ptr + 2); 
+	buff[pos+3] = *(value_length_ptr + 3); 		
+}

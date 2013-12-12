@@ -62,7 +62,7 @@ class zmq_point_to_poin_client: mq_client
 			if(context is null)
 				context = zmq_init(1);
 
-			soc = zmq_socket(context, soc_type.ZMQ_REQ);
+			soc = zmq_socket(context, ZMQ_REQ);
 
 			int rc = zmq_connect(soc, cast(char*) (connect_to ~ "\0"));
 			if(rc != 0)
@@ -126,9 +126,9 @@ class zmq_point_to_poin_client: mq_client
 		int send_param = 0;
 
 		if(send_more)
-			send_param = send_recv_opt.ZMQ_SNDMORE;
+			send_param = ZMQ_SNDMORE;
 
-		rc = zmq_send(soc, &msg, send_param);
+		rc = zmq_sendmsg(soc, &msg, send_param);
 		if(rc != 0)
 		{
 			log.trace("libzmq_client.send:zmq_send: {}\n", zmq_error2string(zmq_errno()));
@@ -160,7 +160,7 @@ class zmq_point_to_poin_client: mq_client
 
 		//StopWatch sw_c;
 
-		rc = zmq_recv(soc, &msg, 0);
+		rc = zmq_recvmsg(soc, &msg, 0);
 		if(rc != 0)
 		{
 			rc = zmq_msg_close(&msg);
@@ -197,7 +197,7 @@ class zmq_point_to_poin_client: mq_client
 		context = zmq_init(1);
 		while(1)
 		{
-			soc = zmq_socket(context, soc_type.ZMQ_REP);
+			soc = zmq_socket(context, ZMQ_REP);
 
 			log.trace_log_and_console("libzmq_client: listen from client: %s", bind_to);
 			int rc = zmq_bind(soc, cast(char*) (bind_to ~ "\0"));
@@ -222,7 +222,7 @@ class zmq_point_to_poin_client: mq_client
 						break;
 					}
 
-					rc = zmq_send(soc, &msg, 0);
+					rc = zmq_sendmsg(soc, &msg, 0);
 					if(rc != 0)
 					{
 						log.trace_log_and_console("error in zmq_msg_send: %s", zmq_error2string(zmq_errno()));
@@ -247,7 +247,7 @@ class zmq_point_to_poin_client: mq_client
 					break;
 				}
 
-				rc = zmq_recv(soc, &msg, 0);
+				rc = zmq_recvmsg(soc, &msg, 0);
 				if(rc != 0)
 				{
 					log.trace_log_and_console("listener:error in zmq_recv: %s", zmq_error2string(zmq_errno()));
@@ -269,7 +269,7 @@ class zmq_point_to_poin_client: mq_client
 
 						ubyte[] outbuff;
 
-						message_acceptor(data, cast(uint) (len + 1), this, outbuff);
+						message_acceptor(data, cast(uint) (len + 1), this, outbuff, null);
 
 						if (outbuff.length < 2)
 						{
@@ -299,9 +299,54 @@ class zmq_point_to_poin_client: mq_client
 			core.thread.Thread.sleep(dur!("seconds")(1));
 		}
 	}
+	
+/*	
+	listener_result listener()
+	{
+    void* ctx = zmq_init(1);
+
+    ///  Socket to talk to clients
+    void* responder = zmq_socket(ctx, ZMQ_REP);
+    zmq_bind(responder, cast(char*)bind_to);
+	
+    ubyte[] out_data;
+    while(true)
+    {
+        ///  Wait for next request from client
+        zmq_msg_t request;
+        zmq_msg_init(&request);
+        zmq_recvmsg(responder, &request, 0);
+
+        byte* data = cast(byte*)zmq_msg_data(&request);
+        int data_length = cast (int)zmq_msg_size (&request);
+        
+        message_acceptor(data, data_length, this, out_data, null);
+
+        zmq_msg_close(&request);
+
+        ///  Send reply back to client
+        zmq_msg_t reply;
+        zmq_msg_init_size(&reply, out_data.length);
+
+        ///Slicing calls memcpy internally.
+        (zmq_msg_data(&reply))[0..out_data.length] = out_data[0..out_data.length];
+        zmq_sendmsg(responder, &reply, 0);
+        zmq_msg_close(&reply);
+    }
+    ///  We never get here but if we did, this would be how we end
+    zmq_close(responder);
+    zmq_term(ctx);
+	}	
+*/	
 }
 
 string fromStringz(char* s)
 {
 	return cast(immutable) (s ? s[0 .. strlen(s)] : null);
+}
+
+public string zmq_error2string (int errnum)
+{
+    char* err_text = zmq_strerror (errnum);
+    return cast (string) err_text[0..strlen (err_text)];
 }

@@ -990,22 +990,6 @@ class Predicate
 	}
 }
 
-private int int_from_buff (string buff, int pos)
-{
-	int res = buff[pos+0] + ((cast(uint)buff[pos+1]) << 8) + ((cast(uint)buff[pos+2]) << 16) + ((cast(uint)buff[pos+3]) << 24);
-	 
-	return res;
-}
-
-private void int_to_buff (ref ubyte[] buff, int pos, int dd)
-{
-	ubyte* value_length_ptr = cast(ubyte*)&dd;
-	buff[pos+0] = *(value_length_ptr + 0); 
-	buff[pos+1] = *(value_length_ptr + 1); 
-	buff[pos+2] = *(value_length_ptr + 2); 
-	buff[pos+3] = *(value_length_ptr + 3); 		
-}
-
 class Objectz
 {
 	string literal; 		// если type == LITERAL

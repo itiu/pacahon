@@ -10,9 +10,8 @@ private
 	import std.conv;
 	
 	import mq.mq_client;
-
 	import ae.utils.container;
-	import util.json_ld.parser1;
+	import util.json_ld.parser;
 	import util.logger;
 	import util.oi:OI;
 	import util.utils;	
@@ -31,7 +30,6 @@ private
 	import pacahon.define;
 
 //	import search.vql;
-	import az.condition:MandatManager;
 }
 
 logger log;
@@ -42,7 +40,7 @@ static this()
 }
 
 
-class ThreadContext: Context, Authorizer
+class ThreadContext: Context
 {	
 	private Tid _tid_statistic_data_accumulator;
 	@property Tid tid_statistic_data_accumulator () { return _tid_statistic_data_accumulator; }	
@@ -50,8 +48,8 @@ class ThreadContext: Context, Authorizer
 	private Tid _tid_ticket_manager;
 	@property Tid tid_ticket_manager () { return _tid_ticket_manager; }
 			
-	private StopWatch _sw;
-	@property StopWatch sw () { return _sw; }
+//	private StopWatch _sw;
+//	@property StopWatch sw () { return _sw; }
 		
 	private Ticket*[string] _user_of_ticket;
 	@property Ticket*[string] user_of_ticket () { return _user_of_ticket; }
@@ -73,10 +71,17 @@ class ThreadContext: Context, Authorizer
 	int _count_command;
 	int _count_message;
 
-	@property int count_command () { return _count_command;}
-	@property int count_message () { return _count_message;}
-	@property void count_command (int n) {_count_command = n;}
-	@property void count_message (int n) {_count_message = n;}
+	@property int count_command () { return _count_command; }
+	@property int count_message () { return _count_message; }
+	@property void count_command (int n) { _count_command = n; }
+	@property void count_message (int n) { _count_message = n; }
+	
+	//
+	bool send_on_authorization (string bson_subject)
+	{
+		send (tid_acl_manager, AUTHORIZE, bson_subject, thisTid);
+		return true;
+	}
 	
 	/////////////////////////////////////////////////////////
 	private string[string] cache__subject_creator;	
@@ -95,8 +100,6 @@ class ThreadContext: Context, Authorizer
 		cache__subject_creator[key] = value;
 	} 
 	/////////////////////////////////////////////////////////
-
-	MandatManager mandat_manager;
 
 	//	 TODO предусмотреть сброс кэша шаблонов
 	private DocTemplate[string][string] templates;
@@ -230,9 +233,6 @@ class ThreadContext: Context, Authorizer
 		writeln(context_name ~ ": load events");
 		pacahon.event_filter.load_events(this);
 		writeln(context_name ~ ": load events... ok");
-
-		mandat_manager = new MandatManager(this);
-		mandat_manager.load();
 	}
 
 	bool authorize(Ticket *ticket, Subject doc)
@@ -244,64 +244,6 @@ class ThreadContext: Context, Authorizer
 	{
 		return tid_subject_manager;
 	}
-
-	void get_mandats_4_whom(Ticket *ticket, ref HashSet!Mandat mandats)
-	{
-//		writeln ("&0 ticket.userId=", ticket.userId);
-//		writeln ("&1 ticket.parentUnitIds=", ticket.parentUnitIds);
-//		StopWatch sw_c;
-//		sw_c.start();
-		
-		if (ticket is null)
-			return;
-					
-		mrf (ticket.userId, mandats, false);
-//		writeln ("&2 mandats:", mandats);
-		
-		foreach (unit ; ticket.parentUnitIds)
-			mrf (unit, mandats, true);
-//		writeln ("&3 mandats:", mandats);
-		
-//		sw_c.stop();		
-//		writeln ("время вычисления требуемых полей документа в шаблонах, time=", sw_c.peek().usecs);
-//		writeln ("&1 fields=", fields);
-//		writeln ("&2 templateIds=", templateIds.data.keys);
-		return;
-	}
-	
-	private void mrf (string unitId, ref HashSet!Mandat mandats, bool recursive = false)
-	{		
-//		writeln ("unitId=[", unitId, "]");
-//		writeln (" mandat_manager.ost.node_4_parents=",  mandat_manager.ost.node_4_parents);
-		string[] parent_ids;
-		
-		if (recursive == true)
-		{
-			parent_ids = mandat_manager.ost.node_4_parents.get(unitId, null);
-//			writeln ("parentsIds=[", parent_ids, "]");
-			
-			foreach(unit_id; parent_ids)
-			{				
-				mrf (unit_id, mandats, recursive);
-			}
-		}
-		
-		auto cai = mandat_manager.whom_4_cai.get (unitId, null);
-		if(cai !is null)
-		{
-//			writeln ("cai.conditions=", cai.conditions.items, "\n");
-			foreach (mandat; cai.conditions.items)
-				mandats.add (mandat);
-			
-//			foreach (field; cai.fields.data.keys)
-//				fields[field] = new Set!string;
-			
-//			foreach (templateId; cai.templateIds.data.keys)
-//				templateIds.add (templateId);
-			
-		}		
-	}
-	
 	
 	Ticket *foundTicket(string ticket_id)
 	{

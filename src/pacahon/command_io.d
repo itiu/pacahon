@@ -12,36 +12,25 @@ private import std.datetime;
 private import std.base64;
 private import std.digest.sha;
 
+private import util.logger;
+private import util.utils;
+private import util.json_ld.parser;
+
 private import pacahon.graph;
-
-private import util.json_ld.parser1;
-
-private import pacahon.authorization;
 private import pacahon.know_predicates;
 private import pacahon.log_msg;
 private import pacahon.context;
-
-private import util.logger;
-private import util.utils;
-
 private import pacahon.event_filter;
-private import search.search_event;
 private import pacahon.context;
+private import search.search_event;
 
 import onto.docs_base;
 
 logger log;
-//char[] buff;
-char[] buff1;
 string[] reifed_data_subj;
-
-//int read_from_mongo = 0;
-//int read_from_mmf = 0;
 
 static this()
 {
-	//	buff = new char[21];
-	buff1 = new char[6];
 	log = new logger("pacahon", "log", "command-io");
 	reifed_data_subj = new string[1];
 	reifed_data_subj[0] = "_:R__01";
@@ -144,12 +133,6 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
 			bool subjectIsExist = false;
 
 			bool authorization_res = false;
-
-			if(ticket !is null)
-			{
-				authorization_res = authorize(ticket.userId, graph.subject, operation.CREATE | operation.UPDATE, context,
-						authorize_reason, subjectIsExist);
-			}
 
 			if(authorization_res == true || ticket is null)
 			{
@@ -272,12 +255,6 @@ public void store_graph(Subject graph, string userId, Context context, out bool 
 
 		bool authorization_res = false;
 
-		if(userId !is null)
-		{
-			authorization_res = authorize(userId, graph.subject, operation.CREATE | operation.UPDATE, context,
-					authorize_reason, subjectIsExist);
-		}
-
 		if(authorization_res == true || userId is null)
 		{
 			if(userId !is null && graph.isExsistsPredicate(dc__creator) == false)
@@ -390,7 +367,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
 				if(query !is null)
 				{
 					//writeln ("#1 ticket=", ticket);
-					count_found_subjects = context.vql.get(ticket, query, res, null, context);
+					count_found_subjects = context.vql.get(ticket, query, res, context);
 					
 					reason = "";
 				} 
@@ -495,8 +472,7 @@ Subject remove(Subject message, Predicate sender, Ticket *ticket, Context contex
 		if (ticket !is null)
 			userId = ticket.userId;
 		
-		bool result_of_az = authorize(userId, ss.subject, operation.DELETE, context, authorize_reason,
-				isExistSubject);
+		bool result_of_az = false;
 
 		if(result_of_az)
 		{

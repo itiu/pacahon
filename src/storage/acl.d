@@ -13,6 +13,7 @@ private
 	import pacahon.graph;
 	import pacahon.context;
 	import pacahon.define;
+	import ae.utils.container;	
 }
 
 logger log;
@@ -92,7 +93,15 @@ void acl_manager ()
 			{
 			try
 			{	
-				if (cmd == STORE)
+				if (cmd == AUTHORIZE)
+				{
+//					writeln ("is AUTHORIZE");
+					Set!string*[string] sss = get_subject_from_BSON (msg, TYPE);			
+//					print_2 (sss);
+				
+					send(tid_sender, msg, thisTid);										
+				}
+				else if (cmd == STORE)
 				{
 					Subject graph = Subject.fromBSON (msg);
 					

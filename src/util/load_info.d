@@ -95,14 +95,14 @@ void print_statistic (Tid _statistic_data_accumulator)
 			now.length = 19;
 					
 			float cps = 0.1f;
-			float wt = (cast(float)delta_worked_time)/1000/1000;
+			float wt = cast(float)delta_worked_time;
+			float dc = cast(float)delta_count;
 			if (wt > 0)
-				cps = delta_count/wt;
-					
-					
+				cps = (dc/wt)*1000*1000;
+										
        		auto writer = appender!string();
-	        formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps:%6.1f | work time:%6d µs | t.w.t. : %7d ms", 
-			        		now, msg_count, cmd_count, cps, delta_worked_time, worked_time/1000);
+	        formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps:%6.1f | work time:%7d µs | processed: %5d | t.w.t. : %7d ms", 
+			        		now, msg_count, cmd_count, cps, delta_worked_time, delta_count, worked_time/1000);
 			        
 	        log.trace ("cps:%6.1f", cps);
 			        

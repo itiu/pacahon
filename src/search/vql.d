@@ -17,12 +17,14 @@ private
 	import ae.utils.container;
 	import util.oi;
 	import util.logger;	
+	import util.utils;	
 
 	import bind.xapian_d_header;
 
 	import pacahon.graph;
 	import pacahon.context;
 	import pacahon.define;
+	import pacahon.know_predicates;
 
 	import search.vel;
 	import search.xapian;
@@ -108,7 +110,7 @@ class VQL
 //		}
 	}
 
-	public int get(Ticket *ticket, string query_str, ref GraphCluster res, Authorizer authorizer, Context thread_context)
+	public int get(Ticket *ticket, string query_str, ref GraphCluster res, Context thread_context)
 	{
 		//		if (ticket !is null)
 		//		writeln ("userId=", ticket.userId);
@@ -190,13 +192,6 @@ class VQL
 			
 			if (query !is null)
 			{
-				HashSet!Mandat mandats;		
-				if(authorizer !is null && ticket !is null)
-				{
-					authorizer.get_mandats_4_whom(ticket, mandats);
-					//writeln ("mandats=", mandats);
-				}
-				
 				int count = 0;
 				
 				XapianMultiValueKeyMaker sorter;
@@ -324,9 +319,9 @@ class VQL
 		}
 	}
 	
-	int execute_xapian_query (XapianQuery query, XapianMultiValueKeyMaker sorter, int authorize, ref string[string] fields, ref GraphCluster res, Context thread_context)
+	int execute_xapian_query (XapianQuery query, XapianMultiValueKeyMaker sorter, int authorize, ref string[string] fields, ref GraphCluster res, Context context)
 	{
-		int read_count;
+		int read_count = 0;
 				
 		//writeln ("query=", get_query_description (query));				
 				
@@ -350,7 +345,7 @@ class VQL
 		//	    writeln ("matches =",  matches.size (&err));
 
 		XapianMSetIterator it = matches.iterator(&err);
-		Tid tid_subject_manager = thread_context.get_tid_subject_manager ();
+		Tid tid_subject_manager = context.get_tid_subject_manager ();
 
 		while (it.is_next (&err) == true)
 		{   
@@ -358,7 +353,7 @@ class VQL
 			uint* data_len;
 			it.get_document_data (&data_str, &data_len, &err);
 			string subject_str = cast(immutable)data_str[0..*data_len].dup;
-      
+//			writeln (subject_str);
 			send (tid_subject_manager, FOUND, subject_str, thisTid);
 			
 			it.next (&err);
@@ -367,19 +362,78 @@ class VQL
 		destroy_MSetIterator (it);
 		destroy_MSet (matches);
 
-		for (int i = 0; i < read_count; i++)
+		byte[string] hash_of_subjects;
+
+		// Фаза I, получим субьекты из хранилища и отправим их на авторизацию, тут же получение из авторизации и формирование части ответа
+		for (int i = 0; i < read_count * 2; i++)
 		{
-			string msg = receiveOnly!(string);
-			Subject ss = Subject.fromBSON (msg);
-      																			
-			if (ss !is null)
+			receive((string bson_msg, Tid from) 
 			{
-				remove_predicates (ss, fields);
-				res.addSubject (ss);
-				count++;
-			}      
-		
+				if (from == context.get_tid_subject_manager ())
+				{
+					context.send_on_authorization (bson_msg);					
+				}
+				else
+				{
+					if (bson_msg.length > 16)
+					{
+						Set!string*[string] sss = get_subject_from_BSON (bson_msg, LINKS);
+						
+						hash_of_subjects[sss["@"].items[0]] = 1;
+						
+						foreach (objz ; sss.values)
+						{
+							foreach (id ;  objz.items)
+							{
+								if (hash_of_subjects.get (id, -1) == -1)
+								{
+									hash_of_subjects[id] = 2;									
+								} 
+							}
+						}
+								
+						// отправить в исходящий поток
+//						print_2 (sss);
+					}																				
+				}
+			});
 		}
+		
+		// Фаза II, дочитать если нужно 
+		int count_inner;
+		foreach (key ; hash_of_subjects.keys)
+		{
+			byte vv = hash_of_subjects[key];
+			if (vv == 2)
+			{
+				send (tid_subject_manager, FOUND, key, thisTid);				
+				count_inner++;	
+			}			
+		}
+		
+		for (int i = 0; i < count_inner; i++)
+		{
+			receive((string bson_msg, Tid from) 
+			{
+				if (bson_msg.length > 16)
+				{				
+					//writeln ("!!!", bson_msg);
+					// отправить в исходящий поток
+										
+				}	
+			});
+		}
+		
+
+//      		print_2 (sss);															
+//			if (sss !is null)
+//			{
+//				remove_predicates (ss, fields);
+//				res.addSubject (ss);
+//				count++;
+//			}      
+		
+//		}
 		
 		return read_count;
 	}	

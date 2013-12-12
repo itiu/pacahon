@@ -22,8 +22,6 @@ static this()
 	log = new logger("pacahon", "log", "server");
 }
 
-//////////////// TicketManager
-
 void subject_manager ()
 {
     MDB_env *env;
@@ -71,7 +69,7 @@ void subject_manager ()
 	while (true)
 	{
 		string res = "";
-		receive((byte cmd, string msg, Tid tid_sender) 
+		receive((byte cmd, string msg, Tid tid_response_reciever) 
 		{
 			if (rrc == 0)
 			{
@@ -96,7 +94,7 @@ void subject_manager ()
                     else
                     {
                     	res = "Fail:" ~  fromStringz (mdb_strerror (rc));
-                    	writeln ("#1 rc:", fromStringz (mdb_strerror (rc)));
+                    	writeln ("#1 rc:", rc, ", ", fromStringz (mdb_strerror (rc)));
                    	}
 	//				writeln ("#1 key.length:", graph.subject.length);
 		//			writeln ("#1 data.length:", msg.length);
@@ -132,11 +130,11 @@ void subject_manager ()
 					else
 					{	
 						res = "";
-                    	writeln ("#1 rc:[", msg, "] , ", fromStringz (mdb_strerror (rc)));
+//                    	writeln ("#1 rc:", rc, ", [", msg, "] , ", fromStringz (mdb_strerror (rc)));
                     }	
 					//	writeln ("%%4");	                  					
 						
-					send(tid_sender, res);					
+					send(tid_response_reciever, res, thisTid);					
 //					mdb_txn_abort(txn_r);
 					}	
 					//	writeln ("%%5");	                  					
@@ -145,7 +143,7 @@ void subject_manager ()
 				else
 				{
 					writeln ("%3 ", msg);
-					send(tid_sender, "");
+					send(tid_response_reciever, "", thisTid);
 				}
 			}
 			catch (Exception ex)

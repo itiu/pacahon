@@ -19,6 +19,11 @@ struct Set(T, uint INITSIZE=64)
 	private T[] data;
 	size_t size;
 
+	void resize (int size)
+	{
+		data.length = size;
+	}
+
 	void opOpAssign(string OP)(T item)
 		if (OP=="~")
 	{

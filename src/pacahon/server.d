@@ -3,9 +3,6 @@ module pacahon.server;
 private
 {
 	import core.thread;
-//	import core.stdc.stdio;
-//	import core.stdc.stdlib;
-//	import core.memory;
 	import std.stdio;
 	import std.string;
 	import std.c.string;
@@ -23,10 +20,9 @@ private
 	import storage.acl;
 	import storage.ticket;
 	import storage.subject;
-	//import trioplax.mongodb.TripleStorage;
 
 	import util.logger;
-	import util.json_ld.parser1;
+	import util.json_ld.parser;
 	import util.turtle_parser;
 	import util.utils;
 	import util.oi;
@@ -40,6 +36,7 @@ private
 	import pacahon.thread_context;
 	import pacahon.event_filter;
 	import pacahon.define;
+	
 	import search.ba2pacahon;	
 	import search.xapian;
 }
@@ -108,15 +105,17 @@ void main(char[][] args)
 				behavior = props.object["behavior"].str;								
 
 			/////////////////////////////////////////////////////////////////////////////////////////////////////////
-			spawn (&pacahon.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);	
+//			spawn (&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);	
 			
 			
 			JSONValue[] _listeners;
 			if(("listeners" in props.object) !is null)
 			{
 				_listeners = props.object["listeners"].array;
+				int listener_section_count = 0;				
 				foreach(listener; _listeners)
-				{
+				{					
+					listener_section_count++;
 					string[string] params;
 					foreach(key; listener.object.keys)
 						params[key] = listener[key].str;
@@ -124,15 +123,18 @@ void main(char[][] args)
 					if(params.get("transport", "") == "zmq")
 					{
 						string zmq_connect_type = params.get("zmq_connect_type", "server");
-						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
-
+//						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
+						
 
 						if(zmq_connect_type == "server")
 						{
 							try
 							{
-								zmq_connection = new zmq_point_to_poin_client();
-								zmq_connection.connect_as_listener(params);
+								spawn (&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);	
+								log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
+								
+//								zmq_connection = new zmq_point_to_poin_client();
+//								zmq_connection.connect_as_listener(params);
 							} catch(Exception ex)
 							{
 							}
@@ -147,28 +149,28 @@ void main(char[][] args)
 							}
 						}
 
-						if(zmq_connection !is null)
-						{
-							zmq_connection.set_callback(&get_message);
-							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ", 
-									tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+//						if(zmq_connection !is null)
+//						{
+//							zmq_connection.set_callback(&get_message);
+//							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ", 
+//									tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
 
-							if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
-							{
-								if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
-									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
-								else
-									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
-							}
+//							if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
+//							{
+//								if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
+//									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
+//								else
+//									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
+//							}
 
-							writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
+//							writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
 
-							writeln("start zmq listener");
-							thread_listener_for_zmq.start();
+//							writeln("start zmq listener");
+//							thread_listener_for_zmq.start();
 
 //							LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
 //							load_info_thread.start();
-						}
+//						}
 
 					} else if(params.get("transport", "") == "rabbitmq")
 					{
@@ -293,8 +295,8 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				if(trace_msg[69] == 1)
 					log.trace("messages, total time: %d [µs]", t);
 
-				context.sw.reset();
-				context.sw.start();
+//				context.sw.reset();
+//				context.sw.start();
 				
 				return;
 			} else
@@ -507,7 +509,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 		log.trace("формируем ответ, серилизуем ответные графы в строку");
 
 	OutBuffer outbuff = new OutBuffer();
-	outbuff.reserve(results.length * 1500); 	
+
 
 	if(msg_format == format.JSON_LD)
 		toJson_ld(results, outbuff, false);
@@ -562,7 +564,7 @@ class ServerThread: core.thread.Thread
 		super(_dd);
 		resource = new ThreadContext(props, context_name, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);				
 		
-		resource.sw.start();
+//		resource.sw.start();
 	}
 
 

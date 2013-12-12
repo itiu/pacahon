@@ -245,7 +245,7 @@ class rabbitmq_client: mq_client
 //					writeln ("len:", frame.payload.body_fragment.len);    
 
 					message_acceptor((cast(byte*) frame.payload.body_fragment.bytes),
-							cast(uint) (frame.payload.body_fragment.len), this, outbuff);
+							cast(uint) (frame.payload.body_fragment.len), this, outbuff, null);
 
 					//					send(soc_rep, cast(char*) outbuff, cast(uint) outbuff.length, false);
 //					writeln ("message_acceptor ok");    

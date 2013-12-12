@@ -167,7 +167,7 @@ class zmq_pp_broker_client: mq_client
 
 			items[0].socket = worker;
 			items[0].fd = 0;
-			items[0].events = io_multiplexing.ZMQ_POLLIN;
+			items[0].events = ZMQ_POLLIN;
 			items[0].revents = 0;
 
 			int rc = zmq_poll(cast(zmq_pollitem_t*) items, 1, PPP_HEARTBEAT_INTERVAL * ZMQ_POLL_MSEC);
@@ -177,7 +177,7 @@ class zmq_pp_broker_client: mq_client
 			}
 
 			//        printf("items [0].revents = %d\n", items [0].revents);
-			if(items[0].revents & io_multiplexing.ZMQ_POLLIN)
+			if(items[0].revents & ZMQ_POLLIN)
 			{
 				//	    		sw.start();
 
@@ -211,7 +211,7 @@ class zmq_pp_broker_client: mq_client
 					//		        		sw.stop();
 					//		        		printf ("(1):%d\n", sw.peek().usecs);
 
-					message_acceptor(msg_body, size, this, outbuff);
+					message_acceptor(msg_body, size, this, outbuff, null);
 
 					//			sw.reset ();
 					//	    		sw.start();
@@ -310,19 +310,19 @@ class zmq_pp_broker_client: mq_client
 //		Uuid generated = rndUuid.next;
 		string id = uid.toString();
 
-		zmq_setsockopt(socket, soc_opt.ZMQ_IDENTITY, cast(char*)id, cast(int)id.length);
+		zmq_setsockopt(socket, ZMQ_IDENTITY, cast(char*)id, cast(int)id.length);
 
 		return cast(char[])id;
 	}
 
 	private void* s_worker_socket(zctx_t* ctx, char* point)
 	{
-		void* soc_worker = zsocket_new(ctx, soc_type.ZMQ_DEALER);
+		void* soc_worker = zsocket_new(ctx, ZMQ_DEALER);
 
 		//		void* context = zmq_init(1);
-		//		void* soc_worker = zmq_socket(context, soc_type.ZMQ_DEALER);
+		//		void* soc_worker = zmq_socket(context, ZMQ_DEALER);
 
-		//zmq_socket(context, soc_type.ZMQ_XREQ);
+		//zmq_socket(context, ZMQ_XREQ);
 
 		if(soc_worker is null)
 		{
@@ -346,7 +346,7 @@ class zmq_pp_broker_client: mq_client
 
 		//  Configure socket to not wait at close time
 		int linger = 0;
-		zmq_setsockopt(soc_worker, soc_opt.ZMQ_LINGER, &linger, linger.sizeof);
+		zmq_setsockopt(soc_worker, ZMQ_LINGER, &linger, linger.sizeof);
 
 		//  Tell queue we're ready for work
 		writeln("I: worker ready: [", identity, "] ", PPP_READY);

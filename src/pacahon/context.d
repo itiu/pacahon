@@ -7,7 +7,6 @@ private import ae.utils.container;
 private import pacahon.graph;
 private import search.vel;
 private import onto.doc_template;
-private import ae.utils.container;
 private import util.oi;
 
 interface Context
@@ -16,7 +15,7 @@ interface Context
 	@property Tid tid_statistic_data_accumulator ();
 	
 	@property Tid tid_ticket_manager ();	
-	@property StopWatch sw ();
+//	@property StopWatch sw ();
 	@property Ticket*[string] user_of_ticket ();
 	@property GraphCluster ba2pacahon_records ();
 	@property GraphCluster event_filters ();
@@ -35,6 +34,8 @@ interface Context
 	@property int count_message ();
 	@property void count_command (int n);
 	@property void count_message (int n);
+	
+	bool send_on_authorization (string msg);	
 }
 
 enum event_type
@@ -56,22 +57,4 @@ struct Ticket
 	string[] parentUnitIds = new string[0];
 
 	long end_time;	
-}
-
-const byte asObject = 0;
-const byte asArray = 1;
-const byte asString = 2;
-
-struct Mandat
-{
-	string id;
-	string whom;
-	string right;
-	TTA expression;	
-} 
-
-public interface Authorizer
-{
-	bool authorize (Ticket *ticket, Subject doc);	
-	void get_mandats_4_whom (Ticket *ticket,  ref HashSet!Mandat mandats);
 }

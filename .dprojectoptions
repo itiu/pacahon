@@ -3,6 +3,6 @@ buildtype = EXECUTABLE
 out = bin
 outname = pacahon
 buildtool = $DEEBUILDER.COMPILEREXEPATH @build.rf
-extraOptions = -od$DEEBUILDER.OUTPUTPATH\n-of$DEEBUILDER.OUTPUTEXE\n$DEEBUILDER.SRCLIBS.-I\n$DEEBUILDER.SRCFOLDERS.-I\n$DEEBUILDER.SRCMODULES lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a lib64/libutils.a
+extraOptions = -od$DEEBUILDER.OUTPUTPATH\n-of$DEEBUILDER.OUTPUTEXE\n$DEEBUILDER.SRCLIBS.-I\n$DEEBUILDER.SRCFOLDERS.-I\n$DEEBUILDER.SRCMODULES -L-lzmq lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a lib64/libutils.a
 
 

@@ -25,8 +25,8 @@ NB: Описание сборки / установки приведено для
 
 используемые библиотеки (находятся в lib64):
 
-zeromq v4.2.0 ( http://www.zeromq.com )
-- libzmq.a:
+zeromq v3.2.2 ( http://www.zeromq.com )
+- libzmq.so:
 - libczmq.a:
 
 xapian 1.2.15 ( http://xapian.org )
