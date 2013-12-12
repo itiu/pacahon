@@ -9,7 +9,7 @@ Pacahon:
 Runtime библиотека: 
     phobos.
 Транспортный уровень: 
-    zeromq.
+    zeromq/nanomsg/rabbitmq.
 Хранилище и поиск: 
     lmdb + xapian.
 
