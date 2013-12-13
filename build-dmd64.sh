@@ -1,8 +1,7 @@
 DMD=dmd
-#~/incubator/ldc2-0.12.1-linux-x86_64/bin/ldmd2
 
 VERSION_MAJOR=1
-VERSION_MINOR=36
+VERSION_MINOR=37
 VERSION_PATCH=0
 
 #cp -r src/* build/src
@@ -15,21 +14,16 @@ rm *.log
 rm *.io
 rm *.oi
 
-libs="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libczmq.a lib64/libuuid.a lib64/librabbitmq.a lib64/libutils.a"
+m_static="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a"
+m_shared="-L-lzmq -L-lxapiand -L-lxapian -L-lnanomsg -L-llmdb -L-lczmq -L-lrabbitmq"
 
-$DMD -m64 -O -g -release -L-lzmq \
-@pacahon-src-list $libs -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
+$DMD -m64 -O -g -release @pacahon-src-list $m_static -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64-sl
+$DMD -m64 -O -g -release @pacahon-src-list $m_shared -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64
 
-$DMD -m64 -debug -g -version=trace -L-lzmq \
-@pacahon-src-list $libs -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64-trace
+#$DMD -m64 -debug -g -version=trace \
+#@pacahon-src-list $libs -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64-trace
 
 rm target/*.o
 rm target/*.log
 rm target/*.io
 rm target/*.oi
-
-
-
-#$
-
-#$DMD -m64 -O -Iimport -inline -d -L-Llib64 -L-lluad -L-llua -L-ldl \

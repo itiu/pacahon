@@ -23,10 +23,10 @@ NB: Описание сборки / установки приведено для
 - Клиент системы контроля версий GIT.
 - Digital mars D2 compiler dmd 2.064.2 ( http://dlang.org )
 
-используемые библиотеки (находятся в lib64):
+используемые библиотеки, (статические библиотеки находятся в lib64):
 
-zeromq v3.2.2 ( http://www.zeromq.com )
-- libzmq.so:
+zeromq v3.2.3 ( http://www.zeromq.com )
+- libzmq,a
 - libczmq.a:
 
 xapian 1.2.15 ( http://xapian.org )
@@ -37,6 +37,10 @@ xapian 1.2.15 ( http://xapian.org )
 
 lmdb 0.9.9 ( http://symas.com/mdb )
 - liblmdb.a
+
+rabbitmq-c 0.4.0 ( http://github.com/alanxz/rabbitmq-c ) 
+- librabbitmq.a
+
 
 2.2. Процедура сборки / установки:
 
