@@ -72,7 +72,7 @@ class rabbitmq_client: mq_client
 		conn = amqp_new_connection();
 
 		int port = to!(int)(params.get("port", "5672"));
-		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (immutable char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
+		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
 
 		amqp_set_sockfd(&conn, sockfd);
 		die_on_amqp_error(amqp_login(&conn, cast(char*) (params["vhost"] ~ "\0"), 0, 131072, 0,
@@ -114,7 +114,7 @@ class rabbitmq_client: mq_client
 
 		conn = amqp_new_connection();
 
-		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (immutable char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
+		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
 
 		amqp_set_sockfd(&conn, sockfd);
 		die_on_amqp_error(amqp_login(&conn, cast(char*) (params["vhost"] ~ "\0"), 0, 131072, 0,
@@ -141,7 +141,7 @@ class rabbitmq_client: mq_client
 		// открываем уже без опции consume
 		conn = amqp_new_connection();
 
-		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (immutable char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
+		die_on_error(sockfd = amqp_open_socket(cast(char*) (params["hostname"] ~ "\0"), port), cast (char*) ("Error on opening socket (AMQP) [" ~ params["hostname"] ~ "]" ));
 
 		amqp_set_sockfd(&conn, sockfd);
 		die_on_amqp_error(amqp_login(&conn, cast(char*) (params["vhost"] ~ "\0"), 0, 131072, 0,
@@ -282,7 +282,7 @@ class rabbitmq_client: mq_client
 		amqp_bytes_t _msg;
 		_msg.len = message_size - 1;
 		_msg.bytes = cast(byte*)messagebody; 
-		die_on_error(amqp_basic_publish(&conn, 1, exchange, queuename, 0, 0, &props, _msg), "Publish");
+		die_on_error(amqp_basic_publish(&conn, 1, exchange, queuename, 0, 0, &props, _msg), cast(char*)"Publish");
 
 		return 0;
 	}
@@ -300,5 +300,63 @@ amqp_bytes_t to_amqp_string(string ss)
 	tt.len = ss.length;
 	tt.bytes = cast(byte *)ss;
 	return tt;
+}
+		
+void die_on_amqp_error(amqp_rpc_reply_t x, string context)
+{
+  switch (x.reply_type) {
+  case amqp_response_type_enum.AMQP_RESPONSE_NORMAL:
+    return;
+  
+  case amqp_response_type_enum.AMQP_RESPONSE_NONE:
+    printf("%s: missing RPC reply type!\n", context);
+    break;
+    
+  case amqp_response_type_enum.AMQP_RESPONSE_LIBRARY_EXCEPTION:
+    printf("%s: %s\n", context, amqp_error_string(x.library_error));
+    break;
+    
+//  case amqp_response_type_enum.AMQP_RESPONSE_SERVER_EXCEPTION:
+//    switch (x.reply.id) {
+//    case AMQP_CONNECTION_CLOSE_METHOD: {
+//      amqp_connection_close_t *m = cast(amqp_connection_close_t *) x.reply.decoded;
+//      printf("%s: server connection error %d, message: %.*s\n",
+//              context,
+//              m.reply_code,
+//              cast(int) m.reply_text.len, cast(char *) m.reply_text.bytes);
+//      break;
+//    }
+    
+//    case AMQP_CHANNEL_CLOSE_METHOD: {
+//      amqp_channel_close_t *m = cast(amqp_channel_close_t *) x.reply.decoded;
+//      printf("%s: server channel error %d, message: %.*s\n",
+//              context,
+//              m.reply_code,
+//              cast(int) m.reply_text.len, cast(char *) m.reply_text.bytes);
+//      break;
+//    }
+    
+//    default:
+//      printf("%s: unknown server error, method id 0x%08X\n", context, x.reply.id);
+//      break;
+//    }
+    
+//    break;
+
+    default:
+    	break;
+  }
+    
+  //exit(1);
+}
+	
+void die_on_error(int x, char *context)
+{ 
+  if (x < 0) {
+    char *errstr = amqp_error_string(-x);
+    printf("%s: %s\n", context, errstr);
+    free(errstr);
+//    exit(1);
+  }
 }
 		

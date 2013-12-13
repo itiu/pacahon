@@ -382,20 +382,23 @@ extern(C)
 	amqp_rpc_reply_t amqp_connection_close(amqp_connection_state_t* state, int code);
 
 // --- utils ----
-extern(C)
-	void die_on_error(int x, immutable char* context);
+//extern(C)
+//	void die_on_error(int x, immutable char* context);
 
-extern(C)
-	void die_on_amqp_error(amqp_rpc_reply_t x, immutable char* context);
+//extern(C)
+//	void die_on_amqp_error(amqp_rpc_reply_t x, immutable char* context);
 
-extern(C)
-	extern void amqp_dump(void* buffer, size_t len);
+//extern(C)
+//	extern void amqp_dump(void* buffer, size_t len);
 
-extern(C)
-	extern uint64_t now_microseconds();
+//extern(C)
+//	extern uint64_t now_microseconds();
 
-extern(C)
-	extern void microsleep(int usec);
+//extern(C)
+//	extern void microsleep(int usec);
+
+extern(C) char *amqp_error_string(int err);
+
 
 struct amqp_basic_publish_t 
 {
