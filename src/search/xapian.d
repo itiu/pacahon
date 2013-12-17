@@ -54,9 +54,10 @@ private void store__key2slot (ref int[string] key2slot, ref XapianWritableDataba
 
 public int[string] read_key2slot ()
 {
-	int[string] key2slot;
+    int[string] key2slot;
     XapianDatabase db = new_Database(xapian_path.ptr, xapian_path.length, &err);
-    
+    if (err == 0)
+    {
     string lang = "english";
     XapianStem stemmer = new_Stem(cast(char*)lang, lang.length, &err);
     XapianEnquire enquire = db.new_Enquire(&err);
@@ -103,6 +104,7 @@ public int[string] read_key2slot ()
 	//writeln("******");
 		
 	db.close (&err);
+    }	
 	writeln("slot size=", key2slot.length);
 		
 	return key2slot;
@@ -140,9 +142,9 @@ import storage.subject;
 
 void xapian_indexer(Tid tid_storage_manager)
 {				
-	printTid("XapianIndexer");
-	
-	///////////// XAPIAN INDEXER ///////////////////////////
+    writeln ("SPAWN: Xapian Indexer");
+
+    ///////////// XAPIAN INDEXER ///////////////////////////
     XapianWritableDatabase indexer_db;
     XapianTermGenerator indexer;
 
@@ -157,8 +159,7 @@ void xapian_indexer(Tid tid_storage_manager)
     	return;
     }	
     
-
-	int[string] key2slot = read_key2slot ();
+    int[string] key2slot = read_key2slot ();
 
     indexer = new_TermGenerator (&err);
     indexer.set_stemmer(stemmer, &err);

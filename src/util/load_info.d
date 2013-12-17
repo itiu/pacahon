@@ -39,7 +39,7 @@ static this()
 void statistic_data_accumulator ()
 {
 	long[] stat = new long[3];
-	writeln ("START THREAD: statistic_data_accumulator");
+	writeln ("SPAWN: statistic_data_accumulator");
 	while (true)
 	{
 		receive(
@@ -62,7 +62,7 @@ void statistic_data_accumulator ()
 
 void print_statistic (Tid _statistic_data_accumulator)
 {
-	writeln ("START THREAD: print_statistic");
+	writeln ("SPAWN: print_statistic");
 	
 	long sleep_time = 1;
 	Thread.sleep(dur!("seconds")(sleep_time));

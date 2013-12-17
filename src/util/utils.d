@@ -69,22 +69,21 @@ public JSONValue get_props(string file_name)
 	{
 		res.type = JSON_TYPE.OBJECT;
 
-		JSONValue element1;
-		element1.str = "tcp://127.0.0.1:5555";
-		res.object["zmq_point"] = element1;
+		JSONValue listeners;
+		listeners.type = JSON_TYPE.ARRAY;
 
-		JSONValue element2;
-		element2.str = "127.0.0.1";
-		res.object["mongodb_server"] = element2;
+		JSONValue transport;				
+		transport.type = JSON_TYPE.OBJECT;
 
-		JSONValue element3;
-		element3.type = JSON_TYPE.INTEGER;
-		element3.integer = 27017;
-		res.object["mongodb_port"] = element3;
+		JSONValue point;    
+		point.str = "tcp://127.0.0.1:5555";
+		transport.object["point"] = point;
+		JSONValue tt;    
+		tt.str = "zmq";
+		transport.object["transport"] = tt;
 
-		JSONValue element4;
-		element4.str = "pacahon";
-		res.object["mongodb_collection"] = element4;
+		listeners.array ~= transport;
+		res.object["listeners"] = listeners;
 
 		string buff = toJSON(&res);
 

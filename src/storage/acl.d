@@ -34,7 +34,7 @@ static this()
 какие права - crud
 когда
 
-ключи:
+ключи
 1. [кому]+[на что]+[право] : подтверждение права, значение [byte]
 2. [кому]+[на что] : уникальные по значению записи о правах
 
@@ -42,11 +42,20 @@ static this()
 
 void acl_manager ()
 {
+    writeln ("SPAWN: ALC manager");
     MDB_env *env;
     MDB_dbi dbi;
     MDB_txn *txn;
 
     string path = "./data/lmdb-acl";
+
+    try
+    {
+        mkdir("data");
+    }
+    catch (Exception ex)
+    {
+    }
 
     try
     {

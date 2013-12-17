@@ -24,11 +24,21 @@ static this()
 
 void subject_manager ()
 {
+    writeln ("SPAWN: Subject manager");
+
     MDB_env *env;
     MDB_dbi dbi;
     MDB_txn *txn;
 
     string path = "./data/lmdb-subjects";
+
+    try
+    {
+        mkdir("data");
+    }
+    catch (Exception ex)
+    {    	
+    }
 
     try
     {

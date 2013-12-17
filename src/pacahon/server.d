@@ -52,20 +52,24 @@ static this()
 
 void main(char[][] args)
 {
-	Tid tid_ticket_manager = spawn (&ticket_manager);
-	Tid tid_subject_manager = spawn (&subject_manager);	
-	Tid tid_acl_manager = spawn (&acl_manager); 
-			
-    Tid tid_xapian_indexer = spawn (&xapian_indexer, tid_subject_manager);	
-    spawn (&xapian_indexer_commiter, tid_xapian_indexer);
-    
-    Tid tid_statistic_data_accumulator = spawn (&statistic_data_accumulator);
-    spawn (&print_statistic, tid_statistic_data_accumulator);    	
     	    	
 	try
 	{
 		log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
 				pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
+
+		core.thread.Thread.sleep(dur!("msecs")(1));
+
+		Tid tid_ticket_manager = spawn (&ticket_manager);
+		Tid tid_subject_manager = spawn (&subject_manager);	
+		Tid tid_acl_manager = spawn (&acl_manager); 
+			
+		Tid tid_xapian_indexer = spawn (&xapian_indexer, tid_subject_manager);	
+		spawn (&xapian_indexer_commiter, tid_xapian_indexer);
+    
+		Tid tid_statistic_data_accumulator = spawn (&statistic_data_accumulator);
+		core.thread.Thread.sleep(dur!("msecs")(1));
+		spawn (&print_statistic, tid_statistic_data_accumulator);    	
 
 		{
 			JSONValue props;
@@ -189,17 +193,14 @@ void main(char[][] args)
 						} catch(Exception ex)
 						{
 						}
-
 					}
-
 				}
 
-				
-
-				while(true)
-					core.thread.Thread.sleep(dur!("seconds")(1000));
 			}
 		}
+				    while(true)
+					core.thread.Thread.sleep(dur!("seconds")(1000));
+
 	} catch(Exception ex)
 	{
 		writeln("Exception: ", ex.msg);

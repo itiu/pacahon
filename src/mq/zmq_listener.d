@@ -19,6 +19,7 @@ import util.utils;
 
 void zmq_thread (string props_file_name, int pos_in_listener_section, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
 {
+	writeln ("SPAWN: zmq listener");
 	JSONValue props;
 	
 	try

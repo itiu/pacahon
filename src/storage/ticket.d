@@ -26,11 +26,21 @@ static this()
 
 void ticket_manager ()
 {
+    writeln ("SPAWN: ticket manager");
+
     MDB_env *env;
     MDB_dbi dbi;
     MDB_txn *txn;
     
     string path = "./data/lmdb-tickets";
+
+    try
+    {
+        mkdir("data");
+    }
+    catch (Exception ex)
+    {
+    }
 
     try
     {
