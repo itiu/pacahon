@@ -165,26 +165,7 @@ class ThreadContext: Context
 		{
 			if (props.object["use_caching_of_documents"].str == "true")
 				use_caching_of_documents = true;
-		}	
-
-		// адрес базы данных mongodb
-		string mongodb_server = "localhost";
-		if(("mongodb_server" in props.object) !is null)
-			mongodb_server = props.object["mongodb_server"].str;
-		// порт базы данных mongodb
-		int mongodb_port = 27017;
-		if(("mongodb_port" in props.object) !is null)
-			mongodb_port = cast(int) props.object["mongodb_port"].integer;
-
-		// имя коллекции
-		string db_name = "pacahon";
-		if(("mongodb_database_name" in props.object) !is null)
-			db_name = props.object["mongodb_database_name"].str;
-		else
-			db_name = "pacahon";
-
-//		_ts = connect_to_mongodb_triple_storage(mongodb_port, mongodb_server, db_name, context_name, use_caching_of_documents);
-		
+		}			
 
 		JSONValue[] _gateways;
 		if(("gateways" in props.object) !is null)
