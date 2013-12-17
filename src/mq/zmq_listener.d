@@ -62,23 +62,36 @@ void zmq_thread (string props_file_name, int pos_in_listener_section, Tid tid_xa
         zmq_msg_init(&request);
         zmq_recvmsg(responder, &request, 0);
 
-        byte* data = cast(byte*)zmq_msg_data(&request);
+//        byte* data = cast(byte*)zmq_msg_data(&request);
         int data_length = cast (int)zmq_msg_size (&request);
         
-        get_message(data, data_length, null, out_data, context);
+        if (data_length > 0)
+        {
+        	byte* data = cast(byte*)zmq_msg_data(&request);
+        
+        	get_message(data, data_length, null, out_data, context);
 
-        zmq_msg_close(&request);
+        	zmq_msg_close(&request);
 
-        ///  Send reply back to client
-        zmq_msg_t reply;
+        	///  Send reply back to client
+        	zmq_msg_t reply;
 //        zmq_msg_init_data(&reply, cast(byte*)out_data, out_data.length, null, null);
         
-        zmq_msg_init_size(&reply, out_data.length);
+        	zmq_msg_init_size(&reply, out_data.length);
 
-        ///Slicing calls memcpy internally.
-        (zmq_msg_data(&reply))[0..out_data.length] = out_data[0..out_data.length];
-        zmq_sendmsg(responder, &reply, 0);
-        zmq_msg_close(&reply);
+        	///Slicing calls memcpy internally.
+        	(zmq_msg_data(&reply))[0..out_data.length] = out_data[0..out_data.length];
+        	zmq_sendmsg(responder, &reply, 0);
+        	zmq_msg_close(&reply);
+        }
+        else
+        {
+        	zmq_msg_t reply;
+        	zmq_msg_init_size(&reply, 0);
+        	zmq_sendmsg(responder, &reply, 0);
+        	zmq_msg_close(&reply);        	
+        }
+        
     }
     ///  We never get here but if we did, this would be how we end
     zmq_close(responder);

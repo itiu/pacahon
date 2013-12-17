@@ -261,5 +261,6 @@ extern (C++)
     void destroy_MSet(XapianMSet mset);
     void destroy_MSetIterator(XapianMSetIterator msetit);
     void destroy_Query (XapianQuery query);
+    void destroy_Enquire (XapianEnquire enquire);
     void destroy_MultiValueKeyMaker (XapianMultiValueKeyMaker sorter);
 }

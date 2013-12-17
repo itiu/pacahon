@@ -8,11 +8,11 @@ src/bind/xapian_d_header.d
 src/pacahon/define.d
 
 src/mq/mq_client.d 
-src/mq/zmq_point_to_poin_client.d 
 src/mq/zmq_pp_broker_client.d
 src/mq/rabbitmq_client.d
 src/mq/nanomsg_listener.d
 src/mq/zmq_listener.d
+src/mq/file_reader.d
 
 src/util/turtle_parser.d 
 src/util/logger.d 

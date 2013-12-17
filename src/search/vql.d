@@ -56,11 +56,11 @@ class VQL
 	private Set!OI from_search_points;
 	
 	private XapianDatabase xapian_db;
-	private XapianStem xapian_stemmer;
+//	private XapianStem xapian_stemmer;
     private string xapian_path = "xapian-search";
     private string xapian_lang = "russian";
     private XapianEnquire xapian_enquire;
-    private XapianQueryParser xapian_qp;
+//    private XapianQueryParser xapian_qp;
     private int[string] key2slot;
     private string transTable1;
 
@@ -76,13 +76,13 @@ class VQL
 		found_sections = new string[6];
 		                 
 		byte err;
-		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
+//		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
 		xapian_db = new_Database(xapian_path.ptr, xapian_path.length, &err);
-		xapian_enquire = xapian_db.new_Enquire(&err);
-		xapian_qp = new_QueryParser (&err);    
-		xapian_qp.set_stemmer(xapian_stemmer, &err);
-		xapian_qp.set_database(xapian_db, &err);   
-		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err); 	
+//		xapian_enquire = xapian_db.new_Enquire(&err);
+//		xapian_qp = new_QueryParser (&err);    
+//		xapian_qp.set_stemmer(xapian_stemmer, &err);
+//		xapian_qp.set_database(xapian_db, &err);   
+//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err); 	
 		
 		key2slot = read_key2slot ();
 		
@@ -193,7 +193,8 @@ class VQL
 			if (query !is null)
 			{
 				int count = 0;
-				
+				xapian_enquire = xapian_db.new_Enquire(&err);
+
 				XapianMultiValueKeyMaker sorter;
 				
     			if (section_is_found[SORT] == true)
@@ -239,8 +240,9 @@ class VQL
 				if (state > 0)
 					read_count = state;
 				
-				destroy_MultiValueKeyMaker (sorter);
+				destroy_Enquire (xapian_enquire);
 				destroy_Query (query);	
+				destroy_MultiValueKeyMaker (sorter);
 				
 //				writeln ("read count:", read_count, ", count:", count);
 				return read_count;				    
@@ -319,8 +321,8 @@ class VQL
 		}
 	}
 	
-	int execute_xapian_query (XapianQuery query, XapianMultiValueKeyMaker sorter, int authorize, ref string[string] fields, ref GraphCluster res, Context context)
-	{
+	int execute_xapian_query (XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[string] fields, ref GraphCluster res, Context context)
+	{		
 		int read_count = 0;
 				
 		//writeln ("query=", get_query_description (query));				
@@ -330,43 +332,41 @@ class VQL
 		xapian_enquire.set_query(query, &err);
 		if (sorter !is null)
 			xapian_enquire.set_sort_by_key(sorter, true, &err);
-    			
-		//writeln ("V1");
-    	XapianMSet matches = xapian_enquire.get_mset(0, authorize, &err);    			
+
+    	XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);    			
     	if (err < 0)
-    	{
     		return err;
-    	}    			
-    	//		writeln ("V2 err", cast (byte)err);
     			
-    	int count = 0;
-			
 		//	    writeln ("found =",  matches.get_matches_estimated(&err));
 		//	    writeln ("matches =",  matches.size (&err));
 
-		XapianMSetIterator it = matches.iterator(&err);
-		Tid tid_subject_manager = context.get_tid_subject_manager ();
-
-		while (it.is_next (&err) == true)
-		{   
-			char* data_str;
-			uint* data_len;
-			it.get_document_data (&data_str, &data_len, &err);
-			string subject_str = cast(immutable)data_str[0..*data_len].dup;
-//			writeln (subject_str);
-			send (tid_subject_manager, FOUND, subject_str, thisTid);
-			
-			it.next (&err);
-			read_count++;
-		}
-		destroy_MSetIterator (it);
-		destroy_MSet (matches);
-
-		byte[string] hash_of_subjects;
-
-		// Фаза I, получим субьекты из хранилища и отправим их на авторизацию, тут же получение из авторизации и формирование части ответа
-		for (int i = 0; i < read_count * 2; i++)
+		if (matches !is null)
 		{
+			Tid tid_subject_manager = context.get_tid_subject_manager ();
+			
+			XapianMSetIterator it = matches.iterator(&err);
+
+			while (it.is_next (&err) == true)
+			{   
+				char* data_str;
+				uint* data_len;
+				it.get_document_data (&data_str, &data_len, &err);
+				string subject_str = cast(immutable)data_str[0..*data_len].dup;
+//				writeln (subject_str);
+				send (tid_subject_manager, FOUND, subject_str, thisTid);
+			
+				it.next (&err);
+				read_count++;
+			}
+		
+			destroy_MSetIterator (it);
+			destroy_MSet (matches);
+
+			byte[string] hash_of_subjects;
+
+			// Фаза I, получим субьекты из хранилища и отправим их на авторизацию, тут же получение из авторизации и формирование части ответа
+			for (int i = 0; i < read_count * 2; i++)
+			{
 			receive((string bson_msg, Tid from) 
 			{
 				if (from == context.get_tid_subject_manager ())
@@ -397,22 +397,22 @@ class VQL
 					}																				
 				}
 			});
-		}
-		
-		// Фаза II, дочитать если нужно 
-		int count_inner;
-		foreach (key ; hash_of_subjects.keys)
-		{
+			}
+				
+			// Фаза II, дочитать если нужно 
+			int count_inner;
+			foreach (key ; hash_of_subjects.keys)
+			{
 			byte vv = hash_of_subjects[key];
 			if (vv == 2)
 			{
 				send (tid_subject_manager, FOUND, key, thisTid);				
 				count_inner++;	
 			}			
-		}
+			}
 		
-		for (int i = 0; i < count_inner; i++)
-		{
+			for (int i = 0; i < count_inner; i++)
+			{
 			receive((string bson_msg, Tid from) 
 			{
 				if (bson_msg.length > 16)
@@ -422,8 +422,9 @@ class VQL
 										
 				}	
 			});
-		}
+			}
 		
+		}
 
 //      		print_2 (sss);															
 //			if (sss !is null)

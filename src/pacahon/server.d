@@ -12,10 +12,10 @@ private
 	import std.conv;
 	import std.concurrency;
 
-	import mq.zmq_point_to_poin_client;
 	import mq.zmq_pp_broker_client;
 	import mq.mq_client;
 	import mq.rabbitmq_client;
+	import mq.file_reader;
 
 	import storage.acl;
 	import storage.ticket;
@@ -78,35 +78,7 @@ void main(char[][] args)
 				throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
 			}
 
-			mq_client zmq_connection = null;
-			mq_client rabbitmq_connection = null;
-
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////
-			string bind_to = "tcp://*:5555";
-			if(("zmq_point" in props.object) !is null)
-				bind_to = props.object["zmq_point"].str;
-
-			// логгирование
-			// gebug - все отладочные сообщения, внимание! при включении будут жуткие тормоза! 
-			// off - выключено
-			// info - краткая информация о выполненных командах 
-			// info_and_io - краткая информация о выполненных командах и входящие и исходящие сообщения 
-			string logging = "info_and_io";
-			if(("logging" in props.object) !is null)
-				logging = props.object["logging"].str;
-
-			// поведение:
-			//	all - выполняет все операции
-			//  writer - только операции записи
-			//  reader - только операции чтения
-			//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
-			string behavior = "all";
-			if(("behavior" in props.object) !is null)
-				behavior = props.object["behavior"].str;								
-
-			/////////////////////////////////////////////////////////////////////////////////////////////////////////
-//			spawn (&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);	
-			
+			/////////////////////////////////////////////////////////////////////////////////////////////////////////			
 			
 			JSONValue[] _listeners;
 			if(("listeners" in props.object) !is null)
@@ -120,12 +92,23 @@ void main(char[][] args)
 					foreach(key; listener.object.keys)
 						params[key] = listener[key].str;
 
-					if(params.get("transport", "") == "zmq")
+					if(params.get("transport", "") == "file_reader")
 					{
+						//spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+						FileReadThread frt = new FileReadThread ("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+						frt.start ();  													
+					}
+					else if(params.get("transport", "") == "nanomsg")
+					{
+						spawn (&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);							
+					}
+					else if(params.get("transport", "") == "zmq")
+					{
+						mq_client zmq_connection = null;
+						
 						string zmq_connect_type = params.get("zmq_connect_type", "server");
 //						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
 						
-
 						if(zmq_connect_type == "server")
 						{
 							try
@@ -174,6 +157,8 @@ void main(char[][] args)
 
 					} else if(params.get("transport", "") == "rabbitmq")
 					{
+						mq_client rabbitmq_connection = null;
+						
 						// прием данных по каналу rabbitmq
 						log.trace_log_and_console("LISTENER: connect to rabbitmq");
 
@@ -280,26 +265,26 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 				}
 			}
 
-			if(tmp_is_ba == true)
-			{
-				string msg_str = util.utils.fromStringz(cast(char*) msg);
-				ba2pacahon(msg_str, context);
-
-				send(context.tid_statistic_data_accumulator, PUT, COUNT_COMMAND, 1);
-
-				sw.stop();
-				int t = cast(int) sw.peek().usecs;
-
-				send(context.tid_statistic_data_accumulator, PUT, WORKED_TIME, t);
-
-				if(trace_msg[69] == 1)
-					log.trace("messages, total time: %d [µs]", t);
-
-//				context.sw.reset();
-//				context.sw.start();
-				
-				return;
-			} else
+//			if(tmp_is_ba == true)
+//			{
+//				string msg_str = util.utils.fromStringz(cast(char*) msg);
+//				ba2pacahon(msg_str, context);
+//
+//				send(context.tid_statistic_data_accumulator, PUT, COUNT_COMMAND, 1);
+//
+//				sw.stop();
+//				int t = cast(int) sw.peek().usecs;
+//
+//				send(context.tid_statistic_data_accumulator, PUT, WORKED_TIME, t);
+//
+//				if(trace_msg[69] == 1)
+//					log.trace("messages, total time: %d [µs]", t);
+//
+////				context.sw.reset();
+////				context.sw.start();
+//				
+//				return;
+//			} else
 			{
 				msg_format = format.JSON_LD;
 				subjects = parse_json_ld_string(cast(char*) msg, message_size);
@@ -328,7 +313,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 //		io_msg.trace_io(true, cast(byte*) bb, bb.length);
 		
 	}
-	
+		
 	if (subjects is null)
 		subjects = new Subject[0];
 	
@@ -355,27 +340,27 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 
 	Subject[] results;
 
-	if(is_parse_success == false)
-	{
-		results = new Subject[1];
-
-		Subject res = new Subject();
-
-		res.subject = generateMsgId();
-
-		res.addPredicateAsURI("a", msg__Message);
-		res.addPredicate(msg__sender, "pacahon");
-
-		//			if(message !is null)
-		//			{
-		//				res.addPredicateAsURI(msg__in_reply_to, message.subject);								
-		//			}
-
-		res.addPredicate(msg__reason, "JSON Parsing error:" ~ parse_error);
-		res.addPredicate(msg__status, "400");
-
-		results[0] = res;
-	} else
+//	if(is_parse_success == false)
+//	{
+//		results = new Subject[1];
+//
+//		Subject res = new Subject();
+//
+//		res.subject = generateMsgId();
+//
+//		res.addPredicateAsURI("a", msg__Message);
+//		res.addPredicate(msg__sender, "pacahon");
+//
+//		//			if(message !is null)
+//		//			{
+//		//				res.addPredicateAsURI(msg__in_reply_to, message.subject);								
+//		//			}
+//
+//		res.addPredicate(msg__reason, "JSON Parsing error:" ~ parse_error);
+//		res.addPredicate(msg__status, "400");
+//
+//		results[0] = res;
+//	} else
 	{
 		results = new Subject[subjects.length];
 
@@ -503,6 +488,9 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 			ii++;
 		}
 		
+		if (ii == 0)
+			writeln ("II == 0, MSG_LENGTH=, ", message_size, ", msg=", cast (string)msg[0..message_size]);
+		
 	}
 
 	if(trace_msg[8] == 1)
@@ -552,6 +540,7 @@ void get_message(byte* msg, int message_size, mq_client from_client, ref ubyte[]
 	 GC.minimize();
 	 }
 	 */
+	
 	return;
 }
 

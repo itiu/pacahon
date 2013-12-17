@@ -6,7 +6,6 @@ import std.concurrency;
 import std.conv;
 	
 private import mq.mq_client;
-private import mq.zmq_point_to_poin_client;
 private import mq.rabbitmq_client;
 private import util.logger;
 
@@ -62,9 +61,6 @@ class OI
 			is_embedded = true;
 			return 0;	
 		}
-
-		if(transport == "zmq")
-			client = new zmq_point_to_poin_client();
 
 		else if(transport == "rabbitmq")
 			client = new rabbitmq_client();

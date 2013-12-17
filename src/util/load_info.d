@@ -82,6 +82,7 @@ void print_statistic (Tid _statistic_data_accumulator)
 		long worked_time = stat[WORKED_TIME];
 
 		long delta_count = msg_count - prev_count;
+		prev_count = msg_count;
 
 		float p100 = 3000;
 				
@@ -101,7 +102,7 @@ void print_statistic (Tid _statistic_data_accumulator)
 				cps = (dc/wt)*1000*1000;
 										
        		auto writer = appender!string();
-	        formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps:%6.1f | work time:%7d µs | processed: %5d | t.w.t. : %7d ms", 
+	        formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps/thr:%6.1f | work time:%7d µs | processed: %5d | t.w.t. : %7d ms", 
 			        		now, msg_count, cmd_count, cps, delta_worked_time, delta_count, worked_time/1000);
 			        
 	        log.trace ("cps:%6.1f", cps);
@@ -140,7 +141,6 @@ void print_statistic (Tid _statistic_data_accumulator)
 			}	
 		}
 
-		prev_count = msg_count;
 		Thread.sleep(dur!("seconds")(sleep_time));
 	}
 	
