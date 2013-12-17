@@ -29,7 +29,7 @@ zeromq v3.2.3 ( http://www.zeromq.com )
 - libzmq,a
 - libczmq.a:
 
-xapian 1.2.15 ( http://xapian.org )
+xapian 1.2.16 ( http://xapian.org )
 - libxapian-backend.a 
 - libxapian.a 
 - libxapiand.a

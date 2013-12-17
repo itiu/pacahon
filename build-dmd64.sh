@@ -1,3 +1,4 @@
+#bash
 DMD=dmd
 
 VERSION_MAJOR=1
@@ -14,7 +15,7 @@ rm *.log
 rm *.io
 rm *.oi
 
-m_static="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian.a lib64/libxapian-backend.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a"
+m_static="lib64/libnanomsg.a lib64/libanl.a lib64/liblmdb.a lib64/libxapiand.a lib64/libxapian-main.a lib64/libxapian-backend.a lib64/libzmq.a lib64/libczmq.a lib64/libstdc++.a lib64/libuuid.a lib64/librabbitmq.a"
 m_shared="-L-lzmq -L-lxapiand -L-lxapian -L-lnanomsg -L-llmdb -L-lczmq -L-lrabbitmq"
 
 $DMD -m64 -O -g -release @pacahon-src-list $m_static -oftarget/Pacahon-$VERSION_MAJOR-$VERSION_MINOR-$VERSION_PATCH-64-sl
