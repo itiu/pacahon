@@ -35,7 +35,7 @@ xapian 1.2.16 ( http://xapian.org )
 - libxapiand.a
 - libstdc++.a
 
-lmdb 0.9.9 ( http://symas.com/mdb )
+lmdb 0.9.10 ( http://symas.com/mdb, https://gitorious.org/mdb/mdb/archive/f39bceb800dd1b1b4b05cfb45a3ddde94a273fff.tar.gz )
 - liblmdb.a
 
 rabbitmq-c 0.4.0 ( http://github.com/alanxz/rabbitmq-c ) 
