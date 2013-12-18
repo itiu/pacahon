@@ -2,256 +2,253 @@ module util.logger;
 
 // TODO: ++ module core.sys.posix.syslog;
 
-private 
+private
 {
-	import std.format;
-	import std.c.stdio;
-	import std.datetime;
+    import std.format;
+    import std.c.stdio;
+    import std.datetime;
 
-	import std.array: appender;
+    import std.array : appender;
 
-	import std.stdio;
-	import std.datetime;
-	import std.c.linux.linux;
-	import std.concurrency;
+    import std.stdio;
+    import std.datetime;
+    import std.c.linux.linux;
+    import std.concurrency;
 }
 
-void logger_process ()
+void logger_process()
 {
-	writeln ("SPAWN: Logger");
-	LoggerQueue llq = null; 
-	
-	while (true)
-	{
-		// Receive a message from the owner thread.
-		auto msg = receiveOnly! (char, string, string, string, string) ();
-		
-		char cmd = msg[0];
-		
-		if (llq is null)
-			llq = new LoggerQueue (msg[1], msg[2], msg[3]);	
-		
-		if (cmd == 'T')
-			llq.trace (msg[4]);
-		else if (cmd == 'C')
-			llq.trace_log_and_console (msg[4]);
-		else if (cmd == 'I')
-			llq.trace_io (true, msg[4]);
-		else if (cmd == 'O')
-			llq.trace_io (false, msg[4]);
-			
-	}	
-	
+    writeln("SPAWN: Logger");
+    LoggerQueue llq = null;
+
+    while (true)
+    {
+        // Receive a message from the owner thread.
+        auto msg = receiveOnly!(char, string, string, string, string)();
+
+        char cmd = msg[ 0 ];
+
+        if (llq is null)
+            llq = new LoggerQueue(msg[ 1 ], msg[ 2 ], msg[ 3 ]);
+
+        if (cmd == 'T')
+            llq.trace(msg[ 4 ]);
+        else if (cmd == 'C')
+            llq.trace_log_and_console(msg[ 4 ]);
+        else if (cmd == 'I')
+            llq.trace_io(true, msg[ 4 ]);
+        else if (cmd == 'O')
+            llq.trace_io(false, msg[ 4 ]);
+    }
 }
 
 
 
 public class logger
 {
-	private string log_name = "app";
-	private string ext = "log";
-	private string src = "";
-	Tid tid_logger;
-	bool isSpawn = false;
-	
-	this(string _log_name, string _ext, string _src)
-	{		
-		log_name = _log_name;
-		src = _src;
-		ext = _ext;
-	}
-	
-	void trace(Char, A...)(in Char[] fmt, A args)
-	{		
-		if (isSpawn == false)
-		{
-			tid_logger = spawn(&logger_process);
-			isSpawn = true;
-		}	
-				
-		auto writer = appender!string();
-		formattedWrite(writer, fmt, args);		
-		send (tid_logger, 'T', log_name, ext, src, writer.data);		
-	}
-	
-	void trace_log_and_console(Char, A...)(in Char[] fmt, A args)
-	{		
-		if (isSpawn == false)
-		{
-			tid_logger = spawn(&logger_process);
-			isSpawn = true;
-		}	
-		
-		auto writer = appender!string();
-		formattedWrite(writer, fmt, args);		
-		send (tid_logger, 'C', log_name, ext, src, writer.data);		
-	}
-	
-	void trace_io(bool io, byte* data, ulong length)
-	{		
-		if (isSpawn == false)
-		{
-			tid_logger = spawn(&logger_process);
-			isSpawn = true;
-		}	
-		
-		if (io == true)
-			send (tid_logger, 'I', log_name, ext, src, cast(immutable)(cast(char*)data)[0..length]);		
-		else
-			send (tid_logger, 'O', log_name, ext, src, cast(immutable)(cast(char*)data)[0..length]);		
-	}
-	
+    private string log_name = "app";
+    private string ext      = "log";
+    private string src      = "";
+    Tid            tid_logger;
+    bool           isSpawn = false;
+
+    this(string _log_name, string _ext, string _src)
+    {
+        log_name = _log_name;
+        src      = _src;
+        ext      = _ext;
+    }
+
+    void trace(Char, A ...) (in Char[] fmt, A args)
+    {
+        if (isSpawn == false)
+        {
+            tid_logger = spawn(&logger_process);
+            isSpawn    = true;
+        }
+
+        auto writer = appender!string();
+        formattedWrite(writer, fmt, args);
+        send(tid_logger, 'T', log_name, ext, src, writer.data);
+    }
+
+    void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
+    {
+        if (isSpawn == false)
+        {
+            tid_logger = spawn(&logger_process);
+            isSpawn    = true;
+        }
+
+        auto writer = appender!string();
+        formattedWrite(writer, fmt, args);
+        send(tid_logger, 'C', log_name, ext, src, writer.data);
+    }
+
+    void trace_io(bool io, byte *data, ulong length)
+    {
+        if (isSpawn == false)
+        {
+            tid_logger = spawn(&logger_process);
+            isSpawn    = true;
+        }
+
+        if (io == true)
+            send(tid_logger, 'I', log_name, ext, src, cast(immutable)(cast(char *)data)[ 0..length ]);
+        else
+            send(tid_logger, 'O', log_name, ext, src, cast(immutable)(cast(char *)data)[ 0..length ]);
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-shared byte trace_msg[1100];
+           shared byte trace_msg[ 1100 ];
 
 alias long _time;
 
 
 public class LoggerQueue
 {
-	private int count = 0;
-	private int prev_time = 0; 
+    private int    count     = 0;
+    private int    prev_time = 0;
 
-	private string trace_logfilename = "app";
-	private string ext = "log";
-	private string src = "";
+    private string trace_logfilename = "app";
+    private string ext               = "log";
+    private string src               = "";
 
-	
-	private FILE* ff = null;
 
-	this(string log_name, string _ext, string _src)
-	{		
-		trace_logfilename = log_name;
-		src = _src;
-		ext = _ext;
-	}
+    private FILE *ff = null;
 
-	~this()
-	{
-		fclose(ff);
-	}
+    this(string log_name, string _ext, string _src)
+    {
+        trace_logfilename = log_name;
+        src               = _src;
+        ext               = _ext;
+    }
 
-	private void open_new_file ()
-	{
-		count = 0;
-		_time tt = time(null);
-		tm* ptm = localtime(&tt);
-		int year = ptm.tm_year + 1900;
-		int month = ptm.tm_mon + 1;
-		int day = ptm.tm_mday;
-		int hour = ptm.tm_hour;
-		int minute = ptm.tm_min;
-		int second = ptm.tm_sec;
+    ~this()
+    {
+        fclose(ff);
+    }
 
-		auto writer = appender!string();
+    private void open_new_file()
+    {
+        count = 0;
+        _time tt     = time(null);
+        tm    *ptm   = localtime(&tt);
+        int   year   = ptm.tm_year + 1900;
+        int   month  = ptm.tm_mon + 1;
+        int   day    = ptm.tm_mday;
+        int   hour   = ptm.tm_hour;
+        int   minute = ptm.tm_min;
+        int   second = ptm.tm_sec;
 
-		formattedWrite(writer, "%s_%04d-%02d-%02d_%02d:%02d:%02d.%s", trace_logfilename, year, month, day, hour, minute, second, ext);
+        auto  writer = appender!string();
 
-		writer.put(cast(char) 0);
-		
-		if (ff !is null)
-		{
-			fflush(ff);
-			fclose(ff);
-		}
-		
-		ff = fopen(writer.data.ptr, "aw");
-	}
-	
-	void trace_io(bool io, string data)
-	{	
-		if (data.length <= 0)
-			return;
-		
-		string str_io;
+        formattedWrite(writer, "%s_%04d-%02d-%02d_%02d:%02d:%02d.%s", trace_logfilename, year, month, day, hour, minute, second, ext);
 
-		if(io == true)
-			str_io = "INPUT";
-		else
-			str_io = "OUTPUT";
-			
-		_time tt = time(null);
-		tm* ptm = localtime(&tt);
-		int year = ptm.tm_year + 1900;
-		int month = ptm.tm_mon + 1;
-		int day = ptm.tm_mday;
-		int hour = ptm.tm_hour;
-		int minute = ptm.tm_min;
-		int second = ptm.tm_sec;
-		auto now = Clock.currTime();
-		int usecs = now.fracSec.usecs;
+        writer.put(cast(char)0);
 
-		count ++;
+        if (ff !is null)
+        {
+            fflush(ff);
+            fclose(ff);
+        }
 
-		if (ff is null || prev_time > 0 && day != prev_time || count > 1_000_000)
-		{
-			open_new_file ();
-		}
-		
-		auto writer = appender!string();
+        ff = fopen(writer.data.ptr, "aw");
+    }
 
-		formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d]\n%s\n", year, month, day, hour, minute, second, usecs, str_io);
+    void trace_io(bool io, string data)
+    {
+        if (data.length <= 0)
+            return;
 
-		fwrite (cast(char*)writer.data, 1, writer.data.length, ff);
-		
-        fwrite (cast(char*)data, 1, data.length, ff);
+        string str_io;
 
-		fputc('\r', ff);
-		
-		fflush(ff);
-		
-		prev_time = day;		
-	}
+        if (io == true)
+            str_io = "INPUT";
+        else
+            str_io = "OUTPUT";
 
-	string trace(string arg)
-	{
-		_time tt = time(null);
-		tm* ptm = localtime(&tt);
-		int year = ptm.tm_year + 1900;
-		int month = ptm.tm_mon + 1;
-		int day = ptm.tm_mday;
-		int hour = ptm.tm_hour;
-		int minute = ptm.tm_min;
-		int second = ptm.tm_sec;
-		auto now = Clock.currTime();
-		int usecs = now.fracSec.usecs;
+        _time tt     = time(null);
+        tm    *ptm   = localtime(&tt);
+        int   year   = ptm.tm_year + 1900;
+        int   month  = ptm.tm_mon + 1;
+        int   day    = ptm.tm_mday;
+        int   hour   = ptm.tm_hour;
+        int   minute = ptm.tm_min;
+        int   second = ptm.tm_sec;
+        auto  now    = Clock.currTime();
+        int   usecs  = now.fracSec.usecs;
 
-		count++;
-		if (ff is null || prev_time > 0 && day != prev_time || count > 1_000_000)
-		{
-			open_new_file ();
-		}
-		
-		//	       StopWatch sw1; sw1.start();
-		auto writer = appender!string();
+        count++;
 
-		if (src.length > 0)
-		    formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] [%s] ", year, month, day, hour, minute, second, usecs, src);
-		else
-		    formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] ", year, month, day, hour, minute, second, usecs);
+        if (ff is null || prev_time > 0 && day != prev_time || count > 1_000_000)
+        {
+            open_new_file();
+        }
 
-		writer.put (arg);
-		writer.put(cast(char) 0);
+        auto writer = appender!string();
 
-		fputs(cast(char*) writer.data, ff);
-		fputc('\n', ff);
+        formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d]\n%s\n", year, month, day, hour, minute, second, usecs, str_io);
 
-		//    		sw1.stop();
-		//               writeln (cast(long) sw1.peek().microseconds);
+        fwrite(cast(char *)writer.data, 1, writer.data.length, ff);
 
-		fflush(ff);
+        fwrite(cast(char *)data, 1, data.length, ff);
 
-		prev_time = day;		
+        fputc('\r', ff);
 
-		return writer.data;
-	}
+        fflush(ff);
 
-	void trace_log_and_console(string arg)
-	{
-		write(trace(arg), "\n");
-	}
+        prev_time = day;
+    }
+
+    string trace(string arg)
+    {
+        _time tt     = time(null);
+        tm    *ptm   = localtime(&tt);
+        int   year   = ptm.tm_year + 1900;
+        int   month  = ptm.tm_mon + 1;
+        int   day    = ptm.tm_mday;
+        int   hour   = ptm.tm_hour;
+        int   minute = ptm.tm_min;
+        int   second = ptm.tm_sec;
+        auto  now    = Clock.currTime();
+        int   usecs  = now.fracSec.usecs;
+
+        count++;
+        if (ff is null || prev_time > 0 && day != prev_time || count > 1_000_000)
+        {
+            open_new_file();
+        }
+
+        //	       StopWatch sw1; sw1.start();
+        auto writer = appender!string();
+
+        if (src.length > 0)
+            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] [%s] ", year, month, day, hour, minute, second, usecs, src);
+        else
+            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] ", year, month, day, hour, minute, second, usecs);
+
+        writer.put(arg);
+        writer.put(cast(char)0);
+
+        fputs(cast(char *)writer.data, ff);
+        fputc('\n', ff);
+
+        //          sw1.stop();
+        //               writeln (cast(long) sw1.peek().microseconds);
+
+        fflush(ff);
+
+        prev_time = day;
+
+        return writer.data;
+    }
+
+    void trace_log_and_console(string arg)
+    {
+        write(trace(arg), "\n");
+    }
 }

@@ -7,17 +7,17 @@ private import std.uuid;
 
 Subject create_reifed_info(string ss, string pp, string oo)
 {
-	Subject new_subj = new Subject();
-	
-	UUID new_id = randomUUID();	
-	
-	new_subj.subject = "r" ~ new_id.toString()[0..8];
+    Subject new_subj = new Subject();
 
-	new_subj.addPredicate(rdf__type, rdf__Statement);
-	new_subj.addPredicate(rdf__subject, ss);
-	new_subj.addPredicate(rdf__predicate, pp);
-	new_subj.addPredicate(rdf__object, oo);
+    UUID    new_id = randomUUID();
+
+    new_subj.subject = "r" ~ new_id.toString()[ 0..8 ];
+
+    new_subj.addPredicate(rdf__type, rdf__Statement);
+    new_subj.addPredicate(rdf__subject, ss);
+    new_subj.addPredicate(rdf__predicate, pp);
+    new_subj.addPredicate(rdf__object, oo);
 
 //	writeln("create_reifed_info s=", ss, ", p=", pp, ", o=", oo);
-	return new_subj;
+    return new_subj;
 }

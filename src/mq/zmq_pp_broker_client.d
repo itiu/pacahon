@@ -24,347 +24,348 @@ alias void listener_result;
 
 static int ZMQ_POLL_MSEC = 1;
 
-const PPP_HEARTBEAT_LIVENESS = 5; //  		3-5 is reasonable
-const PPP_HEARTBEAT_INTERVAL = 1000 * 10; //  	msecs
-const PPP_INTERVAL_RECONNECT_INIT = 1000; //  		Initial reconnect
-const PPP_INTERVAL_RECONNECT_MAX = 32000; //  		After exponential backoff
-const PPP_HEARTBEAT = "H";
+const      PPP_HEARTBEAT_LIVENESS      = 5;         //          3-5 is reasonable
+const      PPP_HEARTBEAT_INTERVAL      = 1000 * 10; //      msecs
+const      PPP_INTERVAL_RECONNECT_INIT = 1000;      //          Initial reconnect
+const      PPP_INTERVAL_RECONNECT_MAX  = 32000;     //          After exponential backoff
+const      PPP_HEARTBEAT               = "H";
 
 // поведение:
 //	all - выполняет все операции
 //  writer - только операции записи
 //  reader - только операции чтения
-//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются 		
+//  logger - ничего не выполняет а только логгирует операции, параметры logging не учитываются
 
-const PPP_BEHAVIOR_ALL = "RA";
-const PPP_BEHAVIOR_WRITER = "RW";
-const PPP_BEHAVIOR_READER = "RR";
-const PPP_BEHAVIOR_LOGGER = "RL";
+const         PPP_BEHAVIOR_ALL    = "RA";
+const         PPP_BEHAVIOR_WRITER = "RW";
+const         PPP_BEHAVIOR_READER = "RR";
+const         PPP_BEHAVIOR_LOGGER = "RL";
 
 static string PPP_READY;
 
 // Called upon a signal from Linux
 extern (C) public void sighandler0(int sig) nothrow @system
 {
-	printf("signal %d caught...\n", sig);
-	try
-	{
-	    system ("kill -kill " ~ text (getpid()));
-	    //Runtime.terminate();
-	}
-	catch (Exception ex)
-	{
-	}
+    printf("signal %d caught...\n", sig);
+    try
+    {
+        system("kill -kill " ~ text(getpid()));
+        //Runtime.terminate();
+    }
+    catch (Exception ex)
+    {
+    }
 }
 
-class zmq_pp_broker_client: mq_client
+class zmq_pp_broker_client : mq_client
 {
-	private string fail;
-	private bool is_success_status = false;
+    private string fail;
+    private bool   is_success_status = false;
 
-	bool is_success()
-	{
-		return is_success_status;
-	}
+    bool is_success()
+    {
+        return is_success_status;
+    }
 
-	string get_fail_msg()
-	{
-		return fail;
-	}
-	
-	char[] identity;
-	zctx_t* ctx;
-	void* worker;
+    string get_fail_msg()
+    {
+        return fail;
+    }
 
-	int count_h = 0;
+    char[] identity;
+    zctx_t *ctx;
+    void   *worker;
 
-	size_t liveness;
-	size_t interval;
+    int    count_h = 0;
 
-	ulong heartbeat_at;
-	char* bind_to;
+    size_t liveness;
+    size_t interval;
 
-	void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) message_acceptor;
+    ulong  heartbeat_at;
+    char   *bind_to;
 
-	int count = 0;
-	bool isSend = false;
+    void function(byte *txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) message_acceptor;
 
-	this()
-	{
-	}
+    int  count  = 0;
+    bool isSend = false;
 
-	~this()
-	{
-		zctx_destroy(&ctx);
-		printf("zmq_pp_broker_client destroy\n");
-	}
+    this()
+    {
+    }
 
-	int connect_as_listener(string[string] params)
-	{
-		string _bind_to = params.get ("bind_to", null);
-		string _behavior = params.get ("behavior", null); 
-		
-		PPP_READY = PPP_BEHAVIOR_ALL;
+    ~this()
+    {
+        zctx_destroy(&ctx);
+        printf("zmq_pp_broker_client destroy\n");
+    }
 
-		if(_behavior == "all")
-			PPP_READY = PPP_BEHAVIOR_ALL;
-		else if(_behavior == "writer")
-			PPP_READY = PPP_BEHAVIOR_WRITER;
-		else if(_behavior == "reader")
-			PPP_READY = PPP_BEHAVIOR_READER;
-		else if(_behavior == "logger")
-			PPP_READY = PPP_BEHAVIOR_LOGGER;
+    int connect_as_listener(string[ string ] params)
+    {
+        string _bind_to  = params.get("bind_to", null);
+        string _behavior = params.get("behavior", null);
 
-		bind_to = cast(char*) (_bind_to);// ~ "\0");
-		printf("worker\n");
+        PPP_READY = PPP_BEHAVIOR_ALL;
 
-		ctx = zctx_new();
-		worker = s_worker_socket(ctx, bind_to);
+        if (_behavior == "all")
+            PPP_READY = PPP_BEHAVIOR_ALL;
+        else if (_behavior == "writer")
+            PPP_READY = PPP_BEHAVIOR_WRITER;
+        else if (_behavior == "reader")
+            PPP_READY = PPP_BEHAVIOR_READER;
+        else if (_behavior == "logger")
+            PPP_READY = PPP_BEHAVIOR_LOGGER;
 
-		//  If liveness hits zero, queue is considered disconnected
-		liveness = PPP_HEARTBEAT_LIVENESS;
-		interval = PPP_INTERVAL_RECONNECT_INIT;
+        bind_to = cast(char *)(_bind_to);        // ~ "\0");
+        printf("worker\n");
 
-		//  Send out heartbeats at regular intervals
-		heartbeat_at = zclock_time() + PPP_HEARTBEAT_INTERVAL;
-		
-		is_success_status = true;
-		return 0;
-	}
-	
-	int connect_as_req(string[string] params)
-	{
-		return -1;
-	}
+        ctx    = zctx_new();
+        worker = s_worker_socket(ctx, bind_to);
 
-	// set callback function for listener ()
-	void set_callback(void function(byte* txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
-	{
-		message_acceptor = _message_acceptor;
-	}
- 
-	void get_count(out int cnt)
-	{
-		cnt = count;
-	}
+        //  If liveness hits zero, queue is considered disconnected
+        liveness = PPP_HEARTBEAT_LIVENESS;
+        interval = PPP_INTERVAL_RECONNECT_INIT;
 
-	// in thread listens to the queue and calls _message_acceptor
-	listener_result listener()
-	{
-		version (linux) 
-		{
-		    // установим обработчик сигналов прерывания процесса
-		    signal(SIGABRT, &sighandler0);
-		    signal(SIGTERM, &sighandler0);
-		    signal(SIGQUIT, &sighandler0);
-		    signal(SIGINT, &sighandler0);
-		}	
+        //  Send out heartbeats at regular intervals
+        heartbeat_at = zclock_time() + PPP_HEARTBEAT_INTERVAL;
 
-		while(1)
-		{
-			//			StopWatch sw;
-			zmq_pollitem_t items[] = new zmq_pollitem_t[1];
+        is_success_status = true;
+        return 0;
+    }
 
-			items[0].socket = worker;
-			items[0].fd = 0;
-			items[0].events = ZMQ_POLLIN;
-			items[0].revents = 0;
+    int connect_as_req(string[ string ] params)
+    {
+        return -1;
+    }
 
-			int rc = zmq_poll(cast(zmq_pollitem_t*) items, 1, PPP_HEARTBEAT_INTERVAL * ZMQ_POLL_MSEC);
-			if(rc == -1)
-			{
-			//	break; //  Interrupted
-			}
+    // set callback function for listener ()
+    void set_callback(void function(byte *txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
+    {
+        message_acceptor = _message_acceptor;
+    }
 
-			//        printf("items [0].revents = %d\n", items [0].revents);
-			if(items[0].revents & ZMQ_POLLIN)
-			{
-				//	    		sw.start();
+    void get_count(out int cnt)
+    {
+        cnt = count;
+    }
 
-				//  Get message
-				//  - 3-part envelope + content -> request
-				//  - 1-part "HEARTBEAT" -> heartbeat            
-				zmsg_t* msg = zmsg_recv(worker);
+    // in thread listens to the queue and calls _message_acceptor
+    listener_result listener()
+    {
+        version (linux)
+        {
+            // установим обработчик сигналов прерывания процесса
+            signal(SIGABRT, &sighandler0);
+            signal(SIGTERM, &sighandler0);
+            signal(SIGQUIT, &sighandler0);
+            signal(SIGINT, &sighandler0);
+        }
 
-				if(!msg)
-					break; //  Interrupted
+        while (1)
+        {
+            //			StopWatch sw;
+            zmq_pollitem_t items[] = new zmq_pollitem_t[ 1 ];
 
-				int size_msg = cast(uint)zmsg_size(msg);
-				//				   printf("message size=%d\n", size_msg);
+            items[ 0 ].socket  = worker;
+            items[ 0 ].fd      = 0;
+            items[ 0 ].events  = ZMQ_POLLIN;
+            items[ 0 ].revents = 0;
 
-				if(size_msg == 3)
-				{
-					//					printf("I: recieve task\n");
+            int rc = zmq_poll(cast(zmq_pollitem_t *)items, 1, PPP_HEARTBEAT_INTERVAL * ZMQ_POLL_MSEC);
+            if (rc == -1)
+            {
+                //	break; //  Interrupted
+            }
 
-					zframe_t* frame = zmsg_last(msg);
-					byte* msg_body = zframe_data(frame);
-					int size = cast(uint)zframe_size(frame);
+            //        printf("items [0].revents = %d\n", items [0].revents);
+            if (items[ 0 ].revents & ZMQ_POLLIN)
+            {
+                //	            sw.start();
 
-					isSend = false;
-					// обработка принятого сообщения и отправка ответа
+                //  Get message
+                //  - 3-part envelope + content -> request
+                //  - 1-part "HEARTBEAT" -> heartbeat
+                zmsg_t *msg = zmsg_recv(worker);
 
-					//					printf("zmq_pp_broker_client #1\n");
-					count++;
+                if (!msg)
+                    break;                     //  Interrupted
 
-					ubyte[] outbuff;
+                int size_msg = cast(uint) zmsg_size(msg);
+                //				   printf("message size=%d\n", size_msg);
 
-					//		        		sw.stop();
-					//		        		printf ("(1):%d\n", sw.peek().usecs);
+                if (size_msg == 3)
+                {
+                    //					printf("I: recieve task\n");
 
-					message_acceptor(msg_body, size, this, outbuff, null);
+                    zframe_t *frame    = zmsg_last(msg);
+                    byte     *msg_body = zframe_data(frame);
+                    int      size      = cast(uint) zframe_size(frame);
 
-					//			sw.reset ();
-					//	    		sw.start();
-					//					printf("zmq_pp_broker_client #2\n");
+                    isSend = false;
+                    // обработка принятого сообщения и отправка ответа
 
-					//					if (isSend == false)
-					//					{
-					//						возможно потребуется обработка такой ситуации
-					//					}
+                    //					printf("zmq_pp_broker_client #1\n");
+                    count++;
 
-					//					zclock_sleep(50);
-					zframe_reset(frame, cast(char*) outbuff, outbuff.length);
+                    ubyte[] outbuff;
 
-					zmsg_send(&msg, worker);
-					//		zstr_send (worker, "safsfsd");
+                    //		                sw.stop();
+                    //		                printf ("(1):%d\n", sw.peek().usecs);
 
-					liveness = PPP_HEARTBEAT_LIVENESS;
+                    message_acceptor(msg_body, size, this, outbuff, null);
 
-					//				Thread.getThis().sleep(100_000);
+                    //			sw.reset ();
+                    //	            sw.start();
+                    //					printf("zmq_pp_broker_client #2\n");
 
-					//					if(zctx_interrupted)
-					//						break;
-					//					zmsg_destroy(&msg);
+                    //					if (isSend == false)
+                    //					{
+                    //						возможно потребуется обработка такой ситуации
+                    //					}
 
-				} else if(size_msg == 1)
-				{
-				    //printf ("I'm recieve message size = 1");
-					zframe_t* frame = zmsg_first(msg);
-					char* msg_body = cast(char*) zframe_data(frame);
-					if(strncmp(msg_body, cast(char*) PPP_HEARTBEAT, PPP_HEARTBEAT.length) == 0)
-					{
-						printf ("I: recieve HEARTBEAT\n");
-						liveness = PPP_HEARTBEAT_LIVENESS;
-					} else
-					{
-						printf("E: ( %s invalid message)\n", cast(char*) identity);
-						zmsg_dump(msg);
-					}
-					zmsg_destroy(&msg);
-				}
-				interval = PPP_INTERVAL_RECONNECT_INIT;
-			} else
-			{
-				if(liveness < PPP_HEARTBEAT_LIVENESS)
-					printf("!!!! --liveness = %d\n", liveness);
-				if(--liveness == 0)
-				{
-					printf("W: heartbeat failure, can't reach queue\n");
-					printf("W: reconnecting in %zd msec...\n", interval);
-					Thread.sleep(dur!("msecs")(interval));
+                    //					zclock_sleep(50);
+                    zframe_reset(frame, cast(char *)outbuff, outbuff.length);
 
-					if(interval < PPP_INTERVAL_RECONNECT_MAX)
-					{
-						interval *= 2;
-					}
-					else
-					{
-					    system ("kill -kill " ~ text (getpid()));
-					}
+                    zmsg_send(&msg, worker);
+                    //		zstr_send (worker, "safsfsd");
 
-					zsocket_destroy(ctx, worker);
-					worker = s_worker_socket(ctx, bind_to);
-					liveness = PPP_HEARTBEAT_LIVENESS;
-				}
-			}
+                    liveness = PPP_HEARTBEAT_LIVENESS;
 
-			//  Send heartbeat to broker if it's time
-			if(zclock_time() > heartbeat_at)
-			{
-				heartbeat_at = zclock_time() + PPP_HEARTBEAT_INTERVAL;
-				//          printf ("I: worker heartbeat\n");
-				zframe_t* frame = zframe_new(cast(char*) PPP_HEARTBEAT, PPP_HEARTBEAT.length);
-				zframe_send(&frame, worker, 0);
-				count_h++;
-				//				printf ("count_h=%d\n", count_h);
-			}
+                    //				Thread.getThis().sleep(100_000);
 
-			//		        		sw.stop();
-			//		        		printf ("(2):%d\n", sw.peek().usecs);
-			//			if(zctx_interrupted)
-			//				break;
-		}
+                    //					if(zctx_interrupted)
+                    //						break;
+                    //					zmsg_destroy(&msg);
+                }
+                else if (size_msg == 1)
+                {
+                    //printf ("I'm recieve message size = 1");
+                    zframe_t *frame    = zmsg_first(msg);
+                    char     *msg_body = cast(char *) zframe_data(frame);
+                    if (strncmp(msg_body, cast(char *)PPP_HEARTBEAT, PPP_HEARTBEAT.length) == 0)
+                    {
+                        printf("I: recieve HEARTBEAT\n");
+                        liveness = PPP_HEARTBEAT_LIVENESS;
+                    }
+                    else
+                    {
+                        printf("E: ( %s invalid message)\n", cast(char *)identity);
+                        zmsg_dump(msg);
+                    }
+                    zmsg_destroy(&msg);
+                }
+                interval = PPP_INTERVAL_RECONNECT_INIT;
+            }
+            else
+            {
+                if (liveness < PPP_HEARTBEAT_LIVENESS)
+                    printf("!!!! --liveness = %d\n", liveness);
+                if (--liveness == 0)
+                {
+                    printf("W: heartbeat failure, can't reach queue\n");
+                    printf("W: reconnecting in %zd msec...\n", interval);
+                    Thread.sleep(dur!("msecs")(interval));
 
-		system ("kill -kill " ~ text (getpid()));
+                    if (interval < PPP_INTERVAL_RECONNECT_MAX)
+                    {
+                        interval *= 2;
+                    }
+                    else
+                    {
+                        system("kill -kill " ~ text(getpid()));
+                    }
 
-		return;
-	}
+                    zsocket_destroy(ctx, worker);
+                    worker   = s_worker_socket(ctx, bind_to);
+                    liveness = PPP_HEARTBEAT_LIVENESS;
+                }
+            }
 
-	//	 Set simple random printable identity on socket	
-	private static char[] s_set_id(void* socket)
-	{
-		UUID uid = randomUUID();
+            //  Send heartbeat to broker if it's time
+            if (zclock_time() > heartbeat_at)
+            {
+                heartbeat_at = zclock_time() + PPP_HEARTBEAT_INTERVAL;
+                //          printf ("I: worker heartbeat\n");
+                zframe_t *frame = zframe_new(cast(char *)PPP_HEARTBEAT, PPP_HEARTBEAT.length);
+                zframe_send(&frame, worker, 0);
+                count_h++;
+                //				printf ("count_h=%d\n", count_h);
+            }
+
+            //		                sw.stop();
+            //		                printf ("(2):%d\n", sw.peek().usecs);
+            //			if(zctx_interrupted)
+            //				break;
+        }
+
+        system("kill -kill " ~ text(getpid()));
+
+        return;
+    }
+
+    //	 Set simple random printable identity on socket
+    private static char[] s_set_id(void *socket)
+    {
+        UUID uid = randomUUID();
 //		Twister rnd;
 //		rnd.seed;
 //		UuidGen rndUuid = new RandomGen!(Twister)(rnd);
 //		Uuid generated = rndUuid.next;
-		string id = uid.toString();
+        string id = uid.toString();
 
-		zmq_setsockopt(socket, ZMQ_IDENTITY, cast(char*)id, cast(int)id.length);
+        zmq_setsockopt(socket, ZMQ_IDENTITY, cast(char *)id, cast(int)id.length);
 
-		return cast(char[])id;
-	}
+        return cast(char[])id;
+    }
 
-	private void* s_worker_socket(zctx_t* ctx, char* point)
-	{
-		void* soc_worker = zsocket_new(ctx, ZMQ_DEALER);
+    private void *s_worker_socket(zctx_t *ctx, char *point)
+    {
+        void *soc_worker = zsocket_new(ctx, ZMQ_DEALER);
 
-		//		void* context = zmq_init(1);
-		//		void* soc_worker = zmq_socket(context, ZMQ_DEALER);
+        //		void* context = zmq_init(1);
+        //		void* soc_worker = zmq_socket(context, ZMQ_DEALER);
 
-		//zmq_socket(context, ZMQ_XREQ);
+        //zmq_socket(context, ZMQ_XREQ);
 
-		if(soc_worker is null)
-		{
-			printf("error in zsocket_new, socket not created\n");
-			return null;
-		}
+        if (soc_worker is null)
+        {
+            printf("error in zsocket_new, socket not created\n");
+            return null;
+        }
 
-		printf("soc_worker %x\n", soc_worker);
+        printf("soc_worker %x\n", soc_worker);
 
-		//  Set random identity to make tracing easier
-		identity = s_set_id(soc_worker);
+        //  Set random identity to make tracing easier
+        identity = s_set_id(soc_worker);
 
-		printf("connect to: %s\n", point);
-		int rc = zmq_connect(soc_worker, point);
-		if(rc != 0)
-		{
-			printf("error in zmq_connect: %s\n", zmq_strerror(zmq_errno()));
-			return null;
-		}
-		printf("ok\n");
+        printf("connect to: %s\n", point);
+        int rc = zmq_connect(soc_worker, point);
+        if (rc != 0)
+        {
+            printf("error in zmq_connect: %s\n", zmq_strerror(zmq_errno()));
+            return null;
+        }
+        printf("ok\n");
 
-		//  Configure socket to not wait at close time
-		int linger = 0;
-		zmq_setsockopt(soc_worker, ZMQ_LINGER, &linger, linger.sizeof);
+        //  Configure socket to not wait at close time
+        int linger = 0;
+        zmq_setsockopt(soc_worker, ZMQ_LINGER, &linger, linger.sizeof);
 
-		//  Tell queue we're ready for work
-		writeln("I: worker ready: [", identity, "] ", PPP_READY);
-		zframe_t* frame = zframe_new(cast(char*) PPP_READY, PPP_READY.length);
-		zframe_send(&frame, soc_worker, 0);
+        //  Tell queue we're ready for work
+        writeln("I: worker ready: [", identity, "] ", PPP_READY);
+        zframe_t *frame = zframe_new(cast(char *)PPP_READY, PPP_READY.length);
+        zframe_send(&frame, soc_worker, 0);
 
-		return soc_worker;
-	}
+        return soc_worker;
+    }
 
-	///////////////////////////////////////////////////////////////////////
-	int send(char* messagebody, int message_size, bool send_more)
-	{
-		return -1;
-	}
+    ///////////////////////////////////////////////////////////////////////
+    int send(char *messagebody, int message_size, bool send_more)
+    {
+        return -1;
+    }
 
-	string reciev()
-	{
-		return null;
-	}
-
+    string reciev()
+    {
+        return null;
+    }
 }

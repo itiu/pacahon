@@ -6,26 +6,25 @@ private import pacahon.know_predicates;
 
 class DocTemplate
 {
-	Subject main;
-	GraphCluster data;
+    Subject      main;
+    GraphCluster data;
 
-	this()
-	{
-		data = new GraphCluster();
-	}
+    this()
+    {
+        data = new GraphCluster();
+    }
 
-	Subject addTriple(string S, string P, string O, byte lang)
-	{
-		return data.addTriple(S, P, O, lang);
-	}
+    Subject addTriple(string S, string P, string O, byte lang)
+    {
+        return data.addTriple(S, P, O, lang);
+    }
 
-	Predicate get_export_predicates()
-	{
-		if(main is null)
-			return null;
+    Predicate get_export_predicates()
+    {
+        if (main is null)
+            return null;
 
-		Predicate pp = main.getPredicate(link__exportPredicates);
-		return pp;
-	}
-
+        Predicate pp = main.getPredicate(link__exportPredicates);
+        return pp;
+    }
 }
