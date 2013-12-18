@@ -39,247 +39,247 @@ static this()
 
 class ThreadContext : Context
 {
-private Tid _tid_statistic_data_accumulator;
-@property Tid tid_statistic_data_accumulator()
-{
-    return _tid_statistic_data_accumulator;
-}
+    private Tid _tid_statistic_data_accumulator;
+    @property Tid tid_statistic_data_accumulator()
+    {
+        return _tid_statistic_data_accumulator;
+    }
 
-private Tid _tid_ticket_manager;
-@property Tid tid_ticket_manager()
-{
-    return _tid_ticket_manager;
-}
+    private Tid _tid_ticket_manager;
+    @property Tid tid_ticket_manager()
+    {
+        return _tid_ticket_manager;
+    }
 
 //	private StopWatch _sw;
 //	@property StopWatch sw () { return _sw; }
 
-private Ticket *[ string ] _user_of_ticket;
-@property Ticket *[ string ] user_of_ticket()
-{
-    return _user_of_ticket;
-}
+    private Ticket *[ string ] _user_of_ticket;
+    @property Ticket *[ string ] user_of_ticket()
+    {
+        return _user_of_ticket;
+    }
 
-private GraphCluster _ba2pacahon_records;
-@property GraphCluster ba2pacahon_records()
-{
-    return _ba2pacahon_records;
-}
+    private GraphCluster _ba2pacahon_records;
+    @property GraphCluster ba2pacahon_records()
+    {
+        return _ba2pacahon_records;
+    }
 
-private GraphCluster _event_filters;
-@property GraphCluster event_filters()
-{
-    return _event_filters;
-}
+    private GraphCluster _event_filters;
+    @property GraphCluster event_filters()
+    {
+        return _event_filters;
+    }
 
-private search.vql.VQL _vql;
-@property search.vql.VQL vql()
-{
-    return _vql;
-}
+    private search.vql.VQL _vql;
+    @property search.vql.VQL vql()
+    {
+        return _vql;
+    }
 
-Tid  tid_subject_manager;
-Tid  tid_acl_manager;
-bool use_caching_of_documents = false;
-bool IGNORE_EMPTY_TRIPLE      = false;
+    Tid  tid_subject_manager;
+    Tid  tid_acl_manager;
+    bool use_caching_of_documents = false;
+    bool IGNORE_EMPTY_TRIPLE      = false;
 
-int  _count_command;
-int  _count_message;
+    int  _count_command;
+    int  _count_message;
 
-@property int count_command()
-{
-    return _count_command;
-}
-@property int count_message()
-{
-    return _count_message;
-}
-@property void count_command(int n)
-{
-    _count_command = n;
-}
-@property void count_message(int n)
-{
-    _count_message = n;
-}
+    @property int count_command()
+    {
+        return _count_command;
+    }
+    @property int count_message()
+    {
+        return _count_message;
+    }
+    @property void count_command(int n)
+    {
+        _count_command = n;
+    }
+    @property void count_message(int n)
+    {
+        _count_message = n;
+    }
 
 //
-bool send_on_authorization(string bson_subject)
-{
-    send(tid_acl_manager, AUTHORIZE, bson_subject, thisTid);
-    return true;
-}
+    bool send_on_authorization(string bson_subject)
+    {
+        send(tid_acl_manager, AUTHORIZE, bson_subject, thisTid);
+        return true;
+    }
 
 /////////////////////////////////////////////////////////
-private string[ string ] cache__subject_creator;
-int get_subject_creator_size()
-{
-    return cast(int)cache__subject_creator.length;
-}
+    private string[ string ] cache__subject_creator;
+    int get_subject_creator_size()
+    {
+        return cast(int)cache__subject_creator.length;
+    }
 
-string get_subject_creator(string pp)
-{
-    return cache__subject_creator.get(pp, null);
-}
+    string get_subject_creator(string pp)
+    {
+        return cache__subject_creator.get(pp, null);
+    }
 
-void set_subject_creator(string key, string value)
-{
-    cache__subject_creator[ key ] = value;
-}
+    void set_subject_creator(string key, string value)
+    {
+        cache__subject_creator[ key ] = value;
+    }
 /////////////////////////////////////////////////////////
 
 //	 TODO предусмотреть сброс кэша шаблонов
-private DocTemplate[ string ][ string ] templates;
+    private DocTemplate[ string ][ string ] templates;
 
-DocTemplate get_template(string uid, string v_dc_identifier, string v_docs_version)
-{
-    DocTemplate res;
-
-    try
+    DocTemplate get_template(string uid, string v_dc_identifier, string v_docs_version)
     {
-        DocTemplate[ string ] rr;
+        DocTemplate res;
 
-        if (uid !is null)
+        try
         {
-            v_dc_identifier = uid;
-            v_docs_version  = "@";
-        }
+            DocTemplate[ string ] rr;
 
-        rr = templates.get(v_dc_identifier, null);
-
-        if (rr !is null)
-        {
-            if (v_docs_version is null)
-                res = rr.get("actual", null);
-            else
-                res = rr.get(v_docs_version, null);
-        }
-    } catch (Exception ex)
-    {
-        // writeln("Ex!" ~ ex.msg);
-    }
-    return res;
-}
-
-void set_template(DocTemplate tmpl, string tmpl_subj, string v_id)
-{
-    templates[ tmpl_subj ][ v_id ] = tmpl;
-}
-
-mq_client client;
-
-private   Set!OI[ string ] gateways;
-
-Set!OI empty_set;
-Set!OI get_gateways(string name)
-{
-    return gateways.get(name, empty_set);
-}
-
-this(JSONValue props, string context_name, Tid tid_xapian_indexer, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_)
-{
-    _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
-    _tid_ticket_manager             = _tid_ticket_manager_;
-    tid_subject_manager             = _tid_subject_manager_;
-    tid_acl_manager                 = _tid_acl_manager_;
-
-    _event_filters      = new GraphCluster();
-    _ba2pacahon_records = new GraphCluster();
-
-    // использование кеша документов
-    if (("use_caching_of_documents" in props.object) !is null)
-    {
-        if (props.object[ "use_caching_of_documents" ].str == "true")
-            use_caching_of_documents = true;
-    }
-
-    JSONValue[] _gateways;
-    if (("gateways" in props.object) !is null)
-    {
-        _gateways = props.object[ "gateways" ].array;
-        foreach (gateway; _gateways)
-        {
-            if (("alias" in gateway.object) !is null)
+            if (uid !is null)
             {
-                string[ string ] params;
-                foreach (key; gateway.object.keys)
-                    params[ key ] = gateway[ key ].str;
-
-                string io_alias = gateway.object[ "alias" ].str;
-
-                Set!OI empty_set;
-                Set!OI gws = gateways.get(io_alias, empty_set);
-
-                if (gws.size == 0)
-                    gateways[ io_alias ] = empty_set;
-
-                OI oi = new OI();
-                if (oi.connect(params) == 0)
-                    writeln("#A1:", oi.get_alias);
-                else
-                    writeln("#A2:", oi.get_alias);
-
-                if (oi.get_db_type == "xapian")
-                {
-                    writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tid_xapian_indexer);
-                    oi.embedded_gateway = tid_xapian_indexer;
-                }
-
-                gws ~= oi;
-                gateways[ io_alias ] = gws;
+                v_dc_identifier = uid;
+                v_docs_version  = "@";
             }
+
+            rr = templates.get(v_dc_identifier, null);
+
+            if (rr !is null)
+            {
+                if (v_docs_version is null)
+                    res = rr.get("actual", null);
+                else
+                    res = rr.get(v_docs_version, null);
+            }
+        } catch (Exception ex)
+        {
+            // writeln("Ex!" ~ ex.msg);
         }
+        return res;
     }
+
+    void set_template(DocTemplate tmpl, string tmpl_subj, string v_id)
+    {
+        templates[ tmpl_subj ][ v_id ] = tmpl;
+    }
+
+    mq_client client;
+
+    private   Set!OI[ string ] gateways;
 
     Set!OI empty_set;
-    Set!OI from_search = gateways.get("from-search", empty_set);
-    _vql               = new search.vql.VQL(from_search);
-
-    writeln(context_name ~ ": connect to mongodb is ok");
-
-    writeln(context_name ~ ": load events");
-    pacahon.event_filter.load_events(this);
-    writeln(context_name ~ ": load events... ok");
-}
-
-bool authorize(Ticket *ticket, Subject doc)
-{
-    return false;            //mandat_manager.ca;
-}
-
-Tid get_tid_subject_manager()
-{
-    return tid_subject_manager;
-}
-
-Ticket *foundTicket(string ticket_id)
-{
-    Ticket *tt = user_of_ticket.get(ticket_id, null);
-
-    //	trace_msg[2] = 0;
-
-    if (tt is null)
+    Set!OI get_gateways(string name)
     {
-        string when     = null;
-        int    duration = 0;
-        send(tid_ticket_manager, FOUND, ticket_id, thisTid);
-        string ticket_str = receiveOnly!(string);
+        return gateways.get(name, empty_set);
+    }
 
-        if (ticket_str !is null && ticket_str.length > 128)
+    this(JSONValue props, string context_name, Tid tid_xapian_indexer, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_)
+    {
+        _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
+        _tid_ticket_manager             = _tid_ticket_manager_;
+        tid_subject_manager             = _tid_subject_manager_;
+        tid_acl_manager                 = _tid_acl_manager_;
+
+        _event_filters      = new GraphCluster();
+        _ba2pacahon_records = new GraphCluster();
+
+        // использование кеша документов
+        if (("use_caching_of_documents" in props.object) !is null)
         {
-            tt = new Ticket;
-            Subject ticket = Subject.fromBSON(ticket_str);
-//				writeln ("Ticket=",ticket);
-            tt.id     = ticket.subject;
-            tt.userId = ticket.getFirstLiteral(ticket__accessor);
-            when      = ticket.getFirstLiteral(ticket__when);
-            string dd = ticket.getFirstLiteral(ticket__duration);
-            duration = parse!uint (dd);
-
-//				writeln ("tt.userId=", tt.userId);
+            if (props.object[ "use_caching_of_documents" ].str == "true")
+                use_caching_of_documents = true;
         }
 
-        //////////////////////////////
+        JSONValue[] _gateways;
+        if (("gateways" in props.object) !is null)
+        {
+            _gateways = props.object[ "gateways" ].array;
+            foreach (gateway; _gateways)
+            {
+                if (("alias" in gateway.object) !is null)
+                {
+                    string[ string ] params;
+                    foreach (key; gateway.object.keys)
+                        params[ key ] = gateway[ key ].str;
+
+                    string io_alias = gateway.object[ "alias" ].str;
+
+                    Set!OI empty_set;
+                    Set!OI gws = gateways.get(io_alias, empty_set);
+
+                    if (gws.size == 0)
+                        gateways[ io_alias ] = empty_set;
+
+                    OI oi = new OI();
+                    if (oi.connect(params) == 0)
+                        writeln("#A1:", oi.get_alias);
+                    else
+                        writeln("#A2:", oi.get_alias);
+
+                    if (oi.get_db_type == "xapian")
+                    {
+                        writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tid_xapian_indexer);
+                        oi.embedded_gateway = tid_xapian_indexer;
+                    }
+
+                    gws ~= oi;
+                    gateways[ io_alias ] = gws;
+                }
+            }
+        }
+
+        Set!OI empty_set;
+        Set!OI from_search = gateways.get("from-search", empty_set);
+        _vql               = new search.vql.VQL(from_search);
+
+        writeln(context_name ~ ": connect to mongodb is ok");
+
+        writeln(context_name ~ ": load events");
+        pacahon.event_filter.load_events(this);
+        writeln(context_name ~ ": load events... ok");
+    }
+
+    bool authorize(Ticket *ticket, Subject doc)
+    {
+        return false;        //mandat_manager.ca;
+    }
+
+    Tid get_tid_subject_manager()
+    {
+        return tid_subject_manager;
+    }
+
+    Ticket *foundTicket(string ticket_id)
+    {
+        Ticket *tt = user_of_ticket.get(ticket_id, null);
+
+        //	trace_msg[2] = 0;
+
+        if (tt is null)
+        {
+            string when     = null;
+            int    duration = 0;
+            send(tid_ticket_manager, FOUND, ticket_id, thisTid);
+            string ticket_str = receiveOnly!(string);
+
+            if (ticket_str !is null && ticket_str.length > 128)
+            {
+                tt = new Ticket;
+                Subject ticket = Subject.fromBSON(ticket_str);
+//				writeln ("Ticket=",ticket);
+                tt.id     = ticket.subject;
+                tt.userId = ticket.getFirstLiteral(ticket__accessor);
+                when      = ticket.getFirstLiteral(ticket__when);
+                string dd = ticket.getFirstLiteral(ticket__duration);
+                duration = parse!uint (dd);
+
+//				writeln ("tt.userId=", tt.userId);
+            }
+
+            //////////////////////////////
 /*
                         tt.id = ticket_id;
 
@@ -330,39 +330,39 @@ Ticket *foundTicket(string ticket_id)
                                 delete (it);
                         }
  */
-        if (trace_msg[ 20 ] == 1)
-            log.trace("foundTicket end");
+            if (trace_msg[ 20 ] == 1)
+                log.trace("foundTicket end");
 
-        if (tt.userId is null)
+            if (tt.userId is null)
+            {
+                if (trace_msg[ 22 ] == 1)
+                    log.trace("найденный сессионный билет не полон, пользователь не найден");
+            }
+
+            if (tt.userId !is null && (when is null || duration < 10))
+            {
+                if (trace_msg[ 23 ] == 1)
+                    log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
+                tt.userId = null;
+            }
+
+            if (when !is null)
+            {
+                if (trace_msg[ 24 ] == 1)
+                    log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when, duration, text(tt.parentUnitIds));
+
+                // TODO stringToTime очень медленная операция ~ 100 микросекунд
+                tt.end_time = stringToTime(when) + duration * 100_000_000_000;                 //? hnsecs?
+
+                _user_of_ticket[ ticket_id ] = tt;
+            }
+        }
+        else
         {
-            if (trace_msg[ 22 ] == 1)
-                log.trace("найденный сессионный билет не полон, пользователь не найден");
+            if (trace_msg[ 17 ] == 1)
+                log.trace("тикет нашли в кеше, %s", ticket_id);
         }
 
-        if (tt.userId !is null && (when is null || duration < 10))
-        {
-            if (trace_msg[ 23 ] == 1)
-                log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
-            tt.userId = null;
-        }
-
-        if (when !is null)
-        {
-            if (trace_msg[ 24 ] == 1)
-                log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when, duration, text(tt.parentUnitIds));
-
-            // TODO stringToTime очень медленная операция ~ 100 микросекунд
-            tt.end_time = stringToTime(when) + duration * 100_000_000_000;                     //? hnsecs?
-
-            _user_of_ticket[ ticket_id ] = tt;
-        }
+        return tt;
     }
-    else
-    {
-        if (trace_msg[ 17 ] == 1)
-            log.trace("тикет нашли в кеше, %s", ticket_id);
-    }
-
-    return tt;
-}
 }

@@ -26,472 +26,478 @@ private import search.search_event;
 
 import onto.docs_base;
 
-logger log;
+logger   log;
 string[] reifed_data_subj;
 
 static this()
 {
-	log = new logger("pacahon", "log", "command-io");
-	reifed_data_subj = new string[1];
-	reifed_data_subj[0] = "_:R__01";
+    log                   = new logger("pacahon", "log", "command-io");
+    reifed_data_subj      = new string[ 1 ];
+    reifed_data_subj[ 0 ] = "_:R__01";
 }
 
 /*
- * комманда добавления / изменения фактов в хранилище 
+ * комманда добавления / изменения фактов в хранилище
  * TODO !в данный момент обрабатывает только одноуровневые графы
  */
 Subject put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
 {
-	if(trace_msg[31] == 1)
-		log.trace("command put");
+    if (trace_msg[ 31 ] == 1)
+        log.trace("command put");
 
-	isOk = false;
-	reason = "добавление фактов не возможно";
+    isOk   = false;
+    reason = "добавление фактов не возможно";
 
-	Subject res;
+    Subject   res;
 
-	Predicate args = message.getPredicate(msg__args);
+    Predicate args = message.getPredicate(msg__args);
 
-	if(trace_msg[32] == 1)
-		log.trace("command put, args.count_objects=%d ", args.count_objects);
+    if (trace_msg[ 32 ] == 1)
+        log.trace("command put, args.count_objects=%d ", args.count_objects);
 
-	foreach(arg; args.getObjects)
-	{
-		Subject[] graphs_on_put = null;
+    foreach (arg; args.getObjects)
+    {
+        Subject[] graphs_on_put = null;
 
-		try
-		{
-			if(arg.type == OBJECT_TYPE.CLUSTER)
-			{
-				graphs_on_put = arg.cluster.getArray;
-			} else if(arg.type == OBJECT_TYPE.SUBJECT)
-			{
-				graphs_on_put = new Subject[1];
-				graphs_on_put[0] = arg.subject;
-			}
-		} catch(Exception ex)
-		{
-			log.trace("cannot parse arg message: ex %s", ex.msg);
-		}
+        try
+        {
+            if (arg.type == OBJECT_TYPE.CLUSTER)
+            {
+                graphs_on_put = arg.cluster.getArray;
+            }
+            else if (arg.type == OBJECT_TYPE.SUBJECT)
+            {
+                graphs_on_put      = new Subject[ 1 ];
+                graphs_on_put[ 0 ] = arg.subject;
+            }
+        } catch (Exception ex)
+        {
+            log.trace("cannot parse arg message: ex %s", ex.msg);
+        }
 
-		if(trace_msg[34] == 1)
-			log.trace("arguments has been read");
+        if (trace_msg[ 34 ] == 1)
+            log.trace("arguments has been read");
 
-		if(graphs_on_put is null)
-		{
-			reason = "в сообщении нет фактов которые следует поместить в хранилище";
-		}
+        if (graphs_on_put is null)
+        {
+            reason = "в сообщении нет фактов которые следует поместить в хранилище";
+        }
 
-		store_graphs(graphs_on_put, ticket, context, isOk, reason);
+        store_graphs(graphs_on_put, ticket, context, isOk, reason);
 
-		if(trace_msg[37] == 1)
-			log.trace("command put is finish");
-	}
+        if (trace_msg[ 37 ] == 1)
+            log.trace("command put is finish");
+    }
 
-	return res;
+    return res;
 }
 
 public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context context, out bool isOk, out string reason,
-		bool prepareEvents = true)
+                         bool prepareEvents = true)
 {
-	// фаза I, добавим основные данные
-	foreach(graph; graphs_on_put)
-	{
-		Predicate type = graph.getPredicate(rdf__type);
+    // фаза I, добавим основные данные
+    foreach (graph; graphs_on_put)
+    {
+        Predicate type = graph.getPredicate(rdf__type);
 
-		if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
-		{
-			if (auth__Authenticated in type.objects_of_value)
-			{
-				writeln ("!1 graph=", graph);
-				Predicate acr = graph.getPredicate (auth__credential);
-				
-				Objectz oo = acr.getObjects()[0];
-				
-				// это добавление пользовательской учетки
-				string credential_64 = oo.literal;
-				
-				// сделаем хэш из пароля и сохраним
-				ubyte[] credential = Base64.decode(credential_64);
-				ubyte[20] hash = sha1Of(credential);
-				credential_64 = Base64.encode(hash);
-				
-				oo.literal = credential_64;				
-				writeln ("!6 graph=", graph);
-			}
-			
-			if(trace_msg[35] == 1)
-				log.trace("[35.1] adding subject=%s", graph.subject);
+        if (type !is null && ((rdf__Statement in type.objects_of_value) is null))
+        {
+            if (auth__Authenticated in type.objects_of_value)
+            {
+                writeln("!1 graph=", graph);
+                Predicate acr = graph.getPredicate(auth__credential);
 
-			// цикл по всем добавляемым субьектам
-			/* 2. если создается новый субъект, то ограничений по умолчанию нет
-			 * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять 
-			 * если добавляющий автор субъекта 
-			 * или может быть вычислено разрешающее право на U данного субъекта. */
+                Objectz   oo = acr.getObjects()[ 0 ];
 
-			string authorize_reason;
-			bool subjectIsExist = false;
+                // это добавление пользовательской учетки
+                string credential_64 = oo.literal;
 
-			bool authorization_res = false;
+                // сделаем хэш из пароля и сохраним
+                ubyte[] credential = Base64.decode(credential_64);
+                ubyte[ 20 ] hash = sha1Of(credential);
+                credential_64    = Base64.encode(hash);
 
-			if(authorization_res == true || ticket is null)
-			{
-				if(ticket !is null && graph.isExsistsPredicate(dc__creator) == false)
-				{
-					// добавим признак dc:creator
-					graph.addPredicate(dc__creator, ticket.userId);
-				}
+                oo.literal = credential_64;
+                writeln("!6 graph=", graph);
+            }
 
-				//context.ts.storeSubject(graph, context);
+            if (trace_msg[ 35 ] == 1)
+                log.trace("[35.1] adding subject=%s", graph.subject);
 
-				if(prepareEvents == true)
-				{
-					if(type.isExistLiteral(event__Event))
-					{
-						// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-						context.event_filters.addSubject(graph);
+            // цикл по всем добавляемым субьектам
+            /* 2. если создается новый субъект, то ограничений по умолчанию нет
+             * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять
+             * если добавляющий автор субъекта
+             * или может быть вычислено разрешающее право на U данного субъекта. */
 
-						writeln("add new event_filter [", graph.subject, "]");
-					} else
-					{
-						string event_type;
+            string authorize_reason;
+            bool   subjectIsExist = false;
 
-						if(subjectIsExist == true)
-							event_type = "update subject";
-						else
-							event_type = "create subject";
+            bool   authorization_res = false;
 
-						processed_events(graph, event_type, context);
-					}
-				}
+            if (authorization_res == true || ticket is null)
+            {
+                if (ticket !is null && graph.isExsistsPredicate(dc__creator) == false)
+                {
+                    // добавим признак dc:creator
+                    graph.addPredicate(dc__creator, ticket.userId);
+                }
 
-				reason = "добавление фактов выполнено:" ~ authorize_reason;
-				isOk = true;
+                //context.ts.storeSubject(graph, context);
 
-				search_event(graph, context);
-			} else
-			{
-				reason = "добавление фактов не возможно: " ~ authorize_reason;
-				if(trace_msg[36] == 1)
-					log.trace("autorize=%s", reason);
-			}
+                if (prepareEvents == true)
+                {
+                    if (type.isExistLiteral(event__Event))
+                    {
+                        // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+                        context.event_filters.addSubject(graph);
 
-		} else
-		{
-			if(type is null)
-				reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
-		}
-	}
+                        writeln("add new event_filter [", graph.subject, "]");
+                    }
+                    else
+                    {
+                        string event_type;
 
-	if(trace_msg[34] == 1)
-		log.trace("фаза II, добавим основные данные");
+                        if (subjectIsExist == true)
+                            event_type = "update subject";
+                        else
+                            event_type = "create subject";
 
-	// фаза II, добавим реифицированные данные 
-	// !TODO авторизация для реифицированных данных пока не выполняется
-	for(int jj = 0; jj < graphs_on_put.length; jj++)
-	{
-		Subject graph = graphs_on_put[jj];
+                        processed_events(graph, event_type, context);
+                    }
+                }
 
-		Predicate type = graph.getPredicate(rdf__type);
+                reason = "добавление фактов выполнено:" ~ authorize_reason;
+                isOk   = true;
 
-		if(type !is null && (rdf__Statement in type.objects_of_value))
-		{
-			// определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
-			// если, да то добавить их в хранилище через метод addTripleToReifedData
-			Predicate r_subject = graph.getPredicate(rdf__subject);
-			Predicate r_predicate = graph.getPredicate(rdf__predicate);
-			Predicate r_object = graph.getPredicate(rdf__object);
+                search_event(graph, context);
+            }
+            else
+            {
+                reason = "добавление фактов не возможно: " ~ authorize_reason;
+                if (trace_msg[ 36 ] == 1)
+                    log.trace("autorize=%s", reason);
+            }
+        }
+        else
+        {
+            if (type is null)
+                reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
+        }
+    }
 
-			if(r_subject !is null && r_predicate !is null && r_object !is null)
-			{
-/*				
-				Triple reif = new Triple(r_subject.getFirstLiteral(), r_predicate.getFirstLiteral(), r_object.getFirstLiteral());
+    if (trace_msg[ 34 ] == 1)
+        log.trace("фаза II, добавим основные данные");
 
-				foreach(pp; graph.getPredicates)
-				{
-					if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
-					{
-						foreach(oo; pp.getObjects())
-						{
-							if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-								context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
-							else
-								context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
-						}
-					}
+    // фаза II, добавим реифицированные данные
+    // !TODO авторизация для реифицированных данных пока не выполняется
+    for (int jj = 0; jj < graphs_on_put.length; jj++)
+    {
+        Subject   graph = graphs_on_put[ jj ];
 
-				}
-*/			
-			}
-		} else
-		{
-			if(type is null)
-				reason = "добавление фактов не возможно: не указан rdf:type для субьекта " ~ graph.subject;
-		}
+        Predicate type = graph.getPredicate(rdf__type);
 
-	}
+        if (type !is null && (rdf__Statement in type.objects_of_value))
+        {
+            // определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
+            // если, да то добавить их в хранилище через метод addTripleToReifedData
+            Predicate r_subject   = graph.getPredicate(rdf__subject);
+            Predicate r_predicate = graph.getPredicate(rdf__predicate);
+            Predicate r_object    = graph.getPredicate(rdf__object);
 
+            if (r_subject !is null && r_predicate !is null && r_object !is null)
+            {
+/*
+                                Triple reif = new Triple(r_subject.getFirstLiteral(), r_predicate.getFirstLiteral(), r_object.getFirstLiteral());
+
+                                foreach(pp; graph.getPredicates)
+                                {
+                                        if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
+                                        {
+                                                foreach(oo; pp.getObjects())
+                                                {
+                                                        if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+                                                                context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
+                                                        else
+                                                                context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
+                                                }
+                                        }
+
+                                }
+ */
+            }
+        }
+        else
+        {
+            if (type is null)
+                reason = "добавление фактов не возможно: не указан rdf:type для субьекта " ~ graph.subject;
+        }
+    }
 }
 
 public void store_graph(Subject graph, string userId, Context context, out bool isOk, out string reason,
-		bool prepareEvents = true)
+                        bool prepareEvents = true)
 {
-	// фаза I, добавим основные данные
-	Predicate type = graph.getPredicate(rdf__type);
+    // фаза I, добавим основные данные
+    Predicate type = graph.getPredicate(rdf__type);
 
-	if(type !is null && ((rdf__Statement in type.objects_of_value) is null))
-	{
-		if(trace_msg[35] == 1)
-			log.trace("[35.2] adding subject=%s", graph.subject);
+    if (type !is null && ((rdf__Statement in type.objects_of_value) is null))
+    {
+        if (trace_msg[ 35 ] == 1)
+            log.trace("[35.2] adding subject=%s", graph.subject);
 
-		// цикл по всем добавляемым субьектам
-		/* 2. если создается новый субъект, то ограничений по умолчанию нет
-		 * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять 
-		 * если добавляющий автор субъекта 
-		 * или может быть вычислено разрешающее право на U данного субъекта. */
+        // цикл по всем добавляемым субьектам
+        /* 2. если создается новый субъект, то ограничений по умолчанию нет
+         * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять
+         * если добавляющий автор субъекта
+         * или может быть вычислено разрешающее право на U данного субъекта. */
 
-		string authorize_reason;
-		bool subjectIsExist = false;
+        string authorize_reason;
+        bool   subjectIsExist = false;
 
-		bool authorization_res = false;
+        bool   authorization_res = false;
 
-		if(authorization_res == true || userId is null)
-		{
-			if(userId !is null && graph.isExsistsPredicate(dc__creator) == false)
-			{
-				// добавим признак dc:creator
-				graph.addPredicate(dc__creator, userId);
-			}
+        if (authorization_res == true || userId is null)
+        {
+            if (userId !is null && graph.isExsistsPredicate(dc__creator) == false)
+            {
+                // добавим признак dc:creator
+                graph.addPredicate(dc__creator, userId);
+            }
 
-			//context.ts.storeSubject(graph, context);
+            //context.ts.storeSubject(graph, context);
 
-			if(prepareEvents == true)
-			{
-				if(type.isExistLiteral(event__Event))
-				{
-					// если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-					context.event_filters.addSubject(graph);
+            if (prepareEvents == true)
+            {
+                if (type.isExistLiteral(event__Event))
+                {
+                    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+                    context.event_filters.addSubject(graph);
 
-					writeln("add new event_filter [", graph.subject, "]");
-				} else
-				{
-					string event_type;
+                    writeln("add new event_filter [", graph.subject, "]");
+                }
+                else
+                {
+                    string event_type;
 
-					if(subjectIsExist == true)
-						event_type = "update subject";
-					else
-						event_type = "create subject";
+                    if (subjectIsExist == true)
+                        event_type = "update subject";
+                    else
+                        event_type = "create subject";
 
-					processed_events(graph, event_type, context);
-				}
-			}
+                    processed_events(graph, event_type, context);
+                }
+            }
 
-			reason = "добавление фактов выполнено:" ~ authorize_reason;
-			isOk = true;
+            reason = "добавление фактов выполнено:" ~ authorize_reason;
+            isOk   = true;
 
-			search_event(graph, context);
-		} else
-		{
-			reason = "добавление фактов не возможно: " ~ authorize_reason;
-			if(trace_msg[36] == 1)
-				log.trace("autorize=%s", reason);
-		}
-
-	} else
-	{
-		if(type is null)
-			reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
-	}
-
+            search_event(graph, context);
+        }
+        else
+        {
+            reason = "добавление фактов не возможно: " ~ authorize_reason;
+            if (trace_msg[ 36 ] == 1)
+                log.trace("autorize=%s", reason);
+        }
+    }
+    else
+    {
+        if (type is null)
+            reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
+    }
 }
 
 public void get(Ticket *ticket, Subject message, Predicate sender, Context context, out bool isOk, out string reason,
-		ref GraphCluster res, out char from_out)
+                ref GraphCluster res, out char from_out)
 {
-	// в качестве аргумента - шаблон для выборки, либо запрос на VQL
+    // в качестве аргумента - шаблон для выборки, либо запрос на VQL
 
-	// если аргумент маска:
-	// 		query:get - обозначает что будет возвращено значение соответствующего предиката
-	// 		поиск по маске обрабатывает только одноуровневые шаблоны
+    // если аргумент маска:
+    //      query:get - обозначает что будет возвращено значение соответствующего предиката
+    //      поиск по маске обрабатывает только одноуровневые шаблоны
 
-	isOk = false;
+    isOk = false;
 
-	if(trace_msg[41] == 1)
-		log.trace("command get");
+    if (trace_msg[ 41 ] == 1)
+        log.trace("command get");
 
-	reason = "запрос не выполнен";
+    reason = "запрос не выполнен";
 
-	Predicate args = message.getPredicate(msg__args);
+    Predicate args = message.getPredicate(msg__args);
 
-	if(trace_msg[42] == 1)
-	{
-		OutBuffer outbuff = new OutBuffer();
-		toJson_ld(message, outbuff, true);
-		log.trace("[42] command get, cmd=%s", outbuff.toString);
-	}
+    if (trace_msg[ 42 ] == 1)
+    {
+        OutBuffer outbuff = new OutBuffer();
+        toJson_ld(message, outbuff, true);
+        log.trace("[42] command get, cmd=%s", outbuff.toString);
+    }
 
-	if(args !is null)
-	{
-		foreach(arg; args.getObjects())
-		{
-			if(trace_msg[43] == 1)
-				log.trace("[43] args.objects.type = %s", text(arg.type));
+    if (args !is null)
+    {
+        foreach (arg; args.getObjects())
+        {
+            if (trace_msg[ 43 ] == 1)
+                log.trace("[43] args.objects.type = %s", text(arg.type));
 
-			Subject[] queries;
+            Subject[] queries;
 
-			if(arg.type == OBJECT_TYPE.CLUSTER)
-			{
-				queries = arg.cluster.getArray;
-			} else if(arg.type == OBJECT_TYPE.SUBJECT)
-			{
-				queries = new Subject[1];
-				queries[0] = arg.subject;
-			}
+            if (arg.type == OBJECT_TYPE.CLUSTER)
+            {
+                queries = arg.cluster.getArray;
+            }
+            else if (arg.type == OBJECT_TYPE.SUBJECT)
+            {
+                queries      = new Subject[ 1 ];
+                queries[ 0 ] = arg.subject;
+            }
 
-			if(trace_msg[45] == 1)
-				log.trace("[45] arguments has been read");
+            if (trace_msg[ 45 ] == 1)
+                log.trace("[45] arguments has been read");
 
-			if(queries is null)
-			{
-				reason = "в сообщении отсутствует граф-шаблон";
-			}
+            if (queries is null)
+            {
+                reason = "в сообщении отсутствует граф-шаблон";
+            }
 
-			StopWatch sw;
-			sw.start();
+            StopWatch sw;
+            sw.start();
 
-			foreach(s_query; queries)
-			{
-				int count_found_subjects;				
-				
-				string query = s_query.getFirstLiteral("query");
-				if(query !is null)
-				{
-					//writeln ("#1 ticket=", ticket);
-					count_found_subjects = context.vql.get(ticket, query, res, context);
-					
-					reason = "";
-				} 
-				/////////////////////////////////////////////////////////////////////////////////////////
-				if(trace_msg[58] == 1)
-					log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
+            foreach (s_query; queries)
+            {
+                int    count_found_subjects;
 
-				// авторизуем найденные субьекты
-				int count_authorized_subjects = res.length;
+                string query = s_query.getFirstLiteral("query");
+                if (query !is null)
+                {
+                    //writeln ("#1 ticket=", ticket);
+                    count_found_subjects = context.vql.get(ticket, query, res, context);
 
-				string authorize_reason;
-				/*
-				 foreach(s; res.graphs_of_subject)
-				 {
-				 count_found_subjects++;
+                    reason = "";
+                }
+                /////////////////////////////////////////////////////////////////////////////////////////
+                if (trace_msg[ 58 ] == 1)
+                    log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
 
-				 bool isExistSubject;
-				 bool result_of_az = authorize(userId, s.subject, operation.READ, context, authorize_reason,
-				 isExistSubject);
+                // авторизуем найденные субьекты
+                int    count_authorized_subjects = res.length;
 
-				 if(result_of_az == false)
-				 {
-				 if(trace_msg[59] == 1)
-				 log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
+                string authorize_reason;
+                /*
+                   foreach(s; res.graphs_of_subject)
+                   {
+                   count_found_subjects++;
 
-				 s.count_edges = 0;
-				 s.subject = null;
+                   bool isExistSubject;
+                   bool result_of_az = authorize(userId, s.subject, operation.READ, context, authorize_reason,
+                   isExistSubject);
 
-				 if(trace_msg[60] == 1)
-				 log.trace("remove from list");
-				 } else
-				 {
-				 count_authorized_subjects++;
-				 }
+                   if(result_of_az == false)
+                   {
+                   if(trace_msg[59] == 1)
+                   log.trace("AZ: s=%s -> %s ", s.subject, authorize_reason);
 
-				 }
-				 */
-				if(count_found_subjects == count_authorized_subjects)
-				{
-					reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ text(count_found_subjects);
-				} else if(count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
-				{
-					reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text (count_authorized_subjects);
-				} else if(count_authorized_subjects == 0 && count_found_subjects > 0)
-				{
-					reason = "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
-				}
+                   s.count_edges = 0;
+                   s.subject = null;
 
-				isOk = true;
-				//				}
-			}
+                   if(trace_msg[60] == 1)
+                   log.trace("remove from list");
+                   } else
+                   {
+                   count_authorized_subjects++;
+                   }
 
-			if(trace_msg[61] == 1)
-			{
-				sw.stop();
-				long t = cast(long) sw.peek().usecs;
+                   }
+                 */
+                if (count_found_subjects == count_authorized_subjects)
+                {
+                    reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ text(count_found_subjects);
+                }
+                else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
+                {
+                    reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text(count_authorized_subjects);
+                }
+                else if (count_authorized_subjects == 0 && count_found_subjects > 0)
+                {
+                    reason = "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
+                }
 
-				log.trace("total time command get: %d [µs]", t);
-			}
-		}
-	}
+                isOk = true;
+                //				}
+            }
 
-	// TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
-	//	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
-	return;
+            if (trace_msg[ 61 ] == 1)
+            {
+                sw.stop();
+                long t = cast(long)sw.peek().usecs;
+
+                log.trace("total time command get: %d [µs]", t);
+            }
+        }
+    }
+
+    // TODO !для безопасности, факты с предикатом [auth:credential] не отдавать !
+    //	core.thread.Thread.getThis().sleep(dur!("msecs")( 1 ));
+    return;
 }
 
 Subject remove(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
 {
-	if(trace_msg[38] == 1)
-		log.trace("command remove");
+    if (trace_msg[ 38 ] == 1)
+        log.trace("command remove");
 
-	isOk = false;
+    isOk = false;
 
-	reason = "нет причин для выполнения комманды remove";
+    reason = "нет причин для выполнения комманды remove";
 
-	Subject res;
+    Subject res;
 
-	try
-	{
-		Predicate arg = message.getPredicate(msg__args);
-		if(arg is null)
-		{
-			reason = "аргументы " ~ msg__args ~ " не указаны";
-			isOk = false;
-			return null;
-		}
+    try
+    {
+        Predicate arg = message.getPredicate(msg__args);
+        if (arg is null)
+        {
+            reason = "аргументы " ~ msg__args ~ " не указаны";
+            isOk   = false;
+            return null;
+        }
 
-		Subject ss = arg.getObjects()[0].subject;
-		if(ss is null)
-		{
-			reason = msg__args ~ " найден, но не заполнен";
-			isOk = false;
-			return null;
-		}
+        Subject ss = arg.getObjects()[ 0 ].subject;
+        if (ss is null)
+        {
+            reason = msg__args ~ " найден, но не заполнен";
+            isOk   = false;
+            return null;
+        }
 
-		string authorize_reason;
-		bool isExistSubject;
-		
-		string userId;
-		
-		if (ticket !is null)
-			userId = ticket.userId;
-		
-		bool result_of_az = false;
+        string authorize_reason;
+        bool   isExistSubject;
 
-		if(result_of_az)
-		{
-			//context.ts.removeSubject(ss.subject);
-			reason = "команда remove выполнена успешно";
-			isOk = true;
-		} else
-		{
-			reason = "нет прав на удаление субьекта:" ~ authorize_reason;
-			isOk = false;
-		}
+        string userId;
 
-		return res;
-	} catch(Exception ex)
-	{
-		reason = "ошибка удаления субьекта :" ~ ex.msg;
-		isOk = false;
+        if (ticket !is null)
+            userId = ticket.userId;
 
-		return res;
-	}
+        bool result_of_az = false;
 
+        if (result_of_az)
+        {
+            //context.ts.removeSubject(ss.subject);
+            reason = "команда remove выполнена успешно";
+            isOk   = true;
+        }
+        else
+        {
+            reason = "нет прав на удаление субьекта:" ~ authorize_reason;
+            isOk   = false;
+        }
+
+        return res;
+    } catch (Exception ex)
+    {
+        reason = "ошибка удаления субьекта :" ~ ex.msg;
+        isOk   = false;
+
+        return res;
+    }
 }
