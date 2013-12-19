@@ -32,7 +32,9 @@ zeromq v3.2.3 ( http://www.zeromq.com )
 xapian 1.2.16 ( http://xapian.org )
 - libxapian-backend.a 
 - libxapian.a 
-- libxapiand.a
+
+xapian D2 binding:
+- libxapiand.a ( https://github.com/itiu/xapian-d/archive/ab57ed9122b1088562a96c4eb7b62d756ba0f15b.zip )
 - libstdc++.a
 
 lmdb 0.9.10 ( http://symas.com/mdb, https://gitorious.org/mdb/mdb/archive/f39bceb800dd1b1b4b05cfb45a3ddde94a273fff.tar.gz )
