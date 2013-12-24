@@ -154,6 +154,8 @@ interface XapianTermGenerator
     void set_document(XapianDocument doc, byte *err);
     void index_text(const char *data_str, ulong data_len, byte *err);
     void index_text(const char *data_str, ulong data_len, const char *prefix_str, ulong prefix_len, byte *err);
+    void index_text_without_positions(const char *data_str, ulong data_len, byte *err);
+    void index_text_without_positions(const char *data_str, ulong data_len, const char *prefix_str, ulong prefix_len, byte *err);
     void index_data(int data, const char *prefix_str, ulong prefix_len, byte *err);
     void index_data(long data, const char *prefix_str, ulong prefix_len, byte *err);
     void index_data(float data, const char *prefix_str, ulong prefix_len, byte *err);
