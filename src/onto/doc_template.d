@@ -14,7 +14,7 @@ class DocTemplate
         data = new GraphCluster();
     }
 
-    Subject addTriple(string S, string P, string O, byte lang)
+    Subject addTriple(string S, string P, string O, LANG lang)
     {
         return data.addTriple(S, P, O, lang);
     }

@@ -9,6 +9,7 @@ import std.datetime;
 import std.conv;
 import std.typecons;
 import std.stdio;
+import std.string;
 
 import bind.xapian_d_header;
 import util.utils;
@@ -95,7 +96,7 @@ public int[ string ] read_key2slot()
             int idx = 0;
             foreach (record; csvReader!(Tuple!(string, int))(data))
             {
-//              writefln("%d %s -> %d", idx, record[0], record[1]);
+              //writefln("%d %s -> %d", idx, record[0], record[1]);
                 key2slot[ record[ 0 ] ] = record[ 1 ];
                 idx++;
                 //core.thread.Thread.sleep(dur!("seconds")(1));
@@ -117,6 +118,7 @@ private void printTid(string tag)
 
 protected int get_slot(string field, ref int[ string ] key2slot)
 {
+//	writeln ("get_slot:", field);
     int slot = key2slot.get(field, -1);
 
     if (slot == -1)
@@ -198,7 +200,7 @@ void xapian_indexer(Tid tid_storage_manager)
 
             Subject ss = Subject.fromBSON(msg);
 
-//			writeln ("prepare msg counter:", counter, ", subject:", ss.subject);
+			//writeln ("prepare msg counter:", counter, ", subject:", ss.subject);
 
             if (ss.subject !is null && ss.count_edges > 0)
             {
@@ -219,7 +221,7 @@ void xapian_indexer(Tid tid_storage_manager)
                         pp.metadata = null;
                     }
 
-//					writeln (pp.predicate, ".type:", type);
+					//writeln (pp.predicate, ".type:", type);
 
                     string p_text_ru = "";
                     string p_text_en = "";
@@ -240,10 +242,12 @@ void xapian_indexer(Tid tid_storage_manager)
                             prefix = "X" ~ text(slot_L1) ~ "X";
 
                             string data = escaping_or_uuid2search(oo.literal);
-                            indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+ 
+//                         	writeln ("index as literal:[", data, "], lang=", oo.lang);
+                         	indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
                         }
-                        else if (oo.type == OBJECT_TYPE.URI)
+                        else if (oo.type == OBJECT_TYPE.RESOURCE)
                         {
                             if (oo.literal is null)
                             {
@@ -253,12 +257,13 @@ void xapian_indexer(Tid tid_storage_manager)
                                 int slot_L1 = get_slot(pp.predicate, key2slot);
                                 prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                string data = escaping_or_uuid2search(oo.literal);
+                                string data = to_lower_and_replace_delimeters(oo.literal);
+//                                writeln ("index as resource:[", data, "]");
                                 indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                                 doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
                             }
                         }
-                        else if (oo.type == OBJECT_TYPE.SUBJECT)
+                        else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
                         {
                             if (oo.subject !is null && oo.subject.count_edges == 0)
                             {
@@ -266,8 +271,8 @@ void xapian_indexer(Tid tid_storage_manager)
                             else
                             {
                             }
-                        }
-                        else if (oo.type == OBJECT_TYPE.CLUSTER)
+                        }                       
+                        else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
                         {
                             for (int i = 0; i < oo.cluster.length; i++)
                             {
@@ -490,8 +495,8 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
             int slot = get_slot(ls, key2slot);
             //writeln ("slot=", slot);
             //writeln ("rs=", rs);
-            string tr = "X" ~ text(slot) ~ "X" ~ rs;
-            query = new_Query(cast(char *)tr, tr.length, &err);
+            string xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+            query = new_Query(cast(char *)xtr, xtr.length, &err);
             destroy_Query(query_l);
             destroy_Query(query_r);
         }

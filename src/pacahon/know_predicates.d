@@ -4,6 +4,13 @@ public static const byte _NONE = 0;
 public static const byte _RU   = 1;
 public static const byte _EN   = 2;
 
+public const string owl__Ontology 	  	= "owl:Ontology";
+public const string owl__versionInfo 	= "owl:versionInfo";
+
+
+
+
+
 
 //classes
 public const static string prefix_tmpl        = "uo:template_";
@@ -13,9 +20,6 @@ public const static string prefix_restriction = "uo:rstr_";
 public const static string prefix_doc = "zdb:doc_";
 //public const static string prefix_person = "zdb:person_";
 //public const static string prefix_department = "zdb:dep_";
-
-
-
 
 public const string rdf__type      = "a"; // TODO a == rdf:type
 public const string rdf__subject   = "rdf:subject";
@@ -29,7 +33,6 @@ public const string rdfs__subClassOf = "rdfs:subClassOf";
 public const string rdfs__label      = "rdfs:label";
 public const string rdfs__comment    = "rdfs:comment";
 
-public const string owl__Ontology = "owl:Ontology";
 //public const string owl__imports = "owl:imports";
 public const string owl__Restriction    = "owl:Restriction";
 public const string owl__hasPart        = "owl:hasPart";

@@ -545,8 +545,8 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     }
                 }
                 //				log.trace ("write literal end");
-            }
-            else if (oo.type == OBJECT_TYPE.URI)
+            }            
+            else if (oo.type == OBJECT_TYPE.RESOURCE)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -563,7 +563,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     outbuff.write('"');
                 }
             }
-            else if (oo.type == OBJECT_TYPE.SUBJECT)
+            else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -583,7 +583,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     toJson_ld(oo.subject, outbuff, use_reif, level + 1);
                 }
             }
-            else if (oo.type == OBJECT_TYPE.CLUSTER)
+            else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
             {
                 if (ff == true)
                     outbuff.write(',');

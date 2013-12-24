@@ -39,6 +39,8 @@ static this()
 
 class ThreadContext : Context
 {
+	private Tid tid_xapian_indexer;
+	
     private Tid _tid_statistic_data_accumulator;
     @property Tid tid_statistic_data_accumulator()
     {
@@ -176,12 +178,13 @@ class ThreadContext : Context
         return gateways.get(name, empty_set);
     }
 
-    this(JSONValue props, string context_name, Tid tid_xapian_indexer, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_)
+    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_)
     {
         _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
         _tid_ticket_manager             = _tid_ticket_manager_;
         tid_subject_manager             = _tid_subject_manager_;
         tid_acl_manager                 = _tid_acl_manager_;
+        tid_xapian_indexer 				= _tid_xapian_indexer_;
 
         _event_filters      = new GraphCluster();
         _ba2pacahon_records = new GraphCluster();
@@ -235,7 +238,7 @@ class ThreadContext : Context
         Set!OI from_search = gateways.get("from-search", empty_set);
         _vql               = new search.vql.VQL(from_search);
 
-        writeln(context_name ~ ": connect to mongodb is ok");
+//        writeln(context_name ~ ": connect to mongodb is ok");
 
         writeln(context_name ~ ": load events");
         pacahon.event_filter.load_events(this);
@@ -250,6 +253,11 @@ class ThreadContext : Context
     Tid get_tid_subject_manager()
     {
         return tid_subject_manager;
+    }
+    
+    Tid get_tid_search_manager()
+    {
+        return tid_xapian_indexer;    	
     }
 
     Ticket *foundTicket(string ticket_id)

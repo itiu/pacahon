@@ -183,7 +183,7 @@ class VQL
 
         if (type_source == XAPIAN)
         {
-//			writeln ("SEARCH FROM XAPIAN");
+			//writeln ("SEARCH FROM XAPIAN");
             XapianQuery query;
             string      dummy;
             double      d_dummy;
@@ -244,7 +244,7 @@ class VQL
                 destroy_Query(query);
                 destroy_MultiValueKeyMaker(sorter);
 
-//				writeln ("read count:", read_count, ", count:", count);
+				//writeln ("read count:", read_count, ", count:", count);
                 return read_count;
             }
 
@@ -337,8 +337,8 @@ class VQL
         if (err < 0)
             return err;
 
-        //	    writeln ("found =",  matches.get_matches_estimated(&err));
-        //	    writeln ("matches =",  matches.size (&err));
+        	   // writeln ("found =",  matches.get_matches_estimated(&err));
+        	   // writeln ("matches =",  matches.size (&err));
 
         if (matches !is null)
         {
@@ -352,7 +352,7 @@ class VQL
                 uint   *data_len;
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
-//				writeln (subject_str);
+				//writeln (subject_str);
                 send(tid_subject_manager, FOUND, subject_str, thisTid);
 
                 it.next(&err);
@@ -379,6 +379,8 @@ class VQL
                                 {
                                     Set!string *[ string ] sss = get_subject_from_BSON(bson_msg, LINKS);
 
+                                    if (sss.length > 0)
+                                    {
                                     hash_of_subjects[ sss[ "@" ].items[ 0 ] ] = 1;
 
                                     foreach (objz; sss.values)
@@ -393,8 +395,9 @@ class VQL
                                     }
 
                                     // отправить в исходящий поток
-//						print_2 (sss);
+						//print_2 (sss);
                                 }
+                                  }
                             }
                         });
             }

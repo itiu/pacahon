@@ -28,10 +28,10 @@ private import pacahon.know_predicates;
 
 enum OBJECT_TYPE : byte
 {
-    LITERAL = 0,
-    SUBJECT = 1,
-    URI     = 2,
-    CLUSTER = 3
+    LITERAL  = 0,
+    LINK_SUBJECT =  10,
+    LINK_CLUSTER  = 20,
+    RESOURCE = 30
 }
 
 //enum DATA_TYPE: byte
@@ -82,7 +82,7 @@ final class GraphCluster
         }
     }
 
-    Subject addTriple(string s, string p, string o, byte lang = 0)
+    Subject addTriple(string s, string p, string o, LANG lang = LANG.NONE)
     {
         if (o is null)
             return null;
@@ -181,7 +181,7 @@ final class GraphCluster
 
                 for (short kk = 0; kk < pp.count_objects; kk++)
                 {
-                    if (pp.objects[ kk ].type == OBJECT_TYPE.LITERAL || pp.objects[ kk ].type == OBJECT_TYPE.URI)
+                    if (pp.objects[ kk ].type == OBJECT_TYPE.LITERAL || pp.objects[ kk ].type == OBJECT_TYPE.RESOURCE)
                     {
                         i1PO[ pp.predicate ][ cast(string)pp.objects[ kk ].literal ] = subject;
                     }
@@ -307,28 +307,6 @@ final class Subject
         return edges_of_predicate.get(pname, null);
     }
 
-    void addPredicateAsURI(string predicate, string object)
-    {
-        if (object is null)
-            return;
-
-        if (edges.length == 0)
-            edges = new Predicate[ 16 ];
-
-        if (edges.length == _count_edges)
-            edges.length += 16;
-        edges[ _count_edges ]                      = new Predicate;
-        edges[ _count_edges ].predicate            = predicate;
-        edges[ _count_edges ].objects              = new Objectz[ 1 ];
-        edges[ _count_edges ].count_objects        = 1;
-        edges[ _count_edges ].objects[ 0 ]         = new Objectz();
-        edges[ _count_edges ].objects[ 0 ].literal = object;
-        edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.URI;
-        _count_edges++;
-
-        needReidex = true;
-    }
-
     void addPredicate(string predicate, string object, Subject _metadata, Subject _reification, byte lang = LANG.NONE)
     {
         if (object is null)
@@ -369,8 +347,32 @@ final class Subject
         }
         needReidex = true;
     }
+    
+    Objectz addResource(string predicate, string object)
+    {
+        if (object is null)
+            return null;
 
-    Objectz addPredicate(string predicate, string object, byte lang = LANG.NONE)
+        if (edges.length == 0)
+            edges = new Predicate[ 16 ];
+
+        if (edges.length == _count_edges)
+            edges.length += 16;
+        edges[ _count_edges ]                      = new Predicate;
+        edges[ _count_edges ].predicate            = predicate;
+        edges[ _count_edges ].objects              = new Objectz[ 1 ];
+        edges[ _count_edges ].count_objects        = 1;
+        edges[ _count_edges ].objects[ 0 ]         = new Objectz();
+        edges[ _count_edges ].objects[ 0 ].literal = object;
+        edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.RESOURCE;
+        _count_edges++;
+
+        needReidex = true;
+        
+        return edges[ _count_edges - 1 ].objects[ 0 ];
+    }
+    
+    Objectz addPredicate(string predicate, string object, LANG lang = LANG.NONE)
     {
         if (object is null)
             return null;
@@ -445,7 +447,7 @@ final class Subject
             edges[ _count_edges ].count_objects        = 1;
             edges[ _count_edges ].objects[ 0 ]         = new Objectz();
             edges[ _count_edges ].objects[ 0 ].cluster = cluster;
-            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.CLUSTER;
+            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.LINK_CLUSTER;
             _count_edges++;
         }
         needReidex = true;
@@ -483,7 +485,7 @@ final class Subject
             edges[ _count_edges ].count_objects        = 1;
             edges[ _count_edges ].objects[ 0 ]         = new Objectz();
             edges[ _count_edges ].objects[ 0 ].subject = subject;
-            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.SUBJECT;
+            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.LINK_SUBJECT;
             _count_edges++;
         }
         needReidex = true;
@@ -596,11 +598,11 @@ final class Subject
 
             foreach (oo; pp.getObjects())
             {
-                if (oo.type == OBJECT_TYPE.SUBJECT)
+                if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
                 {
                     oo.subject.reindex_predicate();
                 }
-                else if (oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
+                else if (oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.RESOURCE)
                 {
                     pp.objects_of_value[ oo.literal ] = oo;
                 }
@@ -708,7 +710,7 @@ final class Subject
 
                 if (len > bson.length)
                 {
-                    writeln("!@!#!@#!@%#$@!&% len > bson.length, len=", len, ", bson.length=", bson.length);
+                    writeln("!@!#!@#!@%#$@!&% len > bson.length, len=", len, ", bson.length=", bson.length, "\n", bson);
                 }
 
 
@@ -746,16 +748,25 @@ final class Subject
                     else
                     {
                         string val  = bson[ bp..bp + len - 1 ];
-                        byte   lang = bson[ bp + len ];
+                        byte lang_or_resource_flag = bson[ bp + len - 1];
 
 //						writeln ("val:", val);
 //						print_dump (bp+len, bson);
-
-                        //writeln ("lang:", cast(byte)bson[bp+len+2]);
+//                        writeln (val, ", lang:", lang_or_resource_flag);
                         if (pp !is null)
-                            oo = pp.addLiteral(val, lang);
+                        {
+                        	if (lang_or_resource_flag == OBJECT_TYPE.RESOURCE)
+                        		oo = pp.addResource(val);
+                        	else	
+                        		oo = pp.addLiteral(val, cast(LANG)lang_or_resource_flag);
+                        }    
                         else
-                            oo = subject.addPredicate(key, val, lang);
+                        {
+                        	if (lang_or_resource_flag == OBJECT_TYPE.RESOURCE)
+                        		oo = subject.addResource (key, val);
+                        	else	
+                        		oo = subject.addPredicate(key, val, cast(LANG)lang_or_resource_flag);
+                        }    
                     }
 
                     //writeln (bson[bp..bp+len]);
@@ -833,7 +844,7 @@ class Predicate
     {
         if (count_objects > 0)
         {
-            if (objects[ 0 ].type == OBJECT_TYPE.CLUSTER && objects[ 0 ].cluster.graphs_of_subject.length == 1)
+            if (objects[ 0 ].type == OBJECT_TYPE.LINK_CLUSTER && objects[ 0 ].cluster.graphs_of_subject.length == 1)
             {
                 return objects[ 0 ].cluster.graphs_of_subject.values[ 0 ];
             }
@@ -858,7 +869,7 @@ class Predicate
         return objects[ count_objects - 1 ];
     }
 
-    Objectz addLiteral(string val, byte lang = LANG.NONE)
+    Objectz addLiteral(string val, LANG lang = LANG.NONE)
     {
         if (val is null)
             return null;
@@ -868,6 +879,21 @@ class Predicate
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].literal = val;
         objects[ count_objects ].lang    = lang;
+        count_objects++;
+        return objects[ count_objects - 1 ];
+    }
+    
+    Objectz addResource(string val)
+    {
+        if (val is null)
+            return null;
+
+        if (objects.length == count_objects)
+            objects.length += 16;
+        objects[ count_objects ]         = new Objectz;
+        objects[ count_objects ].literal = val;
+        objects[ count_objects ].lang    = LANG.NONE;
+        objects[ count_objects ].type 	 = OBJECT_TYPE.RESOURCE;
         count_objects++;
         return objects[ count_objects - 1 ];
     }
@@ -881,7 +907,7 @@ class Predicate
             objects.length += 16;
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].cluster = cl;
-        objects[ count_objects ].type    = OBJECT_TYPE.CLUSTER;
+        objects[ count_objects ].type    = OBJECT_TYPE.LINK_CLUSTER;
         count_objects++;
     }
 
@@ -894,7 +920,7 @@ class Predicate
             objects.length += 16;
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].subject = ss;
-        objects[ count_objects ].type    = OBJECT_TYPE.SUBJECT;
+        objects[ count_objects ].type    = OBJECT_TYPE.LINK_SUBJECT;
         count_objects++;
     }
 
@@ -1006,14 +1032,13 @@ class Predicate
 
 class Objectz
 {
-    string       literal;            // если type == LITERAL
-    Subject      subject;            // если type == SUBJECT
-    GraphCluster cluster;            // если type == CLUSTER
+    string       literal;            // если type == LITERAL or RESOURCE
+    Subject      subject;            // если type == LINK_SUBJECT
+    GraphCluster cluster;            // если type == LINK_CLUSTER
 
     Subject      reification = null; // реификация для данного значения
 
     byte         type = OBJECT_TYPE.LITERAL;
-    //	byte data_type = DATA_TYPE.STRING;
     byte         lang;
 
     override string toString()
@@ -1023,13 +1048,24 @@ class Objectz
 
     void toBSON(OutBuffer outbuff)
     {
-        if (type == OBJECT_TYPE.LITERAL && literal !is null)
+        if ((type == OBJECT_TYPE.LITERAL || type == OBJECT_TYPE.RESOURCE ) && literal !is null)
         {
             int value_length        = cast(int)(literal.length + 1);
             int offset_length_value = cast(int)outbuff.offset;
             outbuff.write(0xFFFFFFFF);
             outbuff.write(literal);
-            outbuff.write(lang);
+            
+            if (type == OBJECT_TYPE.RESOURCE)
+            {
+//            	writeln (literal, "-> as resource, type=", type);
+            	outbuff.write(type);
+            }	
+            else
+            {
+//            	writeln (literal, "-> as literal, lang=", lang);
+            	outbuff.write(lang);
+            }	
+            	
             outbuff.write(cast(byte)0);
 
             int_to_buff(outbuff.data, offset_length_value, value_length);

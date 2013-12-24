@@ -97,9 +97,9 @@ void main(char[][] args)
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        //spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
-                        FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
-                        frt.start();
+                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+                        //FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+                        //frt.start();
                     }
                     else if (params.get("transport", "") == "nanomsg")
                     {

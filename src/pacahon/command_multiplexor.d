@@ -227,7 +227,7 @@ public Subject set_message_trace(Subject message, Predicate sender, Ticket *tick
 
     foreach (arg; args.getObjects())
     {
-        if (arg.type == OBJECT_TYPE.SUBJECT)
+        if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
         {
             Subject   sarg = arg.subject;
 
@@ -286,7 +286,7 @@ void command_preparer(Ticket *exist_ticket, Subject message, Subject out_message
 
     out_message.subject = generateMsgId();
 
-    out_message.addPredicateAsURI("a", msg__Message);
+    out_message.addResource("a", msg__Message);
     out_message.addPredicate(msg__sender, "pacahon");
 
     if (sender !is null)
@@ -297,7 +297,7 @@ void command_preparer(Ticket *exist_ticket, Subject message, Subject out_message
 
     if (message !is null)
     {
-        out_message.addPredicateAsURI(msg__in_reply_to, message.subject);
+        out_message.addResource(msg__in_reply_to, message.subject);
         Predicate command = message.getPredicate(msg__command);
 
         if (command !is null)

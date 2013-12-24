@@ -14,6 +14,7 @@ private
     import std.string;
     import std.outbuffer;
     import std.concurrency;
+    import std.ascii;
 
     import ae.utils.container;
     import pacahon.know_predicates;
@@ -76,16 +77,22 @@ public JSONValue get_props(string file_name)
         listeners.type = JSON_TYPE.ARRAY;
 
         JSONValue transport;
-        transport.type = JSON_TYPE.OBJECT;
-
+        transport.type = JSON_TYPE.OBJECT;        
         JSONValue point;
-        point.str                   = "tcp://127.0.0.1:5555";
+        point.str                   = "tcp://*:5559";
         transport.object[ "point" ] = point;
         JSONValue tt;
         tt.str                          = "zmq";
         transport.object[ "transport" ] = tt;
-
         listeners.array ~= transport;
+        
+        JSONValue transport1;
+        transport1.type = JSON_TYPE.OBJECT;        
+        JSONValue tt1;
+        tt1.str                          = "file_reader";
+        transport1.object[ "transport" ] = tt1;
+        listeners.array ~= transport1;
+
         res.object[ "listeners" ] = listeners;
 
         string buff = toJSON(&res);
@@ -409,6 +416,25 @@ string _tmp_correct_link(string link)
     return cast(string)sscc;
 }
 
+string to_lower_and_replace_delimeters(string in_text)
+{
+	if (in_text is null || in_text.length == 0)
+		return in_text;
+		
+	char[] out_text = new char[in_text.length];
+	
+	for (int i = 0; i < in_text.length; i++)
+	{
+		char cc = in_text[i];
+		if (cc == ':' || cc == ' ' || cc == '-')
+			out_text[i] = '_';
+		else
+			out_text[i] = std.ascii.toLower (cc);
+	}	
+		
+    return cast(immutable)out_text;
+}
+
 string escaping_or_uuid2search(string in_text)
 {
     OutBuffer outbuff = new OutBuffer();
@@ -570,7 +596,7 @@ private static int prepare_bson_element(string bson, ref Set!string *[ string ] 
                 pos++;
 
             string key = bson[ bp..pos ];
-            //writeln ("key=", bson[bp..pos]);
+            //writeln ("key=`", bson[bp..pos], "`");
             pos++;
 
             bp = pos;
@@ -600,20 +626,19 @@ private static int prepare_bson_element(string bson, ref Set!string *[ string ] 
                     len = cast(int)bson.length - bp;
 
                 //writeln ("LEN2:", len);
-                string val  = bson[ bp..bp + len - 1 ];
+                string val  = bson[ bp..bp + len ];
                 byte   lang = bson[ bp + len ];
 
-//					writeln ("val:", val);
 //						print_dump (bp+len, bson);
 
 //					writeln ("lang:", cast(byte)bson[bp+len+2]);
 
                 if (parent_type != 0x03)
                 {
-//						writeln ("#0 level:", level, ", ooz=", ooz);
+					//	writeln ("#0 level:", level, ", ooz=", ooz);
 
                     if (fields == ALL ||
-                        (fields == LINKS && is_link_on_subject(val)) ||
+                        (fields == LINKS && (key == "@" || is_link_on_subject(val))) ||
                         fields == TYPE)
                     {
                         if (level == 0)
@@ -625,7 +650,10 @@ private static int prepare_bson_element(string bson, ref Set!string *[ string ] 
                         *ooz ~= val;
 
                         if (level == 0)
+                        {
+					//writeln ("val:", val);
                             res[ key ] = ooz;
+                        }    
                     }
                 }
 

@@ -11,7 +11,7 @@ private import pacahon.graph;
 private import util.utils;
 
 /*
- *  src - С-шная строка содержащая факты в формате n3,
+ *  src - С-шная строка содержащая факты в формате n3 (ttl),
  *  len - длинна исходной строки,
  */
 
@@ -33,7 +33,7 @@ public Subject[] parse_turtle_string(char *src, int len)
 
     GraphCluster res = new GraphCluster();
 
-    Subject[]    subject_level = new Subject[ 3 ];
+    Subject[]    subject_level = new Subject[ 4 ];
     char         prev_el;
     Subject      ss;
     Predicate    pp;
@@ -60,7 +60,7 @@ public Subject[] parse_turtle_string(char *src, int len)
             // new line
             new_line_ptr = ptr;
 
-            //			printf("!NewLine!%s\n", new_line_ptr);
+            // printf("!NewLine!%s\n", new_line_ptr);
 
             if (ch == '@')
             {
@@ -104,70 +104,146 @@ public Subject[] parse_turtle_string(char *src, int len)
                 // это начало элемента
                 char *start_el = ptr;
                 char *end_el   = ptr;
-//				writeln ("2 CH0 [", *start_el, "]");
+				//writeln ("2 CH0 [", *start_el, "]");
 
+				bool is_literal = false;
                 // пропускаем термы в кавычках (" или """)
                 bool is_multiline_quote = false;
                 if (*start_el == '"')
                 {
                     if (*(start_el + 1) == '"' && *(start_el + 2) == '"')
                     {
-                        start_el          += 2;
+                        start_el          += 3;
                         end_el             = start_el;
                         is_multiline_quote = true;
                     }
+                    else
+                    {
+                        start_el          += 1;
+                        end_el             = start_el;                    	
+                    }
 
                     ch = *end_el;
+                    //writeln ("3 CH0 [", *end_el, "]");
+                    
                     while (end_el - src < len)
                     {
                         if (ch == '"')
                         {
-                            if (end_el - src < len - 2 && *(end_el + 1) == '"' && *(end_el + 2) == '"')
+                           	is_literal = true;
+                            if (is_multiline_quote == true && end_el - src < len - 2 && *(end_el + 1) == '"' && *(end_el + 2) == '"')
                             {
+                            	end_el += 2;
+                            	ch = *end_el;
+ //                           	writeln("CH#:", ch, ", ", cast(int)ch);
                                 break;
                             }
 
                             if (is_multiline_quote == false)
-                                break;
+                            {
+                            	if (*(end_el + 1) == '@')
+                            	{
+                            		while (end_el - src < len)
+                            		{
+                            			end_el++;	
+                            			if (*end_el == ' ' || *end_el == ';' || *end_el == '.')
+                            			{
+                            				end_el--;
+                            				ch = *end_el;
+                            				break;
+                            			}	
+                            			if (*end_el == ',')
+                            			{	
+                            				end_el--;
+                            				ch = *end_el;
+                            				break;
+                            			}	
+                            		}                            		
+                            		ch = *end_el;
+//                            		writeln("CH@:", ch, ", ", cast(int)ch);
+                            	}	
+                           		break;
+                            }    
                         }
 
                         end_el++;
                         ch = *end_el;
                     }
                 }
+                
+//				writeln("CH0:", ch, ", ", cast(int)ch);
 
                 int length_el;
-
-//				writeln("CH1:", ch, ", ", cast(int)ch);
-                if (ch == ']' || ch == ';')
+                int depth = 0;
+                if (state != 2 && *start_el == '(')
                 {
-//				writeln("CH1:", ch, ", ", cast(int)ch);
-//					writeln ("!!!!1");
-                    length_el = 1;
-                }
-                else if (ch == ',' || ch == '.' || ch == '[')
-                {
-                    length_el = 1;
-                }
-                else
-                {
-                    while (end_el - src < len - 1)
-                    {
-//						writeln("CH2:", ch, ", ", cast(int)ch);
-                        if (ch == ';' || ch == ' ' || ch == '\r')
-                            break;
-                        if (ch == '\n' || ch == ',')
-                            break;
-                        if (ch == '.' || ch == '[' || ch == ']')
-                            break;
-
+                // пропускаем термы: (( )))
+                	start_el          += 1;
+                    end_el             = start_el; 
+                	while (end_el - src < len)
+                	{                		
+                		if (ch == ')')
+                        {
+                        	if (depth == 0)
+                        		break;
+                        	
+                        	depth--;                        	
+                        }
                         end_el++;
                         ch = *end_el;
+                		if (ch == '(')
+                			depth++;                                                
+                	}
+                	length_el = cast(int)(end_el - start_el);
+                }
+                else if (*start_el == '<')
+                {
+                // пропускаем термы в < >)
+                	start_el          += 1;
+                    end_el             = start_el; 
+                	while (end_el - src < len)
+                	{
+                		if (ch == '>')
+                        {
+                        	break;
+                        }
+                        end_el++;
+                        ch = *end_el;                        
+                	}
+                	length_el = cast(int)(end_el - start_el);
+                }
+                else
+                {                
+//					writeln("CH1:", ch, ", ", cast(int)ch);
+                	if (ch == ']' || ch == ';')
+                	{
+//						writeln("CH2:", ch, ", ", cast(int)ch);
+                    	length_el = 1;
                     }
+                    else if (ch == ',' || ch == '.' || ch == '[')
+                    {
+                    	length_el = 1;
+                   	}
+                   	else
+                   	{
+                   		while (end_el - src < len - 1)
+                   		{
+//							writeln("CH3:", ch, ", ", cast(int)ch);
+                        	if (ch == ';' || ch == ' ' || ch == '\r')
+                        		break;
+                            if (ch == '\n' || ch == ',' || ch == '"')
+                            	break;
+                            if (ch == '.' || ch == '[' || ch == ']')
+                            	break;
 
-                    length_el = cast(int)(end_el - start_el);
-                    if (is_multiline_quote)
-                        length_el -= 3;
+                            end_el++;
+                            ch = *end_el;
+                        }
+
+                    	length_el = cast(int)(end_el - start_el);
+                    	if (is_multiline_quote)
+                    		length_el -= 2;                    		
+                    }
                 }
 
                 if (length_el > 0)
@@ -177,18 +253,20 @@ public Subject[] parse_turtle_string(char *src, int len)
                     if (ss is null)
                         ss = new Subject();
 
-                    prev_el = next_element(start_el, length_el, ss, pp, &state);
+                    prev_el = next_element(start_el, length_el, ss, pp, &state, is_literal);
                     if (prev_el == '.')
                     {
-//						writeln ("@ add to res:", ss);
+//						writeln ("@ add to res:", ss.subject);
                         res.addSubject(ss);
                         pp = null;
+                        if (level == 0)
+                        	ss = new Subject();
                     }
                     else if (prev_el == '[')
                     {
                         subject_level[ level ] = ss;
                         level++;
-//					writeln ("@ ++ level !!!:", level);
+//						writeln ("@ ++ level !!!:", level);
                         Subject sub_subj = new Subject();
                         sub_subj.subject = "";
                         pp.addSubject(sub_subj);
@@ -222,8 +300,8 @@ public Subject[] parse_turtle_string(char *src, int len)
                 ch = *ptr;
 //				writeln ("1 END CH:", ch);
 
-//						writeln ("----");
-                //				printf("[%s]\n", element);
+//						writeln ("----------------------------------");
+                		//		printf("[%s]\n", element);
             }
         }
     }
@@ -235,12 +313,12 @@ public Subject[] parse_turtle_string(char *src, int len)
     return res.getArray();
 }
 
-private char next_element(char *element, int el_length, Subject ss, Predicate pp, byte *state)
+private char next_element(char *element, int el_length, Subject ss, Predicate pp, byte *state, bool is_literal)
 {
     if (element is null)
         return 0;
 
-//	writeln ("el:", element[0..el_length], ", el_length:", el_length);
+//	writeln ("el:*", element[0..el_length], "*, el_length:", el_length);
 
     char ch = *element;
 
@@ -260,24 +338,40 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
     if (ss.subject is null)
     {
         ss.subject = cast(immutable)element[ 0..el_length ];
-//	    writeln ("@ add new subject");
+//	    writeln ("@ add new subject=", ss.subject);
         *state = 1;
         return 0;
     }
 
     if (*state == 1)
     {
-//	    writeln ("@ add predicate");
         *state       = 2;
         pp.predicate = cast(immutable)element[ 0..el_length ];
+//	    writeln ("@ add predicate=,", pp.predicate);
         ss.addPredicate(pp);
         return 0;
     }
 
     if (*state == 2)
     {
-//	    writeln ("@ set object");
-        pp.addLiteral(cast(immutable)element[ 0..el_length ]);
+    	string data = cast(immutable)element[0..el_length];
+    	
+    	if (is_literal == true)
+    	{
+    	LANG lang = LANG.NONE;
+    	if (data[$-3] == '@')
+    	{
+    		if (data[$-2] == 'r')
+    			lang = LANG.RU;
+    		else if (data[$-2] == 'e')
+    			lang = LANG.EN;
+    		el_length -= 4;
+    	}	 
+        pp.addLiteral(data[0..el_length], lang);
+        }
+    	else
+    		pp.addResource (data[0..el_length]);
+//	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
         return 0;
     }
 
@@ -369,19 +463,19 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
                 {
                     outbuff.write(cast(char[])"@en");
                 }
-            }
-            else if (oo.type == OBJECT_TYPE.URI)
+            }           
+            else if (oo.type == OBJECT_TYPE.RESOURCE)
             {
                 outbuff.write(cast(char[])"   ");
                 outbuff.write(oo.literal);
             }
-            else if (oo.type == OBJECT_TYPE.SUBJECT)
+            else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
             {
                 outbuff.write(cast(char[])"\n  [\n");
                 toTurtle(oo.subject, outbuff, level + 1);
                 outbuff.write(cast(char[])"\n  ]");
             }
-            else if (oo.type == OBJECT_TYPE.CLUSTER)
+            else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
             {
                 outbuff.write(cast(char[])" \"\"\"");
                 foreach (s; oo.cluster.getArray())
