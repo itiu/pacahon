@@ -303,7 +303,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
     {
         //msg_format = format.TURTLE;
         msg_format = format.JSON_LD;
-        subjects   = parse_turtle_string(cast(char *)msg, message_size);
+        subjects   = parse_turtle_string(cast(char *)msg, message_size, context.get_prefix_map);
 
 //		OutBuffer outbuff = new OutBuffer();
 //		toJson_ld(subjects, outbuff, true);

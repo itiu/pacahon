@@ -37,6 +37,8 @@ interface Context
     @property void count_message(int n);
 
     bool send_on_authorization(string msg);
+    
+    ref string[string] get_prefix_map ();
 }
 
 enum event_type

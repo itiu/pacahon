@@ -39,6 +39,13 @@ static this()
 
 class ThreadContext : Context
 {
+	private string[string] prefix_map;
+	
+	ref string[string] get_prefix_map ()
+	{
+		return prefix_map;
+	}
+	
 	private Tid tid_xapian_indexer;
 	
     private Tid _tid_statistic_data_accumulator;

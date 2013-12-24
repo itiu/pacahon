@@ -15,7 +15,7 @@ private import util.utils;
  *  len - длинна исходной строки,
  */
 
-public Subject[] parse_turtle_string(char *src, int len)
+public Subject[] parse_turtle_string(char *src, int len, ref string[string] prefix_map)
 {
 //	StopWatch sw;
 //	sw.start();
@@ -65,13 +65,46 @@ public Subject[] parse_turtle_string(char *src, int len)
             if (ch == '@')
             {
                 // это блок назначения префиксов
+                while (*ptr != ' ' && ptr - src < len)
+                	ptr++;
+
+                string token = cast(immutable)new_line_ptr[0..ptr - new_line_ptr]; 		
+
+                if (token == "@prefix" && ptr + 5 - src < len)
+                {
+                	ptr++;
+
+                	char* s_pos = ptr;
+                	while (*ptr != ' ' && ptr - src < len)
+                		ptr++;                	
+                	string prefix = cast(immutable)s_pos[0..ptr - s_pos].dup;
+                	
+                	ptr++;
+                	
+                	if (*ptr == '<')
+                		ptr++;
+                	
+                	s_pos = ptr;
+                	while (*ptr != ' ' && ptr - src < len)
+                		ptr++;
+                		         
+                	if (*(ptr - 1) == '>')
+                		ptr--;
+
+                	if (*(ptr - 1) == '#')
+                		ptr--;
+                		                		       	
+                	string url = cast(immutable)s_pos[0..ptr - s_pos].dup;
+                	
+                	prefix_map[prefix] = url;
+                	prefix_map[url] = prefix;
+                }	
 
                 // пропускаем строку
                 while (ch != '\n' && ch != '\r' && ptr - src < len)
                 {
                     ptr++;
                     ch      = *ptr;
-                    prev_ch = ch;
                 }
                 continue;
             }
@@ -85,7 +118,6 @@ public Subject[] parse_turtle_string(char *src, int len)
                 {
                     ptr++;
                     ch      = *ptr;
-                    prev_ch = ch;
                 }
                 continue;
             }
