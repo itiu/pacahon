@@ -14,7 +14,7 @@ private
     import std.c.string;
     import std.concurrency;
 
-    import ae.utils.container;
+    import util.container;
     import util.oi;
     import util.logger;
     import util.utils;
@@ -56,11 +56,11 @@ class VQL
     private                Set!OI from_search_points;
 
     private XapianDatabase xapian_db;
-//	private XapianStem xapian_stemmer;
+	private XapianStem xapian_stemmer;
     private string         xapian_path = "xapian-search";
     private string         xapian_lang = "russian";
     private XapianEnquire  xapian_enquire;
-//    private XapianQueryParser xapian_qp;
+    private XapianQueryParser xapian_qp;
     private int[ string ] key2slot;
     private string transTable1;
 
@@ -76,12 +76,12 @@ class VQL
         found_sections     = new string[ 6 ];
 
         byte err;
-//		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
+		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
         xapian_db = new_Database(xapian_path.ptr, xapian_path.length, &err);
 //		xapian_enquire = xapian_db.new_Enquire(&err);
-//		xapian_qp = new_QueryParser (&err);
-//		xapian_qp.set_stemmer(xapian_stemmer, &err);
-//		xapian_qp.set_database(xapian_db, &err);
+		xapian_qp = new_QueryParser (&err);
+		xapian_qp.set_stemmer(xapian_stemmer, &err);
+		xapian_qp.set_database(xapian_db, &err);
 //		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);
 
         key2slot = read_key2slot();
@@ -188,7 +188,7 @@ class VQL
             string      dummy;
             double      d_dummy;
 
-            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0);
+            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
             if (query !is null)
             {
@@ -381,23 +381,21 @@ class VQL
 
                                     if (sss.length > 0)
                                     {
-                                    hash_of_subjects[ sss[ "@" ].items[ 0 ] ] = 1;
+                                    	hash_of_subjects[ sss[ "@" ].items[ 0 ] ] = 1;
 
-                                    foreach (objz; sss.values)
-                                    {
-                                        foreach (id; objz.items)
-                                        {
-                                            if (hash_of_subjects.get(id, -1) == -1)
-                                            {
-                                                hash_of_subjects[ id ] = 2;
-                                            }
-                                        }
-                                    }
+                                    	foreach (objz; sss.values)
+                                    	{
+                                    		foreach (id; objz.items)
+                                    		{
+                                    			if (hash_of_subjects.get(id, -1) == -1)
+                                    			{
+                                    				hash_of_subjects[ id ] = 2;
+                                    			}
+                                    		}
+                                    	}
 
-                                    // отправить в исходящий поток
-						//print_2 (sss);
+									}
                                 }
-                                  }
                             }
                         });
             }

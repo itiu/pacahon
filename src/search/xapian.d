@@ -149,7 +149,6 @@ void xapian_indexer(Tid tid_storage_manager)
     ///////////// XAPIAN INDEXER ///////////////////////////
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
-
     string                 lang    = "russian";
     XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);
 
@@ -246,6 +245,9 @@ void xapian_indexer(Tid tid_storage_manager)
 //                         	writeln ("index as literal:[", data, "], lang=", oo.lang);
                          	indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                            
+                            all_text.write(data);
+                            all_text.write("|");
                         }
                         else if (oo.type == OBJECT_TYPE.RESOURCE)
                         {
@@ -261,21 +263,9 @@ void xapian_indexer(Tid tid_storage_manager)
 //                                writeln ("index as resource:[", data, "]");
                                 indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                                 doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                            }
-                        }
-                        else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
-                        {
-                            if (oo.subject !is null && oo.subject.count_edges == 0)
-                            {
-                            }
-                            else
-                            {
-                            }
-                        }                       
-                        else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
-                        {
-                            for (int i = 0; i < oo.cluster.length; i++)
-                            {
+                                
+                                all_text.write(data);
+                                all_text.write("|");                                
                             }
                         }
                     }
@@ -426,7 +416,7 @@ void xapian_indexer(Tid tid_storage_manager)
     }
 }
 
-protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query, ref int[ string ] key2slot, out double _rd, int level)
+protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query, ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
 {
 //	string eee = "                                                                                       ";
 //	string e1 = text(level) ~ eee[0..level*3];
@@ -439,8 +429,8 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
 
     if (tta.op == ">" || tta.op == "<")
     {
-        string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1);
-        string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1);
+        string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
+        string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
 
         if (rs.length == 19 && rs[ 4 ] == '-' && rs[ 7 ] == '-' && rs[ 10 ] == 'T' && rs[ 13 ] == ':' && rs[ 16 ] == ':')
         {
@@ -486,17 +476,48 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
     }
     else if (tta.op == "==")
     {
-        string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1);
-        string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1);
+        string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
+        string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
         //writeln ("#2 % query_l=", query_l);
         //writeln ("#2 % query_r=", query_r);
+       	//writeln ("rs=", rs);
         if (query_l is null && query_r is null)
         {
-            int slot = get_slot(ls, key2slot);
-            //writeln ("slot=", slot);
-            //writeln ("rs=", rs);
-            string xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-            query = new_Query(cast(char *)xtr, xtr.length, &err);
+        	string xtr;
+        	if (ls != "*")
+        	{            	
+           		int slot = get_slot(ls, key2slot);
+           		//writeln ("slot=", slot);
+            	if (indexOf (rs, '*') > 0 && rs.length > 3)
+            	{
+//            		xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+            		string query_str = to_lower_and_replace_delimeters(rs);
+            		xtr = "X" ~ text(slot) ~ "X";
+        			query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr, xtr.length, &err);            		
+//        			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);            		
+            	}
+            	else
+            	{
+            		xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+            		query = new_Query(cast(char *)xtr, xtr.length, &err);            		
+            	}
+            	
+            }
+        	else
+        	{
+        		xtr = to_lower_and_replace_delimeters(rs);
+
+            	if (indexOf (xtr, '*') > 0 && xtr.length > 3)
+            	{
+        			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
+        		}
+            	else
+            	{
+        			query = qp.parse_query(cast(char *)xtr, xtr.length, &err);            		
+            	}
+            		
+        	}	
+        	
             destroy_Query(query_l);
             destroy_Query(query_r);
         }
@@ -510,14 +531,14 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
 
         string tta_R;
         if (tta.R !is null)
-            tta_R = transform_vql_to_xapian(tta.R, tta.op, token_L, t_op_r, query_r, key2slot, rd, level + 1);
+            tta_R = transform_vql_to_xapian(tta.R, tta.op, token_L, t_op_r, query_r, key2slot, rd, level + 1, qp);
 
         if (t_op_r !is null)
             op = t_op_r;
 
         string tta_L;
         if (tta.L !is null)
-            tta_L = transform_vql_to_xapian(tta.L, tta.op, dummy, t_op_l, query_l, key2slot, ld, level + 1);
+            tta_L = transform_vql_to_xapian(tta.L, tta.op, dummy, t_op_l, query_l, key2slot, ld, level + 1, qp);
 
         if (t_op_l !is null)
             op = t_op_l;
@@ -600,10 +621,10 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
 //	writeln ("#4 ||");
 
         if (tta.R !is null)
-            transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1);
+            transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
 
         if (tta.L !is null)
-            transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1);
+            transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
 
         query = query_l.add_right_query(xapian_op.OP_OR, query_r, &err);
         destroy_Query(query_l);

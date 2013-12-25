@@ -34,7 +34,7 @@ xapian 1.2.16 ( http://xapian.org )
 - libxapian.a 
 
 xapian D2 binding:
-- libxapiand.a ( https://github.com/itiu/xapian-d/archive/644dfe496452d4f321132b68fc72a31671ba9f1b.zip )
+- libxapiand.a ( https://github.com/itiu/xapian-d/archive/8a82f0b05c91f517e3df5480b2f72843b2871c6f.zip )
 - libstdc++.a
 
 lmdb 0.9.10 ( http://symas.com/mdb, https://gitorious.org/mdb/mdb/archive/f39bceb800dd1b1b4b05cfb45a3ddde94a273fff.tar.gz )
