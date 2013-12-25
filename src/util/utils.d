@@ -16,7 +16,7 @@ private
     import std.concurrency;
     import std.ascii;
 
-    import ae.utils.container;
+    import util.container;
     import pacahon.know_predicates;
     import pacahon.context;
 }
@@ -626,7 +626,7 @@ private static int prepare_bson_element(string bson, ref Set!string *[ string ] 
                     len = cast(int)bson.length - bp;
 
                 //writeln ("LEN2:", len);
-                string val  = bson[ bp..bp + len ];
+                string val  = bson[ bp..bp + len - 1];
                 byte   lang = bson[ bp + len ];
 
 //						print_dump (bp+len, bson);
