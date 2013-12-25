@@ -1,5 +1,7 @@
 module pacahon.define;
 
+import util.container;
+
 enum : byte
 {
     STORE     = 1,
@@ -19,6 +21,7 @@ enum : byte
 
 alias immutable(int)[]  const_int_array;
 alias immutable(long)[] const_long_array;
+alias Set!string *[ string ] tSubject; // ассоциативный массив содержащий в качестве value указатель на списки строк
 
 const byte              asObject = 0;
 const byte              asArray  = 1;

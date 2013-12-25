@@ -1,5 +1,5 @@
 /**
- * ae.utils.container
+ * util.container
  *
  * License:
  *   This Source Code Form is subject to the terms of
@@ -11,7 +11,7 @@
  *   Vladimir Panteleev <vladimir@thecybershadow.net>
  */
 
-module ae.utils.container;
+module util.container;
 
 /// Unordered array with O(1) insertion and removal
 struct Set(T, uint INITSIZE=64)
