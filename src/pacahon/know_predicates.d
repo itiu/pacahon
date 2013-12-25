@@ -6,9 +6,9 @@ public static const byte _EN   = 2;
 
 public const string owl__Ontology 	  	= "owl:Ontology";
 public const string owl__versionInfo 	= "owl:versionInfo";
+public const string rdf__Property 		= "rdf:Property";
 
-
-
+//--------------------------------------------------------------------------------
 
 
 

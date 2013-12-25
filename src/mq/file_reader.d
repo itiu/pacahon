@@ -11,12 +11,15 @@ import std.concurrency;
 import std.json;
 import std.file;
 import std.outbuffer;
+import std.string;
 
 import pacahon.context;
 import pacahon.thread_context;
 import pacahon.server;
 import pacahon.graph;
 import pacahon.define;
+import pacahon.know_predicates;
+import util.container;
 import util.utils;
 import util.turtle_parser;
 import util.json_ld.parser;
@@ -89,17 +92,75 @@ private void prepare_file (string file_name, Context context)
             	
             	writeln (context.get_prefix_map);
             	
+            	bool[string] for_load;
+
             	foreach (ss; ss_list)
             	{
-/*            		writeln ("-------------------------------------------------------------------------------");
+					string prefix = context.get_prefix_map.get (ss.subject, null); 
+					if (prefix !is null)
+					{
+						writeln ("found prefix=", prefix);
+						if (ss.isExsistsPredicate (rdf__type, owl__Ontology))
+						{
+							string version_onto = ss.getFirstLiteral (owl__versionInfo);
+							writeln (prefix, ", version=", version_onto);
+							
+							// проверить какая версия данной отологии в хранилище
+							writeln ("look in storage[", ss.subject, "]");
+							tSubject sss = context.get_subject (ss.subject);
+							
+							if (sss !is null)
+							{
+							Set!string* aaa = sss.get (owl__versionInfo, null);
+							if (aaa.size > 0)
+							{
+								if (aaa.items()[0] == version_onto)
+								{
+									writeln ("This version [", version_onto, "] onto[", prefix, "] already exist");
+								}
+								else
+								{
+									writeln ("1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+									for_load[prefix] = true;									
+									for_load[ss.subject] = true;									
+								}
+							}
+							}
+							else
+							{
+									writeln ("2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+									for_load[prefix] = true;									
+									for_load[ss.subject] = true;																	
+							}							
+						}
+					}	
+            	}
+            	
+            	writeln ("Onto for load:", for_load);
+            	
+            	foreach (ss; ss_list)
+            	{
+            		if (ss.isExsistsPredicate (rdf__type, rdfs__Class) || ss.isExsistsPredicate (rdf__type, rdf__Property))
+            		{
+            			long pos = indexOf (ss.subject, ":");
+            			if (pos > 0)
+            			{
+            				string prefix = ss.subject[0..pos+1];
+            				if (for_load.get(prefix, false) == true)
+            				{
+            					writeln (ss.subject, " 1 store! ");
+            					string ss_as_bson = ss.toBSON();
+            					send(context.get_tid_search_manager, ss_as_bson);
+            				}
+            			}
+            		}
+            		else if (for_load.get (ss.subject, false) == true)
+            		{
+            					writeln (ss.subject, " 2 store! ");
+            					string ss_as_bson = ss.toBSON();
+            					send(context.get_tid_search_manager, ss_as_bson);
+            		}
 
-            		OutBuffer outbuff = new OutBuffer();
-            		toJson_ld(ss, outbuff, true);            		
-            		writeln (outbuff);
-            		writeln ("-------------------------------------------------------------------------------");
-*/
-					string ss_as_bson = ss.toBSON();
-					send(context.get_tid_search_manager, ss_as_bson);
 						//get .get_tid_subject_manager, STORE, ss_as_bson, thisTid);
             	}
 				send(context.get_tid_search_manager, "COMMIT");

@@ -378,7 +378,11 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
     if (*state == 1)
     {
         *state       = 2;
-        pp.predicate = cast(immutable)element[ 0..el_length ];
+        string predicate = cast(immutable)element[ 0..el_length ]; 
+        if (predicate == "rdf:type")
+        	predicate = "a";
+        	
+        pp.predicate = predicate;
 //	    writeln ("@ add predicate=,", pp.predicate);
         ss.addPredicate(pp);
         return 0;
