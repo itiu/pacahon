@@ -13,7 +13,7 @@ private
     import pacahon.graph;
     import pacahon.context;
     import pacahon.define;
-    import ae.utils.container;
+    import util.container;
 }
 
 logger log;
@@ -71,10 +71,10 @@ void acl_manager()
         writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
     else
     {
-        rrc = mdb_env_set_mapsize(env, 10485760 * 10);
-        if (rrc != 0)
-            writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
-        else
+//        rrc = mdb_env_set_mapsize(env, 10485760 * 10);
+//        if (rrc != 0)
+//            writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
+//       else
         {
             rrc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
 

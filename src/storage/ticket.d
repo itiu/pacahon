@@ -52,7 +52,7 @@ void ticket_manager()
 
     int rc;
     rc = mdb_env_create(&env);
-    rc = mdb_env_set_mapsize(env, 10485760);
+//    rc = mdb_env_set_mapsize(env, 10485760);
     rc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
     if (!rc)
     {

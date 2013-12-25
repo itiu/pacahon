@@ -54,10 +54,10 @@ void subject_manager()
         writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
     else
     {
-        rrc = mdb_env_set_mapsize(env, 10485760 * 512);
-        if (rrc != 0)
-            writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
-        else
+       // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
+       // if (rrc != 0)
+       //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
+       // else
         {
             rrc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
 
@@ -112,7 +112,12 @@ void subject_manager()
                                 // send(tid_sender, res);
 
                                 rc = mdb_txn_commit(txn);
+                                if (rc != 0)
+                                    writeln("#2 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
+                                
                                 rc = mdb_txn_begin(env, null, 0, &txn);
+                                if (rc != 0)
+                                    writeln("#3 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
                             }
                             else if (cmd == FOUND)
                             {
