@@ -10,7 +10,7 @@ private
     import std.conv;
 
     import mq.mq_client;
-    import ae.utils.container;
+    import util.container;
     import util.json_ld.parser;
     import util.logger;
     import util.oi : OI;
@@ -39,15 +39,28 @@ static this()
 
 class ThreadContext : Context
 {
-	private string[string] prefix_map;
+	Set!string *[ string ] get_subject (string uid)
+	{
+		Set!string *[ string ] res = null;
+		send(tid_subject_manager, FOUND, uid, thisTid);	
+		receive((string bson_msg, Tid from)
+		{
+           if (from == tid_subject_manager)
+           {
+           		res = get_subject_from_BSON(bson_msg);
+           }    	
+		});
+		
+		return res;
+    }
 	
+	private string[string] prefix_map;	
 	ref string[string] get_prefix_map ()
 	{
 		return prefix_map;
 	}
 	
-	private Tid tid_xapian_indexer;
-	
+	private Tid tid_xapian_indexer;	
     private Tid _tid_statistic_data_accumulator;
     @property Tid tid_statistic_data_accumulator()
     {

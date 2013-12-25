@@ -3,7 +3,7 @@ module pacahon.context;
 private import std.concurrency;
 private import std.datetime;
 
-private import ae.utils.container;
+private import util.container;
 private import pacahon.graph;
 private import search.vel;
 private import onto.doc_template;
@@ -39,6 +39,8 @@ interface Context
     bool send_on_authorization(string msg);
     
     ref string[string] get_prefix_map ();
+    
+    Set!string *[ string ] get_subject (string uid);
 }
 
 enum event_type
