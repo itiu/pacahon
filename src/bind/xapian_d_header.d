@@ -260,6 +260,7 @@ interface XapianDatabase
 
 interface XapianWritableDatabase
 {
+    XapianEnquire new_Enquire(byte *err);
     uint add_document(XapianDocument doc, byte *err);
     uint replace_document(const char *_unique_term, ulong _unique_term_len, XapianDocument document, byte *err);
     void commit(byte *err);
@@ -317,6 +318,7 @@ interface XapianQueryParser
 {
     void set_stemmer(XapianStem stemmer, byte *err);
     void set_database(XapianDatabase db, byte *err);
+    void set_database(XapianWritableDatabase db, byte *err);
     void set_stemming_strategy(stem_strategy strategy, byte *err);
     XapianQuery parse_query(char *query_string, ulong query_string_len, byte *err);
     XapianQuery parse_query(char *query_string, ulong query_string_len, feature_flag flags, byte *err);
@@ -331,16 +333,17 @@ interface XapianMultiValueKeyMaker
     void add_value(int pos, bool asc_desc, byte *err);
 }
 
-///////
+////////
+XapianDatabase new_Database(const char *path, ulong path_len, byte *err);
+XapianDatabase new_InMemoryDatabase(byte *err);
+
+XapianWritableDatabase new_WritableDatabase(const char *path, ulong path_len, int action, byte *err);
+XapianWritableDatabase new_InMemoryWritableDatabase(byte *err);
 
 XapianDocument new_Document(byte *err);
 XapianMultiValueKeyMaker new_MultiValueKeyMaker(byte *err);
-
-XapianDatabase new_Database(const char *path, ulong path_len, byte *err);
 XapianQueryParser new_QueryParser(byte *err);
 XapianStem new_Stem(char *language, ulong language_len, byte *err);
-
-XapianWritableDatabase new_WritableDatabase(const char *path, ulong path_len, int action, byte *err);
 XapianTermGenerator new_TermGenerator(byte *err);
 XapianNumberValueRangeProcessor new_NumberValueRangeProcessor(int slot, const char *_str, ulong _str_len, bool prefix, byte *err);
 
