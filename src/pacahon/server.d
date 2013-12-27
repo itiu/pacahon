@@ -65,9 +65,13 @@ void main(char[][] args)
 
         Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager);
         spawn(&xapian_indexer_commiter, tid_xapian_indexer);
+        send (tid_xapian_indexer, thisTid);
+        receive((bool isReady)
+        {    	
+        });        
 
         Tid tid_statistic_data_accumulator = spawn(&statistic_data_accumulator);
-        core.thread.Thread.sleep(dur!("msecs")(1));
+        core.thread.Thread.sleep(dur!("msecs")(10));
         spawn(&print_statistic, tid_statistic_data_accumulator);
 
         {

@@ -10,6 +10,7 @@ import std.conv;
 import std.typecons;
 import std.stdio;
 import std.string;
+import std.file;
 
 import bind.xapian_d_header;
 import util.utils;
@@ -152,6 +153,8 @@ void xapian_indexer(Tid tid_storage_manager)
     string                 lang    = "russian";
     XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);
 
+    bool is_exist_db = exists(xapian_path);
+
     // Open the database for update, creating a new database if necessary.
     indexer_db = new_WritableDatabase(xapian_path.ptr, xapian_path.length, DB_CREATE_OR_OPEN, &err);
     if (err != 0)
@@ -160,15 +163,26 @@ void xapian_indexer(Tid tid_storage_manager)
         return;
     }
 
-    int[ string ] key2slot = read_key2slot();
-
     indexer = new_TermGenerator(&err);
     indexer.set_stemmer(stemmer, &err);
+
+    indexer_db.commit(&err);
 
     int   counter                         = 0;
     int   last_counter_afrer_timed_commit = 0;
     ulong last_size_key2slot              = 0;
 
+    int[ string ] key2slot;
+    
+    if (is_exist_db == true)
+    	read_key2slot();
+    	
+    writeln ("xapian_indexer ready");
+    receive((Tid tid_response_reciever)
+    {    	
+    	send (tid_response_reciever, true);
+    });
+    	
     while (true)
     {
         auto msg = receiveOnly!(string)();
