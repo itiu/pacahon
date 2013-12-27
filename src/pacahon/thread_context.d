@@ -8,7 +8,8 @@ private
     import std.datetime;
     import std.concurrency;
     import std.conv;
-
+    import std.outbuffer;
+    
     import mq.mq_client;
     import util.container;
     import util.json_ld.parser;
@@ -39,6 +40,19 @@ static this()
 
 class ThreadContext : Context
 {
+	private Tid tid_key2slot_accumulator;
+	public int[ string ] get_key2slot()
+	{
+		send (tid_key2slot_accumulator, GET, thisTid);
+		
+		string msg = receiveOnly!(string)();
+		
+	 	int[ string ] key2slot = deserialize_key2slot (msg);
+	 	return key2slot;
+	}
+	
+	
+	
 	Set!string *[ string ] get_subject (string uid)
 	{
 		Set!string *[ string ] res = null;
@@ -198,13 +212,14 @@ class ThreadContext : Context
         return gateways.get(name, empty_set);
     }
 
-    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_)
+    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_, Tid _tid_key2slot_accumulator_)
     {
         _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
         _tid_ticket_manager             = _tid_ticket_manager_;
         tid_subject_manager             = _tid_subject_manager_;
         tid_acl_manager                 = _tid_acl_manager_;
         tid_xapian_indexer 				= _tid_xapian_indexer_;
+        tid_key2slot_accumulator = _tid_key2slot_accumulator_;
 
         _event_filters      = new GraphCluster();
         _ba2pacahon_records = new GraphCluster();
@@ -256,7 +271,7 @@ class ThreadContext : Context
 
         Set!OI empty_set;
         Set!OI from_search = gateways.get("from-search", empty_set);
-        _vql               = new search.vql.VQL(from_search);
+        _vql               = new search.vql.VQL(from_search, this);
 
 //        writeln(context_name ~ ": connect to mongodb is ok");
 

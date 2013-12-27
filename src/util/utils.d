@@ -15,12 +15,42 @@ private
     import std.outbuffer;
     import std.concurrency;
     import std.ascii;
+    import std.csv;
+    import std.typecons;    
 
     import util.container;
     import pacahon.know_predicates;
     import pacahon.context;
 }
 
+public string serialize_key2slot (ref int[ string ] key2slot)
+{
+    OutBuffer outbuff = new OutBuffer();
+    foreach (key, value; key2slot)
+    {
+        outbuff.write('"');
+        outbuff.write(key);
+        outbuff.write('"');
+        outbuff.write(',');
+        outbuff.write(text(value));
+        outbuff.write('\n');
+    }
+    return outbuff.toString();	
+}
+
+public int[ string ] deserialize_key2slot (string data)
+{
+    int[ string ] key2slot;
+
+    int idx = 0;
+    foreach (record; csvReader!(Tuple!(string, int))(data))
+    {
+    	key2slot[ record[ 0 ] ] = record[ 1 ];
+        idx++;
+    }
+    
+    return key2slot;	
+}
 
 string getNowAsString()
 {

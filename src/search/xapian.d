@@ -4,7 +4,6 @@ module search.xapian;
 
 import std.concurrency;
 import std.outbuffer;
-import std.csv;
 import std.datetime;
 import std.conv;
 import std.typecons;
@@ -24,24 +23,39 @@ import search.vel;
 private const string xapian_path            = "xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-byte                 err;
+byte err;
 
-private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer)
+public void key2slot_accumulator()
+{
+	string key2slot_str;
+	
+    writeln("SPAWN: key2slot_accumulator");
+    while (true)
+    {
+        receive(
+                (byte cmd, string _key2slot_str)
+                {
+                    if (cmd == PUT)
+                    {
+                    	writeln ("PUT:\n", _key2slot_str);
+                        key2slot_str = _key2slot_str;
+                    }
+                },
+                (byte cmd, Tid tid_sender)
+                {
+                    if (cmd == GET)
+                    {
+//                    	writeln ("GET:\n", key2slot_str);
+                        send(tid_sender, key2slot_str);
+                    }
+                });
+    }
+}
+
+private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer, Tid key2slot_accumulator)
 {
 //	writeln ("#1 store__key2slot");
-    OutBuffer outbuff = new OutBuffer();
-
-    foreach (key, value; key2slot)
-    {
-        outbuff.write('"');
-        outbuff.write(key);
-        outbuff.write('"');
-        outbuff.write(',');
-        outbuff.write(text(value));
-        outbuff.write('\n');
-    }
-
-    string         data = outbuff.toString();
+    string         data = serialize_key2slot (key2slot);
 
     XapianDocument doc = new_Document(&err);
     indexer.set_document(doc, &err);
@@ -52,39 +66,27 @@ private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatab
     doc.add_boolean_term(uuid.ptr, uuid.length, &err);
     indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
     destroy_Document(doc);
+    
+    send (key2slot_accumulator, PUT, data);
 }
 
-public int[ string ] read_key2slot()
+private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid key2slot_accumulator)
 {
-    int[ string ] key2slot;
-    XapianDatabase db = new_Database(xapian_path.ptr, xapian_path.length, &err);
-    if (err == 0)
-    {
-        string            lang    = "english";
-        XapianStem        stemmer = new_Stem(cast(char *)lang, lang.length, &err);
-        XapianEnquire     enquire = db.new_Enquire(&err);
-        XapianQueryParser qp      = new_QueryParser(&err);
+       string      query_string = xapian_metadata_doc_id;
 
-        qp.set_stemmer(stemmer, &err);
-        qp.set_database(db, &err);
+       XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
 
-        qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);
+       enquire.set_query(query, &err);
 
-        string      query_string = xapian_metadata_doc_id;
+       XapianMSet matches = enquire.get_mset(0, 1, &err);
 
-        XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
+//       writeln ("found =",  matches.get_matches_estimated(&err));
+//       writeln ("matches =",  matches.size (&err));
 
-        enquire.set_query(query, &err);
+       XapianMSetIterator it = matches.iterator(&err);
 
-        XapianMSet matches = enquire.get_mset(0, 1, &err);
-
-//    writeln ("found =",  matches.get_matches_estimated());
-//    writeln ("matches =",  matches.size ());
-
-        XapianMSetIterator it = matches.iterator(&err);
-
-        if (it.is_next(&err) == true)
-        {
+       if (it.is_next(&err) == true)
+       {
             //      writeln ("#15 id=[", it.get_documentid(), "]");
             XapianDocument doc = it.get_document(&err);
 
@@ -92,24 +94,13 @@ public int[ string ] read_key2slot()
             uint           *data_len;
             doc.get_data(&data_str, &data_len, &err);
             string         data = cast(immutable)data_str[ 0..(*data_len) ].dup;
+            send (key2slot_accumulator, PUT, data);
             //writeln ("data=[", data, "]");
 
-            int idx = 0;
-            foreach (record; csvReader!(Tuple!(string, int))(data))
-            {
-              //writefln("%d %s -> %d", idx, record[0], record[1]);
-                key2slot[ record[ 0 ] ] = record[ 1 ];
-                idx++;
-                //core.thread.Thread.sleep(dur!("seconds")(1));
-            }
-        }
-        //writeln("******");
+ //           key2slot = deserialize_key2slot (data);
+       }
 
-        db.close(&err);
-    }
-    writeln("slot size=", key2slot.length);
-
-    return key2slot;
+//       writeln("slot size=", key2slot.length);
 }
 
 private void printTid(string tag)
@@ -127,6 +118,7 @@ protected int get_slot(string field, ref int[ string ] key2slot)
         // create new slot
         slot              = cast(int)key2slot.length + 1;
         key2slot[ field ] = slot;
+//        send (key2slot_accumulator, PUT, data);
     }
 
     return slot;
@@ -143,7 +135,7 @@ void xapian_indexer_commiter(Tid tid)
 
 import storage.subject;
 
-void xapian_indexer(Tid tid_storage_manager)
+void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 {
     writeln("SPAWN: Xapian Indexer");
 
@@ -151,7 +143,7 @@ void xapian_indexer(Tid tid_storage_manager)
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
     string                 lang    = "russian";
-    XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);
+    XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);    
 
     bool is_exist_db = exists(xapian_path);
 
@@ -168,6 +160,11 @@ void xapian_indexer(Tid tid_storage_manager)
 
     indexer_db.commit(&err);
 
+    XapianEnquire xapian_enquire = indexer_db.new_Enquire(&err);
+	XapianQueryParser xapian_qp = new_QueryParser (&err);
+	xapian_qp.set_stemmer(stemmer, &err);
+	xapian_qp.set_database(indexer_db, &err);
+
     int   counter                         = 0;
     int   last_counter_afrer_timed_commit = 0;
     ulong last_size_key2slot              = 0;
@@ -175,7 +172,7 @@ void xapian_indexer(Tid tid_storage_manager)
     int[ string ] key2slot;
     
     if (is_exist_db == true)
-    	read_key2slot();
+    	read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
     	
     writeln ("xapian_indexer ready");
     receive((Tid tid_response_reciever)
@@ -195,7 +192,7 @@ void xapian_indexer(Tid tid_storage_manager)
                 for (int i = 0; i < 1_000_000; i++)
                     if (key2slot.length - last_size_key2slot > 0)
                     {
-                        store__key2slot(key2slot, indexer_db, indexer);
+                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
                         printf("..store__key2slot..");
                         last_size_key2slot = key2slot.length;
                     }
@@ -418,7 +415,7 @@ void xapian_indexer(Tid tid_storage_manager)
                     printf("commit index..");
 
                     if (key2slot.length > 0)
-                        store__key2slot(key2slot, indexer_db, indexer);
+                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
 
                     indexer_db.commit(&err);
                     printf("ok\n");

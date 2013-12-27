@@ -24,7 +24,7 @@ import util.utils;
 import util.turtle_parser;
 import util.json_ld.parser;
 
-void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
+void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
 {
     try
     {
@@ -49,7 +49,7 @@ void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_
 
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props, "file_reader", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+    Context context = new ThreadContext(props, "file_reader", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
 
     SysTime[string] prev_state_of_files;
 

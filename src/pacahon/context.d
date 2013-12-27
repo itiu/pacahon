@@ -41,6 +41,8 @@ interface Context
     ref string[string] get_prefix_map ();
     
     Set!string *[ string ] get_subject (string uid);
+    
+    public int[ string ] get_key2slot();
 }
 
 enum event_type

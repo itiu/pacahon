@@ -30,7 +30,7 @@ class OrgStructureTree : BusEventListener
     this(Context _thread_context)
     {
         thread_context = _thread_context;
-        vql            = new VQL();
+        vql            = new VQL(thread_context);
     }
 
     void bus_event(event_type et)

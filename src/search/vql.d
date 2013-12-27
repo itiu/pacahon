@@ -63,15 +63,17 @@ class VQL
     private XapianQueryParser xapian_qp;
     private int[ string ] key2slot;
     private string transTable1;
+    private Context context;
 
-    this()
+    this(Context _context)
     {
         Set!OI empty_set;
-        this(empty_set);
+        this(empty_set, _context);
     }
 
-    this(ref Set!OI _from_search_points)
+    this(ref Set!OI _from_search_points, Context _context)
     {
+    	context = _context;
         from_search_points = _from_search_points;
         found_sections     = new string[ 6 ];
 
@@ -83,8 +85,6 @@ class VQL
 		xapian_qp.set_stemmer(xapian_stemmer, &err);
 		xapian_qp.set_database(xapian_db, &err);
 //		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);
-
-        key2slot = read_key2slot();
 
         transTable1 = makeTrans(":()-,", "_____");
 
@@ -112,6 +112,8 @@ class VQL
 
     public int get(Ticket *ticket, string query_str, ref GraphCluster res, Context thread_context)
     {
+        key2slot = context.get_key2slot();
+    	
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
         //		writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);

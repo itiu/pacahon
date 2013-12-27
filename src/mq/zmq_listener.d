@@ -17,7 +17,7 @@ import pacahon.thread_context;
 import pacahon.server;
 import util.utils;
 
-void zmq_thread(string props_file_name, int pos_in_listener_section, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
+void zmq_thread(string props_file_name, int pos_in_listener_section, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
 {
     writeln("SPAWN: zmq listener");
     JSONValue props;
@@ -53,7 +53,7 @@ void zmq_thread(string props_file_name, int pos_in_listener_section, Tid tid_xap
     string connect_to = params.get("point", null);
     zmq_bind(responder, cast(char *)connect_to);
 
-    Context context = new ThreadContext(props, "zmq", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+    Context context = new ThreadContext(props, "zmq", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
 
     ubyte[] out_data;
     while (true)

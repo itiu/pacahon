@@ -63,7 +63,8 @@ void main(char[][] args)
         Tid tid_subject_manager = spawn(&subject_manager);
         Tid tid_acl_manager     = spawn(&acl_manager);
 
-        Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager);
+        Tid tid_key2slot_accumulator = spawn(&key2slot_accumulator);
+        Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager, tid_key2slot_accumulator);
         spawn(&xapian_indexer_commiter, tid_xapian_indexer);
         send (tid_xapian_indexer, thisTid);
         receive((bool isReady)
@@ -101,13 +102,13 @@ void main(char[][] args)
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
-                        //FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+                        //FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
                         //frt.start();
                     }
                     else if (params.get("transport", "") == "nanomsg")
                     {
-                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -120,7 +121,7 @@ void main(char[][] args)
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator,tid_key2slot_accumulator);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
@@ -182,7 +183,7 @@ void main(char[][] args)
 
                                 ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
                                                                                              props, "RABBITMQ", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager,
-                                                                                             tid_statistic_data_accumulator);
+                                                                                             tid_statistic_data_accumulator, tid_key2slot_accumulator);
 
                                 init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -548,10 +549,10 @@ class ServerThread : core.thread.Thread
 {
     ThreadContext resource;
 
-    this(void delegate() _dd, JSONValue props, string context_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
+    this(void delegate() _dd, JSONValue props, string context_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
     {
         super(_dd);
-        resource = new ThreadContext(props, context_name, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
+        resource = new ThreadContext(props, context_name, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
 
 //		resource.sw.start();
     }
