@@ -40,23 +40,26 @@ static this()
 
 class ThreadContext : Context
 {
-	private Tid tid_key2slot_accumulator;
+	private Tid tid_xapian_thread_io;
 	public int[ string ] get_key2slot()
 	{
-		send (tid_key2slot_accumulator, GET, thisTid);
-		
-		string msg = receiveOnly!(string)();
-		
+		send (tid_xapian_thread_io, CMD.GET, CNAME.KEY2SLOT, thisTid);		
+		string msg = receiveOnly!(string)();		
 	 	int[ string ] key2slot = deserialize_key2slot (msg);
 	 	return key2slot;
 	}
 	
+	public long get_last_update_time()
+	{
+		send (tid_xapian_thread_io, CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);		
+		long tm = receiveOnly!(long)();		
+	 	return tm;		
+	}	
 	
-	
-	Set!string *[ string ] get_subject (string uid)
+	public Set!string *[ string ] get_subject (string uid)
 	{
 		Set!string *[ string ] res = null;
-		send(tid_subject_manager, FOUND, uid, thisTid);	
+		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
 		receive((string bson_msg, Tid from)
 		{
            if (from == tid_subject_manager)
@@ -67,6 +70,21 @@ class ThreadContext : Context
 		
 		return res;
     }
+	
+    public string get_subject_as_bson (string uid)
+    {
+    	string res; 
+		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
+		receive((string bson_msg, Tid from)
+		{
+           if (from == tid_subject_manager)
+           {
+           		res = bson_msg;
+           }    	
+		});
+		
+		return res;    	
+    }	
 	
 	private string[string] prefix_map;	
 	ref string[string] get_prefix_map ()
@@ -142,7 +160,7 @@ class ThreadContext : Context
 //
     bool send_on_authorization(string bson_subject)
     {
-        send(tid_acl_manager, AUTHORIZE, bson_subject, thisTid);
+        send(tid_acl_manager, CMD.AUTHORIZE, bson_subject, thisTid);
         return true;
     }
 
@@ -212,14 +230,14 @@ class ThreadContext : Context
         return gateways.get(name, empty_set);
     }
 
-    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_, Tid _tid_key2slot_accumulator_)
+    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_, Tid _tid_xapian_thread_io_)
     {
         _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
         _tid_ticket_manager             = _tid_ticket_manager_;
         tid_subject_manager             = _tid_subject_manager_;
         tid_acl_manager                 = _tid_acl_manager_;
         tid_xapian_indexer 				= _tid_xapian_indexer_;
-        tid_key2slot_accumulator = _tid_key2slot_accumulator_;
+        tid_xapian_thread_io = _tid_xapian_thread_io_;
 
         _event_filters      = new GraphCluster();
         _ba2pacahon_records = new GraphCluster();
@@ -305,7 +323,7 @@ class ThreadContext : Context
         {
             string when     = null;
             int    duration = 0;
-            send(tid_ticket_manager, FOUND, ticket_id, thisTid);
+            send(tid_ticket_manager, CMD.FOUND, ticket_id, thisTid);
             string ticket_str = receiveOnly!(string);
 
             if (ticket_str !is null && ticket_str.length > 128)

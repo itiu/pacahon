@@ -41,8 +41,10 @@ interface Context
     ref string[string] get_prefix_map ();
     
     Set!string *[ string ] get_subject (string uid);
+    string get_subject_as_bson (string uid);
     
     public int[ string ] get_key2slot();
+    public long get_last_update_time();
 }
 
 enum event_type

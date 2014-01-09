@@ -43,16 +43,16 @@ void statistic_data_accumulator()
     while (true)
     {
         receive(
-                (byte cmd, byte idx, int delta)
+                (CMD cmd, CNAME idx, int delta)
                 {
-                    if (cmd == PUT)
+                    if (cmd == CMD.PUT)
                     {
                         stat[ idx ] += delta;
                     }
                 },
-                (byte cmd, Tid tid_sender)
+                (CMD cmd, Tid tid_sender)
                 {
-                    if (cmd == GET)
+                    if (cmd == CMD.GET)
                     {
                         send(tid_sender, cast(immutable)stat.dup);
                     }
@@ -74,12 +74,12 @@ void print_statistic(Tid _statistic_data_accumulator)
     {
         sleep_time = 1;
 
-        send(_statistic_data_accumulator, GET, thisTid);
+        send(_statistic_data_accumulator, CMD.GET, thisTid);
         const_long_array stat = receiveOnly!(const_long_array);
 
-        long             msg_count   = stat[ COUNT_MESSAGE ];
-        long             cmd_count   = stat[ COUNT_COMMAND ];
-        long             worked_time = stat[ WORKED_TIME ];
+        long             msg_count   = stat[ CNAME.COUNT_MESSAGE ];
+        long             cmd_count   = stat[ CNAME.COUNT_COMMAND ];
+        long             worked_time = stat[ CNAME.WORKED_TIME ];
 
         long             delta_count = msg_count - prev_count;
         prev_count = msg_count;

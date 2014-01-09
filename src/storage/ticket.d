@@ -64,9 +64,9 @@ void ticket_manager()
     while (true)
     {
         string res = "?";
-        receive((byte cmd, string msg, Tid tid_sender)
+        receive((CMD cmd, string msg, Tid tid_sender)
                 {
-                    if (cmd == STORE)
+                    if (cmd == CMD.STORE)
                     {
                         Subject ticket = Subject.fromBSON(msg);
 
@@ -89,7 +89,7 @@ void ticket_manager()
                         rc = mdb_txn_commit(txn);
                         rc = mdb_txn_begin(env, null, 0, &txn);
                     }
-                    else if (cmd == FOUND)
+                    else if (cmd == CMD.FOUND)
                     {
                         writeln("%1 ", msg);
                         MDB_txn *txn_r;

@@ -63,8 +63,8 @@ void main(char[][] args)
         Tid tid_subject_manager = spawn(&subject_manager);
         Tid tid_acl_manager     = spawn(&acl_manager);
 
-        Tid tid_key2slot_accumulator = spawn(&key2slot_accumulator);
-        Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager, tid_key2slot_accumulator);
+        Tid tid_xapian_thread_io = spawn(&xapian_thread_io);
+        Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager, tid_xapian_thread_io);
         spawn(&xapian_indexer_commiter, tid_xapian_indexer);
         send (tid_xapian_indexer, thisTid);
         receive((bool isReady)
@@ -102,13 +102,13 @@ void main(char[][] args)
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
                         //FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
                         //frt.start();
                     }
                     else if (params.get("transport", "") == "nanomsg")
                     {
-                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -121,7 +121,7 @@ void main(char[][] args)
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator,tid_key2slot_accumulator);
+                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
@@ -183,7 +183,7 @@ void main(char[][] args)
 
                                 ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
                                                                                              props, "RABBITMQ", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager,
-                                                                                             tid_statistic_data_accumulator, tid_key2slot_accumulator);
+                                                                                             tid_statistic_data_accumulator, tid_xapian_thread_io);
 
                                 init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -459,7 +459,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
                 }
 
                 Predicate command_name = command.getPredicate(msg__command);
-                send(context.tid_statistic_data_accumulator, PUT, COUNT_COMMAND, 1);
+                send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.COUNT_COMMAND, 1);
                 sw_c.stop();
                 long t = cast(long)sw_c.peek().usecs;
 
@@ -522,11 +522,11 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
             io_msg.trace_io(false, cast(byte *)out_data, out_data.length);
     }
 
-    send(context.tid_statistic_data_accumulator, PUT, COUNT_MESSAGE, 1);
+    send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.COUNT_MESSAGE, 1);
 
     sw.stop();
     int t = cast(int)sw.peek().usecs;
-    send(context.tid_statistic_data_accumulator, PUT, WORKED_TIME, t);
+    send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.WORKED_TIME, t);
 
     if (trace_msg[ 69 ] == 1)
         log.trace("messages count: %d, total time: %d [µs]", context.count_message, t);

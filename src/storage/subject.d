@@ -13,6 +13,7 @@ private
     import pacahon.graph;
     import pacahon.context;
     import pacahon.define;
+    import search.vel;
 }
 
 logger log;
@@ -22,7 +23,8 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-void subject_manager()
+
+public void subject_manager()
 {
     writeln("SPAWN: Subject manager");
 
@@ -79,13 +81,13 @@ void subject_manager()
     while (true)
     {
         string res = "";
-        receive((byte cmd, string msg, Tid tid_response_reciever)
+        receive((CMD cmd, string msg, Tid tid_response_reciever)
                 {
                     if (rrc == 0)
                     {
                         try
                         {
-                            if (cmd == STORE)
+                            if (cmd == CMD.STORE)
                             {
                                 Subject graph = Subject.fromBSON(msg);
 
@@ -119,7 +121,7 @@ void subject_manager()
                                 if (rc != 0)
                                     writeln("#3 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
                             }
-                            else if (cmd == FOUND)
+                            else if (cmd == CMD.FOUND)
                             {
 //					writeln ("%1 ", msg);
 //					MDB_txn *txn_r;
@@ -167,4 +169,38 @@ void subject_manager()
                     }
                 });
     }
+}
+
+public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level, ref GraphCluster res, Context context)
+{
+    string      dummy;
+    double      rd, ld;
+
+    if (tta.op == "==")
+    {
+        string ls = transform_and_execute_vql_to_lmdb(tta.L, tta.op, dummy, dummy, ld, level + 1, res, context);
+        string rs = transform_and_execute_vql_to_lmdb(tta.R, tta.op, dummy, dummy, rd, level + 1, res, context);
+//       	writeln ("ls=", ls);
+//       	writeln ("rs=", rs);
+       	if (ls == "@")
+       	{
+       		string rr = context.get_subject_as_bson (rs);
+       		Subject ss = Subject.fromBSON (rr);
+       		res.addSubject (ss);
+       	}
+    }
+    else if (tta.op == "||")
+    {
+        if (tta.R !is null)
+            transform_and_execute_vql_to_lmdb(tta.R, tta.op, dummy, dummy, rd, level + 1, res, context);
+
+        if (tta.L !is null)
+            transform_and_execute_vql_to_lmdb(tta.L, tta.op, dummy, dummy, ld, level + 1, res, context);
+    }
+    else
+    {
+//		writeln ("#5 tta.op=", tta.op);
+        return tta.op;
+    }
+    return null;
 }

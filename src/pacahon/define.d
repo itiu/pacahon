@@ -3,7 +3,7 @@ module pacahon.define;
 import util.container;
 import std.concurrency;
 
-enum : byte
+enum CMD : byte
 {
     STORE     = 1,
     PUT       = 1,
@@ -13,11 +13,13 @@ enum : byte
     AUTHORIZE = 8
 }
 
-enum : byte
+enum CNAME : byte
 {
     COUNT_MESSAGE = 0,
     COUNT_COMMAND = 1,
-    WORKED_TIME   = 2
+    WORKED_TIME   = 2,
+	LAST_UPDATE_TIME = 3,
+	KEY2SLOT = 4
 }
 
 alias immutable(int)[]  const_int_array;

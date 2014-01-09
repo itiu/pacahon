@@ -25,34 +25,52 @@ private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfT
 
 byte err;
 
-public void key2slot_accumulator()
+public void xapian_thread_io()
 {
 	string key2slot_str;
+	long last_update_time;	
 	
-    writeln("SPAWN: key2slot_accumulator");
+    writeln("SPAWN: xapian_thread_io");    
+ 	last_update_time = Clock.currTime().stdTime ();          	
+
     while (true)
     {
         receive(
-                (byte cmd, string _key2slot_str)
+                (CMD cmd, CNAME cname, string _key2slot_str)
                 {
-                    if (cmd == PUT)
-                    {
-                    	writeln ("PUT:\n", _key2slot_str);
-                        key2slot_str = _key2slot_str;
+                    if (cmd == CMD.PUT)
+                    {	
+                    	 if (cname == CNAME.KEY2SLOT)
+                    	 {
+                    	 	writeln ("PUT:\n", _key2slot_str);
+                    	 	key2slot_str = _key2slot_str;
+                    	 }
+                    	 else if (cname == CNAME.LAST_UPDATE_TIME)
+                    	 {
+                    	 	last_update_time = Clock.currTime().stdTime ();          	
+                    	 }
                     }
                 },
-                (byte cmd, Tid tid_sender)
+                (CMD cmd, CNAME cname, Tid tid_sender)
                 {
-                    if (cmd == GET)
+                    if (cmd == CMD.GET)
                     {
-//                    	writeln ("GET:\n", key2slot_str);
-                        send(tid_sender, key2slot_str);
+                    	 if (cname == CNAME.KEY2SLOT)
+                    	 {
+//                    		writeln ("GET:\n", key2slot_str);
+                        	send(tid_sender, key2slot_str);
+                         }
+                    	 else if (cname == CNAME.LAST_UPDATE_TIME)
+                    	 {
+                        	send(tid_sender, last_update_time);                    	 	
+                    	 }
                     }
                 });
+                
     }
 }
 
-private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer, Tid key2slot_accumulator)
+private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer, Tid tid_xapian_thread_io)
 {
 //	writeln ("#1 store__key2slot");
     string         data = serialize_key2slot (key2slot);
@@ -67,10 +85,10 @@ private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatab
     indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
     destroy_Document(doc);
     
-    send (key2slot_accumulator, PUT, data);
+    send (tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
 }
 
-private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid key2slot_accumulator)
+private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
 {
        string      query_string = xapian_metadata_doc_id;
 
@@ -94,7 +112,7 @@ private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, Xapi
             uint           *data_len;
             doc.get_data(&data_str, &data_len, &err);
             string         data = cast(immutable)data_str[ 0..(*data_len) ].dup;
-            send (key2slot_accumulator, PUT, data);
+            send (tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
             //writeln ("data=[", data, "]");
 
  //           key2slot = deserialize_key2slot (data);
@@ -189,18 +207,18 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
             if (counter - last_counter_afrer_timed_commit > 0)
             {
                 printf("counter: %d, timer: commit index..", counter);
-                for (int i = 0; i < 1_000_000; i++)
-                    if (key2slot.length - last_size_key2slot > 0)
-                    {
+                if (key2slot.length - last_size_key2slot > 0)
+                {
                         store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
                         printf("..store__key2slot..");
                         last_size_key2slot = key2slot.length;
-                    }
+                }
 
                 indexer_db.commit(&err);
                 printf("ok\n");
-//				indexer_db.close ();
-//				indexer_db = new_WritableDatabase(xapian_path.ptr, xapian_path.length, DB_CREATE_OR_OPEN);
+                
+				//indexer_db.close (&err);
+				//indexer_db = new_WritableDatabase(xapian_path.ptr, xapian_path.length, DB_CREATE_OR_OPEN, &err);
                 last_counter_afrer_timed_commit = counter;
             }
         }
@@ -401,7 +419,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 string doc_data = uuid;
                 doc.set_data(doc_data.ptr, doc_data.length, &err);
 
-                send(tid_storage_manager, STORE, ss.toBSON(), thisTid);
+                send(tid_storage_manager, CMD.STORE, ss.toBSON(), thisTid);
 
                 indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
 
@@ -491,7 +509,8 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
         string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
         //writeln ("#2 % query_l=", query_l);
         //writeln ("#2 % query_r=", query_r);
-       	//writeln ("rs=", rs);
+//       	writeln ("ls=", ls);
+//       	writeln ("rs=", rs);
         if (query_l is null && query_r is null)
         {
         	string xtr;
@@ -505,26 +524,35 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
             		string query_str = to_lower_and_replace_delimeters(rs);
             		xtr = "X" ~ text(slot) ~ "X";
         			query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr, xtr.length, &err);            		
+        			if (err != 0)
+        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
 //        			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);            		
             	}
             	else
             	{
             		xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
             		query = new_Query(cast(char *)xtr, xtr.length, &err);            		
+        			if (err != 0)
+        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('x'=x)", err);
             	}
             	
             }
         	else
         	{
         		xtr = to_lower_and_replace_delimeters(rs);
+//        		writeln ("xtr=", xtr);
 
             	if (indexOf (xtr, '*') > 0 && xtr.length > 3)
             	{
         			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
+        			if (err != 0)
+        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('*'=*)", err);
         		}
             	else
             	{
         			query = qp.parse_query(cast(char *)xtr, xtr.length, &err);            		
+        			if (err != 0)
+        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('*'=x)", err);
             	}
             		
         	}	

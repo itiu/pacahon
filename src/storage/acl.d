@@ -96,13 +96,13 @@ void acl_manager()
     while (true)
     {
         string res = "";
-        receive((byte cmd, string msg, Tid tid_sender)
+        receive((CMD cmd, string msg, Tid tid_sender)
                 {
                     if (rrc == 0)
                     {
                         try
                         {
-                            if (cmd == AUTHORIZE)
+                            if (cmd == CMD.AUTHORIZE)
                             {
 //					writeln ("is AUTHORIZE");
                                 Set!string *[ string ] sss = get_subject_from_BSON(msg, TYPE);
@@ -110,7 +110,7 @@ void acl_manager()
 
                                 send(tid_sender, msg, thisTid);
                             }
-                            else if (cmd == STORE)
+                            else if (cmd == CMD.STORE)
                             {
                                 Subject graph = Subject.fromBSON(msg);
 
@@ -139,7 +139,7 @@ void acl_manager()
                                 rc = mdb_txn_commit(txn);
                                 rc = mdb_txn_begin(env, null, 0, &txn);
                             }
-                            else if (cmd == FOUND)
+                            else if (cmd == CMD.FOUND)
                             {
 //					writeln ("%1 ", msg);
 //					MDB_txn *txn_r;

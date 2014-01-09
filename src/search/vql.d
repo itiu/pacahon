@@ -28,6 +28,8 @@ private
 
     import search.vel;
     import search.xapian;
+    
+    import storage.subject;
     //import az.condition;
 }
 
@@ -48,6 +50,7 @@ class VQL
     const int              SOURCE    = 5;
 
     const int              XAPIAN = 2;
+    const int              LMDB = 3;
 
     private string[]       sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
     private bool[]         section_is_found = [ false, false, false, false, false, false ];
@@ -77,14 +80,7 @@ class VQL
         from_search_points = _from_search_points;
         found_sections     = new string[ 6 ];
 
-        byte err;
-		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
-        xapian_db = new_Database(xapian_path.ptr, xapian_path.length, &err);
-//		xapian_enquire = xapian_db.new_Enquire(&err);
-		xapian_qp = new_QueryParser (&err);
-		xapian_qp.set_stemmer(xapian_stemmer, &err);
-		xapian_qp.set_database(xapian_db, &err);
-//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);
+        open_db ();
 
         transTable1 = makeTrans(":()-,", "_____");
 
@@ -110,12 +106,57 @@ class VQL
 //		}
     }
 
-    public int get(Ticket *ticket, string query_str, ref GraphCluster res, Context thread_context)
+    private void open_db ()
+    {
+        byte err;
+		
+        xapian_db = new_Database(xapian_path.ptr, xapian_path.length, &err);
+        if (err != 0)
+        	writeln ("VQL:new_Database:err", err);
+
+		xapian_qp = new_QueryParser (&err);
+        if (err != 0)
+        	writeln ("VQL:new_QueryParser:err", err);
+        	
+		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
+		xapian_qp.set_stemmer(xapian_stemmer, &err);
+        if (err != 0)
+        	writeln ("VQL:set_stemmer:err", err);
+        	
+		xapian_qp.set_database(xapian_db, &err);
+        if (err != 0)
+        	writeln ("VQL:set_database:err", err);
+//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);    	
+    }
+    
+    private void close_db ()
+    {
+    	xapian_db.close (&err);
+    }
+
+    static long refresh_db_timeout = 10000000 * 20;  
+    long prev_update_time;
+    
+    //Clock.currTime().stdTime ()
+
+    public int get(Ticket *ticket, string query_str, ref GraphCluster res, Context context)
     {
         key2slot = context.get_key2slot();
+        long last_update_time = context.get_last_update_time();
+        if (last_update_time - prev_update_time > refresh_db_timeout)
+        {
+        	writeln ("REOPEN");
+        	close_db ();
+        	open_db ();
+        }
+//    	writeln ("last_update_time=", last_update_time);
+//    	writeln ("prev_update_time=", prev_update_time);
+    	prev_update_time = last_update_time;
     	
+    	//writeln ("key2slot=", key2slot);
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
+        
         //		writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
         //		writeln ("query_str=", query_str);
         //		StopWatch sw;
@@ -182,13 +223,20 @@ class VQL
 
         if (found_sections[ SOURCE ] == "xapian")
             type_source = XAPIAN;
+        else if (found_sections[ SOURCE ] == "lmdb")
+            type_source = LMDB;
 
-        if (type_source == XAPIAN)
+        string      dummy;
+        double      d_dummy;
+
+        if (type_source == LMDB)
+        {
+         	transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
+        }
+        else if (type_source == XAPIAN)
         {
 			//writeln ("SEARCH FROM XAPIAN");
             XapianQuery query;
-            string      dummy;
-            double      d_dummy;
 
             transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
@@ -228,11 +276,11 @@ class VQL
                 int state = -1;
                 while (state == -1)
                 {
-                    state = execute_xapian_query(query, sorter, authorize, fields, res, thread_context);
+                    state = execute_xapian_query(query, sorter, authorize, fields, res, context);
                     if (state == -1)
                     {
-                        writeln("REOPEN");
-                        xapian_db      = new_Database(xapian_path.ptr, xapian_path.length, &err);
+                    	close_db ();
+                    	open_db ();
                         xapian_enquire = xapian_db.new_Enquire(&err);
                     }
                 }
@@ -355,7 +403,7 @@ class VQL
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
 				//writeln (subject_str);
-                send(tid_subject_manager, FOUND, subject_str, thisTid);
+                send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
 
                 it.next(&err);
                 read_count++;
@@ -409,7 +457,7 @@ class VQL
                 byte vv = hash_of_subjects[ key ];
                 if (vv == 2)
                 {
-                    send(tid_subject_manager, FOUND, key, thisTid);
+                    send(tid_subject_manager, CMD.FOUND, key, thisTid);
                     count_inner++;
                 }
             }
