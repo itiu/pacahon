@@ -6,14 +6,15 @@ private
     import std.concurrency;
     import std.file;
 
+    import bind.lmdb_header;
+
     import util.logger;
     import util.utils;
+    import util.graph;
+    import util.container;
 
-    import bind.lmdb_header;
-    import pacahon.graph;
     import pacahon.context;
     import pacahon.define;
-    import util.container;
 }
 
 logger log;
@@ -104,9 +105,9 @@ void acl_manager()
                         {
                             if (cmd == CMD.AUTHORIZE)
                             {
-//					writeln ("is AUTHORIZE");
+					//writeln ("is AUTHORIZE msg=[", msg, "]");
                                 Set!string *[ string ] sss = get_subject_from_BSON(msg, TYPE);
-//					print_2 (sss);
+					//print_2 (sss);
 
                                 send(tid_sender, msg, thisTid);
                             }

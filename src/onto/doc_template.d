@@ -1,8 +1,10 @@
 module onto.doc_template;
 
 private import std.stdio;
-private import pacahon.graph;
+
 private import pacahon.know_predicates;
+private import util.utils; 
+private import util.graph;
 
 class DocTemplate
 {

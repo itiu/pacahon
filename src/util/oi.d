@@ -2,14 +2,14 @@ module util.oi;
 
 private import std.json;
 private import std.stdio;
-import std.concurrency;
-import std.conv;
+private import std.concurrency;
+private import std.conv;
 
 private import mq.mq_client;
 private import mq.rabbitmq_client;
-private import util.logger;
 
-private import pacahon.graph;
+private import util.logger;
+private import util.graph;
 
 import std.datetime;
 

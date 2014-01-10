@@ -16,13 +16,13 @@ private
     import util.logger;
     import util.oi : OI;
     import util.utils;
+    import util.graph;
 
     import storage.ticket;
     import bind.xapian_d_header;
     import onto.doc_template;
 
     import pacahon.context;
-    import pacahon.graph;
 //	import pacahon.command.event_filter;
     import pacahon.know_predicates;
     import pacahon.define;

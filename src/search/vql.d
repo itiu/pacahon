@@ -18,10 +18,10 @@ private
     import util.oi;
     import util.logger;
     import util.utils;
+    import util.graph;
 
     import bind.xapian_d_header;
 
-    import pacahon.graph;
     import pacahon.context;
     import pacahon.define;
     import pacahon.know_predicates;
@@ -402,7 +402,7 @@ class VQL
                 uint   *data_len;
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
-				//writeln (subject_str);
+				writeln (subject_str);
                 send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
 
                 it.next(&err);
@@ -425,8 +425,11 @@ class VQL
                             }
                             else
                             {
+                                //writeln ("!!!", bson_msg);
                                 if (bson_msg.length > 16)
                                 {
+                                writeln ("bson 2 json:", BSON_2_json (bson_msg));
+                                	
                                     Set!string *[ string ] sss = get_subject_from_BSON(bson_msg, LINKS);
 
                                     if (sss.length > 0)
@@ -468,7 +471,6 @@ class VQL
                         {
                             if (bson_msg.length > 16)
                             {
-                                //writeln ("!!!", bson_msg);
                                 // отправить в исходящий поток
                             }
                         });

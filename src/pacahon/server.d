@@ -26,9 +26,9 @@ private
     import util.turtle_parser;
     import util.utils;
     import util.oi;
+    import util.graph;
 
     import pacahon.context;
-    import pacahon.graph;
     import pacahon.multiplexor;
     import pacahon.know_predicates;
     import pacahon.log_msg;

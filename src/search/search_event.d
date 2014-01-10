@@ -7,8 +7,9 @@ private import util.container;
 private import util.oi;
 private import util.logger;
 private import util.utils;
+private import util.graph;
+
 private import pacahon.know_predicates;
-private import pacahon.graph;
 private import pacahon.context;
 private import onto.doc_template;
 

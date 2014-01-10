@@ -4,10 +4,10 @@ private import std.concurrency;
 private import std.datetime;
 
 private import util.container;
-private import pacahon.graph;
+private import util.graph;
+private import util.oi;
 private import search.vel;
 private import onto.doc_template;
-private import util.oi;
 
 interface Context
 {

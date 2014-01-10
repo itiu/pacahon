@@ -6,11 +6,12 @@ private
     import std.concurrency;
     import std.file;
 
+    import bind.lmdb_header;
+
     import util.logger;
     import util.utils;
+    import util.graph;
 
-    import bind.lmdb_header;
-    import pacahon.graph;
     import pacahon.context;
     import pacahon.define;
     import search.vel;
@@ -149,7 +150,7 @@ public void subject_manager()
                                         res = "";
 //                      writeln ("#1 rc:", rc, ", [", msg, "] , ", fromStringz (mdb_strerror (rc)));
                                     }
-                                    //	writeln ("%%4");
+                                    	//writeln ("%%4 msg=", msg , ", res=", res);
 
                                     send(tid_response_reciever, res, thisTid);
 //					mdb_txn_abort(txn_r);

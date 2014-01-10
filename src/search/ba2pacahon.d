@@ -9,11 +9,11 @@ private import std.string;
 private import std.outbuffer;
 
 private import pacahon.know_predicates;
-private import pacahon.graph;
 private import pacahon.context;
 private import pacahon.command_io;
 //private import pacahon.json_ld.parser;
 
+private import util.graph;
 private import util.utils;
 private import util.logger;
 

@@ -13,16 +13,16 @@ import std.file;
 import std.outbuffer;
 import std.string;
 
-import pacahon.context;
-import pacahon.thread_context;
-import pacahon.server;
-import pacahon.graph;
-import pacahon.define;
-import pacahon.know_predicates;
 import util.container;
+import util.graph;
 import util.utils;
 import util.turtle_parser;
 import util.json_ld.parser;
+import pacahon.context;
+import pacahon.thread_context;
+import pacahon.server;
+import pacahon.define;
+import pacahon.know_predicates;
 
 void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
 {

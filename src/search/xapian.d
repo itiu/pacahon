@@ -13,10 +13,10 @@ import std.file;
 
 import bind.xapian_d_header;
 import util.utils;
+import util.graph;
 
 import pacahon.define;
 import pacahon.know_predicates;
-import pacahon.graph;
 import pacahon.context;
 import search.vel;
 
@@ -414,10 +414,9 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 string data = all_text.toString;
                 indexer.index_text(data.ptr, data.length, &err);
 
-                string uuid = ss.subject;
+                string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);
                 doc.add_boolean_term(uuid.ptr, uuid.length, &err);
-                string doc_data = uuid;
-                doc.set_data(doc_data.ptr, doc_data.length, &err);
+                doc.set_data(ss.subject.ptr, ss.subject.length, &err);
 
                 send(tid_storage_manager, CMD.STORE, ss.toBSON(), thisTid);
 
@@ -515,7 +514,17 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
         {
         	string xtr;
         	if (ls != "*")
-        	{            	
+        	{
+        		if (ls == "@")
+        		{
+        		string uid = "uid_" ~ to_lower_and_replace_delimeters(rs);
+        		query = qp.parse_query(cast(char *)uid, uid.length, &err);
+       			if (err != 0)
+       				writeln ("XAPIAN:transform_vql_to_xapian:parse_query(@)", err);
+       			//writeln ("uid=", uid);
+        		}
+        		else
+        		{
            		int slot = get_slot(ls, key2slot);
            		//writeln ("slot=", slot);
             	if (indexOf (rs, '*') > 0 && rs.length > 3)
@@ -535,10 +544,11 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
         			if (err != 0)
         				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('x'=x)", err);
             	}
+            	}
             	
             }
         	else
-        	{
+        	{	
         		xtr = to_lower_and_replace_delimeters(rs);
 //        		writeln ("xtr=", xtr);
 

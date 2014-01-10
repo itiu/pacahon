@@ -1,4 +1,4 @@
-module pacahon.graph;
+module util.graph;
 
 /*
  * набор структур и методов для работы с фактами как с графом
@@ -41,13 +41,6 @@ enum OBJECT_TYPE : byte
 //	DOUBLE = 2,
 //	DATETIME = 3
 //}
-
-enum LANG : byte
-{
-    NONE = 0,
-    RU   = 1,
-    EN   = 2
-}
 
 enum STRATEGY : byte
 {

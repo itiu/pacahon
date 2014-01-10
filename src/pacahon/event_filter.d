@@ -16,8 +16,9 @@ private import util.container;
 private import util.logger;
 private import util.utils;
 private import util.oi;
+private import util.graph;
+
 private import pacahon.know_predicates;
-private import pacahon.graph;
 private import pacahon.context;
 
 logger log;

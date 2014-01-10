@@ -3,10 +3,12 @@ module onto.docs_base;
 private import std.stdio;
 private import std.datetime;
 
-private import pacahon.know_predicates;
-private import pacahon.graph;
-private import pacahon.context;
 private import util.logger;
+private import util.graph;
+
+private import pacahon.know_predicates;
+private import pacahon.context;
+
 private import onto.rdf_base;
 private import onto.doc_template;
 

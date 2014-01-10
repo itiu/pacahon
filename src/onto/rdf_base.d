@@ -1,9 +1,9 @@
 module onto.rdf_base;
 
 private import std.stdio;
-private import pacahon.know_predicates;
-private import pacahon.graph;
 private import std.uuid;
+private import pacahon.know_predicates;
+private import util.graph;
 
 Subject create_reifed_info(string ss, string pp, string oo)
 {
