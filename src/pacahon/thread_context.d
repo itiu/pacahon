@@ -17,6 +17,7 @@ private
     import util.oi : OI;
     import util.utils;
     import util.graph;
+    import util.xson_utils;
 
     import storage.ticket;
     import bind.xapian_d_header;

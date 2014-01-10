@@ -19,6 +19,7 @@ private
     import util.logger;
     import util.utils;
     import util.graph;
+    import util.xson_utils;
 
     import bind.xapian_d_header;
 

@@ -25,6 +25,7 @@ src/util/json_ld_parser.d
 src/util/oi.d 
 src/util/load_info.d 
 src/util/graph.d 
+src/util/xson_utils.d
 
 src/storage/ticket.d
 src/storage/subject.d
