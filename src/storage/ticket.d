@@ -11,6 +11,7 @@ private
     import util.logger;
     import util.utils;
     import util.graph;
+    import util.cbor;    
 
     import pacahon.context;
     import pacahon.define;
@@ -69,7 +70,7 @@ void ticket_manager()
                 {
                     if (cmd == CMD.STORE)
                     {
-                        Subject ticket = Subject.fromBSON(msg);
+                        Subject ticket = decode_cbor(msg);
 
                         MDB_val key;
                         key.mv_data = cast(char *)ticket.subject;

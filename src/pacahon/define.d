@@ -24,7 +24,6 @@ enum CNAME : byte
 
 alias immutable(int)[]  const_int_array;
 alias immutable(long)[] const_long_array;
-alias Set!string *[ string ] tSubject; // ассоциативный массив содержащий в качестве value указатель на списки строк
 alias Tid[string] Tid2Name;
 alias immutable Tid2Name Tids;
 

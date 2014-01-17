@@ -32,6 +32,19 @@ struct Set(T, uint INITSIZE=64)
 		data[size++] = item;
 	}
 
+  int opApply(int delegate(ref T) dg)
+  {
+    int result = 0;
+
+    for (int i = 0; i < data.length; i++)
+    {
+      result = dg(data[i]);
+      if (result)
+        break;
+    }
+    return result;
+  }
+
 	void remove(size_t index)
 	{
 		assert(index < size);
@@ -46,6 +59,11 @@ struct Set(T, uint INITSIZE=64)
 	@property T[] items()
 	{
 		return data[0..size];
+	}
+	
+	@property size_t length()
+	{
+		return size;
 	}
 }
 

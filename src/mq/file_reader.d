@@ -15,9 +15,11 @@ import std.string;
 
 import util.container;
 import util.graph;
+import util.cbor;
 import util.utils;
 import util.turtle_parser;
 import util.json_ld.parser;
+
 import pacahon.context;
 import pacahon.thread_context;
 import pacahon.server;
@@ -107,14 +109,14 @@ private void prepare_file (string file_name, Context context)
 							
 							// проверить какая версия данной отологии в хранилище
 							writeln ("look in storage[", ss.subject, "]");
-							tSubject sss = context.get_subject (ss.subject);
+							Subject sss = context.get_subject (ss.subject);
 							
 							if (sss !is null)
 							{
-							Set!string* aaa = sss.get (owl__versionInfo, null);
-							if (aaa.size > 0)
+							Predicate aaa = sss.getPredicate (owl__versionInfo);
+							if (aaa !is null)
 							{
-								if (aaa.items()[0] == version_onto)
+								if (aaa.isExistLiteral (version_onto))
 								{
 									writeln ("This version [", version_onto, "] onto[", prefix, "] already exist");
 								}
@@ -149,19 +151,19 @@ private void prepare_file (string file_name, Context context)
             				if (for_load.get(prefix, false) == true)
             				{
             					writeln (ss.subject, " 1 store! ");
-            					string ss_as_bson = ss.toBSON();
-            					send(context.get_tid_search_manager, ss_as_bson);
+            					string ss_as_cbor = encode_cbor (ss);
+            					send(context.get_tid_search_manager, ss_as_cbor);
             				}
             			}
             		}
             		else if (for_load.get (ss.subject, false) == true)
             		{
             					writeln (ss.subject, " 2 store! ");
-            					string ss_as_bson = ss.toBSON();
-            					send(context.get_tid_search_manager, ss_as_bson);
+            					string ss_as_cbor = encode_cbor (ss);
+            					send(context.get_tid_search_manager, ss_as_cbor);
             		}
 
-						//get .get_tid_subject_manager, STORE, ss_as_bson, thisTid);
+					//send(context.get_tid_subject_manager, STORE, ss_as_cbor, thisTid);
             	}
 				send(context.get_tid_search_manager, "COMMIT");
             	//put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)            	

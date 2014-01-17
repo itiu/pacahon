@@ -11,6 +11,7 @@ private
     import util.logger;
     import util.utils;
     import util.graph;
+    import util.cbor;
 
     import pacahon.context;
     import pacahon.define;
@@ -90,9 +91,9 @@ public void subject_manager()
                         {
                             if (cmd == CMD.STORE)
                             {
-                                Subject graph = Subject.fromBSON(msg);
+                                Subject graph = decode_cbor(msg);
 
-//					writeln ("#1 graph.subject:", graph.subject);
+					//writeln ("#1 graph.subject:", graph.subject);
                                 MDB_val key;
                                 key.mv_data = cast(char *)graph.subject;
                                 key.mv_size = graph.subject.length;
@@ -185,8 +186,8 @@ public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string
 //       	writeln ("rs=", rs);
        	if (ls == "@")
        	{
-       		string rr = context.get_subject_as_bson (rs);
-       		Subject ss = Subject.fromBSON (rr);
+       		string rr = context.get_subject_as_cbor (rs);
+       		Subject ss = decode_cbor (rr);
        		res.addSubject (ss);
        	}
     }

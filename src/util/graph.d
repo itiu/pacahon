@@ -1,7 +1,7 @@
 module util.graph;
 
 /*
- * набор структур и методов для работы с фактами как с графом
+ * набор структур и методов для работы с фактами
  *
  * модель:
  *
@@ -14,7 +14,6 @@ module util.graph;
  * - сборка графа из фактов или их частей
  * - навигация по графу
  * - серилизации графа в строку
- * - серилизации графа в BSON
  */
 
 private import std.c.string;
@@ -23,8 +22,6 @@ private import std.outbuffer;
 private import std.conv;
 private import std.stdio;
 private import util.utils;
-import util.xson_utils;
-
 
 private import pacahon.know_predicates;
 
@@ -222,6 +219,25 @@ final class Subject
         return _count_edges;
     }
 
+    short length()
+    {
+        return _count_edges;
+    }
+
+    int opApply(int delegate(ref Predicate) dg)
+    {
+    	int result = 0;
+
+    	foreach (val; edges[ 0 .. _count_edges ])
+    	{
+    		result = dg(val);
+    		if (result)
+    			break;
+    	}
+
+    	return result;
+    }
+  
     Predicate[] getPredicates()
     {
         return edges[ 0 .. _count_edges ];
@@ -642,155 +658,6 @@ final class Subject
         return array;
     }
 
-    string toBSON()
-    {
-        OutBuffer outbuff = new OutBuffer();
-
-        toBSON(outbuff);
-        return outbuff.toString;        //.toBytes;
-    }
-
-    void toBSON(ref OutBuffer outbuff, bool is_reification = false)
-    {
-        int start_pos = cast(int)outbuff.offset;
-
-        outbuff.write("\0\0\0\0");
-        outbuff.write(cast(byte)0x2);
-        outbuff.write("@");
-        outbuff.write(cast(byte)0);
-        outbuff.write("\0\0\0\0");
-//		writeln (subject, ":", cast(void*)outbuff);
-        int_to_buff(outbuff.data, cast(int)outbuff.offset - 4, cast(int)subject.length);
-        outbuff.write(subject);
-        outbuff.write(cast(byte)0);
-
-        for (int i = 0; i < _count_edges; i++)
-        {
-            if ((is_reification == true) && (edges[ i ].predicate == rdf__predicate || edges[ i ].predicate == rdf__subject || edges[ i ].predicate == rdf__object))
-                continue;
-
-            edges[ i ].toBSON(outbuff);
-        }
-//		writeln (subject, ":", cast(void*)outbuff);
-//		writeln (outbuff.data);
-        int_to_buff(outbuff.data, start_pos, cast(int)(outbuff.offset - start_pos - 4));
-        //writeln ("TO BSON ", subject);
-        outbuff.write(cast(byte)0);
-    }
-
-    private static int prepare_bson_element(string bson, Subject subject, int pos, Predicate pp)
-    {
-//				writeln ("fromBSON #1 bson.len=", bson.length);
-        Objectz oo;
-
-        while (pos < bson.length)
-        {
-            byte type = bson[ pos ];
-//				writeln ("fromBSON:type", type);
-            pos++;
-
-            if (type == 0x02 || type == 0x03 || type == 0x04)
-            {
-                int bp = pos;
-                while (bson[ pos ] != 0)
-                    pos++;
-
-                string key = bson[ bp..pos ];
-                //writeln ("key=",bson[bp..pos]);
-                pos++;
-
-                bp = pos;
-                int len = int_from_buff(bson, pos);
-                //writeln ("LEN:", len);
-
-                if (len > bson.length)
-                {
-                    writeln("!@!#!@#!@%#$@!&% len > bson.length, len=", len, ", bson.length=", bson.length, "\n", bson);
-                }
-
-
-                if (type == 0x03)
-                {
-//					    writeln ("*1:key=", key);
-                    pos += 4;
-
-                    Subject inner = new Subject();
-                    //writeln ("		!!!!!!!!! read subject of metadata, len=", len, ", pos=", pos, ", bson.len=", bson.length);
-                    pos += prepare_bson_element(bson[ pos..pos + len ], inner, 4, null);
-                    //writeln ("		!!!!!!!! ok, len=", len);
-                    if (key == "M")
-                    {
-                        if (pp !is null)
-                            pp.metadata = inner;
-                    }
-                    else if (key == "R")
-                    {
-                        //writeln ("INNER:", inner, ", oo=", oo);
-                        if (oo !is null)
-                            oo.reification = inner;
-                    }
-                }
-                else
-                if (type == 0x02)
-                {
-                    bp = pos + 4;
-                    if (bp + len > bson.length)
-                        len = cast(int)bson.length - bp;
-
-                    //writeln ("LEN2:", len);
-                    if (subject.subject is null && key == "@")
-                        subject.subject = bson[ bp..bp + len ];
-                    else
-                    {
-                        string val  = bson[ bp..bp + len - 1 ];
-                        byte lang_or_resource_flag = bson[ bp + len - 1];
-
-//						writeln ("val:", val);
-//						print_dump (bp+len, bson);
-//                        writeln (val, ", lang:", lang_or_resource_flag);
-                        if (pp !is null)
-                        {
-                        	if (lang_or_resource_flag == OBJECT_TYPE.RESOURCE)
-                        		oo = pp.addResource(val);
-                        	else	
-                        		oo = pp.addLiteral(val, cast(LANG)lang_or_resource_flag);
-                        }    
-                        else
-                        {
-                        	if (lang_or_resource_flag == OBJECT_TYPE.RESOURCE)
-                        		oo = subject.addResource (key, val);
-                        	else	
-                        		oo = subject.addPredicate(key, val, cast(LANG)lang_or_resource_flag);
-                        }    
-                    }
-
-                    //writeln (bson[bp..bp+len]);
-                    pos = bp + len + 1;
-                }
-                else if (type == 0x04)
-                {
-                    pos += 4;
-
-                    Predicate npp = subject.addPredicate();
-                    npp.predicate = key;
-
-                    pos += prepare_bson_element(bson[ pos..pos + len ], subject, 0, npp);
-                }
-            }
-        }
-
-        return pos;
-    }
-
-    public static Subject fromBSON(string bson)
-    {
-//		writeln ("fromBSON:bson.length=", bson.length);
-        Subject res = new Subject();
-
-        prepare_bson_element(bson, res, 4, null);
-
-        return res;
-    }
 }
 
 class Predicate
@@ -806,6 +673,25 @@ class Predicate
     {
         return objects[ 0 .. count_objects ];
     }
+    
+
+    short length()
+    {
+        return count_objects;
+    }
+        
+  int opApply(int delegate(ref Objectz) dg)
+  {
+    int result = 0;
+
+    for (int i = 0; i < count_objects; i++)
+    {
+      result = dg(objects[i]);
+      if (result)
+        break;
+    }
+    return result;
+  }    
 
     Objectz getObject(string literal)
     {
@@ -934,6 +820,18 @@ class Predicate
         count_objects = cast(ushort)oo.length;
     }
 
+	void opOpAssign(string OP)(Objectz item)
+		if (OP=="~")
+	{
+		addObjectz(item);
+	}
+
+	void opOpAssign(string OP)(string item)
+		if (OP=="~")
+	{
+		addLiteral(item);
+	}
+
     override string toString()
     {
         string res = this.predicate;
@@ -967,62 +865,6 @@ class Predicate
         return res;
     }
 
-    void toBSON(OutBuffer outbuff)
-    {
-        ulong offset_length_value;
-
-        bool  as_array = count_objects > 1 || metadata !is null;
-
-        if (as_array)
-            outbuff.write(cast(byte)0x04);
-        else
-            outbuff.write(cast(byte)0x02);
-
-        outbuff.write(predicate);
-        outbuff.write(cast(byte)0);
-
-        if (as_array)
-        {
-            offset_length_value = outbuff.offset;
-            outbuff.write(0xFFFFFFFF);
-        }
-
-        int idx = 0;
-        foreach (oo; objects[ 0 .. count_objects ])
-        {
-            if (as_array)
-            {
-                outbuff.write(cast(byte)0x02);
-                outbuff.write(text(idx));
-                outbuff.write(cast(byte)0);
-            }
-            oo.toBSON(outbuff);
-            outbuff.write(cast(byte)0);
-            idx++;
-        }
-        if (metadata !is null)
-        {
-            outbuff.write(cast(byte)0x03);
-            outbuff.write("M");
-            outbuff.write(cast(byte)0);
-            metadata.toBSON(outbuff);
-//			writeln (metadata);
-            outbuff.write(cast(byte)0);
-        }
-
-        if (as_array)
-        {
-            int value_length = 0;
-            value_length = cast(int)(outbuff.offset - offset_length_value - 4);
-
-//			if (metadata !is null)
-//				value_length += 3;
-
-            //writeln ("TO BSON ", " ", predicate, ", value_length=", value_length);
-            int_to_buff(outbuff.data, cast(int)offset_length_value, value_length);
-        }
-        outbuff.write(cast(byte)0);
-    }
 }
 
 class Objectz
@@ -1040,45 +882,9 @@ class Objectz
     {
         return literal;
     }
-
-    void toBSON(OutBuffer outbuff)
-    {
-        if ((type == OBJECT_TYPE.LITERAL || type == OBJECT_TYPE.RESOURCE ) && literal !is null)
-        {
-            int value_length        = cast(int)(literal.length + 1);
-            int offset_length_value = cast(int)outbuff.offset;
-            outbuff.write(0xFFFFFFFF);
-            outbuff.write(literal);
-            
-            if (type == OBJECT_TYPE.RESOURCE)
-            {
-//            	writeln (literal, "-> as resource, type=", type);
-            	outbuff.write(type);
-            }	
-            else
-            {
-//            	writeln (literal, "-> as literal, lang=", lang);
-            	outbuff.write(lang);
-            }	
-            	
-            outbuff.write(cast(byte)0);
-
-            int_to_buff(outbuff.data, offset_length_value, value_length);
-
-            if (reification !is null)
-            {
-                outbuff.write(cast(byte)0x03);
-                outbuff.write("R");
-                outbuff.write(cast(byte)0);
-                reification.toBSON(outbuff, true);
-//				writeln (metadata);
-                outbuff.write(cast(byte)0);
-            }
-        }
-    }
 }
 
-private static void print_dump(int bp, string bson)
+private static void print_dump(int bp, string cbor)
 {
     writeln("*******");
 
@@ -1087,11 +893,11 @@ private static void print_dump(int bp, string bson)
 
     if (sp < 0)
         sp = 0;
-    if (ep > bson.length)
-        ep = bson.length - 1;
+    if (ep > cbor.length)
+        ep = cbor.length - 1;
 
     for (long i = sp; i < ep; i++)
-        writeln("bson ", (i - bp), "[", i, "]:", bson[ i ], ", ", cast(uint)bson[ i ]);
+        writeln("bson ", (i - bp), "[", i, "]:", cbor[ i ], ", ", cast(uint)cbor[ i ]);
 
     writeln("*******");
 }

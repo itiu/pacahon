@@ -10,8 +10,9 @@ private import mq.rabbitmq_client;
 
 private import util.logger;
 private import util.graph;
+private import util.cbor;
 
-import std.datetime;
+private import std.datetime;
 
 
 logger log;
@@ -99,7 +100,7 @@ class OI
             //Subject[] metadata = graph.get_metadata ();
 
             // отправляем данные документа
-            string data = graph.toBSON();
+            string data = encode_cbor (graph);
             std.concurrency.send(embedded_gateway, data);
 /*
                 // отправляем метаданные

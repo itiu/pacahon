@@ -11,8 +11,8 @@ private
     import util.logger;
     import util.utils;
     import util.graph;
+    import util.cbor;
     import util.container;
-    import util.xson_utils;
 
     import pacahon.context;
     import pacahon.define;
@@ -107,14 +107,14 @@ void acl_manager()
                             if (cmd == CMD.AUTHORIZE)
                             {
 					//writeln ("is AUTHORIZE msg=[", msg, "]");
-                                Set!string *[ string ] sss = get_subject_from_BSON(msg, TYPE);
+                                Subject sss = decode_cbor(msg, TYPE);
 					//print_2 (sss);
 
                                 send(tid_sender, msg, thisTid);
                             }
                             else if (cmd == CMD.STORE)
                             {
-                                Subject graph = Subject.fromBSON(msg);
+                                Subject graph = decode_cbor(msg);
 
 //					writeln ("#1 graph.subject:", graph.subject);
                                 MDB_val key;

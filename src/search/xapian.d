@@ -14,6 +14,7 @@ import std.file;
 import bind.xapian_d_header;
 import util.utils;
 import util.graph;
+import util.cbor;
 
 import pacahon.define;
 import pacahon.know_predicates;
@@ -226,9 +227,9 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
         {
             counter++;
 
-            Subject ss = Subject.fromBSON(msg);
+            Subject ss = decode_cbor(msg);
 
-			//writeln ("prepare msg counter:", counter, ", subject:", ss.subject);
+			writeln ("prepare msg counter:", counter, ", subject:", ss.subject);
 
             if (ss.subject !is null && ss.count_edges > 0)
             {
@@ -261,7 +262,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             if (pp.count_objects > 1)
                             {
                                 if (oo.lang == LANG.RU)
-                                    p_text_ru ~= oo.literal;
+                                   p_text_ru ~= oo.literal;
                                 if (oo.lang == LANG.EN)
                                     p_text_en ~= oo.literal;
                             }
@@ -418,7 +419,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 doc.add_boolean_term(uuid.ptr, uuid.length, &err);
                 doc.set_data(ss.subject.ptr, ss.subject.length, &err);
 
-                send(tid_storage_manager, CMD.STORE, ss.toBSON(), thisTid);
+                send(tid_storage_manager, CMD.STORE, encode_cbor (ss), thisTid);
 
                 indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
 

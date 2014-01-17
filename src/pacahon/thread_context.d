@@ -17,7 +17,7 @@ private
     import util.oi : OI;
     import util.utils;
     import util.graph;
-    import util.xson_utils;
+    import util.cbor;
 
     import storage.ticket;
     import bind.xapian_d_header;
@@ -57,30 +57,30 @@ class ThreadContext : Context
 	 	return tm;		
 	}	
 	
-	public Set!string *[ string ] get_subject (string uid)
+	public Subject get_subject (string uid)
 	{
-		Set!string *[ string ] res = null;
+		Subject res = null;
 		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
 		receive((string bson_msg, Tid from)
 		{
            if (from == tid_subject_manager)
            {
-           		res = get_subject_from_BSON(bson_msg);
+           		res = decode_cbor(bson_msg);
            }    	
 		});
 		
 		return res;
     }
 	
-    public string get_subject_as_bson (string uid)
+    public string get_subject_as_cbor (string uid)
     {
     	string res; 
 		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
-		receive((string bson_msg, Tid from)
+		receive((string msg, Tid from)
 		{
            if (from == tid_subject_manager)
            {
-           		res = bson_msg;
+           		res = msg;
            }    	
 		});
 		
@@ -330,7 +330,7 @@ class ThreadContext : Context
             if (ticket_str !is null && ticket_str.length > 128)
             {
                 tt = new Ticket;
-                Subject ticket = Subject.fromBSON(ticket_str);
+                Subject ticket = decode_cbor(ticket_str);
 //				writeln ("Ticket=",ticket);
                 tt.id     = ticket.subject;
                 tt.userId = ticket.getFirstLiteral(ticket__accessor);

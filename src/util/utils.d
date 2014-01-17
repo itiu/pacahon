@@ -586,11 +586,3 @@ void print_2(ref Set!string *[ string ] res)
     }
 }
 
-
-enum : byte
-{
-    TYPE  = 1,
-    LINKS = 2,
-    ALL   = 4
-}
-

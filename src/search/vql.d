@@ -19,7 +19,7 @@ private
     import util.logger;
     import util.utils;
     import util.graph;
-    import util.xson_utils;
+    import util.cbor;
 
     import bind.xapian_d_header;
 
@@ -403,7 +403,7 @@ class VQL
                 uint   *data_len;
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
-				writeln (subject_str);
+				//writeln (subject_str);
                 send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
 
                 it.next(&err);
@@ -418,32 +418,33 @@ class VQL
             // Фаза I, получим субьекты из хранилища и отправим их на авторизацию, тут же получение из авторизации и формирование части ответа
             for (int i = 0; i < read_count * 2; i++)
             {
-                receive((string bson_msg, Tid from)
+                receive((string msg, Tid from)
                         {
                             if (from == context.get_tid_subject_manager())
                             {
-                                context.send_on_authorization(bson_msg);
+                                context.send_on_authorization(msg);
                             }
                             else
                             {
-                                //writeln ("!!!", bson_msg);
-                                if (bson_msg.length > 16)
-                                {
-                                writeln ("bson 2 json:", BSON_2_json (bson_msg));
-                                	
-                                    Set!string *[ string ] sss = get_subject_from_BSON(bson_msg, LINKS);
+                                if (msg.length > 16)
+                                {                               	
+//                                    writeln ("!!!", msg);
+                                    Subject sss = decode_cbor(msg, LINKS);
 
-                                    if (sss.length > 0)
+                                    if (sss !is null)
                                     {
-                                    	hash_of_subjects[ sss[ "@" ].items[ 0 ] ] = 1;
+                                    	// отправить в исходящий поток
+                                    	res.addSubject (decode_cbor(msg));
+                                    	
+                                    	hash_of_subjects[sss.subject] = 1;
 
-                                    	foreach (objz; sss.values)
+                                    	foreach (objz; sss)
                                     	{
-                                    		foreach (id; objz.items)
+                                    		foreach (id; objz)
                                     		{
-                                    			if (hash_of_subjects.get(id, -1) == -1)
+                                    			if (hash_of_subjects.get(id.literal, -1) == -1)
                                     			{
-                                    				hash_of_subjects[ id ] = 2;
+                                    				hash_of_subjects[ id.literal ] = 2;
                                     			}
                                     		}
                                     	}
@@ -468,25 +469,17 @@ class VQL
 
             for (int i = 0; i < count_inner; i++)
             {
-                receive((string bson_msg, Tid from)
+                receive((string msg, Tid from)
                         {
-                            if (bson_msg.length > 16)
+                            if (msg.length > 16)
                             {
+                            	//writeln (msg);
                                 // отправить в исходящий поток
+                            	res.addSubject (decode_cbor(msg));
                             }
                         });
             }
         }
-
-//              print_2 (sss);
-//			if (sss !is null)
-//			{
-//				remove_predicates (ss, fields);
-//				res.addSubject (ss);
-//				count++;
-//			}
-
-//		}
 
         return read_count;
     }
