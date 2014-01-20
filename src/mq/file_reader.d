@@ -26,8 +26,10 @@ import pacahon.server;
 import pacahon.define;
 import pacahon.know_predicates;
 
-void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
-{
+void file_reader_thread(string props_file_name, immutable string[] tids_names)
+{	
+    writeln("SPAWN: file reader");
+	
     try
     {
         mkdir("core-onto");
@@ -36,12 +38,11 @@ void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_
     {
     }
 
-    writeln("SPAWN: file reader");
     JSONValue props;
 
     try
     {
-        props = get_props("pacahon-properties.json");
+        props = get_props(props_file_name);
     } catch (Exception ex1)
     {
         throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
@@ -51,7 +52,7 @@ void file_reader_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_
 
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props, "file_reader", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+    Context context = new ThreadContext(props, "file_reader", tids_names);
 
     SysTime[string] prev_state_of_files;
 
@@ -151,19 +152,16 @@ private void prepare_file (string file_name, Context context)
             				if (for_load.get(prefix, false) == true)
             				{
             					writeln (ss.subject, " 1 store! ");
-            					string ss_as_cbor = encode_cbor (ss);
-            					send(context.get_tid_search_manager, ss_as_cbor);
+            					context.store_subject (ss);
             				}
             			}
             		}
             		else if (for_load.get (ss.subject, false) == true)
             		{
             					writeln (ss.subject, " 2 store! ");
-            					string ss_as_cbor = encode_cbor (ss);
-            					send(context.get_tid_search_manager, ss_as_cbor);
+            					context.store_subject (ss);
             		}
 
-					//send(context.get_tid_subject_manager, STORE, ss_as_cbor, thisTid);
             	}
 				send(context.get_tid_search_manager, "COMMIT");
             	//put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)            	
@@ -176,54 +174,3 @@ private void prepare_file (string file_name, Context context)
         }
 	
 }
-/*
-public class FileReadThread : core.thread.Thread
-{
-    ThreadContext resource;
-    ubyte[]       buf;
-    ubyte[]       out_data;
-    Context       context;
-
-    this(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator)
-    {
-        super(&run);
-
-        JSONValue props;
-
-        try
-        {
-            props = get_props("pacahon-properties.json");
-        } catch (Exception ex1)
-        {
-            throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-        }
-
-        core.thread.Thread.sleep(dur!("msecs")(100));
-
-
-        context = new ThreadContext(props, "file_reader", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
-
-        buf = cast(ubyte[]) read("msg.txt");
-    }
-
-private:
-    void run()
-    {
-        writeln("SPAWN: file reader");
-        while (true)
-        {
-            try
-            {
-                if (buf !is null && buf.length > 0)
-                {
-                    get_message(cast(byte *)buf, cast(int)buf.length, null, out_data, context);
-                }
-            }
-            catch (Exception ex)
-            {
-                core.thread.Thread.sleep(dur!("msecs")(100));
-            }
-        }
-    }
-}
-*/

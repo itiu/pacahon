@@ -7,6 +7,7 @@ private
 	import std.string;
 	import std.array;
 	import std.datetime;	
+	import std.concurrency;
 
 	import util.container;
 	import util.oi;
@@ -58,7 +59,27 @@ struct ConditionsAndIndexes
 	HashSet!string fields;	
 }
 
-class MandatManager: BusEventListener
+
+public void condition_thread()
+{
+	string key2slot_str;
+	long last_update_time;	
+	
+    writeln("SPAWN: condition_thread");    
+ 	last_update_time = Clock.currTime().stdTime ();          	
+
+    while (true)
+    {
+    	receive((EVENT type, string msg)
+    	{    	
+    		writeln ("condition_thread:", type, ":", msg); 
+    	});    	
+    }
+}
+
+
+
+class MandatManager
 {
 	OrgStructureTree ost;
 	VQL vql;
@@ -74,10 +95,6 @@ class MandatManager: BusEventListener
 
 	ConditionsAndIndexes*[string] whom_4_cai;
 
-	void bus_event(event_type et)
-	{
-	}
-
 	public void load()
 	{
 		log.trace_log_and_console("start load mandats");
@@ -86,8 +103,8 @@ class MandatManager: BusEventListener
 
 		GraphCluster res = new GraphCluster();
 		vql.get(null, 
-				"return { 'uo:condition'}
-            filter { 'class:identifier' == 'mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
+				"return { 'veda:condition'}
+            filter { 'class:identifier' == 'veda:mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
 				res, thread_context);
 
 		int count = 0;
@@ -97,7 +114,7 @@ class MandatManager: BusEventListener
 		{
 			try
 			{
-				string condition_text = ss.getFirstLiteral("uo:condition");
+				string condition_text = ss.getFirstLiteral(veda__condition);
 				JSONValue condition_json = parseJSON(condition_text);
 				Mandat mandat = void; 
 				
@@ -151,61 +168,6 @@ class MandatManager: BusEventListener
 		}
 	
 
-	public bool calculate_rights_of_mandat(Mandat mndt, string userId, Subject doc, RightType rightType)
-	{		
-//		StopWatch sw_c;
-//		sw_c.start();
-		bool res = false;
-		//writeln ("	DOC=", doc);
-		//writeln ("\n	MANDAT=", mndt);
-		try
-		{
-			string dummy;
-			bool f_rigth_type = false;
-
-			foreach(ch; mndt.right)
-			{
-				if(ch == 'c' && rightType == RightType.CREATE)
-				{
-					f_rigth_type = true;
-					break;
-				} else if(ch == 'r' && rightType == RightType.READ)
-				{
-					f_rigth_type = true;
-					break;
-				} else if(ch == 'w' && rightType == RightType.WRITE)
-				{
-					f_rigth_type = true;
-					break;
-				} else if(ch == 'u' && rightType == RightType.UPDATE)
-				{
-					f_rigth_type = true;
-					break;
-				} else if(ch == 'a')
-				{
-					f_rigth_type = true;
-					break;
-				}
-			}
-
-			if(f_rigth_type == false)
-				return false;
-		
-		
-			res = eval(userId, mndt.expression , "", doc, dummy);		
-		}
-		finally
-		{
-//		sw_c.stop();
-//		if (res == true)
-//		{		
-		//writeln ("мандат =", mndt);		
-//		writeln (res, ", время вычисления мандата, time=", sw_c.peek().usecs);
-//		}
-		}
-		
-		return res;
-	}
 
 	public bool eval(string userId, TTA tta, string p_op, Subject doc, out string token, int level = 0)
 	{
@@ -219,11 +181,7 @@ class MandatManager: BusEventListener
 //			writeln ("fields=", fields);
 //			writeln (A, " == ", B);
 		
-			string ff;
-			if (A == "mo/doc#tmplid")
-				ff = class__identifier;
-			else		
-				ff = "uo:" ~ A;
+			string ff = A;
 
 			if (B == "$user")
 				B = userId;
@@ -234,14 +192,7 @@ class MandatManager: BusEventListener
 			foreach (field_i ; doc.getObjects(ff))
 			{
 				string field = field_i.literal;
-				if (field[3] == ':')
-				{
-					if (field[7] == '_')
-						field = field[8..$];
-					else if (field[8] == '_')
-						field = field[9..$];
-				}	
-			
+
 				//writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
 				if (tta.op == "==" && field == B)
 					return true;
@@ -296,13 +247,13 @@ private static string found_in_condition_templateIds_and_docFields(TTA tta, stri
 			string A = found_in_condition_templateIds_and_docFields(tta.L, tta.op, templateIds, fields, level + 1);
 			string B = found_in_condition_templateIds_and_docFields(tta.R, tta.op, templateIds, fields, level + 1);
 			//writeln (A, " == ", B);
-			if (A == "mo/doc#tmplid" || A == class__identifier)
+			if (A == class__identifier)
 			{
 				templateIds.add (B);
 				fields.add (class__identifier);
 			}
 			else			
-				fields.add ("uo:" ~ A);
+				fields.add (A);
 		
 		} 
 		else if(tta.op == "&&" || tta.op == "||")

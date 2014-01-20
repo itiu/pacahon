@@ -693,13 +693,13 @@ void ba2pacahon(string msg_str, Context context)
             bool   isOk;
             string reason;
 
-            if (is_cached == false)
-                store_graph(node, null, context, isOk, reason, false);
+//            if (is_cached == false)
+//                store_graph(node, null, context, isOk, reason, false);
 
             if (actual == "1")
             {
-                if (is_cached == false)
-                    store_graph(actual_node, null, context, isOk, reason, false);
+//                if (is_cached == false)
+//                    store_graph(actual_node, null, context, isOk, reason, false);
                 if (is_cached == true)
                     doc_cache[ actual_node.subject ] = actual_node;
             }

@@ -9,7 +9,7 @@ private
     import std.concurrency;
     import std.conv;
     import std.outbuffer;
-    
+
     import mq.mq_client;
     import util.container;
     import util.json_ld.parser;
@@ -23,10 +23,11 @@ private
     import bind.xapian_d_header;
     import onto.doc_template;
 
-    import pacahon.context;
-//	import pacahon.command.event_filter;
     import pacahon.know_predicates;
     import pacahon.define;
+    import pacahon.context;
+    import pacahon.event_filter;
+    import pacahon.bus_event;
 
 //	import search.vql;
 }
@@ -41,69 +42,205 @@ static this()
 
 class ThreadContext : Context
 {
-	private Tid tid_xapian_thread_io;
-	public int[ string ] get_key2slot()
-	{
-		send (tid_xapian_thread_io, CMD.GET, CNAME.KEY2SLOT, thisTid);		
-		string msg = receiveOnly!(string)();		
-	 	int[ string ] key2slot = deserialize_key2slot (msg);
-	 	return key2slot;
-	}
-	
-	public long get_last_update_time()
-	{
-		send (tid_xapian_thread_io, CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);		
-		long tm = receiveOnly!(long)();		
-	 	return tm;		
-	}	
-	
-	public Subject get_subject (string uid)
-	{
-		Subject res = null;
-		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
-		receive((string bson_msg, Tid from)
-		{
-           if (from == tid_subject_manager)
-           {
-           		res = decode_cbor(bson_msg);
-           }    	
-		});
-		
-		return res;
-    }
-	
-    public string get_subject_as_cbor (string uid)
+//    private Tid tid_xapian_thread_io;
+//    Tid  tid_subject_manager;
+//    Tid  tid_acl_manager;
+    bool use_caching_of_documents = false;
+    bool IGNORE_EMPTY_TRIPLE      = false;
+
+    int  _count_command;
+    int  _count_message;    
+
+    Tid[string] tids;
+
+    this(JSONValue props, string context_name, immutable string[] _tids_names)
     {
-    	string res; 
-		send(tid_subject_manager, CMD.FOUND, uid, thisTid);	
-		receive((string msg, Tid from)
-		{
-           if (from == tid_subject_manager)
-           {
-           		res = msg;
-           }    	
-		});
-		
-		return res;    	
-    }	
-	
-	private string[string] prefix_map;	
-	ref string[string] get_prefix_map ()
-	{
-		return prefix_map;
-	}
-	
-	private Tid tid_xapian_indexer;	
-    private Tid _tid_statistic_data_accumulator;
-    @property Tid tid_statistic_data_accumulator()
-    {
-        return _tid_statistic_data_accumulator;
+    	foreach (tid_name; _tids_names)
+    	{
+    		tids[tid_name] = locate(tid_name); 
+    	}
+    	writeln ("context:", tids);
+    	
+        _event_filters      = new GraphCluster();
+        _ba2pacahon_records = new GraphCluster();
+
+        // использование кеша документов
+        if (("use_caching_of_documents" in props.object) !is null)
+        {
+            if (props.object[ "use_caching_of_documents" ].str == "true")
+                use_caching_of_documents = true;
+        }
+
+        JSONValue[] _gateways;
+        if (("gateways" in props.object) !is null)
+        {
+            _gateways = props.object[ "gateways" ].array;
+            foreach (gateway; _gateways)
+            {
+                if (("alias" in gateway.object) !is null)
+                {
+                    string[ string ] params;
+                    foreach (key; gateway.object.keys)
+                        params[ key ] = gateway[ key ].str;
+
+                    string io_alias = gateway.object[ "alias" ].str;
+
+                    Set!OI empty_set;
+                    Set!OI gws = gateways.get(io_alias, empty_set);
+
+                    if (gws.size == 0)
+                        gateways[ io_alias ] = empty_set;
+
+                    OI oi = new OI();
+                    if (oi.connect(params) == 0)
+                        writeln("#A1:", oi.get_alias);
+                    else
+                        writeln("#A2:", oi.get_alias);
+
+                    if (oi.get_db_type == "xapian")
+                    {
+                        writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tids[thread.xapian_indexer]);
+                        oi.embedded_gateway = tids[thread.xapian_indexer];
+                    }
+
+                    gws ~= oi;
+                    gateways[ io_alias ] = gws;
+                }
+            }
+        }
+
+        Set!OI empty_set;
+        Set!OI from_search = gateways.get("from-search", empty_set);
+        _vql               = new search.vql.VQL(from_search, this);
+
+//        writeln(context_name ~ ": connect to mongodb is ok");
+
+        writeln(context_name ~ ": load events");
+        pacahon.event_filter.load_events(this);
+        writeln(context_name ~ ": load events... ok");
     }
 
-    private Tid _tid_ticket_manager;
+    Tid getTid (thread tid_name)
+    {
+    	return tids[tid_name];
+    }
+
+
+    public void store_subject(Subject ss, bool prepareEvents = true)
+    {
+        string res;
+        string ss_as_cbor = encode_cbor(ss);
+
+        send(get_tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+        receive((string msg, Tid from)
+                {
+                    if (from == tids[thread.subject_manager])
+                    {
+                        res = msg;
+                        writeln("context.store_subject:msg=", msg);
+                    }
+                });
+
+        if (res.length == 1 && (res == "C" || res == "U"))
+        {
+            send(get_tid_search_manager, ss_as_cbor);
+
+            if (prepareEvents == true)
+            {
+                Predicate type = ss.getPredicate(rdf__type);
+
+
+                if (type.isExistLiteral(event__Event))
+                {
+                    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+                    event_filters.addSubject(ss);
+
+                    writeln("add new event_filter [", ss.subject, "]");
+                }
+                else
+                {
+                    EVENT event_type;
+
+                    if (res == "U")
+                        event_type = EVENT.UPDATE;
+                    else 
+                        event_type = EVENT.CREATE;
+
+                    processed_events(ss, event_type, this);
+                    bus_event(ss, ss_as_cbor, event_type, this);
+                }
+            }
+        }
+        else
+        {
+            writeln("Ex! store_subject:", res);
+        }
+    }
+
+    public int[ string ] get_key2slot()
+    {
+        send(tids[thread.xapian_thread_io], CMD.GET, CNAME.KEY2SLOT, thisTid);
+        string msg = receiveOnly!(string)();
+        int[ string ] key2slot = deserialize_key2slot(msg);
+        return key2slot;
+    }
+
+    public long get_last_update_time()
+    {
+        send(tids[thread.xapian_thread_io], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
+        long tm = receiveOnly!(long)();
+        return tm;
+    }
+
+    public Subject get_subject(string uid)
+    {
+        Subject res = null;
+
+        send(tids[thread.subject_manager], CMD.FOUND, uid, thisTid);
+        receive((string msg, Tid from)
+                {
+                    if (from == tids[thread.subject_manager])
+                    {
+                        res = decode_cbor(msg);
+                    }
+                });
+
+        return res;
+    }
+
+    public string get_subject_as_cbor(string uid)
+    {
+        string res;
+
+        send(tids[thread.subject_manager], CMD.FOUND, uid, thisTid);
+        receive((string msg, Tid from)
+                {
+                    if (from == tids[thread.subject_manager])
+                    {
+                        res = msg;
+                    }
+                });
+
+        return res;
+    }
+
+    private string[ string ] prefix_map;
+    ref     string[ string ] get_prefix_map()
+    {
+        return prefix_map;
+    }
+
+//    private Tid tid_xapian_indexer;
+//    private Tid _tid_statistic_data_accumulator;
+    @property Tid tid_statistic_data_accumulator()
+    {
+        return tids[thread.statistic_data_accumulator];
+    }
+
+//    private Tid _tid_ticket_manager;
     @property Tid tid_ticket_manager()
     {
-        return _tid_ticket_manager;
+        return tids[thread.ticket_manager];
     }
 
 //	private StopWatch _sw;
@@ -133,14 +270,6 @@ class ThreadContext : Context
         return _vql;
     }
 
-    Tid  tid_subject_manager;
-    Tid  tid_acl_manager;
-    bool use_caching_of_documents = false;
-    bool IGNORE_EMPTY_TRIPLE      = false;
-
-    int  _count_command;
-    int  _count_message;
-
     @property int count_command()
     {
         return _count_command;
@@ -158,10 +287,9 @@ class ThreadContext : Context
         _count_message = n;
     }
 
-//
     bool send_on_authorization(string bson_subject)
     {
-        send(tid_acl_manager, CMD.AUTHORIZE, bson_subject, thisTid);
+        send(tids[thread.acl_manager], CMD.AUTHORIZE, bson_subject, thisTid);
         return true;
     }
 
@@ -231,73 +359,6 @@ class ThreadContext : Context
         return gateways.get(name, empty_set);
     }
 
-    this(JSONValue props, string context_name, Tid _tid_xapian_indexer_, Tid _tid_ticket_manager_, Tid _tid_subject_manager_, Tid _tid_acl_manager_, Tid _tid_statistic_data_accumulator_, Tid _tid_xapian_thread_io_)
-    {
-        _tid_statistic_data_accumulator = _tid_statistic_data_accumulator_;
-        _tid_ticket_manager             = _tid_ticket_manager_;
-        tid_subject_manager             = _tid_subject_manager_;
-        tid_acl_manager                 = _tid_acl_manager_;
-        tid_xapian_indexer 				= _tid_xapian_indexer_;
-        tid_xapian_thread_io = _tid_xapian_thread_io_;
-
-        _event_filters      = new GraphCluster();
-        _ba2pacahon_records = new GraphCluster();
-
-        // использование кеша документов
-        if (("use_caching_of_documents" in props.object) !is null)
-        {
-            if (props.object[ "use_caching_of_documents" ].str == "true")
-                use_caching_of_documents = true;
-        }
-
-        JSONValue[] _gateways;
-        if (("gateways" in props.object) !is null)
-        {
-            _gateways = props.object[ "gateways" ].array;
-            foreach (gateway; _gateways)
-            {
-                if (("alias" in gateway.object) !is null)
-                {
-                    string[ string ] params;
-                    foreach (key; gateway.object.keys)
-                        params[ key ] = gateway[ key ].str;
-
-                    string io_alias = gateway.object[ "alias" ].str;
-
-                    Set!OI empty_set;
-                    Set!OI gws = gateways.get(io_alias, empty_set);
-
-                    if (gws.size == 0)
-                        gateways[ io_alias ] = empty_set;
-
-                    OI oi = new OI();
-                    if (oi.connect(params) == 0)
-                        writeln("#A1:", oi.get_alias);
-                    else
-                        writeln("#A2:", oi.get_alias);
-
-                    if (oi.get_db_type == "xapian")
-                    {
-                        writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tid_xapian_indexer);
-                        oi.embedded_gateway = tid_xapian_indexer;
-                    }
-
-                    gws ~= oi;
-                    gateways[ io_alias ] = gws;
-                }
-            }
-        }
-
-        Set!OI empty_set;
-        Set!OI from_search = gateways.get("from-search", empty_set);
-        _vql               = new search.vql.VQL(from_search, this);
-
-//        writeln(context_name ~ ": connect to mongodb is ok");
-
-        writeln(context_name ~ ": load events");
-        pacahon.event_filter.load_events(this);
-        writeln(context_name ~ ": load events... ok");
-    }
 
     bool authorize(Ticket *ticket, Subject doc)
     {
@@ -306,12 +367,12 @@ class ThreadContext : Context
 
     Tid get_tid_subject_manager()
     {
-        return tid_subject_manager;
+        return tids[thread.subject_manager];
     }
-    
+
     Tid get_tid_search_manager()
     {
-        return tid_xapian_indexer;    	
+        return tids[thread.xapian_indexer];
     }
 
     Ticket *foundTicket(string ticket_id)

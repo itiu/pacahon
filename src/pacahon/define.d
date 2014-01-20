@@ -3,16 +3,6 @@ module pacahon.define;
 import util.container;
 import std.concurrency;
 
-enum CMD : byte
-{
-    STORE     = 1,
-    PUT       = 1,
-    FOUND     = 2,
-    GET       = 2,
-    EXAMINE   = 4,
-    AUTHORIZE = 8
-}
-
 enum CNAME : byte
 {
     COUNT_MESSAGE = 0,
@@ -30,3 +20,5 @@ alias immutable Tid2Name Tids;
 const byte              asObject = 0;
 const byte              asArray  = 1;
 const byte              asString = 2;
+
+

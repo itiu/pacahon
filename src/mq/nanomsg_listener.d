@@ -17,8 +17,10 @@ import pacahon.thread_context;
 import pacahon.server;
 import util.utils;
 
-void nanomsg_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
+void nanomsg_thread(string props_file_name, immutable string[] tids_names)
 {
+ 	writeln("SPAWN: nanomsg listener");
+
     JSONValue props;
 
     try
@@ -56,7 +58,7 @@ void nanomsg_thread(string props_file_name, Tid tid_xapian_indexer, Tid tid_tick
     byte    *buf     = cast(byte *) malloc(buf_size);
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props, "nanomsg", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+    Context context = new ThreadContext(props, "nanomsg", tids_names);
 
     int     i = 0;
     while (true)

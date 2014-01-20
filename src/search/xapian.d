@@ -419,8 +419,6 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 doc.add_boolean_term(uuid.ptr, uuid.length, &err);
                 doc.set_data(ss.subject.ptr, ss.subject.length, &err);
 
-                send(tid_storage_manager, CMD.STORE, encode_cbor (ss), thisTid);
-
                 indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
 
                 if (counter % 100 == 0)

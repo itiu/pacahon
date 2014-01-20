@@ -39,6 +39,8 @@ private
 
     import search.ba2pacahon;
     import search.xapian;
+    
+    import az.condition;
 }
 
 logger log;
@@ -59,21 +61,31 @@ void main(char[][] args)
 
         core.thread.Thread.sleep(dur!("msecs")(1));
 
-        Tid tid_ticket_manager  = spawn(&ticket_manager);
-        Tid tid_subject_manager = spawn(&subject_manager);
-        Tid tid_acl_manager     = spawn(&acl_manager);
+        Tid[string] tids;
 
-        Tid tid_xapian_thread_io = spawn(&xapian_thread_io);
-        Tid tid_xapian_indexer = spawn(&xapian_indexer, tid_subject_manager, tid_xapian_thread_io);
-        spawn(&xapian_indexer_commiter, tid_xapian_indexer);
-        send (tid_xapian_indexer, thisTid);
+        tids[thread.ticket_manager]  = spawn(&ticket_manager);
+        tids[thread.subject_manager] = spawn(&subject_manager);
+        tids[thread.acl_manager]     = spawn(&acl_manager);
+
+        tids[thread.xapian_thread_io] = spawn(&xapian_thread_io);
+        tids[thread.xapian_indexer] = spawn(&xapian_indexer, tids[thread.subject_manager], tids[thread.xapian_thread_io]);
+        spawn(&xapian_indexer_commiter, tids[thread.xapian_indexer]);
+        send (tids[thread.xapian_indexer], thisTid);
         receive((bool isReady)
         {    	
         });        
 
-        Tid tid_statistic_data_accumulator = spawn(&statistic_data_accumulator);
+        tids[thread.statistic_data_accumulator] = spawn(&statistic_data_accumulator);
         core.thread.Thread.sleep(dur!("msecs")(10));
-        spawn(&print_statistic, tid_statistic_data_accumulator);
+        spawn(&print_statistic, tids[thread.statistic_data_accumulator]);
+        
+        tids[thread.condition] = spawn (&condition_thread);
+
+        foreach (key, value; tids)
+        {
+             register(key, value);
+        }      
+        writeln ("registred spawned tids:", tids);	
 
         {
             JSONValue props;
@@ -102,13 +114,11 @@ void main(char[][] args)
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
-                        //FileReadThread frt = new FileReadThread("pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
-                        //frt.start();
+                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", cast(immutable) tids.keys);
                     }
                     else if (params.get("transport", "") == "nanomsg")
                     {
-                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
+                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", cast(immutable) tids.keys);
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -121,7 +131,7 @@ void main(char[][] args)
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_xapian_thread_io);
+                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, cast(immutable) tids.keys);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
@@ -181,9 +191,7 @@ void main(char[][] args)
                             {
                                 rabbitmq_connection.set_callback(&get_message);
 
-                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener,
-                                                                                             props, "RABBITMQ", tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager,
-                                                                                             tid_statistic_data_accumulator, tid_xapian_thread_io);
+                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props, "RABBITMQ", tids.keys);
 
                                 init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -549,10 +557,10 @@ class ServerThread : core.thread.Thread
 {
     ThreadContext resource;
 
-    this(void delegate() _dd, JSONValue props, string context_name, Tid tid_xapian_indexer, Tid tid_ticket_manager, Tid tid_subject_manager, Tid tid_acl_manager, Tid tid_statistic_data_accumulator, Tid tid_key2slot_accumulator)
+    this(void delegate() _dd, JSONValue props, string context_name, string[] tids_names)
     {
         super(_dd);
-        resource = new ThreadContext(props, context_name, tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator, tid_key2slot_accumulator);
+        resource = new ThreadContext(props, context_name, cast(immutable)tids_names);
 
 //		resource.sw.start();
     }

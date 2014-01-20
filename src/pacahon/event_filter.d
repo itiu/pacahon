@@ -40,7 +40,7 @@ void load_events(Context context)
     log.trace("loaded (%d) filter(s)", context.event_filters.length);
 }
 
-void processed_events(Subject subject, string type, Context context)
+void processed_events(Subject subject, EVENT type, Context context)
 {
     //writeln("info:processed_events ", type, ":", subject);
 

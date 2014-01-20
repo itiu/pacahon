@@ -47,9 +47,9 @@ src/pacahon/thread_context.d
 src/pacahon/context.d 
 src/pacahon/myversion.d
 src/pacahon/server.d 
+src/pacahon/bus_event.d 
 
 src/search/ba2pacahon.d
-src/search/search_event.d 
 src/search/xapian.d
 src/search/vql.d
 src/search/vel.d

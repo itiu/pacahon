@@ -1,7 +1,8 @@
-module search.search_event;
+module pacahon.bus_event;
 
 private import std.outbuffer;
 private import std.stdio;
+private import std.concurrency;
 
 private import util.container;
 private import util.oi;
@@ -17,18 +18,21 @@ logger log;
 
 static this()
 {
-    log = new logger("2search", "log", "2search");
+    log = new logger("bus_event", "log", "bus_event");
 }
 
-void search_event(Subject graph, Context context)
+void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context context)
 {
-//	writeln ("#search_event 1");
+	writeln ("#bus_event 1");
 
-    if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate(docs__full_text_search, "0"))
-        return;
+	Tid tid_condition = context.getTid (thread.condition);
 
-//	writeln ("#search_event 2 ", graph);
+	send (tid_condition, type, subject_as_cbor);
 
+//    if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate(docs__full_text_search, "0"))
+//        return;
+
+/*
     if (graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true"))
     {
 //		writeln ("#to search !!!");
@@ -72,6 +76,7 @@ void search_event(Subject graph, Context context)
                       graph.subject, "to-report");
         }
     }
+*/
 }
 
 

@@ -19,7 +19,7 @@ static this()
     log = new logger("pacahon", "log", "OrgStructureTree");
 }
 
-class OrgStructureTree : BusEventListener
+class OrgStructureTree
 {
     Context thread_context;
     //  по узлу можем получить его родителей
@@ -31,10 +31,6 @@ class OrgStructureTree : BusEventListener
     {
         thread_context = _thread_context;
         vql            = new VQL(thread_context);
-    }
-
-    void bus_event(event_type et)
-    {
     }
 
     public void load()

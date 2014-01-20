@@ -2,6 +2,7 @@ module pacahon.command_io;
 
 private import core.stdc.stdio;
 private import core.stdc.stdlib;
+private import std.concurrency;
 private import std.c.string;
 private import std.string;
 private import std.conv;
@@ -16,24 +17,21 @@ private import util.logger;
 private import util.utils;
 private import util.json_ld.parser;
 private import util.graph;
+private import util.cbor;
 
 private import pacahon.know_predicates;
 private import pacahon.log_msg;
 private import pacahon.context;
-private import pacahon.event_filter;
-private import pacahon.context;
-private import search.search_event;
+private import pacahon.define;
 
-import onto.docs_base;
+private import onto.docs_base;
 
 logger   log;
-string[] reifed_data_subj;
+
 
 static this()
 {
-    log                   = new logger("pacahon", "log", "command-io");
-    reifed_data_subj      = new string[ 1 ];
-    reifed_data_subj[ 0 ] = "_:R__01";
+    log = new logger("pacahon", "log", "command-io");
 }
 
 /*
@@ -95,7 +93,6 @@ Subject put(Subject message, Predicate sender, Ticket *ticket, Context context, 
 public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context context, out bool isOk, out string reason,
                          bool prepareEvents = true)
 {
-    // фаза I, добавим основные данные
     foreach (graph; graphs_on_put)
     {
         Predicate type = graph.getPredicate(rdf__type);
@@ -143,34 +140,11 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
                     graph.addPredicate(dc__creator, ticket.userId);
                 }
 
-                //context.ts.storeSubject(graph, context);
-
-                if (prepareEvents == true)
-                {
-                    if (type.isExistLiteral(event__Event))
-                    {
-                        // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-                        context.event_filters.addSubject(graph);
-
-                        writeln("add new event_filter [", graph.subject, "]");
-                    }
-                    else
-                    {
-                        string event_type;
-
-                        if (subjectIsExist == true)
-                            event_type = "update subject";
-                        else
-                            event_type = "create subject";
-
-                        processed_events(graph, event_type, context);
-                    }
-                }
+                context.store_subject (graph, prepareEvents);
 
                 reason = "добавление фактов выполнено:" ~ authorize_reason;
                 isOk   = true;
 
-                search_event(graph, context);
             }
             else
             {
@@ -184,127 +158,6 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
             if (type is null)
                 reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
         }
-    }
-
-    if (trace_msg[ 34 ] == 1)
-        log.trace("фаза II, добавим основные данные");
-
-    // фаза II, добавим реифицированные данные
-    // !TODO авторизация для реифицированных данных пока не выполняется
-    for (int jj = 0; jj < graphs_on_put.length; jj++)
-    {
-        Subject   graph = graphs_on_put[ jj ];
-
-        Predicate type = graph.getPredicate(rdf__type);
-
-        if (type !is null && (rdf__Statement in type.objects_of_value))
-        {
-            // определить, несет ли в себе субьект, реифицированные данные (a rdf:Statement)
-            // если, да то добавить их в хранилище через метод addTripleToReifedData
-            Predicate r_subject   = graph.getPredicate(rdf__subject);
-            Predicate r_predicate = graph.getPredicate(rdf__predicate);
-            Predicate r_object    = graph.getPredicate(rdf__object);
-
-            if (r_subject !is null && r_predicate !is null && r_object !is null)
-            {
-/*
-                                Triple reif = new Triple(r_subject.getFirstLiteral(), r_predicate.getFirstLiteral(), r_object.getFirstLiteral());
-
-                                foreach(pp; graph.getPredicates)
-                                {
-                                        if(pp != r_subject && pp != r_predicate && pp != r_object && pp != type)
-                                        {
-                                                foreach(oo; pp.getObjects())
-                                                {
-                                                        if(oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.URI)
-                                                                context.ts.addTripleToReifedData(reif, pp.predicate, oo.literal, oo.lang);
-                                                        else
-                                                                context.ts.addTripleToReifedData(reif, pp.predicate, oo.subject.subject, oo.lang);
-                                                }
-                                        }
-
-                                }
- */
-            }
-        }
-        else
-        {
-            if (type is null)
-                reason = "добавление фактов не возможно: не указан rdf:type для субьекта " ~ graph.subject;
-        }
-    }
-}
-
-public void store_graph(Subject graph, string userId, Context context, out bool isOk, out string reason,
-                        bool prepareEvents = true)
-{
-    // фаза I, добавим основные данные
-    Predicate type = graph.getPredicate(rdf__type);
-
-    if (type !is null && ((rdf__Statement in type.objects_of_value) is null))
-    {
-        if (trace_msg[ 35 ] == 1)
-            log.trace("[35.2] adding subject=%s", graph.subject);
-
-        // цикл по всем добавляемым субьектам
-        /* 2. если создается новый субъект, то ограничений по умолчанию нет
-         * 3. если добавляются факты к уже созданному субъекту, то разрешено добавлять
-         * если добавляющий автор субъекта
-         * или может быть вычислено разрешающее право на U данного субъекта. */
-
-        string authorize_reason;
-        bool   subjectIsExist = false;
-
-        bool   authorization_res = false;
-
-        if (authorization_res == true || userId is null)
-        {
-            if (userId !is null && graph.isExsistsPredicate(dc__creator) == false)
-            {
-                // добавим признак dc:creator
-                graph.addPredicate(dc__creator, userId);
-            }
-
-            //context.ts.storeSubject(graph, context);
-
-            if (prepareEvents == true)
-            {
-                if (type.isExistLiteral(event__Event))
-                {
-                    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-                    context.event_filters.addSubject(graph);
-
-                    writeln("add new event_filter [", graph.subject, "]");
-                }
-                else
-                {
-                    string event_type;
-
-                    if (subjectIsExist == true)
-                        event_type = "update subject";
-                    else
-                        event_type = "create subject";
-
-                    processed_events(graph, event_type, context);
-                }
-            }
-
-            reason = "добавление фактов выполнено:" ~ authorize_reason;
-            isOk   = true;
-
-            search_event(graph, context);
-        }
-        else
-        {
-            reason = "добавление фактов не возможно: " ~ authorize_reason;
-            if (trace_msg[ 36 ] == 1)
-                log.trace("autorize=%s", reason);
-        }
-    }
-    else
-    {
-        if (type is null)
-            reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
     }
 }
 

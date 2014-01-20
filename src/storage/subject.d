@@ -91,37 +91,44 @@ public void subject_manager()
                         {
                             if (cmd == CMD.STORE)
                             {
+                            	try
+                            	{
                                 Subject graph = decode_cbor(msg);
 
-					//writeln ("#1 graph.subject:", graph.subject);
                                 MDB_val key;
                                 key.mv_data = cast(char *)graph.subject;
                                 key.mv_size = graph.subject.length;
 
                                 MDB_val data;
+                                
+                                // проверим был есть ли такой субьект в базе
+                                int rc = mdb_get(txn, dbi, &key, &data);
+                                if (rc == 0)
+                                	res = "U";
+                                else	
+                                	res = "C";
+
                                 data.mv_data = cast(char *)msg;
                                 data.mv_size = msg.length;
 
                                 rc = mdb_put(txn, dbi, &key, &data, 0);
-                                if (rc == 0)
-                                    res = "Ok";
-                                else
-                                {
-                                    res = "Fail:" ~  fromStringz(mdb_strerror(rc));
-                                    writeln("#1 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
-                                }
-                                //				writeln ("#1 key.length:", graph.subject.length);
-                                //			writeln ("#1 data.length:", msg.length);
-
-                                // send(tid_sender, res);
+                                if (rc != 0)
+                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
 
                                 rc = mdb_txn_commit(txn);
                                 if (rc != 0)
-                                    writeln("#2 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
+                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
                                 
                                 rc = mdb_txn_begin(env, null, 0, &txn);
                                 if (rc != 0)
-                                    writeln("#3 rc:", rc, ", ", fromStringz(mdb_strerror(rc)));
+                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
+                                    
+                                    send(tid_response_reciever, res, thisTid);                            		
+                                }
+                            	catch (Exception ex)
+                            	{
+                                    send(tid_response_reciever, res, thisTid);                            		
+                            	}    
                             }
                             else if (cmd == CMD.FOUND)
                             {
@@ -142,7 +149,6 @@ public void subject_manager()
                                     //	writeln ("%%2");
                                     MDB_val data;
                                     int rc = mdb_get(txn, dbi, &key, &data);
-                                    //	writeln ("%%3");
 
                                     if (rc == 0)
                                         res = cast(string)(data.mv_data[ 0..data.mv_size ]);
