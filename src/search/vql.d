@@ -61,10 +61,10 @@ class VQL
 
     private XapianDatabase xapian_db;
 	private XapianStem xapian_stemmer;
-//    private string         xapian_path = "xapian-search";
     private string         xapian_lang = "russian";
     private XapianEnquire  xapian_enquire;
     private XapianQueryParser xapian_qp;
+    
     private int[ string ] key2slot;
     private string transTable1;
     private Context context;
@@ -111,7 +111,7 @@ class VQL
     {
         byte err;
 		
-        xapian_db = new_Database(xapian_path.ptr, xapian_path.length, &err);
+        xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
         if (err != 0)
         	writeln ("VQL:new_Database:err", err);
 
@@ -140,7 +140,7 @@ class VQL
     
     //Clock.currTime().stdTime ()
 
-    public int get(Ticket *ticket, string query_str, ref GraphCluster res, Context context)
+    public int get(Ticket *ticket, string query_str, ref GraphCluster res)
     {
         key2slot = context.get_key2slot();
         long last_update_time = context.get_last_update_time();

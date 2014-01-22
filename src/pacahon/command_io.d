@@ -224,7 +224,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 if (query !is null)
                 {
                     //writeln ("#1 ticket=", ticket);
-                    count_found_subjects = context.vql.get(ticket, query, res, context);
+                    count_found_subjects = context.vql.get(ticket, query, res);
 
                     reason = "";
                 }

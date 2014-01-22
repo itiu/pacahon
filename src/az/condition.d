@@ -14,9 +14,11 @@ private
 	import util.utils;
 	import util.logger;
 	import util.graph;
+	import util.cbor; 
 
 	import pacahon.know_predicates;
 	import pacahon.context;
+	import pacahon.thread_context;
 
 	import search.vel;	
 	import search.vql;
@@ -49,19 +51,20 @@ struct Mandat
         TTA expression;
 }
 
-struct ConditionsAndIndexes
+
+public void condition_thread(string props_file_name, immutable string[] tids_names)
 {
-//	Set!Element conditions;
-	Set!Mandat conditions;
-
-	// indexes
-	HashSet!string templateIds;
-	HashSet!string fields;	
-}
-
-
-public void condition_thread()
-{
+	Context context = new ThreadContext(null, "condition_thread", tids_names);
+	
+	Set!Mandat mandats;
+	OrgStructureTree ost;
+	VQL vql;
+	
+	vql = new VQL(context);
+//	ost = new OrgStructureTree(context);
+//	ost.load();	
+	load(context, vql, mandats);
+	
 	string key2slot_str;
 	long last_update_time;	
 	
@@ -73,6 +76,14 @@ public void condition_thread()
     	receive((EVENT type, string msg)
     	{    	
     		writeln ("condition_thread:", type, ":", msg); 
+    		Subject doc = decode_cbor(msg);
+    		
+    		foreach (mandat; mandats)
+    		{
+    			string token;
+    			Set!string whom;
+    			eval(mandat.expression, "", doc, token, whom);
+    		}
     		
     	});    	
     }
@@ -80,23 +91,7 @@ public void condition_thread()
 
 
 
-class MandatManager
-{
-	OrgStructureTree ost;
-	VQL vql;
-	Context thread_context;
-
-	this(Context _thread_context)
-	{
-		thread_context = _thread_context;
-		vql = new VQL(_thread_context);
-		ost = new OrgStructureTree(_thread_context);
-		ost.load();
-	}
-
-	ConditionsAndIndexes*[string] whom_4_cai;
-
-	public void load()
+	public void load(Context context, VQL vql, ref Set!Mandat mandats)
 	{
 		log.trace_log_and_console("start load mandats");
 
@@ -106,7 +101,7 @@ class MandatManager
 		vql.get(null, 
 				"return { 'veda:condition'}
             filter { 'class:identifier' == 'veda:mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }",
-				res, thread_context);
+				res);
 
 		int count = 0;
 		JSONValue nil;
@@ -138,14 +133,10 @@ class MandatManager
 						//writeln ("str=", el.str);
 						//writeln ("TTA=", mandat.expression);
 					}
-										
-					ConditionsAndIndexes* cai = whom_4_cai.get(mandat.whom, new ConditionsAndIndexes);					
-					if(cai.conditions.size == 0)
-						whom_4_cai[mandat.whom] = cai;
+							
+					mandats ~= mandat;					
 					
-					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
-					
-					cai.conditions ~= mandat;
+//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
 				}
 			} 
 			catch(Exception ex)
@@ -156,28 +147,19 @@ class MandatManager
 
 		}
 
-		//		writeln (whom_4_array_of_condition);
-		//foreach(key, value; whom_4_cai)
-		//{
-		//	writeln("\n", key);
-		//	writeln(value.templateIds.keys);
-		//	writeln(value.fields.keys);
-		//}
-
-		log.trace_log_and_console("end load mandats, count=%d, whom_4_array_of_condition.length=%d", res.length,
-				whom_4_cai.length);
+		log.trace_log_and_console("end load mandats, count=%d ", res.length);
 		}
 	
 
 
-	public bool eval(TTA tta, string p_op, Subject doc, out string token, int level = 0)
+	public bool eval(TTA tta, string p_op, Subject doc, out string token, ref Set!string whom, int level = 0)
 	{
 		if(tta.op == "==" || tta.op == "!=")
 		{
 			string A;
-			eval(tta.L, tta.op, doc, A, level + 1);
+			eval(tta.L, tta.op, doc, A, whom, level + 1);
 			string B;
-			eval(tta.R, tta.op, doc, B, level + 1);
+			eval(tta.R, tta.op, doc, B, whom, level + 1);
 //			writeln ("\ndoc=", doc);
 //			writeln ("fields=", fields);
 //			writeln (A, " == ", B);
@@ -186,9 +168,20 @@ class MandatManager
 
 			if (B == "$user") 
 			{
+				if (p_op == "||")
+				{
+					whom ~= A;
+				}	
+				else
+				{
+					whom.empty ();
+					whom ~= A;
+				}	
+				return true;
 //				B = userId;
 			}	
-			
+			else
+			{
 		//writeln ("ff=", ff);
 		//writeln ("fields.get (ff).items=", doc.getObjects(ff));
 		
@@ -205,6 +198,7 @@ class MandatManager
 				if (tta.op == "!=" && field != B)
 					return true;
 			}
+			}
 			
 			return false;		
 		} else if(tta.op == "&&")
@@ -212,10 +206,10 @@ class MandatManager
 			bool A = false, B = false;
 		
 			if(tta.R !is null)
-				A = eval(tta.R, tta.op, doc, token, level + 1);
+				A = eval(tta.R, tta.op, doc, token, whom, level + 1);
 
 			if(tta.L !is null)
-				B = eval(tta.L, tta.op, doc, token, level + 1);
+				B = eval(tta.L, tta.op, doc, token, whom, level + 1);
 			
 			return A && B; 		
 		}
@@ -224,13 +218,13 @@ class MandatManager
 			bool A = false, B = false;
 
 			if(tta.R !is null)
-				A = eval(tta.R, tta.op, doc, token, level + 1);
+				A = eval(tta.R, tta.op, doc, token, whom, level + 1);
 				
 			if (A == true)
 				return true;	
 
 			if(tta.L !is null)
-				B = eval(tta.L, tta.op, doc, token, level + 1);
+				B = eval(tta.L, tta.op, doc, token, whom, level + 1);
 					
 			return A || B; 		
 		} else if(tta.op == "true")
@@ -243,8 +237,8 @@ class MandatManager
 		}
 		return false;
 	}
-}
 
+/*
 private static string found_in_condition_templateIds_and_docFields(TTA tta, string p_op, ref HashSet!string templateIds, ref HashSet!string fields, int level = 0)
 {
 		if(tta.op == "==" || tta.op == "!=")
@@ -276,5 +270,5 @@ private static string found_in_condition_templateIds_and_docFields(TTA tta, stri
 		
 		return "";
 }
-	
+*/	
 	

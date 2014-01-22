@@ -21,7 +21,7 @@ import pacahon.know_predicates;
 import pacahon.context;
 import search.vel;
 
-public const string xapian_path            = "data/xapian-search";
+public const string xapian_search_db_path            = "data/xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
 byte err;
@@ -164,10 +164,10 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
     string                 lang    = "russian";
     XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);    
 
-    bool is_exist_db = exists(xapian_path);
+    bool is_exist_db = exists(xapian_search_db_path);
 
     // Open the database for update, creating a new database if necessary.
-    indexer_db = new_WritableDatabase(xapian_path.ptr, xapian_path.length, DB_CREATE_OR_OPEN, &err);
+    indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
     if (err != 0)
     {
         writeln("!!!!!!! ERRR O_o");
@@ -219,7 +219,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 printf("ok\n");
                 
 				//indexer_db.close (&err);
-				//indexer_db = new_WritableDatabase(xapian_path.ptr, xapian_path.length, DB_CREATE_OR_OPEN, &err);
+				//indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
                 last_counter_afrer_timed_commit = counter;
             }
         }

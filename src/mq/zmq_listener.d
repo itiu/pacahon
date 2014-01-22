@@ -4,6 +4,7 @@ import core.stdc.stdio;
 import core.stdc.errno;
 import core.stdc.string;
 import core.stdc.stdlib;
+
 import std.conv;
 import std.stdio : writeln;
 import std.datetime;
@@ -21,19 +22,11 @@ void zmq_thread(string props_file_name, int pos_in_listener_section, immutable s
 {
     writeln("SPAWN: zmq listener");
     
-    JSONValue props;
-
-    try
-    {
-        props = get_props("pacahon-properties.json");
-    } catch (Exception ex1)
-    {
-        throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-    }
+    Context context = new ThreadContext(props_file_name, "zmq", tids_names);
 
     string[ string ] params;
     JSONValue[] _listeners;
-    _listeners = props.object[ "listeners" ].array;
+    _listeners = context.get_props().object[ "listeners" ].array;
     int         listener_section_count = 0;
     foreach (listener; _listeners)
     {
@@ -54,7 +47,6 @@ void zmq_thread(string props_file_name, int pos_in_listener_section, immutable s
     string connect_to = params.get("point", null);
     zmq_bind(responder, cast(char *)connect_to);
 
-    Context context = new ThreadContext(props, "zmq", tids_names);
 
     ubyte[] out_data;
     while (true)

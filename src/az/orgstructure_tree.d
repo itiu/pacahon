@@ -38,7 +38,7 @@ class OrgStructureTree
         log.trace_log_and_console("start load org structure links");
 
         GraphCluster res = new GraphCluster();
-        vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res, thread_context);
+        vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res);
 
         foreach (ss; res.getArray())
         {

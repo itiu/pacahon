@@ -96,7 +96,7 @@ long stringToTime(string str)
     }
 }
 
-public JSONValue get_props(string file_name)
+public JSONValue read_props(string file_name)
 {
     JSONValue res;
 

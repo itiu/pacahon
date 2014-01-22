@@ -21,16 +21,6 @@ void nanomsg_thread(string props_file_name, immutable string[] tids_names)
 {
  	writeln("SPAWN: nanomsg listener");
 
-    JSONValue props;
-
-    try
-    {
-        props = get_props("pacahon-properties.json");
-    } catch (Exception ex1)
-    {
-        throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-    }
-
     core.thread.Thread.sleep(dur!("msecs")(100));
 
     char *IN_SOCKET_ADDRESS = cast(char *)"tcp://127.0.0.1:6699";
@@ -58,7 +48,7 @@ void nanomsg_thread(string props_file_name, immutable string[] tids_names)
     byte    *buf     = cast(byte *) malloc(buf_size);
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props, "nanomsg", tids_names);
+    Context context = new ThreadContext(props_file_name, "nanomsg", tids_names);
 
     int     i = 0;
     while (true)

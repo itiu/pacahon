@@ -38,21 +38,11 @@ void file_reader_thread(string props_file_name, immutable string[] tids_names)
     {
     }
 
-    JSONValue props;
-
-    try
-    {
-        props = get_props(props_file_name);
-    } catch (Exception ex1)
-    {
-        throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-    }
-
     core.thread.Thread.sleep(dur!("msecs")(100));
 
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props, "file_reader", tids_names);
+    Context context = new ThreadContext(props_file_name, "file_reader", tids_names);
 
     SysTime[string] prev_state_of_files;
 

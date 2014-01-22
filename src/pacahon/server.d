@@ -52,8 +52,10 @@ static this()
     io_msg = new logger("pacahon", "io", "server");
 }
 
+string props_file_path = "pacahon-properties.json";
+
 void main(char[][] args)
-{
+{	
     try
     {
         log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
@@ -78,13 +80,15 @@ void main(char[][] args)
         tids[thread.statistic_data_accumulator] = spawn(&statistic_data_accumulator);
         core.thread.Thread.sleep(dur!("msecs")(10));
         spawn(&print_statistic, tids[thread.statistic_data_accumulator]);
-        
-        tids[thread.condition] = spawn (&condition_thread);
 
         foreach (key, value; tids)
         {
              register(key, value);
         }      
+        
+        tids[thread.condition] = spawn (&condition_thread, props_file_path, cast(immutable) tids.keys);
+        register(thread.condition, tids[thread.condition]);
+
         writeln ("registred spawned tids:", tids);	
 
         {
@@ -92,7 +96,7 @@ void main(char[][] args)
 
             try
             {
-                props = get_props("pacahon-properties.json");
+                props = read_props(props_file_path);
             } catch (Exception ex1)
             {
                 throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
@@ -191,7 +195,7 @@ void main(char[][] args)
                             {
                                 rabbitmq_connection.set_callback(&get_message);
 
-                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props, "RABBITMQ", tids.keys);
+                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path, "RABBITMQ", tids.keys);
 
                                 init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -557,10 +561,10 @@ class ServerThread : core.thread.Thread
 {
     ThreadContext resource;
 
-    this(void delegate() _dd, JSONValue props, string context_name, string[] tids_names)
+    this(void delegate() _dd, string props_file_path, string context_name, string[] tids_names)
     {
         super(_dd);
-        resource = new ThreadContext(props, context_name, cast(immutable)tids_names);
+        resource = new ThreadContext(props_file_path, context_name, cast(immutable)tids_names);
 
 //		resource.sw.start();
     }
