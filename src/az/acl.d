@@ -1,4 +1,4 @@
-module storage.acl;
+module az.acl;
 
 private
 {

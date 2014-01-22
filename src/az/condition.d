@@ -73,6 +73,7 @@ public void condition_thread()
     	receive((EVENT type, string msg)
     	{    	
     		writeln ("condition_thread:", type, ":", msg); 
+    		
     	});    	
     }
 }
@@ -169,28 +170,32 @@ class MandatManager
 	
 
 
-	public bool eval(string userId, TTA tta, string p_op, Subject doc, out string token, int level = 0)
+	public bool eval(TTA tta, string p_op, Subject doc, out string token, int level = 0)
 	{
 		if(tta.op == "==" || tta.op == "!=")
 		{
 			string A;
-			eval(userId, tta.L, tta.op, doc, A, level + 1);
+			eval(tta.L, tta.op, doc, A, level + 1);
 			string B;
-			eval(userId, tta.R, tta.op, doc, B, level + 1);
+			eval(tta.R, tta.op, doc, B, level + 1);
 //			writeln ("\ndoc=", doc);
 //			writeln ("fields=", fields);
 //			writeln (A, " == ", B);
 		
 			string ff = A;
 
-			if (B == "$user")
-				B = userId;
+			if (B == "$user") 
+			{
+//				B = userId;
+			}	
 			
 		//writeln ("ff=", ff);
 		//writeln ("fields.get (ff).items=", doc.getObjects(ff));
 		
+			// для всех значений поля ff
 			foreach (field_i ; doc.getObjects(ff))
 			{
+				
 				string field = field_i.literal;
 
 				//writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
@@ -207,10 +212,10 @@ class MandatManager
 			bool A = false, B = false;
 		
 			if(tta.R !is null)
-				A = eval(userId, tta.R, tta.op, doc, token, level + 1);
+				A = eval(tta.R, tta.op, doc, token, level + 1);
 
 			if(tta.L !is null)
-				B = eval(userId, tta.L, tta.op, doc, token, level + 1);
+				B = eval(tta.L, tta.op, doc, token, level + 1);
 			
 			return A && B; 		
 		}
@@ -219,13 +224,13 @@ class MandatManager
 			bool A = false, B = false;
 
 			if(tta.R !is null)
-				A = eval(userId, tta.R, tta.op, doc, token, level + 1);
+				A = eval(tta.R, tta.op, doc, token, level + 1);
 				
 			if (A == true)
 				return true;	
 
 			if(tta.L !is null)
-				B = eval(userId, tta.L, tta.op, doc, token, level + 1);
+				B = eval(tta.L, tta.op, doc, token, level + 1);
 					
 			return A || B; 		
 		} else if(tta.op == "true")

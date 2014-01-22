@@ -61,7 +61,7 @@ class VQL
 
     private XapianDatabase xapian_db;
 	private XapianStem xapian_stemmer;
-    private string         xapian_path = "xapian-search";
+//    private string         xapian_path = "xapian-search";
     private string         xapian_lang = "russian";
     private XapianEnquire  xapian_enquire;
     private XapianQueryParser xapian_qp;

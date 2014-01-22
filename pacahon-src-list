@@ -29,7 +29,6 @@ src/util/cbor.d
 
 src/storage/ticket.d
 src/storage/subject.d
-src/storage/acl.d
 
 src/onto/doc_template.d
 src/onto/docs_base.d
@@ -37,6 +36,7 @@ src/onto/rdf_base.d
 
 src/az/orgstructure_tree.d
 src/az/condition.d
+src/az/acl.d
 
 src/pacahon/command_io.d 
 src/pacahon/command_multiplexor.d 

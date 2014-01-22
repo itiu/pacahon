@@ -21,7 +21,7 @@ import pacahon.know_predicates;
 import pacahon.context;
 import search.vel;
 
-private const string xapian_path            = "xapian-search";
+public const string xapian_path            = "data/xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
 byte err;
