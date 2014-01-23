@@ -26,7 +26,7 @@ private import pacahon.define;
 
 private import onto.docs_base;
 
-logger   log;
+logger log;
 
 
 static this()
@@ -140,11 +140,10 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
                     graph.addPredicate(dc__creator, ticket.userId);
                 }
 
-                context.store_subject (graph, prepareEvents);
+                context.store_subject(graph, prepareEvents);
 
                 reason = "добавление фактов выполнено:" ~ authorize_reason;
                 isOk   = true;
-
             }
             else
             {
