@@ -63,7 +63,7 @@ class ThreadContext : Context
         {
             tids[ tid_name ] = locate(tid_name);
         }
-        writeln("context:", tids);
+        //writeln("context:", tids);
 
         _event_filters      = new GraphCluster();
         _ba2pacahon_records = new GraphCluster();

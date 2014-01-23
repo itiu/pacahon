@@ -92,7 +92,7 @@ private void prepare_file (string file_name, Context context)
 					string prefix = context.get_prefix_map.get (ss.subject, null); 
 					if (prefix !is null)
 					{
-						writeln ("found prefix=", prefix);
+//						writeln ("found prefix=", prefix);
 						if (ss.isExsistsPredicate (rdf__type, owl__Ontology))
 						{
 							string version_onto = ss.getFirstLiteral (owl__versionInfo);
