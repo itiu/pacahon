@@ -39,7 +39,7 @@ private
 
     import search.ba2pacahon;
     import search.xapian;
-    
+
     import az.condition;
 }
 
@@ -55,7 +55,7 @@ static this()
 string props_file_path = "pacahon-properties.json";
 
 void main(char[][] args)
-{	
+{
     try
     {
         log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
@@ -63,33 +63,33 @@ void main(char[][] args)
 
         core.thread.Thread.sleep(dur!("msecs")(1));
 
-        Tid[string] tids;
+        Tid[ string ] tids;
 
-        tids[thread.ticket_manager]  = spawn(&ticket_manager);
-        tids[thread.subject_manager] = spawn(&subject_manager);
-        tids[thread.acl_manager]     = spawn(&acl_manager);
+        tids[ thread.ticket_manager ]  = spawn(&ticket_manager);
+        tids[ thread.subject_manager ] = spawn(&subject_manager);
+        tids[ thread.acl_manager ]     = spawn(&acl_manager);
 
-        tids[thread.xapian_thread_io] = spawn(&xapian_thread_io);
-        tids[thread.xapian_indexer] = spawn(&xapian_indexer, tids[thread.subject_manager], tids[thread.xapian_thread_io]);
-        spawn(&xapian_indexer_commiter, tids[thread.xapian_indexer]);
-        send (tids[thread.xapian_indexer], thisTid);
+        tids[ thread.xapian_thread_io ] = spawn(&xapian_thread_io);
+        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.xapian_thread_io ]);
+        spawn(&xapian_indexer_commiter, tids[ thread.xapian_indexer ]);
+        send(tids[ thread.xapian_indexer ], thisTid);
         receive((bool isReady)
-        {    	
-        });        
+                {
+                });
 
-        tids[thread.statistic_data_accumulator] = spawn(&statistic_data_accumulator);
+        tids[ thread.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
         core.thread.Thread.sleep(dur!("msecs")(10));
-        spawn(&print_statistic, tids[thread.statistic_data_accumulator]);
+        spawn(&print_statistic, tids[ thread.statistic_data_accumulator ]);
 
         foreach (key, value; tids)
         {
-             register(key, value);
-        }      
-        
-        tids[thread.condition] = spawn (&condition_thread, props_file_path, cast(immutable) tids.keys);
-        register(thread.condition, tids[thread.condition]);
+            register(key, value);
+        }
 
-        writeln ("registred spawned tids:", tids);	
+        tids[ thread.condition ] = spawn(&condition_thread, props_file_path, cast(immutable)tids.keys);
+        register(thread.condition, tids[ thread.condition ]);
+
+        writeln("registred spawned tids:", tids);
 
         {
             JSONValue props;
@@ -118,11 +118,11 @@ void main(char[][] args)
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn (&mq.file_reader.file_reader_thread, "pacahon-properties.json", cast(immutable) tids.keys);
+                        spawn(&mq.file_reader.file_reader_thread, "pacahon-properties.json", cast(immutable)tids.keys);
                     }
                     else if (params.get("transport", "") == "nanomsg")
                     {
-                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", cast(immutable) tids.keys);
+                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", cast(immutable)tids.keys);
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -135,7 +135,7 @@ void main(char[][] args)
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, cast(immutable) tids.keys);
+                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, cast(immutable)tids.keys);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
