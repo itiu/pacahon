@@ -69,7 +69,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                 	ptr++;
 
                 string token = cast(immutable)new_line_ptr[0..ptr - new_line_ptr]; 		
-
+//                writeln ("# token=", token);
                 if (token == "@prefix" && ptr + 5 - src < len)
                 {
                 	ptr++;
@@ -78,9 +78,11 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                 	while (*ptr != ' ' && ptr - src < len)
                 		ptr++;                	
                 	string prefix = cast(immutable)s_pos[0..ptr - s_pos].dup;
-                	
-                	ptr++;
-                	
+//                	writeln ("# prefix=", prefix);
+
+                	while (*ptr == ' ' && ptr - src < len)
+                		ptr++;                	
+                	               	
                 	if (*ptr == '<')
                 		ptr++;
                 	
@@ -95,6 +97,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                 		ptr--;
                 		                		       	
                 	string url = cast(immutable)s_pos[0..ptr - s_pos].dup;
+//                	writeln ("# url=", url);
                 	
                 	prefix_map[prefix] = url;
                 	prefix_map[url] = prefix;
