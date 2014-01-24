@@ -69,20 +69,20 @@ enum MajorType : ubyte
 {
     /** Major type 0: unsigned integers. */
     UNSIGNED_INTEGER     = 0 << 5,
-    /** Major type 1: negative integers. */
-    NEGATIVE_INTEGER = 1 << 5,
-    /** Major type 2: byte string. */
-    BYTE_STRING      = 2 << 5,
-    /** Major type 3: text/UTF8 string. */
-    TEXT_STRING      = 3 << 5,
-    /** Major type 4: array of items. */
-    ARRAY            = 4 << 5,
-    /** Major type 5: map of pairs. */
-    MAP              = 5 << 5,
-    /** Major type 6: semantic tags. */
-    TAG              = 6 << 5,
-    /** Major type 7: floating point, simple data types. */
-    FLOAT_SIMPLE     = 7 << 5
+        /** Major type 1: negative integers. */
+        NEGATIVE_INTEGER = 1 << 5,
+        /** Major type 2: byte string. */
+        BYTE_STRING      = 2 << 5,
+        /** Major type 3: text/UTF8 string. */
+        TEXT_STRING      = 3 << 5,
+        /** Major type 4: array of items. */
+        ARRAY            = 4 << 5,
+        /** Major type 5: map of pairs. */
+        MAP              = 5 << 5,
+        /** Major type 6: semantic tags. */
+        TAG              = 6 << 5,
+        /** Major type 7: floating point, simple data types. */
+        FLOAT_SIMPLE     = 7 << 5
 }
 
 struct ElementHeader
@@ -97,8 +97,8 @@ struct Element
     union
     {
         string    str;
-        Predicate  pp;
-        Subject subject;
+        Predicate pp;
+        Subject   subject;
     }
 }
 
@@ -149,21 +149,21 @@ public void write_header(MajorType type, ulong len, ref OutBuffer ou)
     }
 }
 
-public void write_predicate (Predicate vv, ref OutBuffer ou)
+public void write_predicate(Predicate vv, ref OutBuffer ou)
 {
-            write_string(vv.predicate, ou);
-            if (vv.length > 1)
-            	write_header(MajorType.ARRAY, vv.length, ou);
-            foreach (value; vv)
-            {
-            	write_string(value.literal, ou);
-            }
+    write_string(vv.predicate, ou);
+    if (vv.length > 1)
+        write_header(MajorType.ARRAY, vv.length, ou);
+    foreach (value; vv)
+    {
+        write_string(value.literal, ou);
+    }
 }
 
-public void write_string (string vv, ref OutBuffer ou)
+public void write_string(string vv, ref OutBuffer ou)
 {
-     write_header(MajorType.TEXT_STRING, vv.length, ou);
-       ou.write(vv);
+    write_header(MajorType.TEXT_STRING, vv.length, ou);
+    ou.write(vv);
 }
 
 public void write(T) (T[] arr, ref OutBuffer ou)
@@ -209,7 +209,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
     el.type = header.type;
     if (header.type == MajorType.MAP)
     {
-        Subject res1 = new Subject ();
+        Subject res1 = new Subject();
 //	writeln ("IS MAP, length=", header.len, ", pos=", pos);
         foreach (i; 0 .. header.len)
         {
@@ -222,23 +222,23 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
 
             if (key.str == "@")
             {
-            	res1.subject = val.str;
-            }	
+                res1.subject = val.str;
+            }
             else if (key.type == MajorType.TEXT_STRING && val.type == MajorType.ARRAY)
             {
-            	if (val.pp !is null)
-            	{
-            		val.pp.predicate = key.str; 
-            		if (val.pp.length > 0)
-            			res1.addPredicate (val.pp);
-            	}	
+                if (val.pp !is null)
+                {
+                    val.pp.predicate = key.str;
+                    if (val.pp.length > 0)
+                        res1.addPredicate(val.pp);
+                }
             }
             else if (key.type == MajorType.TEXT_STRING && val.type == MajorType.TEXT_STRING)
             {
-                if (fields == ALL || (fields == LINKS && is_link_on_subject (val.str) == true))
+                if (fields == ALL || (fields == LINKS && is_link_on_subject(val.str) == true))
                 {
-                	res1.addPredicate (key.str, val.str);
-                }	
+                    res1.addPredicate(key.str, val.str);
+                }
             }
         }
         el.subject = res1;
@@ -247,12 +247,12 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
     {
 //	writeln ("IS STRING, length=", header.len, ", pos=", pos);
 
-        int   ep = cast(int)(pos + header.len);
-        
-        string str = cast(string)src[ pos..ep ].dup;
-       	el.str  = cast(string)src[ pos..ep ];
+        int    ep = cast(int)(pos + header.len);
 
-        pos  = ep;
+        string str = cast(string)src[ pos..ep ].dup;
+        el.str = cast(string)src[ pos..ep ];
+
+        pos = ep;
     }
     else if (header.type == MajorType.ARRAY)
     {
@@ -265,17 +265,16 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
 
             if (arr_el.type == MajorType.TEXT_STRING)
             {
-                if (fields == ALL || (fields == LINKS && is_link_on_subject (arr_el.str) == true))
+                if (fields == ALL || (fields == LINKS && is_link_on_subject(arr_el.str) == true))
                 {
-                	if (vals is null)
-                	 vals = new Predicate ();
-                	 
-                	vals ~= arr_el.str;
+                    if (vals is null)
+                        vals = new Predicate();
+
+                    vals ~= arr_el.str;
                 }
-            }    
+            }
         }
         el.pp = vals;
-
     }
     return pos;
 }
@@ -302,15 +301,15 @@ private int read_header(ubyte[] src, ElementHeader *header)
         else if (ld == 27)
             ld = long_from_buff(src, 1);
     }
-    
+
     if (ld > src.length)
     {
-    	writeln ("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
-    	ld = src.length;
+        writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
+        ld = src.length;
     }
-    	
-    header.len  = ld;
-    
+
+    header.len = ld;
+
     header.type = type;
 //    writeln ("type=", type, ", length=", ld, ", d_pos=", d_pos, ", src.length=", src.length);
 
@@ -328,9 +327,9 @@ public string encode_cbor(Subject in_obj)
     MajorType type    = MajorType.MAP;
 
     write_header(type, map_len, ou);
-    write_string ("@", ou);
-    write_string (in_obj.subject, ou);
-    
+    write_string("@", ou);
+    write_string(in_obj.subject, ou);
+
     foreach (pp; in_obj)
     {
         write_predicate(pp, ou);
@@ -347,6 +346,7 @@ public Subject decode_cbor(string in_str, byte fields = ALL)
 //    sw.start();
 
     Element res;
+
     read_element(cast(ubyte[])in_str, &res, fields);
 
 //    sw.stop();
