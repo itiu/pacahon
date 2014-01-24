@@ -363,7 +363,6 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
     if (el_length == 1 && (ch == ']' || ch == ';' || ch == '.'))
         return *element;
 
-    bool is_quoted = false;
     if (*element == '"')
     {
         element++;
@@ -407,10 +406,13 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
                 el_length -= 4;
             }
 //      writeln (data[0..el_length], ", LANG:", lang);
-            pp.addLiteral(data[ 0..el_length ], lang);
+            pp.addLiteral(data, lang);
         }
         else
-            pp.addResource(data[ 0..el_length ]);
+        {
+            pp.addResource(data);
+//            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
+        }   
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
         return 0;
     }
