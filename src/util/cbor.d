@@ -37,36 +37,6 @@ int DOUBLE_PRECISION_FLOAT = 0x1b;
 /** The CBOR-encoded "break" stop code for unlimited arrays/maps. */
 int BREAK = 0x1f;
 
-/** Semantic tag value describing date/time values in the standard format (UTF8 string, RFC3339). */
-int TAG_STANDARD_DATE_TIME = 0;
-/** Semantic tag value describing date/time values as Epoch timestamp (numeric, RFC3339). */
-int TAG_EPOCH_DATE_TIME = 1;
-/** Semantic tag value describing a positive big integer value (byte string). */
-int TAG_POSITIVE_BIGINT = 2;
-/** Semantic tag value describing a negative big integer value (byte string). */
-int TAG_NEGATIVE_BIGINT = 3;
-/** Semantic tag value describing a decimal fraction value (two-element array, base 10). */
-int TAG_DECIMAL_FRACTION = 4;
-/** Semantic tag value describing a big decimal value (two-element array, base 2). */
-int TAG_BIGDECIMAL = 5;
-/** Semantic tag value describing an expected conversion to base64url encoding. */
-int TAG_EXPECTED_BASE64_URL_ENCODED = 21;
-/** Semantic tag value describing an expected conversion to base64 encoding. */
-int TAG_EXPECTED_BASE64_ENCODED = 22;
-/** Semantic tag value describing an expected conversion to base16 encoding. */
-int TAG_EXPECTED_BASE16_ENCODED = 23;
-/** Semantic tag value describing an encoded CBOR data item (byte string). */
-int TAG_CBOR_ENCODED = 24;
-/** Semantic tag value describing an URL (UTF8 string). */
-int TAG_URI = 32;
-/** Semantic tag value describing a base64url encoded string (UTF8 string). */
-int TAG_BASE64_URL_ENCODED = 33;
-/** Semantic tag value describing a base64 encoded string (UTF8 string). */
-int TAG_BASE64_ENCODED = 34;
-/** Semantic tag value describing a regular expression string (UTF8 string, PCRE). */
-int TAG_REGEXP = 35;
-/** Semantic tag value describing a MIME message (UTF8 string, RFC2045). */
-int TAG_MIME_MESSAGE = 36;
 /** Semantic tag value describing CBOR content. */
 int TAG_CBOR_MARKER = 55799;
 
@@ -93,8 +63,40 @@ enum MajorType : ubyte
 enum TAG : ubyte
 {
 	NONE	= 255,
+	
 	TEXT_RU = 42,
-	TEXT_EN = 43
+	
+	TEXT_EN = 43,	
+/** date/time values in the standard format (UTF8 string, RFC3339). */
+ 	STANDARD_DATE_TIME = 0,
+/** date/time values as Epoch timestamp (numeric, RFC3339). */
+	EPOCH_DATE_TIME = 1,
+/** positive big integer value (byte string). */
+	POSITIVE_BIGINT = 2,
+/** negative big integer value (byte string). */
+	NEGATIVE_BIGINT = 3,
+/** decimal fraction value (two-element array, base 10). */
+	DECIMAL_FRACTION = 4,
+/** big decimal value (two-element array, base 2). */
+	BIGDECIMAL = 5,
+/** base64url encoding. */
+	EXPECTED_BASE64_URL_ENCODED = 21,
+/** base64 encoding. */
+	EXPECTED_BASE64_ENCODED = 22,
+/** base16 encoding. */
+	EXPECTED_BASE16_ENCODED = 23,
+/** encoded CBOR data item (byte string). */
+	CBOR_ENCODED = 24,
+/** URL (UTF8 string). */
+	URI = 32,
+/** base64url encoded string (UTF8 string). */
+	BASE64_URL_ENCODED = 33,
+/** base64 encoded string (UTF8 string). */
+	BASE64_ENCODED = 34,
+/** regular expression string (UTF8 string, PCRE). */
+	REGEXP = 35,
+/** MIME message (UTF8 string, RFC2045). */
+	MIME_MESSAGE = 36	
 }	
 
 struct ElementHeader
@@ -107,13 +109,13 @@ struct ElementHeader
 struct Element
 {
     MajorType type;
+    TAG	  tag = TAG.NONE;
     union
     {
         string    str;
         Predicate pp;
         Subject   subject;
-    }
-    LANG lang;
+    }    
 }
 
 string toString (ElementHeader *el)
@@ -178,32 +180,34 @@ public void write_predicate(Predicate vv, ref OutBuffer ou)
         write_header(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
-        write_string(value.literal, ou, value.lang);
+    	if (value.type == OBJECT_TYPE.RESOURCE)
+    	{    	
+   			write_header(MajorType.TAG, TAG.URI, ou);
+    		write_string(value.literal, ou);
+    	}
+    	else
+    	{
+    		if (value.lang != LANG.NONE)
+    			write_header(MajorType.TAG, value.lang + 41, ou);
+    		write_string(value.literal, ou);
+    	}	
     }
 }
 
-public void write_string(string vv, ref OutBuffer ou, LANG lang = LANG.NONE)
+public void write_string(string vv, ref OutBuffer ou)
 {
-	if (lang == LANG.NONE)
-	{
-		write_header(MajorType.TEXT_STRING, vv.length, ou);
-    }
-	else
-	{
-		write_header(MajorType.TAG, lang + 41, ou);
-		write_header(MajorType.TEXT_STRING, vv.length, ou);
-	}
+	write_header(MajorType.TEXT_STRING, vv.length, ou);
     ou.write(vv);
 }
 
-public void write(T) (T[] arr, ref OutBuffer ou)
-{
-    write_header(MajorType.ARRAY, arr.length, ou);
-    foreach (value; arr)
-    {
-        write(value, ou);
-    }
-}
+//public void write(T) (T[] arr, ref OutBuffer ou)
+//{
+//    write_header(MajorType.ARRAY, arr.length, ou);
+//    foreach (value; arr)
+//    {
+//        write(value, ou);
+//    }
+//}
 
 private short short_from_buff(ubyte[] buff, int pos)
 {
@@ -270,7 +274,18 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
                 if (fields == ALL || (fields == LINKS && is_link_on_subject(val.str) == true))
                 {
                 	//writeln ("[", val.str, "], lang=", val.lang);
-                    res1.addPredicate(key.str, val.str, val.lang);
+                	if (val.tag == TAG.NONE)
+                	{
+//                		writeln ("add as string:", key.str, " : ", val.str);
+                		res1.addPredicate(key.str, val.str);
+                	}	                	
+                	else if (val.tag == TAG.TEXT_RU || val.tag == TAG.TEXT_EN)
+                		res1.addPredicate(key.str, val.str, cast(LANG)(el.tag - 41));
+                	else if (val.tag == TAG.URI)
+                	{
+//                		writeln ("add as resource:", key.str, " : ", val.str);
+                		res1.addResource (key.str, val.str);
+                	}	
                 }
             }
         }
@@ -283,13 +298,8 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
 
         string str = cast(string)src[ pos..ep ].dup;
         el.str = str;
+        el.tag = header.tag;
         
-       	if (header.tag == TAG.TEXT_RU || header.tag == TAG.TEXT_EN)
-       	{
-       		el.lang = cast (LANG)(header.tag - 41); 
-//       		writeln ("TAGGED str=", str, ", lang=", el.lang);
-       	}
-
         pos = ep;
     }
     else if (header.type == MajorType.ARRAY)
@@ -308,7 +318,15 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
                     if (vals is null)
                         vals = new Predicate();
 
-                    vals.addLiteral (arr_el.str, arr_el.lang);
+                	if (arr_el.tag == TAG.NONE)
+                		vals.addLiteral(arr_el.str);                	
+                	else if (arr_el.tag == TAG.TEXT_RU || arr_el.tag == TAG.TEXT_EN)
+                		 vals.addLiteral(arr_el.str, cast(LANG)(arr_el.tag - 41));
+                	else if (arr_el.tag == TAG.URI)
+                	{
+//                		writeln ("#2 add as resource: ", arr_el.str);
+                		vals.addResource (arr_el.str);
+                	}	
                 }
             }
         }
@@ -347,7 +365,7 @@ private int read_header(ubyte[] src, ElementHeader *header)
     	header.tag = cast(TAG)ld;
     	header.len = main_type_header.len;
     	header.type = main_type_header.type;
- //   	writeln ("HEADER:", header.toString());
+//    	writeln ("HEADER:", header.toString());
     }
     else
     {
