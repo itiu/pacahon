@@ -15,7 +15,7 @@ private import util.utils;
  *  len - длинна исходной строки,
  */
 
-public Subject[] parse_turtle_string(char *src, int len, ref string[string] prefix_map)
+public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] prefix_map)
 {
 //	StopWatch sw;
 //	sw.start();
@@ -66,48 +66,48 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
             {
                 // это блок назначения префиксов
                 while (*ptr != ' ' && ptr - src < len)
-                	ptr++;
+                    ptr++;
 
-                string token = cast(immutable)new_line_ptr[0..ptr - new_line_ptr]; 		
+                string token = cast(immutable)new_line_ptr[ 0..ptr - new_line_ptr ];
 //                writeln ("# token=", token);
                 if (token == "@prefix" && ptr + 5 - src < len)
                 {
-                	ptr++;
+                    ptr++;
 
-                	char* s_pos = ptr;
-                	while (*ptr != ' ' && ptr - src < len)
-                		ptr++;                	
-                	string prefix = cast(immutable)s_pos[0..ptr - s_pos].dup;
-//                	writeln ("# prefix=", prefix);
+                    char *s_pos = ptr;
+                    while (*ptr != ' ' && ptr - src < len)
+                        ptr++;
+                    string prefix = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
+//                  writeln ("# prefix=", prefix);
 
-                	while (*ptr == ' ' && ptr - src < len)
-                		ptr++;                	
-                	               	
-                	if (*ptr == '<')
-                		ptr++;
-                	
-                	s_pos = ptr;
-                	while (*ptr != ' ' && ptr - src < len)
-                		ptr++;
-                		         
-                	if (*(ptr - 1) == '>')
-                		ptr--;
+                    while (*ptr == ' ' && ptr - src < len)
+                        ptr++;
 
-                	if (*(ptr - 1) == '#')
-                		ptr--;
-                		                		       	
-                	string url = cast(immutable)s_pos[0..ptr - s_pos].dup;
-//                	writeln ("# url=", url);
-                	
-                	prefix_map[prefix] = url;
-                	prefix_map[url] = prefix;
-                }	
+                    if (*ptr == '<')
+                        ptr++;
+
+                    s_pos = ptr;
+                    while (*ptr != ' ' && ptr - src < len)
+                        ptr++;
+
+                    if (*(ptr - 1) == '>')
+                        ptr--;
+
+                    if (*(ptr - 1) == '#')
+                        ptr--;
+
+                    string url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
+//                  writeln ("# url=", url);
+
+                    prefix_map[ prefix ] = url;
+                    prefix_map[ url ]    = prefix;
+                }
 
                 // пропускаем строку
                 while (ch != '\n' && ch != '\r' && ptr - src < len)
                 {
                     ptr++;
-                    ch      = *ptr;
+                    ch = *ptr;
                 }
                 continue;
             }
@@ -120,7 +120,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                 while (ch != '\n' && ch != '\r' && ptr - src < len)
                 {
                     ptr++;
-                    ch      = *ptr;
+                    ch = *ptr;
                 }
                 continue;
             }
@@ -139,9 +139,9 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                 // это начало элемента
                 char *start_el = ptr;
                 char *end_el   = ptr;
-				//writeln ("2 CH0 [", *start_el, "]");
+                //writeln ("2 CH0 [", *start_el, "]");
 
-				bool is_literal = false;
+                bool is_literal = false;
                 // пропускаем термы в кавычках (" или """)
                 bool is_multiline_quote = false;
                 if (*start_el == '"')
@@ -154,130 +154,130 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                     }
                     else
                     {
-                        start_el          += 1;
-                        end_el             = start_el;                    	
+                        start_el += 1;
+                        end_el    = start_el;
                     }
 
                     ch = *end_el;
                     //writeln ("3 CH0 [", *end_el, "]");
-                    
+
                     while (end_el - src < len)
                     {
                         if (ch == '"')
                         {
-                           	is_literal = true;
+                            is_literal = true;
                             if (is_multiline_quote == true && end_el - src < len - 2 && *(end_el + 1) == '"' && *(end_el + 2) == '"')
                             {
-                            	end_el += 2;
-                            	ch = *end_el;
- //                           	writeln("CH#:", ch, ", ", cast(int)ch);
+                                end_el += 2;
+                                ch      = *end_el;
+                                //                              writeln("CH#:", ch, ", ", cast(int)ch);
                                 break;
                             }
 
                             if (is_multiline_quote == false)
                             {
-                            	if (*(end_el + 1) == '@')
-                            	{
-                            		while (end_el - src < len)
-                            		{
-                            			end_el++;	
-                            			if (*end_el == ' ' || *end_el == ';' || *end_el == '.')
-                            			{
-                            				end_el--;
-                            				ch = *end_el;
-                            				break;
-                            			}	
-                            			if (*end_el == ',')
-                            			{	
-                            				end_el--;
-                            				ch = *end_el;
-                            				break;
-                            			}	
-                            		}                            		
-                            		ch = *end_el;
-//                            		writeln("CH@:", ch, ", ", cast(int)ch);
-                            	}	
-                           		break;
-                            }    
+                                if (*(end_el + 1) == '@')
+                                {
+                                    while (end_el - src < len)
+                                    {
+                                        end_el++;
+                                        if (*end_el == ' ' || *end_el == ';' || *end_el == '.')
+                                        {
+                                            end_el--;
+                                            ch = *end_el;
+                                            break;
+                                        }
+                                        if (*end_el == ',')
+                                        {
+                                            end_el--;
+                                            ch = *end_el;
+                                            break;
+                                        }
+                                    }
+                                    ch = *end_el;
+//                                  writeln("CH@:", ch, ", ", cast(int)ch);
+                                }
+                                break;
+                            }
                         }
 
                         end_el++;
                         ch = *end_el;
                     }
                 }
-                
+
 //				writeln("CH0:", ch, ", ", cast(int)ch);
 
                 int length_el;
                 int depth = 0;
                 if (state != 2 && *start_el == '(')
                 {
-                // пропускаем термы: (( )))
-                	start_el          += 1;
-                    end_el             = start_el; 
-                	while (end_el - src < len)
-                	{                		
-                		if (ch == ')')
+                    // пропускаем термы: (( )))
+                    start_el += 1;
+                    end_el    = start_el;
+                    while (end_el - src < len)
+                    {
+                        if (ch == ')')
                         {
-                        	if (depth == 0)
-                        		break;
-                        	
-                        	depth--;                        	
+                            if (depth == 0)
+                                break;
+
+                            depth--;
                         }
                         end_el++;
                         ch = *end_el;
-                		if (ch == '(')
-                			depth++;                                                
-                	}
-                	length_el = cast(int)(end_el - start_el);
+                        if (ch == '(')
+                            depth++;
+                    }
+                    length_el = cast(int)(end_el - start_el);
                 }
                 else if (*start_el == '<')
                 {
-                // пропускаем термы в < >)
-                	start_el          += 1;
-                    end_el             = start_el; 
-                	while (end_el - src < len)
-                	{
-                		if (ch == '>')
+                    // пропускаем термы в < >)
+                    start_el += 1;
+                    end_el    = start_el;
+                    while (end_el - src < len)
+                    {
+                        if (ch == '>')
                         {
-                        	break;
+                            break;
                         }
                         end_el++;
-                        ch = *end_el;                        
-                	}
-                	length_el = cast(int)(end_el - start_el);
+                        ch = *end_el;
+                    }
+                    length_el = cast(int)(end_el - start_el);
                 }
                 else
-                {                
+                {
 //					writeln("CH1:", ch, ", ", cast(int)ch);
-                	if (ch == ']' || ch == ';')
-                	{
+                    if (ch == ']' || ch == ';')
+                    {
 //						writeln("CH2:", ch, ", ", cast(int)ch);
-                    	length_el = 1;
+                        length_el = 1;
                     }
                     else if (ch == ',' || ch == '.' || ch == '[')
                     {
-                    	length_el = 1;
-                   	}
-                   	else
-                   	{
-                   		while (end_el - src < len - 1)
-                   		{
+                        length_el = 1;
+                    }
+                    else
+                    {
+                        while (end_el - src < len - 1)
+                        {
 //							writeln("CH3:", ch, ", ", cast(int)ch);
-                        	if (ch == ';' || ch == ' ' || ch == '\r')
-                        		break;
+                            if (ch == ';' || ch == ' ' || ch == '\r')
+                                break;
                             if (ch == '\n' || ch == ',' || ch == '"')
-                            	break;
+                                break;
                             if (ch == '.' || ch == '[' || ch == ']')
-                            	break;
+                                break;
 
                             end_el++;
                             ch = *end_el;
                         }
 
-                    	length_el = cast(int)(end_el - start_el);
-                    	if (is_multiline_quote)
-                    		length_el -= 2;                    		
+                        length_el = cast(int)(end_el - start_el);
+                        if (is_multiline_quote)
+                            length_el -= 2;
                     }
                 }
 
@@ -295,7 +295,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
                         res.addSubject(ss);
                         pp = null;
                         if (level == 0)
-                        	ss = new Subject();
+                            ss = new Subject();
                     }
                     else if (prev_el == '[')
                     {
@@ -336,7 +336,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[string] pref
 //				writeln ("1 END CH:", ch);
 
 //						writeln ("----------------------------------");
-                		//		printf("[%s]\n", element);
+                //		printf("[%s]\n", element);
             }
         }
     }
@@ -353,7 +353,7 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
     if (element is null)
         return 0;
 
-//	writeln ("el:*", element[0..el_length], "*, el_length:", el_length);
+    //writeln ("el:*", element[0..el_length], "*, el_length:", el_length);
 
     char ch = *element;
 
@@ -380,11 +380,11 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
 
     if (*state == 1)
     {
-        *state       = 2;
-        string predicate = cast(immutable)element[ 0..el_length ]; 
+        *state = 2;
+        string predicate = cast(immutable)element[ 0..el_length ];
         if (predicate == "rdf:type")
-        	predicate = "a";
-        	
+            predicate = "a";
+
         pp.predicate = predicate;
 //	    writeln ("@ add predicate=,", pp.predicate);
         ss.addPredicate(pp);
@@ -393,23 +393,24 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
 
     if (*state == 2)
     {
-    	string data = cast(immutable)element[0..el_length];
-    	
-    	if (is_literal == true)
-    	{
-    	LANG lang = LANG.NONE;
-    	if (data[$-3] == '@')
-    	{
-    		if (data[$-2] == 'r')
-    			lang = LANG.RU;
-    		else if (data[$-2] == 'e')
-    			lang = LANG.EN;
-    		el_length -= 4;
-    	}	 
-        pp.addLiteral(data[0..el_length], lang);
+        string data = cast(immutable)element[ 0..el_length ];
+
+        if (is_literal == true)
+        {
+            LANG lang = LANG.NONE;
+            if (data[ $ - 3 ] == '@')
+            {
+                if (data[ $ - 2 ] == 'r')
+                    lang = LANG.RU;
+                else if (data[ $ - 2 ] == 'e')
+                    lang = LANG.EN;
+                el_length -= 4;
+            }
+//      writeln (data[0..el_length], ", LANG:", lang);
+            pp.addLiteral(data[ 0..el_length ], lang);
         }
-    	else
-    		pp.addResource (data[0..el_length]);
+        else
+            pp.addResource(data[ 0..el_length ]);
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
         return 0;
     }
@@ -502,7 +503,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
                 {
                     outbuff.write(cast(char[])"@en");
                 }
-            }           
+            }
             else if (oo.type == OBJECT_TYPE.RESOURCE)
             {
                 outbuff.write(cast(char[])"   ");
