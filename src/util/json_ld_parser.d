@@ -8,7 +8,7 @@ private import std.utf;
 private import std.conv;
 
 private import util.graph;
-private import util.utils; 
+private import util.utils;
 private import util.logger;
 
 logger log;
@@ -529,13 +529,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     }
 
                     if (oo.lang == LANG.RU)
-                    {
-                        outbuff.write(cast(char[])"@ru");
-                    }
+                        outbuff.write("@ru");
                     else if (oo.lang == LANG.EN)
-                    {
-                        outbuff.write(cast(char[])"@en");
-                    }
+                        outbuff.write("@en");
 
                     outbuff.write('"');
 
@@ -546,7 +542,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     }
                 }
                 //				log.trace ("write literal end");
-            }            
+            }
             else if (oo.type == OBJECT_TYPE.RESOURCE)
             {
                 if (ff == true)
@@ -559,9 +555,9 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                 }
                 else
                 {
-                    outbuff.write('"');
+//                    outbuff.write('"');
                     outbuff.write(oo.literal);
-                    outbuff.write('"');
+//                    outbuff.write('"');
                 }
             }
             else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
