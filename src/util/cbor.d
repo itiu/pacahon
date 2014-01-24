@@ -1,12 +1,17 @@
 module util.cbor;
 
+private 
+{
 import std.outbuffer;
 import std.stdio;
 import std.typetuple;
 import std.datetime;
+import std.conv;
 
 import util.graph;
 import util.container;
+import util.utils;
+}
 
 enum : byte
 {
@@ -85,10 +90,18 @@ enum MajorType : ubyte
         FLOAT_SIMPLE     = 7 << 5
 }
 
+enum TAG : ubyte
+{
+	NONE	= 255,
+	TEXT_RU = 42,
+	TEXT_EN = 43
+}	
+
 struct ElementHeader
 {
     MajorType type;
     ulong     len;
+    TAG	  tag = TAG.NONE; 		
 }
 
 struct Element
@@ -100,6 +113,12 @@ struct Element
         Predicate pp;
         Subject   subject;
     }
+    LANG lang;
+}
+
+string toString (ElementHeader *el)
+{
+	return "type=" ~ text(el.type) ~ ", len=" ~ text(el.len) ~ ", tag=" ~ text(el.tag); 
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -108,10 +127,13 @@ public void write_header(MajorType type, ulong len, ref OutBuffer ou)
 {
 //    writeln ("@1 type=", type, ", len=", len);
     ubyte element_header;
+    ulong add_info;
 
-    if (len < 24)
+   	add_info = len;
+
+    if (add_info < 24)
     {
-        ubyte ll = cast(ubyte)len;
+        ubyte ll = cast(ubyte)add_info;
         element_header = type | ll;
         ou.write(element_header);
 
@@ -120,30 +142,30 @@ public void write_header(MajorType type, ulong len, ref OutBuffer ou)
     }
     else
     {
-        if ((len & 0xff00000000000000) > 0)
+        if ((add_info & 0xff00000000000000) > 0)
         {
             element_header = type | 27;
             ou.write(element_header);
-            ou.write(len);
+            ou.write(add_info);
         }
-        else if ((len & 0xff000000) > 0)
+        else if ((add_info & 0xff000000) > 0)
         {
             element_header = type | 26;
             ou.write(element_header);
-            ou.write(cast(uint)len);
+            ou.write(cast(uint)add_info);
         }
-        else if ((len & 0xff00) > 0)
+        else if ((add_info & 0xff00) > 0)
         {
             element_header = type | 25;
             ou.write(element_header);
-            ou.write(cast(ushort)len);
+            ou.write(cast(ushort)add_info);
         }
-        else if ((len & 0xff) > 0)
+        else if ((add_info & 0xff) > 0)
         {
             element_header = type | 24;
             ou.write(element_header);
 //	writeln ("element_header=",element_header);
-            ou.write(cast(ubyte)len);
+            ou.write(cast(ubyte)add_info);
 //	writeln ("len=",cast(ubyte)len);
         }
     }
@@ -156,13 +178,21 @@ public void write_predicate(Predicate vv, ref OutBuffer ou)
         write_header(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
-        write_string(value.literal, ou);
+        write_string(value.literal, ou, value.lang);
     }
 }
 
-public void write_string(string vv, ref OutBuffer ou)
+public void write_string(string vv, ref OutBuffer ou, LANG lang = LANG.NONE)
 {
-    write_header(MajorType.TEXT_STRING, vv.length, ou);
+	if (lang == LANG.NONE)
+	{
+		write_header(MajorType.TEXT_STRING, vv.length, ou);
+    }
+	else
+	{
+		write_header(MajorType.TAG, lang + 41, ou);
+		write_header(MajorType.TEXT_STRING, vv.length, ou);
+	}
     ou.write(vv);
 }
 
@@ -230,14 +260,17 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
                 {
                     val.pp.predicate = key.str;
                     if (val.pp.length > 0)
+                    {
                         res1.addPredicate(val.pp);
+                    }    
                 }
             }
-            else if (key.type == MajorType.TEXT_STRING && val.type == MajorType.TEXT_STRING)
+            else if (val.str.length > 0 && key.type == MajorType.TEXT_STRING && val.type == MajorType.TEXT_STRING)
             {
                 if (fields == ALL || (fields == LINKS && is_link_on_subject(val.str) == true))
                 {
-                    res1.addPredicate(key.str, val.str);
+                	//writeln ("[", val.str, "], lang=", val.lang);
+                    res1.addPredicate(key.str, val.str, val.lang);
                 }
             }
         }
@@ -246,11 +279,16 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
     else if (header.type == MajorType.TEXT_STRING)
     {
 //	writeln ("IS STRING, length=", header.len, ", pos=", pos);
-
         int    ep = cast(int)(pos + header.len);
 
         string str = cast(string)src[ pos..ep ].dup;
-        el.str = cast(string)src[ pos..ep ];
+        el.str = str;
+        
+       	if (header.tag == TAG.TEXT_RU || header.tag == TAG.TEXT_EN)
+       	{
+       		el.lang = cast (LANG)(header.tag - 41); 
+//       		writeln ("TAGGED str=", str, ", lang=", el.lang);
+       	}
 
         pos = ep;
     }
@@ -270,7 +308,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
                     if (vals is null)
                         vals = new Predicate();
 
-                    vals ~= arr_el.str;
+                    vals.addLiteral (arr_el.str, arr_el.lang);
                 }
             }
         }
@@ -301,16 +339,26 @@ private int read_header(ubyte[] src, ElementHeader *header)
         else if (ld == 27)
             ld = long_from_buff(src, 1);
     }
-
-    if (ld > src.length)
+    
+    if (type == MajorType.TAG)
     {
-        writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
-        ld = src.length;
+    	ElementHeader main_type_header;
+    	d_pos += read_header(src[d_pos..$], &main_type_header);
+    	header.tag = cast(TAG)ld;
+    	header.len = main_type_header.len;
+    	header.type = main_type_header.type;
+ //   	writeln ("HEADER:", header.toString());
     }
-
-    header.len = ld;
-
-    header.type = type;
+    else
+    {
+    	if (ld > src.length)
+    	{
+    		writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
+    		ld = src.length;
+    	}
+    	header.len = ld;
+    	header.type = type;    	
+    }
 //    writeln ("type=", type, ", length=", ld, ", d_pos=", d_pos, ", src.length=", src.length);
 
     return d_pos;
