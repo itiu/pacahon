@@ -318,7 +318,7 @@ final class Subject
         return edges_of_predicate.get(pname, null);
     }
 
-    void addPredicate(string predicate, string object, Subject _metadata, Subject _reification, byte lang = LANG.NONE)
+    void addPredicate(string predicate, string object, Subject _metadata, Subject _reification, LANG lang = LANG.NONE)
     {
         if (object is null)
             return;
@@ -735,7 +735,7 @@ class Predicate
         return null;
     }
 
-    Objectz addLiteral(string val, Subject reification, byte lang = LANG.NONE)
+    Objectz addLiteral(string val, Subject reification, LANG lang = LANG.NONE)
     {
         if (val is null)
             return null;
@@ -876,7 +876,7 @@ class Objectz
     Subject      reification = null; // реификация для данного значения
 
     byte         type = OBJECT_TYPE.LITERAL;
-    byte         lang;
+    LANG         lang;
 
     override string toString()
     {

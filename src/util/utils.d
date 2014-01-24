@@ -23,7 +23,7 @@ private
     import pacahon.context;
 }
 
-enum LANG : byte
+enum LANG : ubyte
 {
     NONE = 0,
     RU   = 1,
