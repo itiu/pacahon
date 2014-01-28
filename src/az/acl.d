@@ -47,7 +47,24 @@ void acl_manager()
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
 
-    writeln("SPAWN: ALC manager");
+    writeln("SPAWN: ALC manager");    
+
+    try
+    {
+        mkdir("data");
+    }
+    catch (Exception ex)
+    {
+    }
+
+    try
+    {
+        mkdir(db_path);
+    }
+    catch (Exception ex)
+    {
+    }
+
 
     bool is_exist_db = exists(db_path);
 
@@ -72,9 +89,8 @@ void acl_manager()
                     {
                         if (cmd == CMD.AUTHORIZE)
                         {
-                            //writeln ("is AUTHORIZE msg=[", msg, "]");
+//                            writeln ("is AUTHORIZE msg=[", msg, "]");
                             Subject sss = decode_cbor(msg, TYPE);
-                            //print_2 (sss);
 
                             send(tid_sender, msg, thisTid);
                         }
