@@ -434,7 +434,7 @@ class VQL
 
                                     if (sss !is null)
                                     {
-                                    	// отправить в исходящий поток
+                                    	// добавим в исходящий поток
                                     	res.addSubject (decode_cbor(msg));
                                     	
                                     	hash_of_subjects[sss.subject] = 1;
