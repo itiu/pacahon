@@ -376,7 +376,7 @@ class VQL
     {
         int read_count = 0;
 
-        //writeln ("query=", get_query_description (query));
+//        writeln ("query=", get_query_description (query));
 
         byte err;
 
@@ -388,8 +388,8 @@ class VQL
         if (err < 0)
             return err;
 
-        	   // writeln ("found =",  matches.get_matches_estimated(&err));
-        	   // writeln ("matches =",  matches.size (&err));
+//        	    writeln ("found =",  matches.get_matches_estimated(&err));
+//        	    writeln ("matches =",  matches.size (&err));
 
         if (matches !is null)
         {
@@ -403,7 +403,7 @@ class VQL
                 uint   *data_len;
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
-				//writeln (subject_str);
+//				writeln ("Subject_id:", subject_str);
                 send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
 
                 it.next(&err);
@@ -415,7 +415,8 @@ class VQL
 
             byte[ string ] hash_of_subjects;
 
-            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию, тут же получение из авторизации и формирование части ответа
+            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию, 
+            // тут же получение из авторизации и формирование части ответа
             for (int i = 0; i < read_count * 2; i++)
             {
                 receive((string msg, Tid from)
