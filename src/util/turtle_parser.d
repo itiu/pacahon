@@ -34,9 +34,10 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
     GraphCluster res = new GraphCluster();
 
     Subject[]    subject_level = new Subject[ 4 ];
+    string[]     predicate_level = new string[ 4 ];
     char         prev_el;
     Subject      ss;
-    Predicate    pp;
+    string    	 predicate;
     int          level = 0;
     byte         state = 0;
 
@@ -288,31 +289,39 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     if (ss is null)
                         ss = new Subject();
 
-                    prev_el = next_element(start_el, length_el, ss, pp, &state, is_literal);
+                    string out_predicate;    
+                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, is_literal);
+//					writeln ("@ ++ predicate=", predicate, ", out_predicate=", out_predicate);
+
+                    predicate = out_predicate;
+                    
                     if (prev_el == '.')
                     {
 //						writeln ("@ add to res:", ss.subject);
                         res.addSubject(ss);
-                        pp = null;
+                        predicate = null;
                         if (level == 0)
                             ss = new Subject();
                     }
                     else if (prev_el == '[')
                     {
                         subject_level[ level ] = ss;
+                        predicate_level[ level ] = predicate;
                         level++;
-//						writeln ("@ ++ level !!!:", level);
-                        Subject sub_subj = new Subject();
-                        sub_subj.subject = "";
-                        pp.addSubject(sub_subj);
-                        ss    = sub_subj;
+//						writeln ("@ ++ level !!!:", level, ", predicate=", predicate);
+                        ss    = new Subject();
+                        ss.subject = "--:---";
                         state = 1;
                     }
                     else if (prev_el == ']')
                     {
                         level--;
+                        predicate = predicate_level [level];
+//                    	writeln ("@ ++ 1], predicate=", predicate, "=>", ss);
+                    	Subject inner_subject = ss;
                         ss = subject_level[ level ];
-//						writeln ("@ -- level !!!:", level, ", ss=", ss);
+                        ss.addPredicate (predicate, inner_subject);                        
+//						writeln ("@ -- 2 level !!!:", level, ", ss=", ss);
                     }
                     else if (prev_el == ';')
                     {
@@ -320,11 +329,11 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                         state = 1;
                     }
 
-                    if (state == 1)
-                    {
+//                    if (state == 1)
+//                    {
 //					writeln ("@ new empty predicate");
-                        pp = new Predicate();
-                    }
+//                        pp = new Predicate();
+//                    }
                 }
 //				writeln ("1 END CH:", *ptr);
 
@@ -348,20 +357,29 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
     return res.getArray();
 }
 
-private char next_element(char *element, int el_length, Subject ss, Predicate pp, byte *state, bool is_literal)
+private char next_element(char *element, int el_length, Subject ss, string in_predicate, out string out_predicate, byte *state, bool is_literal)
 {
     if (element is null)
+    {
+        out_predicate = in_predicate;
         return 0;
+    }    
 
     //writeln ("el:*", element[0..el_length], "*, el_length:", el_length);
 
     char ch = *element;
 
     if (el_length == 1 && (ch == '[' || ch == ','))
+    {
+        out_predicate = in_predicate;
         return *element;
+    }   
 
     if (el_length == 1 && (ch == ']' || ch == ';' || ch == '.'))
+    {
+        out_predicate = in_predicate;
         return *element;
+    }   
 
     if (*element == '"')
     {
@@ -374,24 +392,32 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
         ss.subject = cast(immutable)element[ 0..el_length ];
 //	    writeln ("@ add new subject=", ss.subject);
         *state = 1;
+        out_predicate = in_predicate;        
         return 0;
     }
 
     if (*state == 1)
     {
         *state = 2;
-        string predicate = cast(immutable)element[ 0..el_length ];
-        if (predicate == "rdf:type")
-            predicate = "a";
+        string cur_predicate = cast(immutable)element[ 0..el_length ];
+        if (cur_predicate == "rdf:type")
+            cur_predicate = "a";
 
-        pp.predicate = predicate;
+        Predicate pp = ss.getPredicate (cur_predicate);
+        if (pp is null)
+        {
+        	pp = new Predicate ();
+        	pp.predicate = cur_predicate;
+        	ss.addPredicate(pp);        	
+        }
+        out_predicate = cur_predicate;    
 //	    writeln ("@ add predicate=,", pp.predicate);
-        ss.addPredicate(pp);
         return 0;
     }
 
     if (*state == 2)
     {
+        Predicate pp = ss.getPredicate (in_predicate);
         string data = cast(immutable)element[ 0..el_length ];
 
         if (is_literal == true)
@@ -414,9 +440,11 @@ private char next_element(char *element, int el_length, Subject ss, Predicate pp
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }   
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
+        out_predicate = in_predicate;
         return 0;
     }
 
+    out_predicate = in_predicate;
     return 0;
 }
 
