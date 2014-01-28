@@ -21,18 +21,18 @@ import pacahon.know_predicates;
 import pacahon.context;
 import search.vel;
 
-public const string xapian_search_db_path            = "data/xapian-search";
+public const string  xapian_search_db_path  = "data/xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-byte err;
+byte                 err;
 
 public void xapian_thread_io()
 {
-	string key2slot_str;
-	long last_update_time;	
-	
-    writeln("SPAWN: xapian_thread_io");    
- 	last_update_time = Clock.currTime().stdTime ();          	
+    string key2slot_str;
+    long   last_update_time;
+
+    writeln("SPAWN: xapian_thread_io");
+    last_update_time = Clock.currTime().stdTime();
 
     while (true)
     {
@@ -40,43 +40,43 @@ public void xapian_thread_io()
                 (CMD cmd, CNAME cname, string _key2slot_str)
                 {
                     if (cmd == CMD.PUT)
-                    {	
-                    	 if (cname == CNAME.KEY2SLOT)
-                    	 {
-                    	 	writeln ("PUT:\n", _key2slot_str);
-                    	 	key2slot_str = _key2slot_str;
-                    	 }
-                    	 else if (cname == CNAME.LAST_UPDATE_TIME)
-                    	 {
-                    	 	last_update_time = Clock.currTime().stdTime ();          	
-                    	 }
+                    {
+                        if (cname == CNAME.KEY2SLOT)
+                        {
+//                          writeln ("PUT:\n", _key2slot_str);
+                            key2slot_str = _key2slot_str;
+                        }
+                        else if (cname == CNAME.LAST_UPDATE_TIME)
+                        {
+                            last_update_time = Clock.currTime().stdTime();
+                        }
                     }
                 },
                 (CMD cmd, CNAME cname, Tid tid_sender)
                 {
                     if (cmd == CMD.GET)
                     {
-                    	 if (cname == CNAME.KEY2SLOT)
-                    	 {
-//                    		writeln ("GET:\n", key2slot_str);
-                        	send(tid_sender, key2slot_str);
-                         }
-                    	 else if (cname == CNAME.LAST_UPDATE_TIME)
-                    	 {
-                        	send(tid_sender, last_update_time);                    	 	
-                    	 }
+                        if (cname == CNAME.KEY2SLOT)
+                        {
+//                          writeln ("GET:\n", key2slot_str);
+                            send(tid_sender, key2slot_str);
+                        }
+                        else if (cname == CNAME.LAST_UPDATE_TIME)
+                        {
+                            send(tid_sender, last_update_time);
+                        }
                     }
                 });
-                
     }
 }
 
 private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer, Tid tid_xapian_thread_io)
 {
 //	writeln ("#1 store__key2slot");
-    string         data = serialize_key2slot (key2slot);
+    string         data = serialize_key2slot(key2slot);
 
     XapianDocument doc = new_Document(&err);
+
     indexer.set_document(doc, &err);
 
     doc.set_data(data.ptr, data.length, &err);
@@ -85,39 +85,39 @@ private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatab
     doc.add_boolean_term(uuid.ptr, uuid.length, &err);
     indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
     destroy_Document(doc);
-    
-    send (tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
+
+    send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
 }
 
 private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
 {
-       string      query_string = xapian_metadata_doc_id;
+    string      query_string = xapian_metadata_doc_id;
 
-       XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
+    XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
 
-       enquire.set_query(query, &err);
+    enquire.set_query(query, &err);
 
-       XapianMSet matches = enquire.get_mset(0, 1, &err);
+    XapianMSet matches = enquire.get_mset(0, 1, &err);
 
 //       writeln ("found =",  matches.get_matches_estimated(&err));
 //       writeln ("matches =",  matches.size (&err));
 
-       XapianMSetIterator it = matches.iterator(&err);
+    XapianMSetIterator it = matches.iterator(&err);
 
-       if (it.is_next(&err) == true)
-       {
-            //      writeln ("#15 id=[", it.get_documentid(), "]");
-            XapianDocument doc = it.get_document(&err);
+    if (it.is_next(&err) == true)
+    {
+        //      writeln ("#15 id=[", it.get_documentid(), "]");
+        XapianDocument doc = it.get_document(&err);
 
-            char           *data_str;
-            uint           *data_len;
-            doc.get_data(&data_str, &data_len, &err);
-            string         data = cast(immutable)data_str[ 0..(*data_len) ].dup;
-            send (tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
-            //writeln ("data=[", data, "]");
+        char           *data_str;
+        uint           *data_len;
+        doc.get_data(&data_str, &data_len, &err);
+        string         data = cast(immutable)data_str[ 0..(*data_len) ].dup;
+        send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
+        //writeln ("data=[", data, "]");
 
- //           key2slot = deserialize_key2slot (data);
-       }
+        //           key2slot = deserialize_key2slot (data);
+    }
 
 //       writeln("slot size=", key2slot.length);
 }
@@ -158,13 +158,29 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 {
     writeln("SPAWN: Xapian Indexer");
 
+    try
+    {
+        mkdir("data");
+    }
+    catch (Exception ex)
+    {
+    }
+
+    try
+    {
+        mkdir(xapian_search_db_path);
+    }
+    catch (Exception ex)
+    {
+    }
+
     ///////////// XAPIAN INDEXER ///////////////////////////
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
     string                 lang    = "russian";
-    XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);    
+    XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);
 
-    bool is_exist_db = exists(xapian_search_db_path);
+    bool                   is_exist_db = exists(xapian_search_db_path);
 
     // Open the database for update, creating a new database if necessary.
     indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
@@ -179,26 +195,26 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
     indexer_db.commit(&err);
 
-    XapianEnquire xapian_enquire = indexer_db.new_Enquire(&err);
-	XapianQueryParser xapian_qp = new_QueryParser (&err);
-	xapian_qp.set_stemmer(stemmer, &err);
-	xapian_qp.set_database(indexer_db, &err);
+    XapianEnquire     xapian_enquire = indexer_db.new_Enquire(&err);
+    XapianQueryParser xapian_qp      = new_QueryParser(&err);
+    xapian_qp.set_stemmer(stemmer, &err);
+    xapian_qp.set_database(indexer_db, &err);
 
     int   counter                         = 0;
     int   last_counter_afrer_timed_commit = 0;
     ulong last_size_key2slot              = 0;
 
     int[ string ] key2slot;
-    
+
     if (is_exist_db == true)
-    	read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
-    	
-    writeln ("xapian_indexer ready");
+        read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
+
+    writeln("xapian_indexer ready");
     receive((Tid tid_response_reciever)
-    {    	
-    	send (tid_response_reciever, true);
-    });
-    	
+            {
+                send(tid_response_reciever, true);
+            });
+
     while (true)
     {
         auto msg = receiveOnly!(string)();
@@ -210,16 +226,16 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 printf("counter: %d, timer: commit index..", counter);
                 if (key2slot.length - last_size_key2slot > 0)
                 {
-                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
-                        printf("..store__key2slot..");
-                        last_size_key2slot = key2slot.length;
+                    store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                    printf("..store__key2slot..");
+                    last_size_key2slot = key2slot.length;
                 }
 
                 indexer_db.commit(&err);
                 printf("ok\n");
-                
-				//indexer_db.close (&err);
-				//indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
+
+                //indexer_db.close (&err);
+                //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
                 last_counter_afrer_timed_commit = counter;
             }
         }
@@ -229,7 +245,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
             Subject ss = decode_cbor(msg);
 
-			writeln ("prepare msg counter:", counter, ", subject:", ss.subject);
+            writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
             if (ss.subject !is null && ss.count_edges > 0)
             {
@@ -250,7 +266,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                         pp.metadata = null;
                     }
 
-					//writeln (pp.predicate, ".type:", type);
+                    //writeln (pp.predicate, ".type:", type);
 
                     string p_text_ru = "";
                     string p_text_en = "";
@@ -262,7 +278,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             if (pp.count_objects > 1)
                             {
                                 if (oo.lang == LANG.RU)
-                                   p_text_ru ~= oo.literal;
+                                    p_text_ru ~= oo.literal;
                                 if (oo.lang == LANG.EN)
                                     p_text_en ~= oo.literal;
                             }
@@ -271,11 +287,11 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             prefix = "X" ~ text(slot_L1) ~ "X";
 
                             string data = escaping_or_uuid2search(oo.literal);
- 
-//                         	writeln ("index as literal:[", data, "], lang=", oo.lang);
-                         	indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+
+//                          writeln ("index as literal:[", data, "], lang=", oo.lang);
+                            indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                            
+
                             all_text.write(data);
                             all_text.write("|");
                         }
@@ -293,9 +309,9 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 //                                writeln ("index as resource:[", data, "]");
                                 indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                                 doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                                
+
                                 all_text.write(data);
-                                all_text.write("|");                                
+                                all_text.write("|");
                             }
                         }
                     }
@@ -507,65 +523,63 @@ protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_toke
         string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
         //writeln ("#2 % query_l=", query_l);
         //writeln ("#2 % query_r=", query_r);
-//       	writeln ("ls=", ls);
-//       	writeln ("rs=", rs);
+//          writeln ("ls=", ls);
+//          writeln ("rs=", rs);
         if (query_l is null && query_r is null)
         {
-        	string xtr;
-        	if (ls != "*")
-        	{
-        		if (ls == "@")
-        		{
-        		string uid = "uid_" ~ to_lower_and_replace_delimeters(rs);
-        		query = qp.parse_query(cast(char *)uid, uid.length, &err);
-       			if (err != 0)
-       				writeln ("XAPIAN:transform_vql_to_xapian:parse_query(@)", err);
-       			//writeln ("uid=", uid);
-        		}
-        		else
-        		{
-           		int slot = get_slot(ls, key2slot);
-           		//writeln ("slot=", slot);
-            	if (indexOf (rs, '*') > 0 && rs.length > 3)
-            	{
-//            		xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-            		string query_str = to_lower_and_replace_delimeters(rs);
-            		xtr = "X" ~ text(slot) ~ "X";
-        			query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr, xtr.length, &err);            		
-        			if (err != 0)
-        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
-//        			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);            		
-            	}
-            	else
-            	{
-            		xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-            		query = new_Query(cast(char *)xtr, xtr.length, &err);            		
-        			if (err != 0)
-        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('x'=x)", err);
-            	}
-            	}
-            	
+            string xtr;
+            if (ls != "*")
+            {
+                if (ls == "@")
+                {
+                    string uid = "uid_" ~ to_lower_and_replace_delimeters(rs);
+                    query = qp.parse_query(cast(char *)uid, uid.length, &err);
+                    if (err != 0)
+                        writeln("XAPIAN:transform_vql_to_xapian:parse_query(@)", err);
+                    //writeln ("uid=", uid);
+                }
+                else
+                {
+                    int slot = get_slot(ls, key2slot);
+                    //writeln ("slot=", slot);
+                    if (indexOf(rs, '*') > 0 && rs.length > 3)
+                    {
+//                  xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+                        string query_str = to_lower_and_replace_delimeters(rs);
+                        xtr   = "X" ~ text(slot) ~ "X";
+                        query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr, xtr.length, &err);
+                        if (err != 0)
+                            writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
+//                  query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
+                    }
+                    else
+                    {
+                        xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+                        query = new_Query(cast(char *)xtr, xtr.length, &err);
+                        if (err != 0)
+                            writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=x)", err);
+                    }
+                }
             }
-        	else
-        	{	
-        		xtr = to_lower_and_replace_delimeters(rs);
-//        		writeln ("xtr=", xtr);
+            else
+            {
+                xtr = to_lower_and_replace_delimeters(rs);
+//              writeln ("xtr=", xtr);
 
-            	if (indexOf (xtr, '*') > 0 && xtr.length > 3)
-            	{
-        			query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
-        			if (err != 0)
-        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('*'=*)", err);
-        		}
-            	else
-            	{
-        			query = qp.parse_query(cast(char *)xtr, xtr.length, &err);            		
-        			if (err != 0)
-        				writeln ("XAPIAN:transform_vql_to_xapian:parse_query('*'=x)", err);
-            	}
-            		
-        	}	
-        	
+                if (indexOf(xtr, '*') > 0 && xtr.length > 3)
+                {
+                    query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
+                    if (err != 0)
+                        writeln("XAPIAN:transform_vql_to_xapian:parse_query('*'=*)", err);
+                }
+                else
+                {
+                    query = qp.parse_query(cast(char *)xtr, xtr.length, &err);
+                    if (err != 0)
+                        writeln("XAPIAN:transform_vql_to_xapian:parse_query('*'=x)", err);
+                }
+            }
+
             destroy_Query(query_l);
             destroy_Query(query_r);
         }
