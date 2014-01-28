@@ -97,6 +97,9 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     if (*(ptr - 1) == '#')
                         ptr--;
 
+                    if (*(ptr - 1) == '/')
+                        ptr--;
+                        
                     string url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
 //                  writeln ("# url=", url);
 
