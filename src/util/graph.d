@@ -22,6 +22,7 @@ private import std.outbuffer;
 private import std.conv;
 private import std.stdio;
 private import util.utils;
+private import util.json_ld.parser;
 
 private import pacahon.know_predicates;
 
@@ -638,14 +639,9 @@ final class Subject
 
     override string toString()
     {
-        string res = this.subject ~ "\n  ";
-
-        for (int i = 0; i < _count_edges; i++)
-        {
-            res ~= "  " ~ edges[ i ].toString() ~ "\n";
-        }
-
-        return res;
+    	OutBuffer ou = new OutBuffer (); 
+    	toJson_ld(this, ou, false);
+    	return ou.toString ();
     }
 
     Subject[] get_metadata()
