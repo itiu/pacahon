@@ -177,7 +177,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 
                             if (is_multiline_quote == false)
                             {
-                                if (*(end_el + 1) == '@')
+                                if (*(end_el + 1) == '@' || *(end_el + 1) == '^')
                                 {
                                     while (end_el - src < len)
                                     {
@@ -422,21 +422,52 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
 
         if (is_literal == true)
         {
-            LANG lang = LANG.NONE;
             if (data[ $ - 3 ] == '@')
             {
+            	LANG lang = LANG.NONE;
                 if (data[ $ - 2 ] == 'r')
                     lang = LANG.RU;
                 else if (data[ $ - 2 ] == 'e')
                     lang = LANG.EN;
                 el_length -= 4;
+                
+                pp.addLiteral(data[0..$-4], lang);
             }
-//      writeln (data[0..el_length], ", LANG:", lang);
-            pp.addLiteral(data, lang);
+            else if (data[$] != '"')
+            {
+            	int end_pos_str = el_length;
+            	while (data[end_pos_str] != '"' && end_pos_str > 0)
+            		end_pos_str--;
+            	
+            	if (data[end_pos_str] == '"' && data[end_pos_str + 1] == '^')
+            	{
+            		string type = data[end_pos_str + 3..$];
+            		data = data[0..end_pos_str];
+            		
+            		if (type == "xsd:nonNegativeInteger")
+            		{
+//            			writeln ("LITERAL TYPE=", type);
+            			pp.addLiteral(data, OBJECT_TYPE.UNSIGNED_INTEGER);            	            			
+            		}
+            		else
+            		{
+            			pp.addLiteral(data);            	            			
+            		}            			
+            	}
+            	else
+            	{
+            		pp.addLiteral(data);            	            			            		
+            	}            	
+            	
+            }
+            else
+            {
+                pp.addLiteral(data);            	
+            }
         }
         else
         {
-            pp.addResource(data);
+            pp.addLiteral(data, OBJECT_TYPE.URI);
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }   
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
@@ -471,7 +502,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
             for (int i = 0; i < level; i++)
                 outbuff.write(cast(char[])" ");
 
-            if (oo.type == OBJECT_TYPE.LITERAL)
+            if (oo.type == OBJECT_TYPE.TEXT_STRING)
             {
                 if (asCluster)
                     outbuff.write(cast(char[])"   \\\"");
@@ -534,7 +565,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
                     outbuff.write(cast(char[])"@en");
                 }
             }
-            else if (oo.type == OBJECT_TYPE.RESOURCE)
+            else if (oo.type == OBJECT_TYPE.URI)
             {
                 outbuff.write(cast(char[])"   ");
                 outbuff.write(oo.literal);
