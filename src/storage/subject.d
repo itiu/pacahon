@@ -157,12 +157,12 @@ public void subject_manager()
                                         res = "";
 //                      writeln ("#1 rc:", rc, ", [", msg, "] , ", fromStringz (mdb_strerror (rc)));
                                     }
-                                    	//writeln ("%%4 msg=", msg , ", res=", res);
+//                                    	writeln ("%%4 msg=", msg , ", res=", res);
 
                                     send(tid_response_reciever, res, thisTid);
 //					mdb_txn_abort(txn_r);
                                 }
-                                //	writeln ("%%5");
+//                                	writeln ("%%5");
                             }
                             else
                             {
