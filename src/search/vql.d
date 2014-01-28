@@ -393,7 +393,7 @@ class VQL
 
         if (matches !is null)
         {
-            Tid                tid_subject_manager = context.get_tid_subject_manager();
+            Tid tid_subject_manager = context.getTid (thread.subject_manager);
 
             XapianMSetIterator it = matches.iterator(&err);
 
@@ -404,10 +404,13 @@ class VQL
                 it.get_document_data(&data_str, &data_len, &err);
                 string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
 //				writeln ("Subject_id:", subject_str);
-                send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
+                if (tid_subject_manager != Tid.init)
+                {
+                	send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
+                	read_count++;
+                }	
 
                 it.next(&err);
-                read_count++;
             }
 
             destroy_MSetIterator(it);
@@ -421,7 +424,7 @@ class VQL
             {
                 receive((string msg, Tid from)
                         {
-                            if (from == context.get_tid_subject_manager())
+                            if (from == tid_subject_manager)
                             {
                                 context.send_on_authorization(msg);
                             }

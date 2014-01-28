@@ -73,9 +73,13 @@ public void condition_thread(string props_file_name, immutable string[] tids_nam
 
     while (true)
     {
+    try
+    {
         receive((EVENT type, string msg)
                 {
-//          writeln ("condition_thread:", type, ":", msg);
+          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
+          			if (msg !is null && msg.length > 3)
+          			{
                     Subject doc = decode_cbor(msg);
 
                     foreach (mandat; mandats)
@@ -84,8 +88,16 @@ public void condition_thread(string props_file_name, immutable string[] tids_nam
                         Set!string whom;
                         eval(mandat.expression, "", doc, token, whom);
                     }
+                    }
                 });
     }
+    catch (Exception ex)
+    {
+    	writeln ("EX! condition: recieve");    	
+    }
+    }
+    writeln("TERMINATED: condition_thread");
+    
 }
 
 

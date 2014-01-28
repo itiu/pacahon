@@ -79,6 +79,8 @@ private void prepare_file (string file_name, Context context)
         {
         	auto    buf = cast(ubyte[]) read(file_name);
 
+        	Tid tid_search_manager = context.getTid (thread.xapian_indexer);
+
             if (buf !is null && buf.length > 0)
             {
             	Subject[] ss_list = parse_turtle_string(cast(char*)buf, cast(int)buf.length, context.get_prefix_map);
@@ -139,13 +141,15 @@ private void prepare_file (string file_name, Context context)
             				string prefix = ss.subject[0..pos+1];
             				if (for_load.get(prefix, false) == true)
             				{
+            					writeln ("#file_reader:store, ss=\n", ss);      					
             					context.store_subject (ss);      
-            					//writeln ("#1, ss=\n", ss);      					
             				}
             			}
 
             	}
-				send(context.get_tid_search_manager, "COMMIT");
+            	
+            	if (tid_search_manager != Tid.init)
+            		send(tid_search_manager, "COMMIT");
             	//put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)            	
 //                get_message(cast(byte *)buf, cast(int)buf.length, null, out_data, context);
             }

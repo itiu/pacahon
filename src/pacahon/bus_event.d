@@ -3,6 +3,7 @@ module pacahon.bus_event;
 private import std.outbuffer;
 private import std.stdio;
 private import std.concurrency;
+private import std.datetime;
 
 private import util.container;
 private import util.oi;
@@ -23,12 +24,27 @@ static this()
 
 void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context context)
 {
-	writeln ("#bus_event 1");
+	writeln ("#bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
+//	Tid tid_condition = locate (thread.condition);
 	Tid tid_condition = context.getTid (thread.condition);
 
-	send (tid_condition, type, subject_as_cbor);
+	if (tid_condition != Tid.init)
+	{
+		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
+		try
+		{
+			 core.thread.Thread.sleep(dur!("seconds")(10));
+		send (tid_condition, type, subject_as_cbor);
+		}
+		catch (Exception ex)
+		{
+			writeln ("EX!bus_event:", ex.msg);
+		}
+		writeln ("#bus_event #2");
+	}	
 
+	writeln ("#bus_event E");
 //    if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate(docs__full_text_search, "0"))
 //        return;
 

@@ -90,6 +90,9 @@ void main(char[][] args)
         register(thread.condition, tids[ thread.condition ]);
 
         writeln("registred spawned tids:", tids);
+        Tid tid_condition = locate (thread.condition);
+        writeln ("tid_condition=", tid_condition);
+        
 
         {
             JSONValue props;

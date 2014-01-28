@@ -42,8 +42,6 @@ interface Context
 {
     public JSONValue get_props();
 
-    Tid get_tid_subject_manager();
-    Tid get_tid_search_manager();
     @property Tid tid_statistic_data_accumulator();
     @property Tid tid_ticket_manager();
     Tid getTid(thread tid_name);

@@ -39,6 +39,7 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
+Tid dummy_tid;
 
 class ThreadContext : Context
 {
@@ -136,7 +137,7 @@ class ThreadContext : Context
 
     Tid getTid(thread tid_name)
     {
-        return tids[ tid_name ];
+    	return tids.get (tid_name, Tid.init);
     }
 
 
@@ -145,7 +146,10 @@ class ThreadContext : Context
         string res;
         string ss_as_cbor = encode_cbor(ss);
 
-        send(get_tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+        Tid tid_subject_manager = getTid (thread.subject_manager);
+        if (tid_subject_manager != Tid.init)
+        {
+        send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
         receive((string msg, Tid from)
                 {
                     if (from == tids[ thread.subject_manager ])
@@ -154,10 +158,15 @@ class ThreadContext : Context
                         writeln("context.store_subject:msg=", msg);
                     }
                 });
+        }
 
         if (res.length == 1 && (res == "C" || res == "U"))
         {
-            send(get_tid_search_manager, ss_as_cbor);
+        	Tid tid_search_manager = getTid (thread.xapian_indexer);
+        	
+        	if (tid_search_manager != Tid.init)
+        	{
+        	send(tid_search_manager, ss_as_cbor);
 
             if (prepareEvents == true)
             {
@@ -184,6 +193,7 @@ class ThreadContext : Context
                     bus_event(ss, ss_as_cbor, event_type, this);
                 }
             }
+           } 
         }
         else
         {
@@ -377,16 +387,6 @@ class ThreadContext : Context
     bool authorize(Ticket *ticket, Subject doc)
     {
         return false;        //mandat_manager.ca;
-    }
-
-    Tid get_tid_subject_manager()
-    {
-        return tids[ thread.subject_manager ];
-    }
-
-    Tid get_tid_search_manager()
-    {
-        return tids[ thread.xapian_indexer ];
     }
 
     Ticket *foundTicket(string ticket_id)
