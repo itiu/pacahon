@@ -133,24 +133,16 @@ private void prepare_file (string file_name, Context context)
             	
             	foreach (ss; ss_list)
             	{
-            		if (ss.isExsistsPredicate (rdf__type, rdfs__Class) || ss.isExsistsPredicate (rdf__type, rdf__Property))
-            		{
             			long pos = indexOf (ss.subject, ":");
             			if (pos > 0)
             			{
             				string prefix = ss.subject[0..pos+1];
             				if (for_load.get(prefix, false) == true)
             				{
-            					writeln (ss.subject, " 1 store! ");
-            					context.store_subject (ss);
+            					context.store_subject (ss);      
+            					//writeln ("#1, ss=\n", ss);      					
             				}
             			}
-            		}
-            		else if (for_load.get (ss.subject, false) == true)
-            		{
-            					writeln (ss.subject, " 2 store! ");
-            					context.store_subject (ss);
-            		}
 
             	}
 				send(context.get_tid_search_manager, "COMMIT");
