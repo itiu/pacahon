@@ -58,10 +58,10 @@ public void subject_manager()
         writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
     else
     {
-       // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
-       // if (rrc != 0)
-       //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
-       // else
+        // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
+        // if (rrc != 0)
+        //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
+        // else
         {
             rrc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
 
@@ -91,44 +91,46 @@ public void subject_manager()
                         {
                             if (cmd == CMD.STORE)
                             {
-                            	try
-                            	{
-                                Subject graph = decode_cbor(msg);
+                                try
+                                {
+                                	writeln ("#b");
+                                    Subject graph = decode_cbor(msg);
 
-                                MDB_val key;
-                                key.mv_data = cast(char *)graph.subject;
-                                key.mv_size = graph.subject.length;
+                                    MDB_val key;
+                                    key.mv_data = cast(char *)graph.subject;
+                                    key.mv_size = graph.subject.length;
 
-                                MDB_val data;
-                                
-                                // проверим был есть ли такой субьект в базе
-                                int rc = mdb_get(txn, dbi, &key, &data);
-                                if (rc == 0)
-                                	res = "U";
-                                else	
-                                	res = "C";
+                                    MDB_val data;
 
-                                data.mv_data = cast(char *)msg;
-                                data.mv_size = msg.length;
+                                    // проверим был есть ли такой субьект в базе
+                                    int rc = mdb_get(txn, dbi, &key, &data);
+                                    if (rc == 0)
+                                        res = "U";
+                                    else
+                                        res = "C";
 
-                                rc = mdb_put(txn, dbi, &key, &data, 0);
-                                if (rc != 0)
-                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
+                                    data.mv_data = cast(char *)msg;
+                                    data.mv_size = msg.length;
 
-                                rc = mdb_txn_commit(txn);
-                                if (rc != 0)
-                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
-                                
-                                rc = mdb_txn_begin(env, null, 0, &txn);
-                                if (rc != 0)
-                                	throw new Exception ("Fail:" ~  fromStringz(mdb_strerror(rc))); 
-                                    
-                                    send(tid_response_reciever, res, thisTid);                            		
+                                    rc = mdb_put(txn, dbi, &key, &data, 0);
+                                    if (rc != 0)
+                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                                    rc = mdb_txn_commit(txn);
+                                    if (rc != 0)
+                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                                    rc = mdb_txn_begin(env, null, 0, &txn);
+                                    if (rc != 0)
+                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                                    send(tid_response_reciever, res, thisTid);
+                                	writeln ("#e");
                                 }
-                            	catch (Exception ex)
-                            	{
-                                    send(tid_response_reciever, res, thisTid);                            		
-                            	}    
+                                catch (Exception ex)
+                                {
+                                    send(tid_response_reciever, res, thisTid);
+                                }
                             }
                             else if (cmd == CMD.FOUND)
                             {
@@ -157,12 +159,12 @@ public void subject_manager()
                                         res = "";
 //                      writeln ("#1 rc:", rc, ", [", msg, "] , ", fromStringz (mdb_strerror (rc)));
                                     }
-//                                    	writeln ("%%4 msg=", msg , ", res=", res);
+//                                      writeln ("%%4 msg=", msg , ", res=", res);
 
                                     send(tid_response_reciever, res, thisTid);
 //					mdb_txn_abort(txn_r);
                                 }
-//                                	writeln ("%%5");
+//                                  writeln ("%%5");
                             }
                             else
                             {
@@ -181,21 +183,21 @@ public void subject_manager()
 
 public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level, ref GraphCluster res, Context context)
 {
-    string      dummy;
-    double      rd, ld;
+    string dummy;
+    double rd, ld;
 
     if (tta.op == "==")
     {
         string ls = transform_and_execute_vql_to_lmdb(tta.L, tta.op, dummy, dummy, ld, level + 1, res, context);
         string rs = transform_and_execute_vql_to_lmdb(tta.R, tta.op, dummy, dummy, rd, level + 1, res, context);
-//       	writeln ("ls=", ls);
-//       	writeln ("rs=", rs);
-       	if (ls == "@")
-       	{
-       		string rr = context.get_subject_as_cbor (rs);
-       		Subject ss = decode_cbor (rr);
-       		res.addSubject (ss);
-       	}
+//          writeln ("ls=", ls);
+//          writeln ("rs=", rs);
+        if (ls == "@")
+        {
+            string  rr = context.get_subject_as_cbor(rs);
+            Subject ss = decode_cbor(rr);
+            res.addSubject(ss);
+        }
     }
     else if (tta.op == "||")
     {
