@@ -1,16 +1,16 @@
 module util.cbor;
 
-private 
+private
 {
-import std.outbuffer;
-import std.stdio;
-import std.typetuple;
-import std.datetime;
-import std.conv;
+    import std.outbuffer;
+    import std.stdio;
+    import std.typetuple;
+    import std.datetime;
+    import std.conv;
 
-import util.graph;
-import util.container;
-import util.utils;
+    import util.graph;
+    import util.container;
+    import util.utils;
 }
 
 enum : byte
@@ -62,65 +62,65 @@ enum MajorType : ubyte
 
 enum TAG : ubyte
 {
-	NONE	= 255,
-	
-	TEXT_RU = 42,
-	
-	TEXT_EN = 43,	
+    NONE                        = 255,
+
+    TEXT_RU                     = 42,
+
+    TEXT_EN                     = 43,
 /** date/time values in the standard format (UTF8 string, RFC3339). */
- 	STANDARD_DATE_TIME = 0,
+    STANDARD_DATE_TIME          = 0,
 /** date/time values as Epoch timestamp (numeric, RFC3339). */
-	EPOCH_DATE_TIME = 1,
+    EPOCH_DATE_TIME             = 1,
 /** positive big integer value (byte string). */
-	POSITIVE_BIGINT = 2,
+    POSITIVE_BIGINT             = 2,
 /** negative big integer value (byte string). */
-	NEGATIVE_BIGINT = 3,
+    NEGATIVE_BIGINT             = 3,
 /** decimal fraction value (two-element array, base 10). */
-	DECIMAL_FRACTION = 4,
+    DECIMAL_FRACTION            = 4,
 /** big decimal value (two-element array, base 2). */
-	BIGDECIMAL = 5,
+    BIGDECIMAL                  = 5,
 /** base64url encoding. */
-	EXPECTED_BASE64_URL_ENCODED = 21,
+    EXPECTED_BASE64_URL_ENCODED = 21,
 /** base64 encoding. */
-	EXPECTED_BASE64_ENCODED = 22,
+    EXPECTED_BASE64_ENCODED     = 22,
 /** base16 encoding. */
-	EXPECTED_BASE16_ENCODED = 23,
+    EXPECTED_BASE16_ENCODED     = 23,
 /** encoded CBOR data item (byte string). */
-	CBOR_ENCODED = 24,
+    CBOR_ENCODED                = 24,
 /** URL (UTF8 string). */
-	URI = 32,
+    URI                         = 32,
 /** base64url encoded string (UTF8 string). */
-	BASE64_URL_ENCODED = 33,
+    BASE64_URL_ENCODED          = 33,
 /** base64 encoded string (UTF8 string). */
-	BASE64_ENCODED = 34,
+    BASE64_ENCODED              = 34,
 /** regular expression string (UTF8 string, PCRE). */
-	REGEXP = 35,
+    REGEXP                      = 35,
 /** MIME message (UTF8 string, RFC2045). */
-	MIME_MESSAGE = 36	
-}	
+    MIME_MESSAGE                = 36
+}
 
 struct ElementHeader
 {
     MajorType type;
     ulong     len;
-    TAG	  tag = TAG.NONE; 		
+    TAG       tag = TAG.NONE;
 }
 
 struct Element
 {
     MajorType type;
-    TAG	  tag = TAG.NONE;
+    TAG       tag = TAG.NONE;
     union
     {
         string    str;
         Predicate pp;
         Subject   subject;
-    }    
+    }
 }
 
-string toString (ElementHeader *el)
+string toString(ElementHeader *el)
 {
-	return "type=" ~ text(el.type) ~ ", len=" ~ text(el.len) ~ ", tag=" ~ text(el.tag); 
+    return "type=" ~ text(el.type) ~ ", len=" ~ text(el.len) ~ ", tag=" ~ text(el.tag);
 }
 
 ///////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,7 @@ public void write_header(MajorType type, ulong len, ref OutBuffer ou)
     ubyte element_header;
     ulong add_info;
 
-   	add_info = len;
+    add_info = len;
 
     if (add_info < 24)
     {
@@ -173,6 +173,21 @@ public void write_header(MajorType type, ulong len, ref OutBuffer ou)
     }
 }
 
+public void write_subject(Subject ss, ref OutBuffer ou)
+{
+    ulong     map_len = ss.length + 1;
+    MajorType type    = MajorType.MAP;
+
+    write_header(type, map_len, ou);
+    write_string("@", ou);
+    write_string(ss.subject, ou);
+
+    foreach (pp; ss)
+    {
+        write_predicate(pp, ou);
+    }
+}
+
 public void write_predicate(Predicate vv, ref OutBuffer ou)
 {
     write_string(vv.predicate, ou);
@@ -180,23 +195,27 @@ public void write_predicate(Predicate vv, ref OutBuffer ou)
         write_header(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
-    	if (value.type == OBJECT_TYPE.RESOURCE)
-    	{    	
-   			write_header(MajorType.TAG, TAG.URI, ou);
-    		write_string(value.literal, ou);
-    	}
-    	else
-    	{
-    		if (value.lang != LANG.NONE)
-    			write_header(MajorType.TAG, value.lang + 41, ou);
-    		write_string(value.literal, ou);
-    	}	
+        if (value.type == OBJECT_TYPE.LINK_SUBJECT)
+        {
+            write_subject(value.subject, ou);
+        }
+        else if (value.type == OBJECT_TYPE.RESOURCE)
+        {
+            write_header(MajorType.TAG, TAG.URI, ou);
+            write_string(value.literal, ou);
+        }
+        else
+        {
+            if (value.lang != LANG.NONE)
+                write_header(MajorType.TAG, value.lang + 41, ou);
+            write_string(value.literal, ou);
+        }
     }
 }
 
 public void write_string(string vv, ref OutBuffer ou)
 {
-	write_header(MajorType.TEXT_STRING, vv.length, ou);
+    write_header(MajorType.TEXT_STRING, vv.length, ou);
     ou.write(vv);
 }
 
@@ -230,7 +249,7 @@ private long long_from_buff(ubyte[] buff, int pos)
     return res;
 }
 
-private static int read_element(ubyte[] src, Element *el, byte fields)
+private static int read_element(ubyte[] src, Element *el, byte fields, Subject parent_subject)
 {
     int           pos;
     ElementHeader header;
@@ -244,48 +263,58 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
     if (header.type == MajorType.MAP)
     {
         Subject res1 = new Subject();
-//	writeln ("IS MAP, length=", header.len, ", pos=", pos);
+//        writeln("IS MAP, length=", header.len, ", pos=", pos);
         foreach (i; 0 .. header.len)
         {
             Element key;
-            pos += read_element(src[ pos..$ ], &key, fields);
-//            writeln ("key=", key.val, ", pos=", pos);
+            pos += read_element(src[ pos..$ ], &key, fields, res1);
             Element val;
-            pos += read_element(src[ pos..$ ], &val, fields);
-//            writeln ("val=", val.val, ", pos=", pos);
+            pos += read_element(src[ pos..$ ], &val, fields, res1);
+//            writeln ("*** key=", key.str, ", pos=", pos);
+//            writeln ("*** val.type=", val.type);
 
-            if (key.str == "@")
+            if (key.type == MajorType.TEXT_STRING)
             {
-                res1.subject = val.str;
-            }
-            else if (key.type == MajorType.TEXT_STRING && val.type == MajorType.ARRAY)
-            {
-                if (val.pp !is null)
+                if (key.str == "@")
                 {
-                    val.pp.predicate = key.str;
-                    if (val.pp.length > 0)
-                    {
-                        res1.addPredicate(val.pp);
-                    }    
+                    res1.subject = val.str;
                 }
-            }
-            else if (val.str.length > 0 && key.type == MajorType.TEXT_STRING && val.type == MajorType.TEXT_STRING)
-            {
-                if (fields == ALL || (fields == LINKS && is_link_on_subject(val.str) == true))
+                else
                 {
-                	//writeln ("[", val.str, "], lang=", val.lang);
-                	if (val.tag == TAG.NONE)
-                	{
-//                		writeln ("add as string:", key.str, " : ", val.str);
-                		res1.addPredicate(key.str, val.str);
-                	}	                	
-                	else if (val.tag == TAG.TEXT_RU || val.tag == TAG.TEXT_EN)
-                		res1.addPredicate(key.str, val.str, cast(LANG)(el.tag - 41));
-                	else if (val.tag == TAG.URI)
-                	{
-//                		writeln ("add as resource:", key.str, " : ", val.str);
-                		res1.addResource (key.str, val.str);
-                	}	
+                    if (val.type == MajorType.ARRAY)
+                    {
+                        if (val.pp !is null)
+                        {
+                            val.pp.predicate = key.str;
+                            if (val.pp.length > 0)
+                            {
+                                res1.addPredicate(val.pp);
+                            }
+                        }
+                    }
+                    else if (val.type == MajorType.MAP)
+                    {
+                        res1.addPredicate(key.str, val.subject);
+                    }
+                    else if (val.type == MajorType.TEXT_STRING && val.str.length > 0)
+                    {
+                        if (fields == ALL || (fields == LINKS && is_link_on_subject(val.str) == true))
+                        {
+                            //writeln ("[", val.str, "], lang=", val.lang);
+                            if (val.tag == TAG.NONE)
+                            {
+//                      writeln ("add as string:", key.str, " : ", val.str);
+                                res1.addPredicate(key.str, val.str);
+                            }
+                            else if (val.tag == TAG.TEXT_RU || val.tag == TAG.TEXT_EN)
+                                res1.addPredicate(key.str, val.str, cast(LANG)(el.tag - 41));
+                            else if (val.tag == TAG.URI)
+                            {
+//                      writeln ("add as resource:", key.str, " : ", val.str);
+                                res1.addResource(key.str, val.str);
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -299,7 +328,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
         string str = cast(string)src[ pos..ep ].dup;
         el.str = str;
         el.tag = header.tag;
-        
+
         pos = ep;
     }
     else if (header.type == MajorType.ARRAY)
@@ -309,7 +338,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
         foreach (i; 0 .. header.len)
         {
             Element arr_el;
-            pos += read_element(src[ pos..$ ], &arr_el, fields);
+            pos += read_element(src[ pos..$ ], &arr_el, fields, parent_subject);
 
             if (arr_el.type == MajorType.TEXT_STRING)
             {
@@ -318,16 +347,22 @@ private static int read_element(ubyte[] src, Element *el, byte fields)
                     if (vals is null)
                         vals = new Predicate();
 
-                	if (arr_el.tag == TAG.NONE)
-                		vals.addLiteral(arr_el.str);                	
-                	else if (arr_el.tag == TAG.TEXT_RU || arr_el.tag == TAG.TEXT_EN)
-                		 vals.addLiteral(arr_el.str, cast(LANG)(arr_el.tag - 41));
-                	else if (arr_el.tag == TAG.URI)
-                	{
-//                		writeln ("#2 add as resource: ", arr_el.str);
-                		vals.addResource (arr_el.str);
-                	}	
+                    if (arr_el.tag == TAG.NONE)
+                        vals.addLiteral(arr_el.str);
+                    else if (arr_el.tag == TAG.TEXT_RU || arr_el.tag == TAG.TEXT_EN)
+                        vals.addLiteral(arr_el.str, cast(LANG)(arr_el.tag - 41));
+                    else if (arr_el.tag == TAG.URI)
+                    {
+//                      writeln ("#2 add as resource: ", arr_el.str);
+                        vals.addResource(arr_el.str);
+                    }
                 }
+            }
+            else if (arr_el.type == MajorType.MAP)
+            {
+               if (vals is null)
+                  vals = new Predicate();
+                vals.addSubject(arr_el.subject);
             }
         }
         el.pp = vals;
@@ -357,25 +392,25 @@ private int read_header(ubyte[] src, ElementHeader *header)
         else if (ld == 27)
             ld = long_from_buff(src, 1);
     }
-    
+
     if (type == MajorType.TAG)
     {
-    	ElementHeader main_type_header;
-    	d_pos += read_header(src[d_pos..$], &main_type_header);
-    	header.tag = cast(TAG)ld;
-    	header.len = main_type_header.len;
-    	header.type = main_type_header.type;
-//    	writeln ("HEADER:", header.toString());
+        ElementHeader main_type_header;
+        d_pos      += read_header(src[ d_pos..$ ], &main_type_header);
+        header.tag  = cast(TAG)ld;
+        header.len  = main_type_header.len;
+        header.type = main_type_header.type;
+//      writeln ("HEADER:", header.toString());
     }
     else
     {
-    	if (ld > src.length)
-    	{
-    		writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
-    		ld = src.length;
-    	}
-    	header.len = ld;
-    	header.type = type;    	
+        if (ld > src.length)
+        {
+            writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
+            ld = src.length;
+        }
+        header.len  = ld;
+        header.type = type;
     }
 //    writeln ("type=", type, ", length=", ld, ", d_pos=", d_pos, ", src.length=", src.length);
 
@@ -386,20 +421,10 @@ private int read_header(ubyte[] src, ElementHeader *header)
 /////////////////////////////////////////////////////////////////////////////////////
 public string encode_cbor(Subject in_obj)
 {
-//	writeln ("encode_cbor #1, subject:", in_obj);
+//    writeln("encode_cbor #1, subject:", in_obj);
     OutBuffer ou = new OutBuffer();
 
-    ulong     map_len = in_obj.length + 1;
-    MajorType type    = MajorType.MAP;
-
-    write_header(type, map_len, ou);
-    write_string("@", ou);
-    write_string(in_obj.subject, ou);
-
-    foreach (pp; in_obj)
-    {
-        write_predicate(pp, ou);
-    }
+    write_subject(in_obj, ou);
 
 //	writeln ("encode_cbor #2 : ou:[", ou, "]");
     return ou.toString();
@@ -413,7 +438,7 @@ public Subject decode_cbor(string in_str, byte fields = ALL)
 
     Element res;
 
-    read_element(cast(ubyte[])in_str, &res, fields);
+    read_element(cast(ubyte[])in_str, &res, fields, null);
 
 //    sw.stop();
 //    int t = cast(int)sw.peek().usecs;
