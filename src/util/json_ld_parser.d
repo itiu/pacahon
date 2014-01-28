@@ -469,7 +469,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     outbuff.write('\t');
             }
 
-            if (oo.type == OBJECT_TYPE.LITERAL)
+            if (oo.type == OBJECT_TYPE.TEXT_STRING)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -543,7 +543,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                 }
                 //				log.trace ("write literal end");
             }
-            else if (oo.type == OBJECT_TYPE.RESOURCE)
+            else if (oo.type == OBJECT_TYPE.URI)
             {
                 if (ff == true)
                     outbuff.write(',');

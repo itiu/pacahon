@@ -273,7 +273,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
                     foreach (oo; pp.getObjects())
                     {
-                        if (oo.type == OBJECT_TYPE.LITERAL)
+                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
                         {
                             if (pp.count_objects > 1)
                             {
@@ -295,7 +295,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             all_text.write(data);
                             all_text.write("|");
                         }
-                        else if (oo.type == OBJECT_TYPE.RESOURCE)
+                        else if (oo.type == OBJECT_TYPE.URI)
                         {
                             if (oo.literal is null)
                             {
@@ -346,7 +346,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                         bool sp = true;
                         foreach (oo; pp.getObjects())
                         {
-                            if (oo.type == OBJECT_TYPE.LITERAL && (oo.lang == _RU || oo.lang == _NONE))
+                            if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _RU || oo.lang == _NONE))
                             {
                                 if (sp == true)
                                 {
@@ -368,7 +368,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                         sp = true;
                         foreach (oo; pp.getObjects())
                         {
-                            if (oo.type == OBJECT_TYPE.LITERAL && (oo.lang == _EN))
+                            if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _EN))
                             {
                                 if (sp == true)
                                 {
@@ -394,7 +394,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
                         foreach (oo; pp.getObjects())
                         {
-                            if (oo.type == OBJECT_TYPE.LITERAL)
+                            if (oo.type == OBJECT_TYPE.TEXT_STRING)
                             {
                                 double data = to!double (oo.literal);
                                 doc.add_value(slot_L1, data, &err);
@@ -412,7 +412,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
                         foreach (oo; pp.getObjects())
                         {
-                            if (oo.type == OBJECT_TYPE.LITERAL)
+                            if (oo.type == OBJECT_TYPE.TEXT_STRING)
                             {
                                 long data = stringToTime(oo.literal);
                                 doc.add_value(slot_L1, data, &err);

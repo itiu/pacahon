@@ -28,19 +28,14 @@ private import pacahon.know_predicates;
 
 enum OBJECT_TYPE : byte
 {
-    LITERAL  = 0,
+    TEXT_STRING  = 0,
     LINK_SUBJECT =  10,
     LINK_CLUSTER  = 20,
-    RESOURCE = 30
+    URI = 30,
+    UNSIGNED_INTEGER = 31,
+    STANDARD_DATE_TIME = 32    
 }
 
-//enum DATA_TYPE: byte
-//{
-//	STRING = 0,
-//	INTEGER = 1,
-//	DOUBLE = 2,
-//	DATETIME = 3
-//}
 
 enum STRATEGY : byte
 {
@@ -174,7 +169,7 @@ final class GraphCluster
 
                 for (short kk = 0; kk < pp.count_objects; kk++)
                 {
-                    if (pp.objects[ kk ].type == OBJECT_TYPE.LITERAL || pp.objects[ kk ].type == OBJECT_TYPE.RESOURCE)
+                    if (pp.objects[ kk ].type == OBJECT_TYPE.TEXT_STRING || pp.objects[ kk ].type == OBJECT_TYPE.URI)
                     {
                         i1PO[ pp.predicate ][ cast(string)pp.objects[ kk ].literal ] = subject;
                     }
@@ -376,7 +371,7 @@ final class Subject
         edges[ _count_edges ].count_objects        = 1;
         edges[ _count_edges ].objects[ 0 ]         = new Objectz();
         edges[ _count_edges ].objects[ 0 ].literal = object;
-        edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.RESOURCE;
+        edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.URI;
         _count_edges++;
 
         needReidex = true;
@@ -614,7 +609,7 @@ final class Subject
                 {
                     oo.subject.reindex_predicate();
                 }
-                else if (oo.type == OBJECT_TYPE.LITERAL || oo.type == OBJECT_TYPE.RESOURCE)
+                else if (oo.type == OBJECT_TYPE.TEXT_STRING || oo.type == OBJECT_TYPE.URI)
                 {
                     pp.objects_of_value[ oo.literal ] = oo;
                 }
@@ -759,8 +754,8 @@ class Predicate
         count_objects++;
         return objects[ count_objects - 1 ];
     }
-    
-    Objectz addResource(string val)
+       
+    Objectz addLiteral(string val, OBJECT_TYPE type)
     {
         if (val is null)
             return null;
@@ -769,11 +764,10 @@ class Predicate
             objects.length += 16;
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].literal = val;
-        objects[ count_objects ].lang    = LANG.NONE;
-        objects[ count_objects ].type 	 = OBJECT_TYPE.RESOURCE;
+        objects[ count_objects ].type    = type;
         count_objects++;
         return objects[ count_objects - 1 ];
-    }
+    }   
 
     void addCluster(GraphCluster cl)
     {
@@ -865,13 +859,13 @@ class Predicate
 
 class Objectz
 {
-    string       literal;            // если type == LITERAL or RESOURCE
+    string       literal;            // если type == LITERAL | RESOURCE | UNSIGNED_INTEGER | STANDARD_DATE_TIME
     Subject      subject;            // если type == LINK_SUBJECT
     GraphCluster cluster;            // если type == LINK_CLUSTER
 
     Subject      reification = null; // реификация для данного значения
 
-    byte         type = OBJECT_TYPE.LITERAL;
+    byte         type = OBJECT_TYPE.TEXT_STRING;
     LANG         lang;
 
     override string toString()
