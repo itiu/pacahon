@@ -576,6 +576,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                 }
                 else
                 {
+//             	writeln ("oo.type == OBJECT_TYPE.LINK_SUBJECT");
                     outbuff.write('\n');
                     toJson_ld(oo.subject, outbuff, use_reif, level + 1);
                 }
