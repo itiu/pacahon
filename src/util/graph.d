@@ -767,21 +767,4 @@ class Objectz
     }
 }
 
-private static void print_dump(int bp, string cbor)
-{
-    writeln("*******");
-
-    long ep = bp + 8;
-    long sp = bp - 8;
-
-    if (sp < 0)
-        sp = 0;
-    if (ep > cbor.length)
-        ep = cbor.length - 1;
-
-    for (long i = sp; i < ep; i++)
-        writeln("bson ", (i - bp), "[", i, "]:", cbor[ i ], ", ", cast(uint)cbor[ i ]);
-
-    writeln("*******");
-}
 
