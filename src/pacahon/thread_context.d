@@ -56,7 +56,7 @@ class ThreadContext : Context
     int  _count_command;
     int  _count_message;
 
-    Tid[ string ] tids;
+    private Tid[ string ] tids;
 
     this(string property_file_path, string context_name, immutable string[] _tids_names)
     {
@@ -135,9 +135,11 @@ class ThreadContext : Context
         writeln(context_name ~ ": load events... ok");
     }
 
-    Tid getTid(thread tid_name)
+    public Tid getTid(thread tid_name)
     {
-    	return tids.get (tid_name, Tid.init);
+    	Tid res = tids.get (tid_name, Tid.init);
+    	assert (res != Tid.init);
+    	return res;
     }
 
 
