@@ -19,12 +19,13 @@ import util.cbor;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
+import storage.subject;
 import search.vel;
 
 public const string  xapian_search_db_path  = "data/xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-byte                 err;
+byte err;
 
 public void xapian_thread_io()
 {
@@ -152,8 +153,6 @@ void xapian_indexer_commiter(Tid tid)
     }
 }
 
-import storage.subject;
-
 void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 {
     writeln("SPAWN: Xapian Indexer");
@@ -258,6 +257,10 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                 {
                     string prefix;
                     int    slot = get_slot(pp.predicate, key2slot);
+                    
+                    all_text.write (escaping_or_uuid2search(pp.predicate));
+                    all_text.write('|');
+                    
                     string type = "?";
 
                     if (pp.metadata !is null)
@@ -293,7 +296,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
                             all_text.write(data);
-                            all_text.write("|");
+                            all_text.write('|');
                         }
                         else if (oo.type == OBJECT_TYPE.URI)
                         {
@@ -311,7 +314,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                                 doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
                                 all_text.write(data);
-                                all_text.write("|");
+                                all_text.write('|');
                             }
                         }
                     }
@@ -360,7 +363,8 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                                 indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
 
                                 all_text.write(oo.literal);
-                                all_text.write("|");
+                                all_text.write('|');
+
                                 //writeln ("slot:", slot_L1, ", value:", oo.literal);
                             }
                         }
@@ -382,7 +386,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                                 indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
 
                                 all_text.write(oo.literal);
-                                all_text.write("|");
+                                all_text.write('|');
                                 //writeln ("slot:", slot_L1, ", value:", oo.literal);
                             }
                         }
@@ -399,7 +403,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                                 double data = to!double (oo.literal);
                                 doc.add_value(slot_L1, data, &err);
                                 all_text.write(oo.literal);
-                                all_text.write("|");
+                                all_text.write('|');
 
                                 indexer.index_data(data, prefix.ptr, prefix.length, &err);
                             }
@@ -417,7 +421,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                                 long data = stringToTime(oo.literal);
                                 doc.add_value(slot_L1, data, &err);
                                 all_text.write(oo.literal);
-                                all_text.write("|");
+                                all_text.write('|');
 
                                 indexer.index_data(data, prefix.ptr, prefix.length, &err);
                             }
