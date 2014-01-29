@@ -233,7 +233,8 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                         if (ch == '(')
                             depth++;
                     }
-                    length_el = cast(int)(end_el - start_el);
+//                    length_el = cast(int)(end_el - start_el);
+                    length_el = 0;
                 }
                 else if (*start_el == '<')
                 {
@@ -285,7 +286,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     }
                 }
 
-                if (length_el > 0)
+                if (length_el > 1 || (length_el == 1 && (*start_el != '(' && *start_el != ')')))
                 {
                     ptr = end_el;
 
@@ -337,6 +338,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 //					writeln ("@ new empty predicate");
 //                        pp = new Predicate();
 //                    }
+					
                 }
 //				writeln ("1 END CH:", *ptr);
 
