@@ -44,7 +44,7 @@ void processed_events(Subject subject, EVENT type, Context context)
 {
     //writeln("info:processed_events ", type, ":", subject);
 
-    foreach (ef; context.event_filters.getArray)
+    foreach (ef; context.event_filters.data)
     {
         string to = ef.getFirstLiteral(event__to);
 

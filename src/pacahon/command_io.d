@@ -61,7 +61,7 @@ Subject put(Subject message, Predicate sender, Ticket *ticket, Context context, 
         {
             if (arg.type == OBJECT_TYPE.LINK_CLUSTER)
             {
-                graphs_on_put = arg.cluster.getArray;
+                graphs_on_put = arg.cluster.data;
             }
             else if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
             {
@@ -161,7 +161,7 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
 }
 
 public void get(Ticket *ticket, Subject message, Predicate sender, Context context, out bool isOk, out string reason,
-                ref GraphCluster res, out char from_out)
+                ref Subjects res, out char from_out)
 {
     // в качестве аргумента - шаблон для выборки, либо запрос на VQL
 
@@ -196,7 +196,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
 
             if (arg.type == OBJECT_TYPE.LINK_CLUSTER)
             {
-                queries = arg.cluster.getArray;
+                queries = arg.cluster.data;
             }
             else if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
             {

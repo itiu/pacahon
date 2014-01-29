@@ -48,8 +48,8 @@ interface Context
 
 //	@property StopWatch sw ();
     @property Ticket *[ string ] user_of_ticket();
-    @property GraphCluster ba2pacahon_records();
-    @property GraphCluster event_filters();
+    @property Subjects ba2pacahon_records();
+    @property Subjects event_filters();
     @property search.vql.VQL vql();
 
     DocTemplate get_template(string uid, string v_dc_identifier, string v_docs_version);

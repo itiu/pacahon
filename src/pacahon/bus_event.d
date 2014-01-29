@@ -34,7 +34,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
 		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
 		try
 		{
-			 core.thread.Thread.sleep(dur!("seconds")(10));
+//			 core.thread.Thread.sleep(dur!("seconds")(10));
 		send (tid_condition, type, subject_as_cbor);
 		}
 		catch (Exception ex)

@@ -37,10 +37,10 @@ class OrgStructureTree
     {
         log.trace_log_and_console("start load org structure links");
 
-        GraphCluster res = new GraphCluster();
+        Subjects res = new Subjects();
         vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res);
 
-        foreach (ss; res.getArray())
+        foreach (ss; res.data)
         {
             Objectz[] parents = ss.getObjects("docs:parentUnit");
             //writeln ("# PARENTS:", parents);

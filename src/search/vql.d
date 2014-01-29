@@ -140,7 +140,7 @@ class VQL
     
     //Clock.currTime().stdTime ()
 
-    public int get(Ticket *ticket, string query_str, ref GraphCluster res)
+    public int get(Ticket *ticket, string query_str, ref Subjects res)
     {
         key2slot = context.get_key2slot();
         long last_update_time = context.get_last_update_time();
@@ -372,7 +372,7 @@ class VQL
         }
     }
 
-    int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref GraphCluster res, Context context)
+    int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
     {
         int read_count = 0;
 

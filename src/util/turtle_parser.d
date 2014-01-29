@@ -31,7 +31,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
     char         ch            = *src;
     char         prev_ch       = 0;
 
-    GraphCluster res = new GraphCluster();
+    Subjects res = new Subjects();
 
     Subject[]    subject_level = new Subject[ 4 ];
     string[]     predicate_level = new string[ 4 ];
@@ -359,7 +359,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 //	 long t = cast(long) sw.peek().usecs;
 //	 writeln ("turtle parser [µs] ", t);
 
-    return res.getArray();
+    return res.data;
 }
 
 private char next_element(char *element, int el_length, Subject ss, string in_predicate, out string out_predicate, byte *state, bool is_literal)
@@ -584,7 +584,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
             else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
             {
                 outbuff.write(cast(char[])" \"\"\"");
-                foreach (s; oo.cluster.getArray())
+                foreach (s; oo.cluster.data)
                 {
                     toTurtle(s, outbuff, 0, true);
                 }

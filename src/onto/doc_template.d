@@ -9,18 +9,12 @@ private import util.graph;
 class DocTemplate
 {
     Subject      main;
-    GraphCluster data;
+    Subjects data;
 
     this()
     {
-        data = new GraphCluster();
+        data = new Subjects();
     }
-
-    Subject addTriple(string S, string P, string O, LANG lang)
-    {
-        return data.addTriple(S, P, O, lang);
-    }
-
     Predicate get_export_predicates()
     {
         if (main is null)

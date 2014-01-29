@@ -24,9 +24,9 @@ enum ParentLevelType : byte
     ARRAY
 }
 
-GraphCluster parse_JSON_LD(T) (T json, int maxDepth = -1) if (isInputRange!T)
+Subjects parse_JSON_LD(T) (T json, int maxDepth = -1) if (isInputRange!T)
 {
-    GraphCluster new_gcl = new GraphCluster;
+    Subjects new_gcl = new Subjects;
 
     if (json.empty())
         return new_gcl;
@@ -197,7 +197,7 @@ GraphCluster parse_JSON_LD(T) (T json, int maxDepth = -1) if (isInputRange!T)
         return str.data;
     }
 
-    void parseValue(GraphCluster gcl, Subject ss, Predicate pp, ParentLevelType plt)
+    void parseValue(Subjects gcl, Subject ss, Predicate pp, ParentLevelType plt)
     {
 //		writeln("parseValue depth=", depth);
 
@@ -247,7 +247,7 @@ GraphCluster parse_JSON_LD(T) (T json, int maxDepth = -1) if (isInputRange!T)
 
                         if (gcl is null)
                         {
-                            gcl = new GraphCluster;
+                            gcl = new Subjects;
                             pp.addCluster(gcl);
                         }
 
@@ -361,12 +361,12 @@ public Subject[] parse_json_ld_string(char *msg, int message_size)
 
     char[]       buff = getString(msg, message_size);
 
-    GraphCluster gcl = parse_JSON_LD(buff);
+    Subjects gcl = parse_JSON_LD(buff);
 
     //	sw1.stop();
     //	log.trace("json msg parse %d [µs]", cast(long) sw1.peek().microseconds);
 
-    return gcl.getArray;
+    return gcl.data;
 }
 
 char[] getString(char *s, int length)
@@ -591,13 +591,13 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
 
                 for (int i = 0; i < oo.cluster.length; i++)
                 {
-                    if (oo.cluster.getArray[ i ] !is null)
+                    if (oo.cluster.data[ i ] !is null)
                     {
                         if (i > 0)
                             outbuff.write(',');
                         outbuff.write('\n');
 
-                        toJson_ld(oo.cluster.getArray[ i ], outbuff, use_reif, level + 1);
+                        toJson_ld(oo.cluster.data[ i ], outbuff, use_reif, level + 1);
                     }
                 }
                 outbuff.write(']');

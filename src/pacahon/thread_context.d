@@ -66,8 +66,8 @@ class ThreadContext : Context
         }
         //writeln("context:", tids);
 
-        _event_filters      = new GraphCluster();
-        _ba2pacahon_records = new GraphCluster();
+        _event_filters      = new Subjects();
+        _ba2pacahon_records = new Subjects();
 
         if (property_file_path !is null)
         {
@@ -278,14 +278,14 @@ class ThreadContext : Context
         return _user_of_ticket;
     }
 
-    private GraphCluster _ba2pacahon_records;
-    @property GraphCluster ba2pacahon_records()
+    private Subjects _ba2pacahon_records;
+    @property Subjects ba2pacahon_records()
     {
         return _ba2pacahon_records;
     }
 
-    private GraphCluster _event_filters;
-    @property GraphCluster event_filters()
+    private Subjects _event_filters;
+    @property Subjects event_filters()
     {
         return _event_filters;
     }

@@ -181,7 +181,7 @@ public void subject_manager()
     }
 }
 
-public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level, ref GraphCluster res, Context context)
+public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level, ref Subjects res, Context context)
 {
     string dummy;
     double rd, ld;

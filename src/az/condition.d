@@ -108,7 +108,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
 
 //		vql = new VQL(_thread_context);
 
-    GraphCluster res = new GraphCluster();
+    Subjects res = new Subjects();
     vql.get(null,
             "return { 'veda:condition'}
             filter { 'class:identifier' == 'veda:mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }"                                        ,
@@ -117,7 +117,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     int       count = 0;
     JSONValue nil;
 
-    foreach (ss; res.getArray())
+    foreach (ss; res.data)
     {
         try
         {

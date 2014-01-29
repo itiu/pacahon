@@ -21,8 +21,10 @@ private import std.string;
 private import std.outbuffer;
 private import std.conv;
 private import std.stdio;
+
 private import util.utils;
 private import util.json_ld.parser;
+private import util.container;
 
 private import pacahon.know_predicates;
 
@@ -43,49 +45,17 @@ enum STRATEGY : byte
     INDEXED   = 1
 }
 
-final class GraphCluster
+final class Subjects
 {
-    private byte type;
-    private      Subject[ string ][ string ] i1PO;
-    private      Subject[ string ] graphs_of_subject;
+//    private byte type;
+//    private      Subject[ string ][ string ] i1PO;
+//    private      Subject[ string ] graphs_of_subject;
 
-    // if STRATEGY.NOINDEXED
-    private Subject[] graphs;
-    private int       count_of_graphs = 0;
+    private Set!Subject graphs;
 
-    this(byte _type = STRATEGY.INDEXED)
+    Subject[] data()
     {
-        type = _type;
-    }
-
-    Subject[] getArray()
-    {
-        if (type == STRATEGY.NOINDEXED)
-        {
-            return graphs[ 0 .. count_of_graphs ];
-        }
-        else
-        {
-            return graphs_of_subject.values;
-        }
-    }
-
-    Subject addTriple(string s, string p, string o, LANG lang = LANG.NONE)
-    {
-        if (o is null)
-            return null;
-
-        Subject ss = graphs_of_subject.get(s, null);
-
-        if (ss is null)
-        {
-            ss         = new Subject;
-            ss.subject = s;
-        }
-        graphs_of_subject[ cast(string)s ] = ss;
-        ss.addPredicate(p, o, lang);
-
-        return ss;
+            return graphs.items;
     }
 
     Subject addSubject(string subject_id)
@@ -94,103 +64,26 @@ final class GraphCluster
 
         ss.subject = subject_id;
 
-        graphs_of_subject[ subject_id ] = ss;
+        graphs ~= ss;
 
         return ss;
     }
 
     void addSubject(Subject ss)
     {
-        if (type == STRATEGY.NOINDEXED)
-        {
-            count_of_graphs++;
-            if (graphs.length <= count_of_graphs)
-                graphs.length += 128;
-            graphs[ count_of_graphs - 1 ] = ss;
-        }
-        else
-        {
-            if (ss !is null && ss.subject !is null)
-            {
-                graphs_of_subject[ ss.subject ] = ss;
-            }
-        }
+        graphs ~= ss;
     }
 
     int length()
     {
-        if (type == STRATEGY.NOINDEXED)
-            return count_of_graphs;
-        else
-            return cast(uint)graphs_of_subject.length;
-    }
-
-    Subject find_subject(string predicate, string literal)
-    {
-        Subject[ string ] ss = i1PO.get(predicate, null);
-        if (ss !is null)
-        {
-            return ss.get(literal, null);
-        }
-        return null;
-    }
-
-    Predicate find_subject_and_get_predicate(string s_predicate, string s_literal, string p_predicate)
-    {
-        //				writeln ("s_predicate=", s_predicate);
-        Subject[ string ] ss = i1PO.get(s_predicate, null);
-        if (ss !is null)
-        {
-            //						writeln ("SS=", ss);
-            Subject fs = ss.get(s_literal, null);
-
-            //			writeln ("fs=", fs);
-            if (fs !is null)
-            {
-                //				writeln ("edges_of_predicate=", fs.edges_of_predicate);
-                Predicate pr = fs.getPredicate(p_predicate);
-
-                return pr;
-            }
-        }
-        return null;
-    }
-
-    void reindex_i1PO(byte[ string ] indexedPredicates = null)
-    {
-        foreach (subject; graphs_of_subject.values)
-        {
-            for (short jj = 0; jj < subject.count_edges; jj++)
-            {
-                Predicate pp = subject.edges[ jj ];
-
-                if (indexedPredicates !is null && indexedPredicates.get(pp.predicate, 0) == 0)
-                    continue;
-
-                for (short kk = 0; kk < pp.count_objects; kk++)
-                {
-                    if (pp.objects[ kk ].type == OBJECT_TYPE.TEXT_STRING || pp.objects[ kk ].type == OBJECT_TYPE.URI)
-                    {
-                        i1PO[ pp.predicate ][ cast(string)pp.objects[ kk ].literal ] = subject;
-                    }
-                }
-            }
-        }
-    }
-
-    void reindex_iXPO()
-    {
-        foreach (subject; graphs_of_subject.values)
-        {
-            subject.reindex_predicate();
-        }
+            return cast(uint)graphs.length;
     }
 
     override string toString()
     {
         string res = "";
 
-        foreach (el; this.graphs_of_subject.values)
+        foreach (el; this.graphs.items)
         {
             res ~= " " ~ el.toString() ~ "\n";
         }
@@ -421,7 +314,7 @@ final class Subject
         }
     }
 
-    void addPredicate(string predicate, GraphCluster cluster)
+    void addPredicate(string predicate, Subjects cluster)
     {
         if (cluster is null)
             return;
@@ -716,9 +609,9 @@ class Predicate
     {
         if (count_objects > 0)
         {
-            if (objects[ 0 ].type == OBJECT_TYPE.LINK_CLUSTER && objects[ 0 ].cluster.graphs_of_subject.length == 1)
+            if (objects[ 0 ].type == OBJECT_TYPE.LINK_CLUSTER && objects[ 0 ].cluster.length == 1)
             {
-                return objects[ 0 ].cluster.graphs_of_subject.values[ 0 ];
+                return objects[ 0 ].cluster.data[ 0 ];
             }
 
             return objects[ 0 ].subject;
@@ -769,7 +662,7 @@ class Predicate
         return objects[ count_objects - 1 ];
     }   
 
-    void addCluster(GraphCluster cl)
+    void addCluster(Subjects cl)
     {
         if (cl is null)
             return;
@@ -861,7 +754,7 @@ class Objectz
 {
     string       literal;            // если type == LITERAL | RESOURCE | UNSIGNED_INTEGER | STANDARD_DATE_TIME
     Subject      subject;            // если type == LINK_SUBJECT
-    GraphCluster cluster;            // если type == LINK_CLUSTER
+    Subjects 	 cluster;            // если type == LINK_CLUSTER
 
     Subject      reification = null; // реификация для данного значения
 

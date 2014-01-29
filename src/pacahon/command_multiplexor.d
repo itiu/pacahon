@@ -306,7 +306,7 @@ void command_preparer(Ticket *exist_ticket, Subject message, Subject out_message
             {
                 if (trace_msg[ 14 ] == 1)
                     log.trace("command_preparer, get");
-                GraphCluster gres = new GraphCluster(STRATEGY.NOINDEXED);
+                Subjects gres = new Subjects();
 
                 get(exist_ticket, message, sender, context, isOk, reason, gres, from);
                 if (isOk == true)

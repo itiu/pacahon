@@ -64,7 +64,7 @@ Subject _getDocument(string subject, byte[ string ] r_predicate, Context context
 {
     //	 writeln("#### getDocument :[", subject, "] ", r_predicate);
     Subject      main_subject = null;
-    GraphCluster res          = null;
+    Subjects res          = null;
 
     if (subject is null)
         return null;

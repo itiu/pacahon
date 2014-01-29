@@ -146,8 +146,8 @@ void ba2pacahon(string msg_str, Context context)
 
         if (objectType == "TEMPLATE")
         {
-            GraphCluster gcl_versioned = new GraphCluster();
-            GraphCluster gcl_actual    = new GraphCluster();
+            Subjects gcl_versioned = new Subjects();
+            Subjects gcl_actual    = new Subjects();
 
             subj_versioned_UID = prefix_tmpl ~ c_id ~ "_" ~ c_vid;
 
@@ -460,12 +460,12 @@ void ba2pacahon(string msg_str, Context context)
             // store versioned
             bool   isOk;
             string reason;
-            store_graphs(gcl_versioned.getArray, null, context, isOk, reason, false);
+            store_graphs(gcl_versioned.data, null, context, isOk, reason, false);
 
             if (actual == "1")
             {
                 // store actual
-                foreach (subject; gcl_actual.getArray)
+                foreach (subject; gcl_actual.data)
                 {
 //					context.ts.removeSubject(subject.subject);
 //					context.ts.storeSubject(subject, context);
@@ -547,7 +547,7 @@ void ba2pacahon(string msg_str, Context context)
                         Subject metadata_dc_created;
                         if (basic_doc_class !is null)
                         {
-                            metadata_dc_created = basic_doc_class.data.find_subject(owl__onProperty, dc__created);
+                            //metadata_dc_created = basic_doc_class.data.find_subject(owl__onProperty, dc__created);
                         }
 
                         node.addPredicate(dc__created, dateCreated, metadata_dc_created, null);
@@ -595,7 +595,7 @@ void ba2pacahon(string msg_str, Context context)
                                     string new_code = ba2user_onto(code);
                                     //writeln("\r\n\r\ndoc:[" ~ code ~ "]->[" ~ new_code ~ "] = ", value);
 
-                                    Subject metadata = tmplate.data.find_subject(owl__onProperty, new_code);
+                                    Subject metadata;// = tmplate.data.find_subject(owl__onProperty, new_code);
                                     Subject reif;
 
                                     string  type        = att.get_str("type");
