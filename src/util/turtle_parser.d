@@ -314,7 +314,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                         level++;
 //						writeln ("@ ++ level !!!:", level, ", predicate=", predicate);
                         ss    = new Subject();
-                        ss.subject = "--:---";
+                        ss.subject = "_:_";
                         state = 1;
                     }
                     else if (prev_el == ']')

@@ -81,13 +81,13 @@ final class Subjects
 
     override string toString()
     {
-        string res = "";
+        string res = "[";
 
         foreach (el; this.graphs.items)
         {
             res ~= " " ~ el.toString() ~ "\n";
         }
-        return res;
+        return res ~ "]";
     }
 }
 

@@ -24,14 +24,14 @@ static this()
 
 void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context context)
 {
-	writeln ("#bus_event B subject_as_cbor=[", subject_as_cbor, "]");
+//	writeln ("#bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
 //	Tid tid_condition = locate (thread.condition);
 	Tid tid_condition = context.getTid (thread.condition);
 
 	if (tid_condition != Tid.init)
 	{
-		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
+//		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
 		try
 		{
 //			 core.thread.Thread.sleep(dur!("seconds")(10));
@@ -41,10 +41,10 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
 		{
 			writeln ("EX!bus_event:", ex.msg);
 		}
-		writeln ("#bus_event #2");
+//		writeln ("#bus_event #2");
 	}	
 
-	writeln ("#bus_event E");
+//	writeln ("#bus_event E");
 //    if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate(docs__full_text_search, "0"))
 //        return;
 

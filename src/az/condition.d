@@ -77,7 +77,7 @@ public void condition_thread(string props_file_name, immutable string[] tids_nam
     {
         receive((EVENT type, string msg)
                 {
-          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
+//          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
           			if (msg !is null && msg.length > 3)
           			{
                     Subject doc = decode_cbor(msg);

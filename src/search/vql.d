@@ -214,7 +214,7 @@ class VQL
             }
         }
 
-        int type_source;
+        int type_source = XAPIAN;
         OI  from_search_point = null;
 
         if (from_search_points.size > 0)
@@ -273,7 +273,7 @@ class VQL
                         }
                     }
                 }
-
+                
                 int state = -1;
                 while (state == -1)
                 {
