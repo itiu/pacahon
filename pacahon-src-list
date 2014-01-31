@@ -33,6 +33,7 @@ src/storage/subject.d
 src/onto/doc_template.d
 src/onto/docs_base.d
 src/onto/rdf_base.d
+src/onto/owl.d
 
 src/az/orgstructure_tree.d
 src/az/condition.d
