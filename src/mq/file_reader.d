@@ -85,7 +85,7 @@ private void prepare_file(string file_name, Context context)
         {
             Subject[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
 
-            writeln(context.get_prefix_map);
+            //writeln(context.get_prefix_map);
 
             bool[ string ] for_load;
 
