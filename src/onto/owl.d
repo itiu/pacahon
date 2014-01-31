@@ -1,6 +1,7 @@
 module onto.owl;
 
 private import std.stdio;
+private import std.typecons;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
@@ -9,10 +10,37 @@ private import util.utils;
 private import util.graph;
 private import util.container;
 
+enum SRC : ubyte
+{
+    direct,
+    inherited
+}
+
 class OWL
 {
     Subject[ string ] uid_2_subject;
-    Subjects[ string ] properties_2_class;
+
+
+
+    alias Property   = Tuple!(SRC, string);
+    alias Properties = Set!Property;
+
+    Properties *[ string ] class_2_properties;
+    void add(Properties *[ string ], string class_name, string propery_name)
+    {
+        Properties *properies = class_2_properties.get(class_name, null);
+
+        if (properies is null)
+        {
+            properies                        = new Properties;
+            class_2_properties[ class_name ] = properies;
+        }
+
+        Property pr;
+        pr[ 0 ] = SRC.direct;
+        pr[ 1 ] = propery_name;
+        *properies ~= pr;
+    }
 
     this()
     {
@@ -21,9 +49,10 @@ class OWL
     public void load(Context context)
     {
         Subjects res = new Subjects();
+
         context.vql().get(null,
                           "return { '*'}
-            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }"                                         ,
+            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
                           res);
         set_data_and_relink(res);
     }
@@ -62,61 +91,43 @@ class OWL
                 Predicate domain = ss.getPredicate(rdfs__domain);
                 if (domain !is null)
                 {
-                    writeln("#2.5 domain=", domain);
                     foreach (dc; domain.getObjects())
                     {
-                    	Subject ssi;
+                        Subject ssi;
                         if (dc.type == OBJECT_TYPE.URI)
                         {
-                        writeln("#2.6 dc=", dc);
                             ssi = uid_2_subject.get(dc.literal, null);
-                           }
-                         else if (dc.type == OBJECT_TYPE.LINK_SUBJECT)
-                    	{
-                    		ssi = dc.subject;
-                    		}
-                    	
-                            if (ssi !is null)
-                            {
-                        writeln("#2.7 ssi=", ssi.subject);
-                                Predicate unionOf = ssi.getPredicate(owl__unionOf);
-                                if (unionOf !is null)
-                                {
-                        writeln("#2.8 unionOf=", unionOf);
-                                    foreach (uo; unionOf)
-                                    {
-                        writeln("#2.9 uo=", uo);
-                                    	
-                                    	
-                                        Subjects properies = properties_2_class.get(uo.literal, new Subjects());
-                        writeln("#2.10 properies=", properies);
-
-                                        if (properies.length == 0)
-                                            properties_2_class[ uo.literal ] = properies;
-
-                                        properies.addSubject (ss);
-                                    }
-                                }
-                                if (ssi.subject != "_:_")
-                                {
-                                    
-                                        Subjects properies = properties_2_class.get(ssi.subject, new Subjects());
-
-                                        if (properies.length == 0)
-                                            properties_2_class[ ssi.subject] = properies;
-
-                                        properies.addSubject (ss);
-
-                       // writeln("#2.9 properies=", properies);
-                                }
-                            }
+                        }
+                        else if (dc.type == OBJECT_TYPE.LINK_SUBJECT)
+                        {
+                            ssi = dc.subject;
                         }
 
-                        
+                        if (ssi !is null)
+                        {
+                            Predicate unionOf = ssi.getPredicate(owl__unionOf);
+                            if (unionOf !is null)
+                            {
+                                foreach (uo; unionOf)
+                                {
+                                    add(class_2_properties, uo.literal, ss.subject);
+                                }
+                            }
+                            if (ssi.subject != "_:_")
+                            {
+                                add(class_2_properties, ssi.subject, ss.subject);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        writeln("#properties_2_class=", properties_2_class);
+        writeln("#class_2_properties=");
+        foreach (key, value; class_2_properties)
+        {
+            Properties pt = *value;
+            writeln(key, "=>", pt.items);
+        }
     }
 }
