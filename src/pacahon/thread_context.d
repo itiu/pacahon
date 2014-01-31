@@ -28,6 +28,7 @@ private
     import pacahon.context;
     import pacahon.event_filter;
     import pacahon.bus_event;
+    import onto.owl;
 
 //	import search.vql;
 }
@@ -127,12 +128,14 @@ class ThreadContext : Context
             Set!OI empty_set;
             Set!OI from_search = gateways.get("from-search", empty_set);
             _vql               = new search.vql.VQL(from_search, this);
-        }
-//        writeln(context_name ~ ": connect to mongodb is ok");
 
         writeln(context_name ~ ": load events");
         pacahon.event_filter.load_events(this);
         writeln(context_name ~ ": load events... ok");
+        
+        OWL owl = new OWL ();
+        owl.load(this);
+        }
     }
 
     public Tid getTid(thread tid_name)
@@ -203,11 +206,25 @@ class ThreadContext : Context
         }
     }
 
+    private string old_msg_key2slot;
+    int[ string ] old_key2slot;
+    
     public int[ string ] get_key2slot()
     {
         send(tids[ thread.xapian_thread_io ], CMD.GET, CNAME.KEY2SLOT, thisTid);
         string msg = receiveOnly!(string)();
-        int[ string ] key2slot = deserialize_key2slot(msg);
+        
+        int[ string ] key2slot;
+        
+        if (msg != old_msg_key2slot)
+        {
+        	key2slot = deserialize_key2slot(msg);
+        	old_msg_key2slot = msg;
+        	old_key2slot = key2slot;
+        }	
+        else
+        	key2slot = old_key2slot;
+        	
         return key2slot;
     }
 
