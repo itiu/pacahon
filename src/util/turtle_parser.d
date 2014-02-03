@@ -6,6 +6,7 @@ private import std.c.string;
 private import std.stdio;
 private import std.datetime;
 private import std.outbuffer;
+private import std.array;
 
 private import util.graph;
 private import util.utils;
@@ -424,6 +425,12 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
     {
         Predicate pp = ss.getPredicate (in_predicate);
         string data = cast(immutable)element[ 0..el_length ];
+       	if (data.indexOf ("\\\"") >= 0)
+       	{
+       		data = data.replace ("\\\"", "\"");
+//       		writeln ("@data=", data);
+       	}	 
+
 
         if (is_literal == true)
         {
@@ -443,19 +450,23 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
             	int end_pos_str = el_length;
             	while (data[end_pos_str] != '"' && end_pos_str > 0)
             		end_pos_str--;
-            	
+            	            	
             	if (data[end_pos_str] == '"' && data[end_pos_str + 1] == '^')
             	{
             		string type = data[end_pos_str + 3..$];
             		data = data[0..end_pos_str];
-            		
+            		            		
             		if (type == "xsd:nonNegativeInteger")
             		{
 //            			writeln ("LITERAL TYPE=", type);
             			pp.addLiteral(data, OBJECT_TYPE.UNSIGNED_INTEGER);            	            			
             		}
-            		else
+            		else if (type == "xsd:string")
             		{
+            			pp.addLiteral(data);            	            			
+            		}
+            		else
+            		{	
             			pp.addLiteral(data);            	            			
             		}            			
             	}
