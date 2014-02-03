@@ -254,7 +254,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
                         Subject ss = decode_cbor(msg);
 
-                        writeln("prepare msg counter:", counter, ", subject:", ss.subject);
+                        //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
                         if (ss.subject !is null && ss.count_edges > 0)
                         {
@@ -733,8 +733,14 @@ string get_query_description(XapianQuery query)
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+interface SearchReader
+{
+    public int get(string str_query, string[ string ] fields, string sort, int count_authorize, ref Subjects res);
+	
+} 
 
-class XapianReader
+
+class XapianReader : SearchReader
 {
     private XapianDatabase    xapian_db;
     private XapianStem        xapian_stemmer;
@@ -751,10 +757,10 @@ class XapianReader
         open_db();
     }
 
-    string      dummy;
-    double      d_dummy;
-    static long refresh_db_timeout = 10000000 * 20;
-    long        prev_update_time;
+    private string      dummy;
+    private double      d_dummy;
+    private static long refresh_db_timeout = 10000000 * 20;
+    private long        prev_update_time;
 
     public int get(string str_query, string[ string ] fields, string sort, int count_authorize, ref Subjects res)
     {
@@ -839,7 +845,7 @@ class XapianReader
         return 0;
     }
 
-    public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
+    private int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
     {
         int read_count = 0;
 

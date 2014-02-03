@@ -58,7 +58,7 @@ class VQL
 
     private string       transTable1;
     private Context      context;
-    private XapianReader xr;
+    private SearchReader xr;
 
     this(Context _context)
     {
