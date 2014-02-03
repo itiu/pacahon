@@ -162,7 +162,7 @@ class ThreadContext : Context
                         if (from == tids[ thread.subject_manager ])
                         {
                             res = msg;
-                            writeln("context.store_subject:msg=", msg);
+                            //writeln("context.store_subject:msg=", msg);
                         }
                     });
         }

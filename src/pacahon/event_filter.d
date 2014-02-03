@@ -54,7 +54,7 @@ void processed_events(Subject subject, EVENT type, Context context)
             continue;
         }
 
-        Predicate subject_types = subject.getPredicate("a");
+        Predicate subject_types = subject.getPredicate(rdf__type);
         //writeln ("subject_types.objects_of_value=",subject_types.objects_of_value);
 
         string filter_type = ef.getFirstLiteral(event__subject_type);

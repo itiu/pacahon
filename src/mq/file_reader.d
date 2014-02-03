@@ -145,7 +145,7 @@ private void prepare_file(string file_name, Context context)
                         string prefix = ss.subject[ 0..pos + 1 ];
                         if (for_load.get(prefix, false) == true)
                         {
-                            writeln("#1 file_reader:store, ss=\n", ss);
+                            //writeln("#1 file_reader:store, ss=\n", ss);
                             context.store_subject(ss);
                         }
                     }
@@ -154,7 +154,7 @@ private void prepare_file(string file_name, Context context)
                 {
                     if (for_load.get(ss.subject, false) == true)
                     {
-                        writeln("#2 file_reader:store, ss=\n", ss);
+                       // writeln("#2 file_reader:store, ss=\n", ss);
                         context.store_subject(ss);
                     }
                 }
