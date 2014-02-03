@@ -721,6 +721,8 @@ string get_query_description(XapianQuery query)
     return "NULL";
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 class XapianReader 
 {
     private XapianDatabase xapian_db;
@@ -967,9 +969,7 @@ class XapianReader
     
     private void close_db ()
     {
-    	writeln ("@#1 close db");
     	xapian_db.close (&err);
-    	writeln ("@#2 close db");
     }
 	
 } 

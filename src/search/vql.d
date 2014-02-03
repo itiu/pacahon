@@ -21,8 +21,6 @@ private
     import util.graph;
     import util.cbor;
 
-    import bind.xapian_d_header;
-
     import pacahon.context;
     import pacahon.define;
     import pacahon.know_predicates;
@@ -31,7 +29,6 @@ private
     import search.xapian;
     
     import storage.subject;
-    //import az.condition;
 }
 
 logger log;
