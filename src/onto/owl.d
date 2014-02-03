@@ -85,7 +85,7 @@ class OWL
  */
         foreach (ss; _subjs.data)
         {
-            writeln("\n#2.3 ss=", ss.subject);
+//            writeln("\n#2.3 ss=", ss.subject);
             if (ss.isExsistsPredicate(rdf__type, owl__ObjectProperty) == true || ss.isExsistsPredicate(rdf__type, owl__DatatypeProperty))
             {
                 Predicate domain = ss.getPredicate(rdfs__domain);
