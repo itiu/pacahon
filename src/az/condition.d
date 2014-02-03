@@ -106,12 +106,10 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
 {
     log.trace_log_and_console("start load mandats");
 
-//		vql = new VQL(_thread_context);
-
     Subjects res = new Subjects();
     vql.get(null,
-            "return { 'veda:condition'}
-            filter { 'class:identifier' == 'veda:mandat' && 'docs:actual' == 'true' && 'docs:active' == 'true' }"                                        ,
+            "return { 'veda-schema:script'}
+            filter { 'a' == 'veda-schema:Mandate'}"                                        ,
             res);
 
     int       count = 0;
@@ -121,8 +119,10 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     {
         try
         {
-            string    condition_text = ss.getFirstLiteral(veda__condition);
+            string    condition_text = ss.getFirstLiteral(veda_schema__script);
+            writeln ("condition_text:", condition_text);
             JSONValue condition_json = parseJSON(condition_text);
+            writeln ("#1");
             Mandat    mandat         = void;
 
             if (condition_json.type == JSON_TYPE.OBJECT)
