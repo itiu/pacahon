@@ -93,7 +93,7 @@ public void subject_manager()
                             {
                                 try
                                 {
-                                	writeln ("#b");
+//                                	writeln ("#b");
                                     Subject graph = decode_cbor(msg);
 
                                     MDB_val key;
@@ -125,7 +125,7 @@ public void subject_manager()
                                         throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 
                                     send(tid_response_reciever, res, thisTid);
-                                	writeln ("#e");
+//                                	writeln ("#e");
                                 }
                                 catch (Exception ex)
                                 {

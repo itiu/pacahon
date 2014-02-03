@@ -161,7 +161,7 @@ private void prepare_file(string file_name, Context context)
             }
 
             if (tid_search_manager != Tid.init)
-                send(tid_search_manager, "COMMIT");
+                send(tid_search_manager, CMD.COMMIT, "");
             //put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
 //                get_message(cast(byte *)buf, cast(int)buf.length, null, out_data, context);
         }

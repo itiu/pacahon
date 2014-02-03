@@ -27,7 +27,7 @@ private
 
     import search.vel;
     import search.xapian;
-    
+
     import storage.subject;
 }
 
@@ -40,38 +40,38 @@ static this()
 
 class VQL
 {
-    const int              RETURN    = 0;
-    const int              FILTER    = 1;
-    const int              SORT      = 2;
-    const int              RENDER    = 3;
-    const int              AUTHORIZE = 4;
-    const int              SOURCE    = 5;
+    const int            RETURN    = 0;
+    const int            FILTER    = 1;
+    const int            SORT      = 2;
+    const int            RENDER    = 3;
+    const int            AUTHORIZE = 4;
+    const int            SOURCE    = 5;
 
-    const int              XAPIAN = 2;
-    const int              LMDB = 3;
+    const int            XAPIAN = 2;
+    const int            LMDB   = 3;
 
-    private string[]       sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
-    private bool[]         section_is_found = [ false, false, false, false, false, false ];
-    private string[]       found_sections;
+    private string[]     sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+    private bool[]       section_is_found = [ false, false, false, false, false, false ];
+    private string[]     found_sections;
 
-    private                Set!OI from_search_points;
-    
-    private string transTable1;
-    private Context context;
-    private XapianReader xr; 
+    private              Set!OI from_search_points;
+
+    private string       transTable1;
+    private Context      context;
+    private XapianReader xr;
 
     this(Context _context)
     {
-    	context = _context;
+        context = _context;
         Set!OI empty_set;
         this(empty_set, _context);
-        xr = new XapianReader (_context);
+        xr = new XapianReader(_context);
     }
 
     this(ref Set!OI _from_search_points, Context _context)
     {
-    	context = _context;
-        xr = new XapianReader (_context);        
+        context            = _context;
+        xr                 = new XapianReader(_context);
         from_search_points = _from_search_points;
         found_sections     = new string[ 6 ];
 
@@ -100,14 +100,11 @@ class VQL
     }
 
 
-    
-    //Clock.currTime().stdTime ()
-
     public int get(Ticket *ticket, string query_str, ref Subjects res)
     {
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
-        
+
         //		writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
         //		writeln ("query_str=", query_str);
         //		StopWatch sw;
@@ -118,9 +115,6 @@ class VQL
         //		long t = cast(long) sw.peek().usecs;
         //		writeln ("found_sections", found_sections);
         //		writeln("split:", t, " µs");
-
-        TTA tta;
-        tta = parse_expr(found_sections[ FILTER ]);
 
         int render = 10000;
         try
@@ -163,13 +157,13 @@ class VQL
                 }
             }
         }
-        
-        string sort;
-        
-        if (section_is_found[ SORT ] == true)
-        	sort = found_sections[ SORT ];
 
-        int type_source = XAPIAN;
+        string sort;
+
+        if (section_is_found[ SORT ] == true)
+            sort = found_sections[ SORT ];
+
+        int type_source       = XAPIAN;
         OI  from_search_point = null;
 
         if (from_search_points.size > 0)
@@ -182,16 +176,17 @@ class VQL
         else if (found_sections[ SOURCE ] == "lmdb")
             type_source = LMDB;
 
-        string      dummy;
-        double      d_dummy;
+        string dummy;
+        double d_dummy;
 
         if (type_source == LMDB)
         {
-         	transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
+            TTA tta = parse_expr(found_sections[ FILTER ]);
+            transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
         }
         else if (type_source == XAPIAN)
-        {	
-        	return xr.get (tta, fields, sort, count_authorize, res);
+        {
+            return xr.get(found_sections[ FILTER ], fields, sort, count_authorize, res);
         }
         return 0;
     }
@@ -263,5 +258,4 @@ class VQL
             }
         }
     }
-
 }

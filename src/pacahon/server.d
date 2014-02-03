@@ -69,8 +69,8 @@ void main(char[][] args)
         tids[ thread.subject_manager ] = spawn(&subject_manager);
         tids[ thread.acl_manager ]     = spawn(&acl_manager);
 
-        tids[ thread.xapian_thread_io ] = spawn(&xapian_thread_io);
-        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.xapian_thread_io ]);
+        tids[ thread.xapian_thread_context ] = spawn(&xapian_thread_context);
+        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.xapian_thread_context ]);
         spawn(&xapian_indexer_commiter, tids[ thread.xapian_indexer ]);
         send(tids[ thread.xapian_indexer ], thisTid);
         receive((bool isReady)
@@ -238,7 +238,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 {
     StopWatch sw;
 
-    sw.start();
+//    sw.start();
 
     if (context is null)
     {
@@ -332,6 +332,9 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 //		ubyte[] bb = outbuff.toBytes();
 //		io_msg.trace_io(true, cast(byte*) bb, bb.length);
     }
+
+    sw.start();
+
 
     if (subjects is null)
         subjects = new Subject[ 0 ];

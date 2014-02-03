@@ -51,11 +51,11 @@ class ThreadContext : Context
     }
 
 
-    bool use_caching_of_documents = false;
-    bool IGNORE_EMPTY_TRIPLE      = false;
+    bool    use_caching_of_documents = false;
+    bool    IGNORE_EMPTY_TRIPLE      = false;
 
-    int  _count_command;
-    int  _count_message;
+    int     _count_command;
+    int     _count_message;
 
     private Tid[ string ] tids;
 
@@ -129,20 +129,21 @@ class ThreadContext : Context
             Set!OI from_search = gateways.get("from-search", empty_set);
             _vql               = new search.vql.VQL(from_search, this);
 
-        writeln(context_name ~ ": load events");
-        pacahon.event_filter.load_events(this);
-        writeln(context_name ~ ": load events... ok");
-        
-        OWL owl = new OWL ();
-        owl.load(this);
+            writeln(context_name ~ ": load events");
+            pacahon.event_filter.load_events(this);
+            writeln(context_name ~ ": load events... ok");
+
+            OWL owl = new OWL();
+            owl.load(this);
         }
     }
 
     public Tid getTid(thread tid_name)
     {
-    	Tid res = tids.get (tid_name, Tid.init);
-    	assert (res != Tid.init);
-    	return res;
+        Tid res = tids.get(tid_name, Tid.init);
+
+        assert(res != Tid.init);
+        return res;
     }
 
 
@@ -151,54 +152,55 @@ class ThreadContext : Context
         string res;
         string ss_as_cbor = encode_cbor(ss);
 
-        Tid tid_subject_manager = getTid (thread.subject_manager);
+        Tid    tid_subject_manager = getTid(thread.subject_manager);
+
         if (tid_subject_manager != Tid.init)
         {
-        send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-        receive((string msg, Tid from)
-                {
-                    if (from == tids[ thread.subject_manager ])
+            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+            receive((string msg, Tid from)
                     {
-                        res = msg;
-                        writeln("context.store_subject:msg=", msg);
-                    }
-                });
+                        if (from == tids[ thread.subject_manager ])
+                        {
+                            res = msg;
+                            writeln("context.store_subject:msg=", msg);
+                        }
+                    });
         }
 
         if (res.length == 1 && (res == "C" || res == "U"))
         {
-        	Tid tid_search_manager = getTid (thread.xapian_indexer);
-        	
-        	if (tid_search_manager != Tid.init)
-        	{
-        	send(tid_search_manager, ss_as_cbor);
+            Tid tid_search_manager = getTid(thread.xapian_indexer);
 
-            if (prepareEvents == true)
+            if (tid_search_manager != Tid.init)
             {
-                Predicate type = ss.getPredicate(rdf__type);
+                send(tid_search_manager, CMD.STORE, ss_as_cbor);
 
-
-                if (type.isExistLiteral(event__Event))
+                if (prepareEvents == true)
                 {
-                    // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-                    event_filters.addSubject(ss);
+                    Predicate type = ss.getPredicate(rdf__type);
 
-                    writeln("add new event_filter [", ss.subject, "]");
-                }
-                else
-                {
-                    EVENT event_type;
 
-                    if (res == "U")
-                        event_type = EVENT.UPDATE;
+                    if (type.isExistLiteral(event__Event))
+                    {
+                        // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
+                        event_filters.addSubject(ss);
+
+                        writeln("add new event_filter [", ss.subject, "]");
+                    }
                     else
-                        event_type = EVENT.CREATE;
+                    {
+                        EVENT event_type;
 
-                    processed_events(ss, event_type, this);
-                    bus_event(ss, ss_as_cbor, event_type, this);
+                        if (res == "U")
+                            event_type = EVENT.UPDATE;
+                        else
+                            event_type = EVENT.CREATE;
+
+                        processed_events(ss, event_type, this);
+                        bus_event(ss, ss_as_cbor, event_type, this);
+                    }
                 }
             }
-           } 
         }
         else
         {
@@ -208,29 +210,29 @@ class ThreadContext : Context
 
     private string old_msg_key2slot;
     int[ string ] old_key2slot;
-    
+
     public int[ string ] get_key2slot()
     {
-        send(tids[ thread.xapian_thread_io ], CMD.GET, CNAME.KEY2SLOT, thisTid);
+        send(tids[ thread.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
         string msg = receiveOnly!(string)();
-        
+
         int[ string ] key2slot;
-        
+
         if (msg != old_msg_key2slot)
         {
-        	key2slot = deserialize_key2slot(msg);
-        	old_msg_key2slot = msg;
-        	old_key2slot = key2slot;
-        }	
+            key2slot         = deserialize_key2slot(msg);
+            old_msg_key2slot = msg;
+            old_key2slot     = key2slot;
+        }
         else
-        	key2slot = old_key2slot;
-        	
+            key2slot = old_key2slot;
+
         return key2slot;
     }
 
     public long get_last_update_time()
     {
-        send(tids[ thread.xapian_thread_io ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
+        send(tids[ thread.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
         long tm = receiveOnly!(long)();
         return tm;
     }

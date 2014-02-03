@@ -17,7 +17,8 @@ enum CMD : byte
     FOUND     = 2,
     GET       = 2,
     EXAMINE   = 4,
-    AUTHORIZE = 8
+    AUTHORIZE = 8,
+    COMMIT	  = 16	
 }
 
 enum EVENT : byte
@@ -32,7 +33,7 @@ enum thread : string
     ticket_manager             = "ticket_manager",
     subject_manager            = "subject_manager",
     acl_manager                = "acl_manager",
-    xapian_thread_io           = "xapian_thread_io",
+    xapian_thread_context      = "xapian_thread_context",
     xapian_indexer             = "xapian_indexer",
     statistic_data_accumulator = "statistic_data_accumulator",
     condition                  = "condition"

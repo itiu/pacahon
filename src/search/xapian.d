@@ -25,9 +25,9 @@ import search.vel;
 public const string  xapian_search_db_path  = "data/xapian-search";
 private const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-byte err;
+byte                 err;
 
-public void xapian_thread_io()
+public void xapian_thread_context()
 {
     string key2slot_str;
     long   last_update_time;
@@ -128,7 +128,7 @@ private void printTid(string tag)
     writefln("%s: %s, address: %s", tag, thisTid, &thisTid);
 }
 
-protected int get_slot(string field, ref int[ string ] key2slot)
+private int get_slot(string field, ref int[ string ] key2slot)
 {
 //	writeln ("get_slot:", field);
     int slot = key2slot.get(field, -1);
@@ -149,7 +149,7 @@ void xapian_indexer_commiter(Tid tid)
     while (true)
     {
         core.thread.Thread.sleep(dur!("seconds")(20));
-        send(tid, "COMMIT");
+        send(tid, CMD.COMMIT, "");
     }
 }
 
@@ -216,250 +216,261 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
     while (true)
     {
-        auto msg = receiveOnly!(string)();
-
-        if (msg == "COMMIT")
-        {
-            if (counter - last_counter_afrer_timed_commit > 0)
-            {
-                printf("counter: %d, timer: commit index..", counter);
-                if (key2slot.length - last_size_key2slot > 0)
+        receive((CMD cmd, string query, Tid tid_sender)
                 {
-                    store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
-                    printf("..store__key2slot..");
-                    last_size_key2slot = key2slot.length;
-                }
-
-                indexer_db.commit(&err);
-                printf("ok\n");
-
-                //indexer_db.close (&err);
-                //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
-                last_counter_afrer_timed_commit = counter;
-            }
-        }
-        else
-        {
-            counter++;
-
-            Subject ss = decode_cbor(msg);
-
-            writeln("prepare msg counter:", counter, ", subject:", ss.subject);
-
-            if (ss.subject !is null && ss.count_edges > 0)
-            {
-                OutBuffer      all_text = new OutBuffer();
-
-                XapianDocument doc = new_Document(&err);
-                indexer.set_document(doc, &err);
-
-                foreach (pp; ss.getPredicates())
+                    if (cmd == CMD.FOUND)
+                    {
+                    	
+                    }
+                },
+                (CMD cmd, string msg)
                 {
-                    string prefix;
-                    int    slot = get_slot(pp.predicate, key2slot);
-                    
-                    all_text.write (escaping_or_uuid2search(pp.predicate));
-                    all_text.write('|');
-                    
-                    string type = "?";
-
-                    if (pp.metadata !is null)
+                    if (cmd == CMD.COMMIT)
                     {
-                        type        = pp.metadata.getFirstLiteral(owl__allValuesFrom);
-                        pp.metadata = null;
-                    }
-
-                    //writeln (pp.predicate, ".type:", type);
-
-                    string p_text_ru = "";
-                    string p_text_en = "";
-
-                    foreach (oo; pp.getObjects())
-                    {
-                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                        if (counter - last_counter_afrer_timed_commit > 0)
                         {
-                            if (pp.count_objects > 1)
+                            printf("counter: %d, timer: commit index..", counter);
+                            if (key2slot.length - last_size_key2slot > 0)
                             {
-                                if (oo.lang == LANG.RU)
-                                    p_text_ru ~= oo.literal;
-                                if (oo.lang == LANG.EN)
-                                    p_text_en ~= oo.literal;
+                                store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                                printf("..store__key2slot..");
+                                last_size_key2slot = key2slot.length;
                             }
 
-                            int slot_L1 = get_slot(pp.predicate, key2slot);
-                            prefix = "X" ~ text(slot_L1) ~ "X";
+                            indexer_db.commit(&err);
+                            printf("ok\n");
 
-                            string data = escaping_or_uuid2search(oo.literal);
-
-//                          writeln ("index as literal:[", data, "], lang=", oo.lang);
-                            indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-
-                            all_text.write(data);
-                            all_text.write('|');
-                        }
-                        else if (oo.type == OBJECT_TYPE.URI)
-                        {
-                            if (oo.literal is null)
-                            {
-                            }
-                            else
-                            {
-                                int slot_L1 = get_slot(pp.predicate, key2slot);
-                                prefix = "X" ~ text(slot_L1) ~ "X";
-
-                                string data = to_lower_and_replace_delimeters(oo.literal);
-//                                writeln ("index as resource:[", data, "]");
-                                indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                                doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-
-                                all_text.write(data);
-                                all_text.write('|');
-                            }
+                            //indexer_db.close (&err);
+                            //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
+                            last_counter_afrer_timed_commit = counter;
                         }
                     }
-
-                    if (pp.count_objects > 1)
+                    else if (cmd == CMD.GET)
                     {
-                        if (p_text_ru.length > 0)
-                        {
-                            int slot_L1 = get_slot(pp.predicate ~ "_ru", key2slot);
-                            prefix = "X" ~ text(slot_L1) ~ "X";
-
-                            indexer.index_text(p_text_ru.ptr, p_text_ru.length, prefix.ptr, prefix.length, &err);
-                            doc.add_value(slot_L1, p_text_ru.ptr, p_text_ru.length, &err);
-                            //writeln ("slot:", slot_L1, ", value:", p_text_ru);
-                        }
-
-                        if (p_text_en.length > 0)
-                        {
-                            int slot_L1 = get_slot(pp.predicate ~ "_en", key2slot);
-                            prefix = "X" ~ text(slot_L1) ~ "X";
-
-                            indexer.index_text(p_text_en.ptr, p_text_en.length, prefix.ptr, prefix.length, &err);
-                            doc.add_value(slot_L1, p_text_en.ptr, p_text_en.length, &err);
-                            //writeln ("slot:", slot_L1, ", value:", p_text_en);
-                        }
-                    }
-
-                    int slot_L1;
-
-                    if (type == xsd__string)
-                    {
-                        bool sp = true;
-                        foreach (oo; pp.getObjects())
-                        {
-                            if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _RU || oo.lang == _NONE))
-                            {
-                                if (sp == true)
-                                {
-                                    slot_L1 = get_slot(pp.predicate ~ ".text_ru", key2slot);
-                                    prefix  = "X" ~ text(slot_L1) ~ "X";
-
-                                    sp = false;
-                                }
-
-                                doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                                indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
-
-                                all_text.write(oo.literal);
-                                all_text.write('|');
-
-                                //writeln ("slot:", slot_L1, ", value:", oo.literal);
-                            }
-                        }
-
-                        sp = true;
-                        foreach (oo; pp.getObjects())
-                        {
-                            if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _EN))
-                            {
-                                if (sp == true)
-                                {
-                                    slot_L1 = get_slot(pp.predicate ~ ".text_en", key2slot);
-                                    prefix  = "X" ~ text(slot_L1) ~ "X";
-
-                                    sp = false;
-                                }
-
-                                doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                                indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
-
-                                all_text.write(oo.literal);
-                                all_text.write('|');
-                                //writeln ("slot:", slot_L1, ", value:", oo.literal);
-                            }
-                        }
-                    }
-                    else if (type == xsd__decimal)
-                    {
-                        slot_L1 = get_slot(pp.predicate ~ ".decimal", key2slot);
-                        prefix  = "X" ~ text(slot_L1) ~ "X";
-
-                        foreach (oo; pp.getObjects())
-                        {
-                            if (oo.type == OBJECT_TYPE.TEXT_STRING)
-                            {
-                                double data = to!double (oo.literal);
-                                doc.add_value(slot_L1, data, &err);
-                                all_text.write(oo.literal);
-                                all_text.write('|');
-
-                                indexer.index_data(data, prefix.ptr, prefix.length, &err);
-                            }
-                        }
-                    }
-                    else if (type == xsd__dateTime)
-                    {
-                        slot_L1 = get_slot(pp.predicate ~ ".dateTime", key2slot);
-                        prefix  = "X" ~ text(slot_L1) ~ "X";
-
-                        foreach (oo; pp.getObjects())
-                        {
-                            if (oo.type == OBJECT_TYPE.TEXT_STRING)
-                            {
-                                long data = stringToTime(oo.literal);
-                                doc.add_value(slot_L1, data, &err);
-                                all_text.write(oo.literal);
-                                all_text.write('|');
-
-                                indexer.index_data(data, prefix.ptr, prefix.length, &err);
-                            }
-                        }
                     }
                     else
                     {
-                        //writeln ("not type for:", pp.predicate);
+                        counter++;
+
+                        Subject ss = decode_cbor(msg);
+
+                        writeln("prepare msg counter:", counter, ", subject:", ss.subject);
+
+                        if (ss.subject !is null && ss.count_edges > 0)
+                        {
+                            OutBuffer all_text = new OutBuffer();
+
+                            XapianDocument doc = new_Document(&err);
+                            indexer.set_document(doc, &err);
+
+                            foreach (pp; ss.getPredicates())
+                            {
+                                string prefix;
+                                int slot = get_slot(pp.predicate, key2slot);
+
+                                all_text.write(escaping_or_uuid2search(pp.predicate));
+                                all_text.write('|');
+
+                                string type = "?";
+
+                                if (pp.metadata !is null)
+                                {
+                                    type = pp.metadata.getFirstLiteral(owl__allValuesFrom);
+                                    pp.metadata = null;
+                                }
+
+                                //writeln (pp.predicate, ".type:", type);
+
+                                string p_text_ru = "";
+                                string p_text_en = "";
+
+                                foreach (oo; pp.getObjects())
+                                {
+                                    if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                    {
+                                        if (pp.count_objects > 1)
+                                        {
+                                            if (oo.lang == LANG.RU)
+                                                p_text_ru ~= oo.literal;
+                                            if (oo.lang == LANG.EN)
+                                                p_text_en ~= oo.literal;
+                                        }
+
+                                        int slot_L1 = get_slot(pp.predicate, key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                        string data = escaping_or_uuid2search(oo.literal);
+
+//                          writeln ("index as literal:[", data, "], lang=", oo.lang);
+                                        indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+                                        doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+
+                                        all_text.write(data);
+                                        all_text.write('|');
+                                    }
+                                    else if (oo.type == OBJECT_TYPE.URI)
+                                    {
+                                        if (oo.literal is null)
+                                        {
+                                        }
+                                        else
+                                        {
+                                            int slot_L1 = get_slot(pp.predicate, key2slot);
+                                            prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                            string data = to_lower_and_replace_delimeters(oo.literal);
+//                                writeln ("index as resource:[", data, "]");
+                                            indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+
+                                            all_text.write(data);
+                                            all_text.write('|');
+                                        }
+                                    }
+                                }
+
+                                if (pp.count_objects > 1)
+                                {
+                                    if (p_text_ru.length > 0)
+                                    {
+                                        int slot_L1 = get_slot(pp.predicate ~ "_ru", key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                        indexer.index_text(p_text_ru.ptr, p_text_ru.length, prefix.ptr, prefix.length, &err);
+                                        doc.add_value(slot_L1, p_text_ru.ptr, p_text_ru.length, &err);
+                                        //writeln ("slot:", slot_L1, ", value:", p_text_ru);
+                                    }
+
+                                    if (p_text_en.length > 0)
+                                    {
+                                        int slot_L1 = get_slot(pp.predicate ~ "_en", key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                        indexer.index_text(p_text_en.ptr, p_text_en.length, prefix.ptr, prefix.length, &err);
+                                        doc.add_value(slot_L1, p_text_en.ptr, p_text_en.length, &err);
+                                        //writeln ("slot:", slot_L1, ", value:", p_text_en);
+                                    }
+                                }
+
+                                int slot_L1;
+
+                                if (type == xsd__string)
+                                {
+                                    bool sp = true;
+                                    foreach (oo; pp.getObjects())
+                                    {
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _RU || oo.lang == _NONE))
+                                        {
+                                            if (sp == true)
+                                            {
+                                                slot_L1 = get_slot(pp.predicate ~ ".text_ru", key2slot);
+                                                prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                                sp = false;
+                                            }
+
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
+
+                                            all_text.write(oo.literal);
+                                            all_text.write('|');
+
+                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
+                                        }
+                                    }
+
+                                    sp = true;
+                                    foreach (oo; pp.getObjects())
+                                    {
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _EN))
+                                        {
+                                            if (sp == true)
+                                            {
+                                                slot_L1 = get_slot(pp.predicate ~ ".text_en", key2slot);
+                                                prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                                sp = false;
+                                            }
+
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
+
+                                            all_text.write(oo.literal);
+                                            all_text.write('|');
+                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
+                                        }
+                                    }
+                                }
+                                else if (type == xsd__decimal)
+                                {
+                                    slot_L1 = get_slot(pp.predicate ~ ".decimal", key2slot);
+                                    prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                    foreach (oo; pp.getObjects())
+                                    {
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                        {
+                                            double data = to!double (oo.literal);
+                                            doc.add_value(slot_L1, data, &err);
+                                            all_text.write(oo.literal);
+                                            all_text.write('|');
+
+                                            indexer.index_data(data, prefix.ptr, prefix.length, &err);
+                                        }
+                                    }
+                                }
+                                else if (type == xsd__dateTime)
+                                {
+                                    slot_L1 = get_slot(pp.predicate ~ ".dateTime", key2slot);
+                                    prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                    foreach (oo; pp.getObjects())
+                                    {
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                        {
+                                            long data = stringToTime(oo.literal);
+                                            doc.add_value(slot_L1, data, &err);
+                                            all_text.write(oo.literal);
+                                            all_text.write('|');
+
+                                            indexer.index_data(data, prefix.ptr, prefix.length, &err);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    //writeln ("not type for:", pp.predicate);
+                                }
+                            }
+                            string data = all_text.toString;
+                            indexer.index_text(data.ptr, data.length, &err);
+
+                            string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);
+                            doc.add_boolean_term(uuid.ptr, uuid.length, &err);
+                            doc.set_data(ss.subject.ptr, ss.subject.length, &err);
+
+                            indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
+
+                            if (counter % 100 == 0)
+                            {
+                                writeln("prepare msg counter:", counter, " ,slot size=", key2slot.length);
+                            }
+
+                            if (counter % 5000 == 0)
+                            {
+                                printf("commit index..");
+
+                                if (key2slot.length > 0)
+                                    store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+
+                                indexer_db.commit(&err);
+                                printf("ok\n");
+                            }
+
+                            destroy_Document(doc);
+                        }
                     }
-                }
-                string data = all_text.toString;
-                indexer.index_text(data.ptr, data.length, &err);
-
-                string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);
-                doc.add_boolean_term(uuid.ptr, uuid.length, &err);
-                doc.set_data(ss.subject.ptr, ss.subject.length, &err);
-
-                indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
-
-                if (counter % 100 == 0)
-                {
-                    writeln("prepare msg counter:", counter, " ,slot size=", key2slot.length);
-                }
-
-                if (counter % 5000 == 0)
-                {
-                    printf("commit index..");
-
-                    if (key2slot.length > 0)
-                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
-
-                    indexer_db.commit(&err);
-                    printf("ok\n");
-                }
-
-                destroy_Document(doc);
-            }
-        }
+                });
     }
 }
 
@@ -723,111 +734,111 @@ string get_query_description(XapianQuery query)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class XapianReader 
+class XapianReader
 {
-    private XapianDatabase xapian_db;
-	private XapianStem xapian_stemmer;
-    private string         xapian_lang = "russian";
-    private XapianEnquire  xapian_enquire;
+    private XapianDatabase    xapian_db;
+    private XapianStem        xapian_stemmer;
+    private string            xapian_lang = "russian";
+    private XapianEnquire     xapian_enquire;
     private XapianQueryParser xapian_qp;
-    
-    private int[ string ] key2slot;    
-	private Context context;
 
-    this (Context _context)
+    private int[ string ] key2slot;
+    private Context context;
+
+    this(Context _context)
     {
-        context = _context;    	
-        open_db ();
+        context = _context;
+        open_db();
     }
-	
-        string      dummy;
-        double      d_dummy;
-    static long refresh_db_timeout = 10000000 * 20;  
-    long prev_update_time;
-    	
-	public int get (TTA tta,  string[ string ] fields, string sort, int count_authorize, ref Subjects res)
-	{
+
+    string      dummy;
+    double      d_dummy;
+    static long refresh_db_timeout = 10000000 * 20;
+    long        prev_update_time;
+
+    public int get(string str_query, string[ string ] fields, string sort, int count_authorize, ref Subjects res)
+    {
+    	TTA tta = parse_expr(str_query);
         key2slot = context.get_key2slot();
-    	//writeln ("key2slot=", key2slot);
+        //writeln ("key2slot=", key2slot);
         long last_update_time = context.get_last_update_time();
         if (last_update_time - prev_update_time > refresh_db_timeout)
         {
-        	writeln ("REOPEN");
-        	close_db ();
-        	open_db ();
+            writeln("REOPEN");
+            close_db();
+            open_db();
         }
-    
-//    	writeln ("last_update_time=", last_update_time);
-//    	writeln ("prev_update_time=", prev_update_time);
-    	prev_update_time = last_update_time;
-    	
-			//writeln ("SEARCH FROM XAPIAN");
-            XapianQuery query;
 
-            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+//      writeln ("last_update_time=", last_update_time);
+//      writeln ("prev_update_time=", prev_update_time);
+        prev_update_time = last_update_time;
 
-            if (query !is null)
+        //writeln ("SEARCH FROM XAPIAN");
+        XapianQuery query;
+
+        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+
+        if (query !is null)
+        {
+            int count = 0;
+            xapian_enquire = xapian_db.new_Enquire(&err);
+
+            XapianMultiValueKeyMaker sorter;
+
+            if (sort != null)
             {
-                int count = 0;
-                xapian_enquire = xapian_db.new_Enquire(&err);
-
-                XapianMultiValueKeyMaker sorter;
-
-                if (sort != null)
+                sorter = new_MultiValueKeyMaker(&err);
+                foreach (field; split(sort, ","))
                 {
-                    sorter = new_MultiValueKeyMaker(&err);
-                    foreach (field; split(sort, ","))
+                    bool asc_desc;
+
+                    long bp = indexOf(field, '\'');
+                    long ep = lastIndexOf(field, '\'');
+                    long dp = lastIndexOf(field, " desc");
+
+                    if (ep > bp && ep - bp > 0)
                     {
-                        bool asc_desc;
+                        string key = field[ bp + 1 .. ep ];
 
-                        long bp = indexOf(field, '\'');
-                        long ep = lastIndexOf(field, '\'');
-                        long dp = lastIndexOf(field, " desc");
+                        if (dp > ep)
+                            asc_desc = false;
+                        else
+                            asc_desc = true;
 
-                        if (ep > bp && ep - bp > 0)
-                        {
-                            string key = field[ bp + 1 .. ep ];
-
-                            if (dp > ep)
-                                asc_desc = false;
-                            else
-                                asc_desc = true;
-
-                            int slot = get_slot(key, key2slot);
-                            sorter.add_value(slot, asc_desc, &err);
-                        }
+                        int slot = get_slot(key, key2slot);
+                        sorter.add_value(slot, asc_desc, &err);
                     }
                 }
-                
-                int state = -1;
-                while (state == -1)
-                {
-                    state = execute_xapian_query(query, sorter, count_authorize, fields, res, context);
-                    if (state == -1)
-                    {
-                    	close_db ();
-                    	open_db ();
-                        xapian_enquire = xapian_db.new_Enquire(&err);
-                    }
-                }
-
-                int read_count = 0;
-
-                if (state > 0)
-                    read_count = state;
-
-                destroy_Enquire(xapian_enquire);
-                destroy_Query(query);
-                destroy_MultiValueKeyMaker(sorter);
-
-				//writeln ("read count:", read_count, ", count:", count);
-                return read_count;
             }
 
-            return 0;    	
-		
-	}
-	
+            int state = -1;
+            while (state == -1)
+            {
+                state = execute_xapian_query(query, sorter, count_authorize, fields, res, context);
+                if (state == -1)
+                {
+                    close_db();
+                    open_db();
+                    xapian_enquire = xapian_db.new_Enquire(&err);
+                }
+            }
+
+            int read_count = 0;
+
+            if (state > 0)
+                read_count = state;
+
+            destroy_Enquire(xapian_enquire);
+            destroy_Query(query);
+            destroy_MultiValueKeyMaker(sorter);
+
+            //writeln ("read count:", read_count, ", count:", count);
+            return read_count;
+        }
+
+        return 0;
+    }
+
     public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
     {
         int read_count = 0;
@@ -844,12 +855,12 @@ class XapianReader
         if (err < 0)
             return err;
 
-//        	    writeln ("found =",  matches.get_matches_estimated(&err));
-//        	    writeln ("matches =",  matches.size (&err));
+//              writeln ("found =",  matches.get_matches_estimated(&err));
+//              writeln ("matches =",  matches.size (&err));
 
         if (matches !is null)
         {
-            Tid tid_subject_manager = context.getTid (thread.subject_manager);
+            Tid                tid_subject_manager = context.getTid(thread.subject_manager);
 
             XapianMSetIterator it = matches.iterator(&err);
 
@@ -862,9 +873,9 @@ class XapianReader
 //				writeln ("Subject_id:", subject_str);
                 if (tid_subject_manager != Tid.init)
                 {
-                	send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
-                	read_count++;
-                }	
+                    send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
+                    read_count++;
+                }
 
                 it.next(&err);
             }
@@ -874,7 +885,7 @@ class XapianReader
 
             byte[ string ] hash_of_subjects;
 
-            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию, 
+            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию,
             // тут же получение из авторизации и формирование части ответа
             for (int i = 0; i < read_count * 2; i++)
             {
@@ -887,29 +898,28 @@ class XapianReader
                             else
                             {
                                 if (msg.length > 16)
-                                {                               	
+                                {
 //                                    writeln ("!!!", msg);
                                     Subject sss = decode_cbor(msg, LINKS);
 
                                     if (sss !is null)
                                     {
-                                    	// добавим в исходящий поток
-                                    	res.addSubject (decode_cbor(msg));
-                                    	
-                                    	hash_of_subjects[sss.subject] = 1;
+                                        // добавим в исходящий поток
+                                        res.addSubject(decode_cbor(msg));
 
-                                    	foreach (objz; sss)
-                                    	{
-                                    		foreach (id; objz)
-                                    		{
-                                    			if (hash_of_subjects.get(id.literal, -1) == -1)
-                                    			{
-                                    				hash_of_subjects[ id.literal ] = 2;
-                                    			}
-                                    		}
-                                    	}
+                                        hash_of_subjects[ sss.subject ] = 1;
 
-									}
+                                        foreach (objz; sss)
+                                        {
+                                            foreach (id; objz)
+                                            {
+                                                if (hash_of_subjects.get(id.literal, -1) == -1)
+                                                {
+                                                    hash_of_subjects[ id.literal ] = 2;
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         });
@@ -933,9 +943,9 @@ class XapianReader
                         {
                             if (msg.length > 16)
                             {
-                            	//writeln (msg);
+                                //writeln (msg);
                                 // отправить в исходящий поток
-                            	res.addSubject (decode_cbor(msg));
+                                res.addSubject(decode_cbor(msg));
                             }
                         });
             }
@@ -944,32 +954,31 @@ class XapianReader
         return read_count;
     }
 
-    private void open_db ()
+    private void open_db()
     {
         byte err;
-		
+
         xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
         if (err != 0)
-        	writeln ("VQL:new_Database:err", err);
+            writeln("VQL:new_Database:err", err);
 
-		xapian_qp = new_QueryParser (&err);
+        xapian_qp = new_QueryParser(&err);
         if (err != 0)
-        	writeln ("VQL:new_QueryParser:err", err);
-        	
-		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
-		xapian_qp.set_stemmer(xapian_stemmer, &err);
+            writeln("VQL:new_QueryParser:err", err);
+
+        xapian_stemmer = new_Stem(cast(char *)xapian_lang, xapian_lang.length, &err);
+        xapian_qp.set_stemmer(xapian_stemmer, &err);
         if (err != 0)
-        	writeln ("VQL:set_stemmer:err", err);
-        	
-		xapian_qp.set_database(xapian_db, &err);
+            writeln("VQL:set_stemmer:err", err);
+
+        xapian_qp.set_database(xapian_db, &err);
         if (err != 0)
-        	writeln ("VQL:set_database:err", err);
-//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);    	
+            writeln("VQL:set_database:err", err);
+//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);
     }
-    
-    private void close_db ()
+
+    private void close_db()
     {
-    	xapian_db.close (&err);
+        xapian_db.close(&err);
     }
-	
-} 
+}
