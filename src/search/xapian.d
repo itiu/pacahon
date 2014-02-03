@@ -720,3 +720,256 @@ string get_query_description(XapianQuery query)
     }
     return "NULL";
 }
+
+class XapianReader 
+{
+    private XapianDatabase xapian_db;
+	private XapianStem xapian_stemmer;
+    private string         xapian_lang = "russian";
+    private XapianEnquire  xapian_enquire;
+    private XapianQueryParser xapian_qp;
+    
+    private int[ string ] key2slot;    
+	private Context context;
+
+    this (Context _context)
+    {
+        context = _context;    	
+        open_db ();
+    }
+	
+        string      dummy;
+        double      d_dummy;
+    static long refresh_db_timeout = 10000000 * 20;  
+    long prev_update_time;
+    	
+	public int get (TTA tta,  string[ string ] fields, string sort, int count_authorize, ref Subjects res)
+	{
+        key2slot = context.get_key2slot();
+    	//writeln ("key2slot=", key2slot);
+        long last_update_time = context.get_last_update_time();
+        if (last_update_time - prev_update_time > refresh_db_timeout)
+        {
+        	writeln ("REOPEN");
+        	close_db ();
+        	open_db ();
+        }
+    
+//    	writeln ("last_update_time=", last_update_time);
+//    	writeln ("prev_update_time=", prev_update_time);
+    	prev_update_time = last_update_time;
+    	
+			//writeln ("SEARCH FROM XAPIAN");
+            XapianQuery query;
+
+            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+
+            if (query !is null)
+            {
+                int count = 0;
+                xapian_enquire = xapian_db.new_Enquire(&err);
+
+                XapianMultiValueKeyMaker sorter;
+
+                if (sort != null)
+                {
+                    sorter = new_MultiValueKeyMaker(&err);
+                    foreach (field; split(sort, ","))
+                    {
+                        bool asc_desc;
+
+                        long bp = indexOf(field, '\'');
+                        long ep = lastIndexOf(field, '\'');
+                        long dp = lastIndexOf(field, " desc");
+
+                        if (ep > bp && ep - bp > 0)
+                        {
+                            string key = field[ bp + 1 .. ep ];
+
+                            if (dp > ep)
+                                asc_desc = false;
+                            else
+                                asc_desc = true;
+
+                            int slot = get_slot(key, key2slot);
+                            sorter.add_value(slot, asc_desc, &err);
+                        }
+                    }
+                }
+                
+                int state = -1;
+                while (state == -1)
+                {
+                    state = execute_xapian_query(query, sorter, count_authorize, fields, res, context);
+                    if (state == -1)
+                    {
+                    	close_db ();
+                    	open_db ();
+                        xapian_enquire = xapian_db.new_Enquire(&err);
+                    }
+                }
+
+                int read_count = 0;
+
+                if (state > 0)
+                    read_count = state;
+
+                destroy_Enquire(xapian_enquire);
+                destroy_Query(query);
+                destroy_MultiValueKeyMaker(sorter);
+
+				//writeln ("read count:", read_count, ", count:", count);
+                return read_count;
+            }
+
+            return 0;    	
+		
+	}
+	
+    public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
+    {
+        int read_count = 0;
+
+//        writeln ("query=", get_query_description (query));
+
+        byte err;
+
+        xapian_enquire.set_query(query, &err);
+        if (sorter !is null)
+            xapian_enquire.set_sort_by_key(sorter, true, &err);
+
+        XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
+        if (err < 0)
+            return err;
+
+//        	    writeln ("found =",  matches.get_matches_estimated(&err));
+//        	    writeln ("matches =",  matches.size (&err));
+
+        if (matches !is null)
+        {
+            Tid tid_subject_manager = context.getTid (thread.subject_manager);
+
+            XapianMSetIterator it = matches.iterator(&err);
+
+            while (it.is_next(&err) == true)
+            {
+                char   *data_str;
+                uint   *data_len;
+                it.get_document_data(&data_str, &data_len, &err);
+                string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
+//				writeln ("Subject_id:", subject_str);
+                if (tid_subject_manager != Tid.init)
+                {
+                	send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
+                	read_count++;
+                }	
+
+                it.next(&err);
+            }
+
+            destroy_MSetIterator(it);
+            destroy_MSet(matches);
+
+            byte[ string ] hash_of_subjects;
+
+            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию, 
+            // тут же получение из авторизации и формирование части ответа
+            for (int i = 0; i < read_count * 2; i++)
+            {
+                receive((string msg, Tid from)
+                        {
+                            if (from == tid_subject_manager)
+                            {
+                                context.send_on_authorization(msg);
+                            }
+                            else
+                            {
+                                if (msg.length > 16)
+                                {                               	
+//                                    writeln ("!!!", msg);
+                                    Subject sss = decode_cbor(msg, LINKS);
+
+                                    if (sss !is null)
+                                    {
+                                    	// добавим в исходящий поток
+                                    	res.addSubject (decode_cbor(msg));
+                                    	
+                                    	hash_of_subjects[sss.subject] = 1;
+
+                                    	foreach (objz; sss)
+                                    	{
+                                    		foreach (id; objz)
+                                    		{
+                                    			if (hash_of_subjects.get(id.literal, -1) == -1)
+                                    			{
+                                    				hash_of_subjects[ id.literal ] = 2;
+                                    			}
+                                    		}
+                                    	}
+
+									}
+                                }
+                            }
+                        });
+            }
+
+            // Фаза II, дочитать если нужно
+            int count_inner;
+            foreach (key; hash_of_subjects.keys)
+            {
+                byte vv = hash_of_subjects[ key ];
+                if (vv == 2)
+                {
+                    send(tid_subject_manager, CMD.FOUND, key, thisTid);
+                    count_inner++;
+                }
+            }
+
+            for (int i = 0; i < count_inner; i++)
+            {
+                receive((string msg, Tid from)
+                        {
+                            if (msg.length > 16)
+                            {
+                            	//writeln (msg);
+                                // отправить в исходящий поток
+                            	res.addSubject (decode_cbor(msg));
+                            }
+                        });
+            }
+        }
+
+        return read_count;
+    }
+
+    private void open_db ()
+    {
+        byte err;
+		
+        xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
+        if (err != 0)
+        	writeln ("VQL:new_Database:err", err);
+
+		xapian_qp = new_QueryParser (&err);
+        if (err != 0)
+        	writeln ("VQL:new_QueryParser:err", err);
+        	
+		xapian_stemmer = new_Stem(cast(char*)xapian_lang, xapian_lang.length, &err);
+		xapian_qp.set_stemmer(xapian_stemmer, &err);
+        if (err != 0)
+        	writeln ("VQL:set_stemmer:err", err);
+        	
+		xapian_qp.set_database(xapian_db, &err);
+        if (err != 0)
+        	writeln ("VQL:set_database:err", err);
+//		xapian_qp.set_stemming_strategy(stem_strategy.STEM_SOME, &err);    	
+    }
+    
+    private void close_db ()
+    {
+    	writeln ("@#1 close db");
+    	xapian_db.close (&err);
+    	writeln ("@#2 close db");
+    }
+	
+} 
