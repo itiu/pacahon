@@ -241,7 +241,7 @@ class ThreadContext : Context
     {
         Subject res = null;
 
-        send(tids[ thread.subject_manager ], CMD.FOUND, uid, thisTid);
+        send(tids[ thread.subject_manager ], CMD.FIND, uid, thisTid);
         receive((string msg, Tid from)
                 {
                     if (from == tids[ thread.subject_manager ])
@@ -257,7 +257,7 @@ class ThreadContext : Context
     {
         string res;
 
-        send(tids[ thread.subject_manager ], CMD.FOUND, uid, thisTid);
+        send(tids[ thread.subject_manager ], CMD.FIND, uid, thisTid);
         receive((string msg, Tid from)
                 {
                     if (from == tids[ thread.subject_manager ])
@@ -420,7 +420,7 @@ class ThreadContext : Context
         {
             string when     = null;
             int    duration = 0;
-            send(tid_ticket_manager, CMD.FOUND, ticket_id, thisTid);
+            send(tid_ticket_manager, CMD.FIND, ticket_id, thisTid);
             string ticket_str = receiveOnly!(string);
 
             if (ticket_str !is null && ticket_str.length > 128)

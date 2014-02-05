@@ -14,11 +14,12 @@ enum CMD : byte
 {
     STORE     = 1,
     PUT       = 1,
-    FOUND     = 2,
+    FIND     = 2,
     GET       = 2,
     EXAMINE   = 4,
     AUTHORIZE = 8,
-    COMMIT	  = 16	
+    COMMIT	  = 16,
+    END_DATA  = 32	
 }
 
 enum EVENT : byte

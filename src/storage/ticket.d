@@ -91,7 +91,7 @@ void ticket_manager()
                         rc = mdb_txn_commit(txn);
                         rc = mdb_txn_begin(env, null, 0, &txn);
                     }
-                    else if (cmd == CMD.FOUND)
+                    else if (cmd == CMD.FIND)
                     {
                         writeln("%1 ", msg);
                         MDB_txn *txn_r;

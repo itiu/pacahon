@@ -69,7 +69,7 @@ void file_reader_thread(string props_file_name, immutable string[] tids_names)
             }
         }
 
-        core.thread.Thread.sleep(dur!("seconds")(3));
+        core.thread.Thread.sleep(dur!("seconds")(10));
     }
 }
 

@@ -58,20 +58,20 @@ class VQL
 
     private string       transTable1;
     private Context      context;
-    private SearchReader xr;
+    private XapianSynchronizedReader xr;
 
     this(Context _context)
     {
         context = _context;
         Set!OI empty_set;
         this(empty_set, _context);
-        xr = new XapianReader(_context);
+        xr = new XapianSynchronizedReader(_context);
     }
 
     this(ref Set!OI _from_search_points, Context _context)
     {
         context            = _context;
-        xr                 = new XapianReader(_context);
+        xr                 = new XapianSynchronizedReader(_context);
         from_search_points = _from_search_points;
         found_sections     = new string[ 6 ];
 
@@ -105,8 +105,7 @@ class VQL
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
 
-        //		writeln("VQL:get ticket=", ticket, ", authorizer=", authorizer);
-        //		writeln ("query_str=", query_str);
+        //		writeln ("@ query_str=", query_str);
         //		StopWatch sw;
         //		sw.start();
 
@@ -133,7 +132,7 @@ class VQL
         } catch (Exception ex)
         {
         }
-
+/*
         string[ string ] fields;
 
         string returns[];
@@ -157,7 +156,7 @@ class VQL
                 }
             }
         }
-
+*/
         string sort;
 
         if (section_is_found[ SORT ] == true)
@@ -186,8 +185,11 @@ class VQL
         }
         else if (type_source == XAPIAN)
         {
-            return xr.get(found_sections[ FILTER ], fields, sort, count_authorize, res);
+            return xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, res);
         }
+        
+        //writeln ("@vql.get end");
+        
         return 0;
     }
 

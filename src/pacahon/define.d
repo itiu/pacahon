@@ -21,4 +21,8 @@ const byte              asObject = 0;
 const byte              asArray  = 1;
 const byte              asString = 2;
 
+interface Outer
+{
+	void put (string data); 
+}
 

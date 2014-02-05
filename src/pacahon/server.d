@@ -70,7 +70,7 @@ void main(char[][] args)
         tids[ thread.acl_manager ]     = spawn(&acl_manager);
 
         tids[ thread.xapian_thread_context ] = spawn(&xapian_thread_context);
-        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.xapian_thread_context ]);
+        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.acl_manager ], tids[ thread.xapian_thread_context ]);
         spawn(&xapian_indexer_commiter, tids[ thread.xapian_indexer ]);
         send(tids[ thread.xapian_indexer ], thisTid);
         receive((bool isReady)

@@ -132,7 +132,7 @@ public void subject_manager()
                                     send(tid_response_reciever, res, thisTid);
                                 }
                             }
-                            else if (cmd == CMD.FOUND)
+                            else if (cmd == CMD.FIND)
                             {
 //					writeln ("%1 ", msg);
 //					MDB_txn *txn_r;

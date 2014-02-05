@@ -153,7 +153,7 @@ void xapian_indexer_commiter(Tid tid)
     }
 }
 
-void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
+void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
     writeln("SPAWN: Xapian Indexer");
 
@@ -178,6 +178,9 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
     XapianTermGenerator    indexer;
     string                 lang    = "russian";
     XapianStem             stemmer = new_Stem(cast(char *)lang, lang.length, &err);
+
+    string                 dummy;
+    double                 d_dummy;
 
     bool                   is_exist_db = exists(xapian_search_db_path);
 
@@ -216,17 +219,54 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
 
     while (true)
     {
-        receive((CMD cmd, string query, Tid tid_sender)
+        receive((CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
                 {
-                    if (cmd == CMD.FOUND)
+                    if (cmd == CMD.FIND)
                     {
-                    	
+                        auto fields = get_fields(str_fields);
+
+                        XapianQuery query;
+                        TTA tta = parse_expr(str_query);
+                        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+
+                        if (query !is null)
+                        {
+                            int count = 0;
+                            xapian_enquire = indexer_db.new_Enquire(&err);
+
+                            XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
+
+                            void delegate(string msg) dg;
+                            void collect_subject(string msg)
+                            {
+                                send(tid_sender, CMD.PUT, msg);
+                            };
+                            dg = &collect_subject;
+
+                            int state = -1;
+                            while (state == -1)
+                            {
+                                state = execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields, dg, tid_subject_manager, tid_acl_manager);
+                                if (state == -1)
+                                {
+                                    xapian_enquire = indexer_db.new_Enquire(&err);
+                                }
+                            }
+
+                            destroy_Enquire(xapian_enquire);
+                            destroy_Query(query);
+                            destroy_MultiValueKeyMaker(sorter);
+                        }
+
+                        send(tid_sender, CMD.END_DATA);
                     }
                 },
                 (CMD cmd, string msg)
                 {
                     if (cmd == CMD.COMMIT)
                     {
+                	    //writeln ("@@ COMMIT");
+                    	
                         if (counter - last_counter_afrer_timed_commit > 0)
                         {
                             printf("counter: %d, timer: commit index..", counter);
@@ -244,9 +284,6 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
                             //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
                             last_counter_afrer_timed_commit = counter;
                         }
-                    }
-                    else if (cmd == CMD.GET)
-                    {
                     }
                     else
                     {
@@ -474,7 +511,7 @@ void xapian_indexer(Tid tid_storage_manager, Tid key2slot_accumulator)
     }
 }
 
-protected string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query, ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
+private string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query, ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
 {
 //	string eee = "                                                                                       ";
 //	string e1 = text(level) ~ eee[0..level*3];
@@ -735,10 +772,55 @@ string get_query_description(XapianQuery query)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 interface SearchReader
 {
-    public int get(string str_query, string[ string ] fields, string sort, int count_authorize, ref Subjects res);
-	
-} 
+    public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res);
+}
 
+class XapianSynchronizedReader : SearchReader
+{
+    private Context context;
+
+    this(Context _context)
+    {
+        context = _context;
+    }
+
+    public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res)
+    {
+//    	writeln ("@ XapianSynchronizedReader.get #1");	
+        Tid tid_subject_manager = context.getTid(thread.subject_manager);
+
+        send(context.getTid(thread.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
+
+        bool next_recieve = true;
+        int  read_count;
+        while (next_recieve)
+        {
+            receive(
+            		(CMD cmd)
+                    {
+                        if (cmd == CMD.END_DATA)
+                        {
+                            next_recieve = false;
+                        }
+                    },                	
+                    (CMD cmd, string msg)
+                    {
+                        if (cmd == CMD.PUT)
+                        {
+                            if (tid_subject_manager != Tid.init)
+                            {
+                               // writeln("msg:", msg);
+                                res.addSubject(decode_cbor (msg));
+                                read_count++;
+                            }
+                        }
+                    });
+        }
+
+//    	writeln ("@ XapianSynchronizedReader.get #end");	
+        return read_count;
+    }
+}
 
 class XapianReader : SearchReader
 {
@@ -762,26 +844,29 @@ class XapianReader : SearchReader
     private static long refresh_db_timeout = 10000000 * 20;
     private long        prev_update_time;
 
-    public int get(string str_query, string[ string ] fields, string sort, int count_authorize, ref Subjects res)
+    public int get(string str_query, string str_fields, string sort, int count_authorize, ref Subjects res)
     {
-    	TTA tta = parse_expr(str_query);
-        key2slot = context.get_key2slot();
-        //writeln ("key2slot=", key2slot);
+        //writeln ("SEARCH FROM XAPIAN");
+
         long last_update_time = context.get_last_update_time();
+
         if (last_update_time - prev_update_time > refresh_db_timeout)
         {
             writeln("REOPEN");
             close_db();
             open_db();
         }
-
 //      writeln ("last_update_time=", last_update_time);
 //      writeln ("prev_update_time=", prev_update_time);
         prev_update_time = last_update_time;
 
-        //writeln ("SEARCH FROM XAPIAN");
-        XapianQuery query;
+        key2slot = context.get_key2slot();
+        //writeln ("key2slot=", key2slot);
 
+        auto        fields = get_fields(str_fields);
+
+        XapianQuery query;
+        TTA         tta = parse_expr(str_query);
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (query !is null)
@@ -789,38 +874,21 @@ class XapianReader : SearchReader
             int count = 0;
             xapian_enquire = xapian_db.new_Enquire(&err);
 
-            XapianMultiValueKeyMaker sorter;
+            XapianMultiValueKeyMaker  sorter = get_sorter(sort, key2slot);
 
-            if (sort != null)
+            void delegate(string msg) dg;
+            void collect_subject(string msg)
             {
-                sorter = new_MultiValueKeyMaker(&err);
-                foreach (field; split(sort, ","))
-                {
-                    bool asc_desc;
-
-                    long bp = indexOf(field, '\'');
-                    long ep = lastIndexOf(field, '\'');
-                    long dp = lastIndexOf(field, " desc");
-
-                    if (ep > bp && ep - bp > 0)
-                    {
-                        string key = field[ bp + 1 .. ep ];
-
-                        if (dp > ep)
-                            asc_desc = false;
-                        else
-                            asc_desc = true;
-
-                        int slot = get_slot(key, key2slot);
-                        sorter.add_value(slot, asc_desc, &err);
-                    }
-                }
-            }
+                res.addSubject(decode_cbor(msg));
+            };
+            dg = &collect_subject;
 
             int state = -1;
             while (state == -1)
             {
-                state = execute_xapian_query(query, sorter, count_authorize, fields, res, context);
+                state = execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields,
+                                             dg,
+                                             context.getTid(thread.subject_manager), context.getTid(thread.acl_manager));
                 if (state == -1)
                 {
                     close_db();
@@ -843,121 +911,6 @@ class XapianReader : SearchReader
         }
 
         return 0;
-    }
-
-    private int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, int count_authorize, ref string[ string ] fields, ref Subjects res, Context context)
-    {
-        int read_count = 0;
-
-//        writeln ("query=", get_query_description (query));
-
-        byte err;
-
-        xapian_enquire.set_query(query, &err);
-        if (sorter !is null)
-            xapian_enquire.set_sort_by_key(sorter, true, &err);
-
-        XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
-        if (err < 0)
-            return err;
-
-//              writeln ("found =",  matches.get_matches_estimated(&err));
-//              writeln ("matches =",  matches.size (&err));
-
-        if (matches !is null)
-        {
-            Tid                tid_subject_manager = context.getTid(thread.subject_manager);
-
-            XapianMSetIterator it = matches.iterator(&err);
-
-            while (it.is_next(&err) == true)
-            {
-                char   *data_str;
-                uint   *data_len;
-                it.get_document_data(&data_str, &data_len, &err);
-                string subject_str = cast(immutable)data_str[ 0..*data_len ].dup;
-//				writeln ("Subject_id:", subject_str);
-                if (tid_subject_manager != Tid.init)
-                {
-                    send(tid_subject_manager, CMD.FOUND, subject_str, thisTid);
-                    read_count++;
-                }
-
-                it.next(&err);
-            }
-
-            destroy_MSetIterator(it);
-            destroy_MSet(matches);
-
-            byte[ string ] hash_of_subjects;
-
-            // Фаза I, получим субьекты из хранилища и отправим их на авторизацию,
-            // тут же получение из авторизации и формирование части ответа
-            for (int i = 0; i < read_count * 2; i++)
-            {
-                receive((string msg, Tid from)
-                        {
-                            if (from == tid_subject_manager)
-                            {
-                                context.send_on_authorization(msg);
-                            }
-                            else
-                            {
-                                if (msg.length > 16)
-                                {
-//                                    writeln ("!!!", msg);
-                                    Subject sss = decode_cbor(msg, LINKS);
-
-                                    if (sss !is null)
-                                    {
-                                        // добавим в исходящий поток
-                                        res.addSubject(decode_cbor(msg));
-
-                                        hash_of_subjects[ sss.subject ] = 1;
-
-                                        foreach (objz; sss)
-                                        {
-                                            foreach (id; objz)
-                                            {
-                                                if (hash_of_subjects.get(id.literal, -1) == -1)
-                                                {
-                                                    hash_of_subjects[ id.literal ] = 2;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        });
-            }
-
-            // Фаза II, дочитать если нужно
-            int count_inner;
-            foreach (key; hash_of_subjects.keys)
-            {
-                byte vv = hash_of_subjects[ key ];
-                if (vv == 2)
-                {
-                    send(tid_subject_manager, CMD.FOUND, key, thisTid);
-                    count_inner++;
-                }
-            }
-
-            for (int i = 0; i < count_inner; i++)
-            {
-                receive((string msg, Tid from)
-                        {
-                            if (msg.length > 16)
-                            {
-                                //writeln (msg);
-                                // отправить в исходящий поток
-                                res.addSubject(decode_cbor(msg));
-                            }
-                        });
-            }
-        }
-
-        return read_count;
     }
 
     private void open_db()
@@ -987,4 +940,181 @@ class XapianReader : SearchReader
     {
         xapian_db.close(&err);
     }
+}
+
+private string[ string ] get_fields(string str_fields)
+{
+    string[ string ] fields;
+
+    if (str_fields !is null)
+    {
+        string[] returns = split(str_fields, ",");
+
+        foreach (field; returns)
+        {
+            long bp = indexOf(field, '\'');
+            long ep = lastIndexOf(field, '\'');
+            long rp = lastIndexOf(field, " reif");
+            if (ep > bp && ep - bp > 0)
+            {
+                string key = field[ bp + 1 .. ep ];
+                if (rp > ep)
+                    fields[ key ] = "reif";
+                else
+                    fields[ key ] = "1";
+            }
+        }
+    }
+    return fields;
+}
+
+private XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2slot)
+{
+    XapianMultiValueKeyMaker sorter;
+
+    if (sort != null)
+    {
+        sorter = new_MultiValueKeyMaker(&err);
+        foreach (field; split(sort, ","))
+        {
+            bool asc_desc;
+
+            long bp = indexOf(field, '\'');
+            long ep = lastIndexOf(field, '\'');
+            long dp = lastIndexOf(field, " desc");
+
+            if (ep > bp && ep - bp > 0)
+            {
+                string key = field[ bp + 1 .. ep ];
+
+                if (dp > ep)
+                    asc_desc = false;
+                else
+                    asc_desc = true;
+
+                int slot = get_slot(key, key2slot);
+                sorter.add_value(slot, asc_desc, &err);
+            }
+        }
+    }
+    return sorter;
+}
+
+private int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire, int count_authorize, ref string[ string ] fields, void delegate(string cbor_subject) add_out_element, Tid tid_subject_manager, Tid tid_acl_manager)
+{
+    int read_count = 0;
+
+    //    writeln ("query=", get_query_description (query));
+
+    byte err;
+
+    xapian_enquire.set_query(query, &err);
+    if (sorter !is null)
+        xapian_enquire.set_sort_by_key(sorter, true, &err);
+
+    XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
+    if (err < 0)
+        return err;
+
+    //  writeln ("found =",  matches.get_matches_estimated(&err));
+    //  writeln ("matches =",  matches.size (&err));
+
+    if (matches !is null)
+    {
+//        Tid                tid_subject_manager = context.getTid(thread.subject_manager);
+
+        XapianMSetIterator it = matches.iterator(&err);
+
+        while (it.is_next(&err) == true)
+        {
+            char   *data_str;
+            uint   *data_len;
+            it.get_document_data(&data_str, &data_len, &err);
+            string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
+			//	writeln ("Subject_id:", subject_id);
+            if (tid_subject_manager != Tid.init)
+            {
+                send(tid_subject_manager, CMD.GET, subject_id, thisTid);
+                read_count++;
+            }
+
+            it.next(&err);
+        }
+
+        destroy_MSetIterator(it);
+        destroy_MSet(matches);
+
+        byte[ string ] hash_of_subjects;
+
+        // Фаза I, получим субьекты из хранилища и отправим их на авторизацию,
+        // тут же получение из авторизации и формирование части ответа
+        for (int i = 0; i < read_count * 2; i++)
+        {
+            receive((string msg, Tid from)
+                    {
+                        if (from == tid_subject_manager)
+                        {
+                            send(tid_acl_manager, CMD.AUTHORIZE, msg, thisTid);
+                        }
+                        else
+                        {
+                            if (msg.length > 16)
+                            {
+//                                    writeln ("!!!", msg);
+                                Subject sss = decode_cbor(msg, LINKS);
+
+                                if (sss !is null)
+                                {
+                                    // добавим в исходящий поток
+                                    add_out_element(msg);
+//                                    res.addSubject(decode_cbor(msg));
+
+                                    hash_of_subjects[ sss.subject ] = 1;
+
+                                    foreach (objz; sss)
+                                    {
+                                        foreach (id; objz)
+                                        {
+                                            if (hash_of_subjects.get(id.literal, -1) == -1)
+                                            {
+                                                hash_of_subjects[ id.literal ] = 2;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+        }
+
+        // Фаза II, дочитать если нужно
+        int count_inner;
+        foreach (key; hash_of_subjects.keys)
+        {
+            byte vv = hash_of_subjects[ key ];
+            if (vv == 2)
+            {
+                send(tid_subject_manager, CMD.GET, key, thisTid);
+                count_inner++;
+            }
+        }
+
+        for (int i = 0; i < count_inner; i++)
+        {
+            receive((string msg, Tid from)
+                    {
+                        if (msg.length > 16)
+                        {
+                            //writeln (msg);
+                            // отправить в исходящий поток
+                            add_out_element(msg);
+
+//                            res.addSubject(decode_cbor(msg));
+                        }
+                    });
+        }
+    }
+
+//    writeln ("@ read_count=", read_count); 
+    return read_count;
 }

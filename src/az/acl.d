@@ -105,7 +105,7 @@ void acl_manager()
                                 string R = ss_msg[ 2 ];
                             }
                         }
-                        else if (cmd == CMD.FOUND)
+                        else if (cmd == CMD.FIND)
                         {
 //					writeln ("%1 ", msg);
 
