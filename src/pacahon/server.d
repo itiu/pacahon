@@ -38,7 +38,7 @@ private
     import pacahon.define;
 
     import search.ba2pacahon;
-    import search.xapian;
+    import search.xapian_indexer;
 
     import az.condition;
 }
@@ -65,13 +65,19 @@ void main(char[][] args)
 
         Tid[ string ] tids;
 
-        tids[ thread.ticket_manager ]  = spawn(&ticket_manager);
         tids[ thread.subject_manager ] = spawn(&subject_manager);
+        core.thread.Thread.sleep(dur!("msecs")(1));
+        tids[ thread.ticket_manager ]  = spawn(&ticket_manager);
+        core.thread.Thread.sleep(dur!("msecs")(1));
         tids[ thread.acl_manager ]     = spawn(&acl_manager);
+        core.thread.Thread.sleep(dur!("msecs")(1));
 
         tids[ thread.xapian_thread_context ] = spawn(&xapian_thread_context);
+        core.thread.Thread.sleep(dur!("msecs")(1));
         tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.acl_manager ], tids[ thread.xapian_thread_context ]);
+        core.thread.Thread.sleep(dur!("msecs")(1));
         spawn(&xapian_indexer_commiter, tids[ thread.xapian_indexer ]);
+        core.thread.Thread.sleep(dur!("msecs")(1));
         send(tids[ thread.xapian_indexer ], thisTid);
         receive((bool isReady)
                 {

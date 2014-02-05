@@ -139,9 +139,9 @@ public void subject_manager()
 //					rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
 
                                 //	writeln ("%%0, rc:", rc);
-                                if (rc != 0)
-                                    writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
-                                else
+                                //if (rc != 0)
+                                   // writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
+                                //else
                                 {
                                     //	writeln ("%%1");
                                     MDB_val key;

@@ -26,7 +26,7 @@ private
     import pacahon.know_predicates;
 
     import search.vel;
-    import search.xapian;
+    import search.xapian_reader;
 
     import storage.subject;
 }
@@ -76,27 +76,6 @@ class VQL
         found_sections     = new string[ 6 ];
 
         transTable1 = makeTrans(":()-,", "_____");
-
-//		foreach (key, value; key2slot)
-//		{
-//			string field = translate (key, transTable1);
-/*
-                        string[] fff = split (field, ".");
-                        if (fff.length == 2)
-                        {
-                                if (fff[1] == "decimal" || fff[1] == "dateTime")
-                                {
-                                        string str = field ~ "_range:";
-
-                                XapianNumberValueRangeProcessor vrp_num = new_NumberValueRangeProcessor (value, cast (const char *)str, str.length, true);
-                                xapian_qp.add_valuerangeprocessor(vrp_num);
-                                }
-                        }
- */
-//			string prefix = "X" ~ text (value) ~ "X";
-//			writeln (field, " -> ", prefix);
-//			xapian_qp.add_prefix (cast(char*)field, field.length, cast(char*)prefix, prefix.length);
-//		}
     }
 
 
@@ -110,10 +89,6 @@ class VQL
         //		sw.start();
 
         split_on_section(query_str);
-        //		sw.stop();
-        //		long t = cast(long) sw.peek().usecs;
-        //		writeln ("found_sections", found_sections);
-        //		writeln("split:", t, " µs");
 
         int render = 10000;
         try
@@ -132,31 +107,7 @@ class VQL
         } catch (Exception ex)
         {
         }
-/*
-        string[ string ] fields;
 
-        string returns[];
-
-        if (section_is_found[ RETURN ] == true)
-        {
-            returns = split(found_sections[ RETURN ], ",");
-
-            foreach (field; returns)
-            {
-                long bp = indexOf(field, '\'');
-                long ep = lastIndexOf(field, '\'');
-                long rp = lastIndexOf(field, " reif");
-                if (ep > bp && ep - bp > 0)
-                {
-                    string key = field[ bp + 1 .. ep ];
-                    if (rp > ep)
-                        fields[ key ] = "reif";
-                    else
-                        fields[ key ] = "1";
-                }
-            }
-        }
-*/
         string sort;
 
         if (section_is_found[ SORT ] == true)
@@ -177,7 +128,8 @@ class VQL
 
         string dummy;
         double d_dummy;
-
+        int res_count;
+        
         if (type_source == LMDB)
         {
             TTA tta = parse_expr(found_sections[ FILTER ]);
@@ -185,12 +137,14 @@ class VQL
         }
         else if (type_source == XAPIAN)
         {
-            return xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, res);
+            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, res);
         }
         
-        //writeln ("@vql.get end");
+//       	sw.stop();
+//       	long t = cast(long) sw.peek().usecs;
+//       	writeln("execute:", t, " µs");
         
-        return 0;
+        return res_count;
     }
 
     private void remove_predicates(Subject ss, ref string[ string ] fields)

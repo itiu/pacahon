@@ -51,6 +51,8 @@ src/pacahon/server.d
 src/pacahon/bus_event.d 
 
 src/search/ba2pacahon.d
-src/search/xapian.d
+src/search/xapian_indexer.d
+src/search/xapian_reader.d
+src/search/xapian_vql.d
 src/search/vql.d
 src/search/vel.d

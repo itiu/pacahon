@@ -5,6 +5,7 @@ private
     import std.stdio;
     import std.concurrency;
     import std.file;
+    import std.datetime;
 
     import bind.lmdb_header;
 
@@ -35,6 +36,7 @@ void ticket_manager()
     MDB_txn *txn;
 
     string  path = "./data/lmdb-tickets";
+//    string  path = "./data/lmdb-subjects";    
 
     try
     {
@@ -55,11 +57,25 @@ void ticket_manager()
     int rc;
     rc = mdb_env_create(&env);
 //    rc = mdb_env_set_mapsize(env, 10485760);
-    rc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
+    	rc = -1;
+    	while (rc != 0)
+    	{
+    		rc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP | MDB_RDONLY, std.conv.octal !664);
+    		if (rc != 0)
+    			core.thread.Thread.sleep(dur!("msecs")(1));
+    	}	
     if (!rc)
     {
-        rc = mdb_txn_begin(env, null, 0, &txn);
-        rc = mdb_dbi_open(txn, null, MDB_CREATE | MDB_DUPSORT, &dbi);
+    	rc = -1;
+    	while (rc != 0)
+    	{
+    		rc = mdb_txn_begin(env, null, 0, &txn);    		
+    		if (rc != 0)
+    			core.thread.Thread.sleep(dur!("msecs")(1));
+    	}	
+    		
+//        rc = mdb_dbi_open(txn, null, MDB_CREATE | MDB_DUPSORT, &dbi);
+        rc = mdb_dbi_open(txn, null, MDB_DUPSORT, &dbi);
     }
 
 
