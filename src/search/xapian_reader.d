@@ -24,7 +24,7 @@ import search.vel;
 import search.xapian_vql;
 
 
-byte                 err;
+byte err;
 
 
 string get_query_description(XapianQuery query)
@@ -59,7 +59,7 @@ class XapianSynchronizedReader : SearchReader
 
     public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res)
     {
-//    	writeln ("@ XapianSynchronizedReader.get #1");	
+//      writeln ("@ XapianSynchronizedReader.get #1");
         Tid tid_subject_manager = context.getTid(thread.subject_manager);
 
         send(context.getTid(thread.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
@@ -69,28 +69,28 @@ class XapianSynchronizedReader : SearchReader
         while (next_recieve)
         {
             receive(
-            		(CMD cmd)
+                    (CMD cmd)
                     {
                         if (cmd == CMD.END_DATA)
                         {
                             next_recieve = false;
                         }
-                    },                	
+                    },
                     (CMD cmd, string msg)
                     {
                         if (cmd == CMD.PUT)
                         {
                             if (tid_subject_manager != Tid.init)
                             {
-                               // writeln("msg:", msg);
-                                res.addSubject(decode_cbor (msg));
+                                // writeln("msg:", msg);
+                                res.addSubject(decode_cbor(msg));
                                 read_count++;
                             }
                         }
                     });
         }
 
-//    	writeln ("@ XapianSynchronizedReader.get #end");	
+//      writeln ("@ XapianSynchronizedReader.get #end");
         return read_count;
     }
 }

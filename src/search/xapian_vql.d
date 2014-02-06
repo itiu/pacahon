@@ -13,10 +13,10 @@ import util.cbor;
 import search.vel;
 import pacahon.context;
 
-public const string  xapian_search_db_path  = "data/xapian-search";
+public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-byte                 err;
+byte                err;
 
 public int get_slot(string field, ref int[ string ] key2slot)
 {
@@ -92,7 +92,8 @@ public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2sl
     return sorter;
 }
 
-public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query, ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
+public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query,
+                                      ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
 {
 //	string eee = "                                                                                       ";
 //	string e1 = text(level) ~ eee[0..level*3];
@@ -180,7 +181,8 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 //                  xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
                         string query_str = to_lower_and_replace_delimeters(rs);
                         xtr   = "X" ~ text(slot) ~ "X";
-                        query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr, xtr.length, &err);
+                        query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr,
+                                               xtr.length, &err);
                         if (err != 0)
                             writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
 //                  query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
@@ -335,7 +337,9 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     return null;
 }
 
-public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire, int count_authorize, ref string[ string ] fields, void delegate(string cbor_subject) add_out_element, Tid tid_subject_manager, Tid tid_acl_manager)
+public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire, int count_authorize,
+                                ref string[ string ] fields, void delegate(string cbor_subject) add_out_element, Tid tid_subject_manager,
+                                Tid tid_acl_manager)
 {
     int read_count = 0;
 
@@ -367,7 +371,7 @@ public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sort
             uint   *data_len;
             it.get_document_data(&data_str, &data_len, &err);
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
-			//	writeln ("Subject_id:", subject_id);
+            //	writeln ("Subject_id:", subject_id);
             if (tid_subject_manager != Tid.init)
             {
                 send(tid_subject_manager, CMD.GET, subject_id, thisTid);
@@ -377,9 +381,9 @@ public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sort
             it.next(&err);
         }
 
-       	//sw.stop();
-       	//long t = cast(long) sw.peek().usecs;
-       	//writeln("1 execute:", t, " µs");
+        //sw.stop();
+        //long t = cast(long) sw.peek().usecs;
+        //writeln("1 execute:", t, " µs");
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);
@@ -452,7 +456,7 @@ public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sort
         }
     }
 
-//    writeln ("@ read_count=", read_count); 
+//    writeln ("@ read_count=", read_count);
     return read_count;
 }
 

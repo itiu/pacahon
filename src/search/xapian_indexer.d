@@ -23,7 +23,7 @@ import storage.subject;
 import search.vel;
 import search.xapian_vql;
 
-byte                 err;
+byte err;
 
 public void xapian_thread_context()
 {
@@ -69,7 +69,8 @@ public void xapian_thread_context()
     }
 }
 
-private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer, Tid tid_xapian_thread_io)
+private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer,
+                             Tid tid_xapian_thread_io)
 {
 //	writeln ("#1 store__key2slot");
     string         data = serialize_key2slot(key2slot);
@@ -188,7 +189,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
     // Open the database for update, creating a new database if necessary.
 //    indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
-    indexer_db = new_InMemoryWritableDatabase (&err);
+    indexer_db = new_InMemoryWritableDatabase(&err);
     if (err != 0)
     {
         writeln("!!!!!!! ERRR O_o");
@@ -249,7 +250,9 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             int state = -1;
                             while (state == -1)
                             {
-                                state = execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields, dg, tid_subject_manager, tid_acl_manager);
+                                state =
+                                    execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields, dg, tid_subject_manager,
+                                                         tid_acl_manager);
                                 if (state == -1)
                                 {
                                     xapian_enquire = indexer_db.new_Enquire(&err);
@@ -268,8 +271,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                 {
                     if (cmd == CMD.COMMIT)
                     {
-                	    //writeln ("@@ COMMIT");
-                    	
+                        //writeln ("@@ COMMIT");
+
                         if (counter - last_counter_afrer_timed_commit > 0)
                         {
                             printf("counter: %d, timer: commit index..", counter);
