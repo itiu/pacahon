@@ -40,24 +40,24 @@ static this()
 
 class VQL
 {
-    const int            RETURN    = 0;
-    const int            FILTER    = 1;
-    const int            SORT      = 2;
-    const int            RENDER    = 3;
-    const int            AUTHORIZE = 4;
-    const int            SOURCE    = 5;
+    const int                        RETURN    = 0;
+    const int                        FILTER    = 1;
+    const int                        SORT      = 2;
+    const int                        RENDER    = 3;
+    const int                        AUTHORIZE = 4;
+    const int                        SOURCE    = 5;
 
-    const int            XAPIAN = 2;
-    const int            LMDB   = 3;
+    const int                        XAPIAN = 2;
+    const int                        LMDB   = 3;
 
-    private string[]     sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
-    private bool[]       section_is_found = [ false, false, false, false, false, false ];
-    private string[]     found_sections;
+    private string[]                 sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+    private bool[]                   section_is_found = [ false, false, false, false, false, false ];
+    private string[]                 found_sections;
 
-    private              Set!OI from_search_points;
+    private                          Set!OI from_search_points;
 
-    private string       transTable1;
-    private Context      context;
+    private string                   transTable1;
+    private Context                  context;
     private XapianSynchronizedReader xr;
 
     this(Context _context)
@@ -128,8 +128,8 @@ class VQL
 
         string dummy;
         double d_dummy;
-        int res_count;
-        
+        int    res_count;
+
         if (type_source == LMDB)
         {
             TTA tta = parse_expr(found_sections[ FILTER ]);
@@ -139,11 +139,11 @@ class VQL
         {
             res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, res);
         }
-        
-//       	sw.stop();
-//       	long t = cast(long) sw.peek().usecs;
-//       	writeln("execute:", t, " µs");
-        
+
+//          sw.stop();
+//          long t = cast(long) sw.peek().usecs;
+//          writeln("execute:", t, " µs");
+
         return res_count;
     }
 

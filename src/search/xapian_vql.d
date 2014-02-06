@@ -337,9 +337,11 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     return null;
 }
 
-public int execute_xapian_query(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire, int count_authorize,
-                                ref string[ string ] fields, void delegate(string cbor_subject) add_out_element, Tid tid_subject_manager,
-                                Tid tid_acl_manager)
+public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire,
+                                                 int count_authorize,
+                                                 ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
+                                                 Tid tid_subject_manager,
+                                                 Tid tid_acl_manager)
 {
     int read_count = 0;
 

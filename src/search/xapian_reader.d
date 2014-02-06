@@ -159,9 +159,9 @@ class XapianReader : SearchReader
             int state = -1;
             while (state == -1)
             {
-                state = execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields,
-                                             dg,
-                                             context.getTid(thread.subject_manager), context.getTid(thread.acl_manager));
+                state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,
+                                                              dg,
+                                                              context.getTid(thread.subject_manager), context.getTid(thread.acl_manager));
                 if (state == -1)
                 {
                     close_db();

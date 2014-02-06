@@ -251,8 +251,9 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             while (state == -1)
                             {
                                 state =
-                                    execute_xapian_query(query, sorter, xapian_enquire, count_authorize, fields, dg, tid_subject_manager,
-                                                         tid_acl_manager);
+                                    exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields, dg,
+                                                                          tid_subject_manager,
+                                                                          tid_acl_manager);
                                 if (state == -1)
                                 {
                                     xapian_enquire = indexer_db.new_Enquire(&err);
