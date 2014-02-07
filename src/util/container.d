@@ -142,7 +142,7 @@ unittest
 // ***************************************************************************
 
 import std.range : isInputRange;
-import ae.utils.alloc;
+import util.alloc;
 
 mixin template ListCommon(NODEREF, bool HASPREV, bool HASTAIL)
 {

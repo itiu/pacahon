@@ -82,7 +82,7 @@
  *   Vladimir Panteleev <vladimir@thecybershadow.net>
  */
 
-module ae.utils.alloc;
+module util.alloc;
 
 import std.conv : emplace;
 import std.traits : fullyQualifiedName;
