@@ -1,5 +1,5 @@
+../../.dub/packages/zeromq-master/deimos/zmq/zmq.d
 src/bind/libczmq_header.d 
-src/bind/libzmq_header.d 
 src/bind/librabbitmq_headers.d
 src/bind/lmdb_header.d
 src/bind/nanomsg_header.d

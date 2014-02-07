@@ -122,12 +122,14 @@ class OWL
                 }
             }
         }
-
+/*
         writeln("#class_2_properties=");
         foreach (key, value; class_2_properties)
         {
             Properties pt = *value;
             writeln(key, "=>", pt.items);
         }
+*/
     }
+
 }

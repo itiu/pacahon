@@ -54,11 +54,15 @@ static this()
 
 string props_file_path = "pacahon-properties.json";
 
-//void main(char[][] args)
-//{
-//	init_core ();
-//}
-
+/*
+void main(char[][] args)
+{
+	init_core ();
+    while (true)
+      core.thread.Thread.sleep(dur!("seconds")(1000));
+	
+}
+*/
 void init_core()
 {
     log    = new logger("pacahon", "log", "server");
@@ -233,8 +237,6 @@ void init_core()
             }
         }
                 
-        while (true)
-            core.thread.Thread.sleep(dur!("seconds")(1000));
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);
