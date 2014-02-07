@@ -52,6 +52,7 @@ void file_reader_thread(string props_file_name, immutable string[] tids_names)
 
         foreach (o; oFiles)
         {
+//	    writeln ("@@ file:", o);
             if ((o.name in prev_state_of_files) !is null)
             {
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
@@ -69,7 +70,7 @@ void file_reader_thread(string props_file_name, immutable string[] tids_names)
             }
         }
 
-        core.thread.Thread.sleep(dur!("seconds")(10));
+        core.thread.Thread.sleep(dur!("seconds")(30));
     }
 }
 

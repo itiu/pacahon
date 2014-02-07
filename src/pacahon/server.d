@@ -108,7 +108,7 @@ void init_core()
 
         writeln("registred spawned tids:", tids);
         Tid tid_condition = locate (thread.condition);
-        writeln ("tid_condition=", tid_condition);
+//        writeln ("tid_condition=", tid_condition);
         
 
         {
@@ -160,40 +160,6 @@ void init_core()
                             {
                             }
                         }
-                        else if (zmq_connect_type == "broker")
-                        {
-                            if (zmq_connection is null)
-                            {
-                                //								zmq_connection = new zmq_pp_broker_client(bind_to, behavior);
-                                //								writeln("zmq PPP broker listener started:", bind_to);
-                            }
-                            else
-                            {
-                            }
-                        }
-
-//						if(zmq_connection !is null)
-//						{
-//							zmq_connection.set_callback(&get_message);
-//							ServerThread thread_listener_for_zmq = new ServerThread(&zmq_connection.listener, props, "ZMQ",
-//									tid_xapian_indexer, tid_ticket_manager, tid_subject_manager, tid_acl_manager, tid_statistic_data_accumulator);
-
-//							if(("IGNORE_EMPTY_TRIPLE" in props.object) !is null)
-//							{
-//								if(props.object["IGNORE_EMPTY_TRIPLE"].str == "NO")
-//									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = false;
-//								else
-//									thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE = true;
-//							}
-
-//							writeln("IGNORE_EMPTY_TRIPLE:", thread_listener_for_zmq.resource.IGNORE_EMPTY_TRIPLE);
-
-//							writeln("start zmq listener");
-//							thread_listener_for_zmq.start();
-
-//							LoadInfoThread load_info_thread = new LoadInfoThread(&thread_listener_for_zmq.getStatistic);
-//							load_info_thread.start();
-//						}
                     }
                     else if (params.get("transport", "") == "rabbitmq")
                     {
