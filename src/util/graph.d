@@ -38,6 +38,12 @@ enum OBJECT_TYPE : byte
     STANDARD_DATE_TIME = 32    
 }
 
+enum LANG : ubyte
+{
+    NONE = 0,
+    RU   = 1,
+    EN   = 2
+}
 
 enum STRATEGY : byte
 {

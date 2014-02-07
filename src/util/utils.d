@@ -23,13 +23,6 @@ private
     import pacahon.context;
 }
 
-enum LANG : ubyte
-{
-    NONE = 0,
-    RU   = 1,
-    EN   = 2
-}
-
 public string serialize_key2slot (ref int[ string ] key2slot)
 {
     OutBuffer outbuff = new OutBuffer();
