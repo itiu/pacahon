@@ -5,6 +5,7 @@
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
 	"dependencies": {"zeromq":"~master"},
+	"license": "LGPL v3",
 	"libs":["zmq", "xapiand", "xapian", "nanomsg", "lmdb", "czmq", "rabbitmq"],
 	"buildOptions": ["inline", "optimize"]
 }
