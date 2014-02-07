@@ -12,7 +12,6 @@ private
     import std.conv;
     import std.concurrency;
 
-    import mq.zmq_pp_broker_client;
     import mq.mq_client;
     import mq.rabbitmq_client;
     import mq.file_reader;
@@ -140,10 +139,6 @@ void init_core()
                     if (params.get("transport", "") == "file_reader")
                     {
                         spawn(&mq.file_reader.file_reader_thread, "pacahon-properties.json", cast(immutable)tids.keys);
-                    }
-                    else if (params.get("transport", "") == "nanomsg")
-                    {
-                        spawn(&mq.nanomsg_listener.nanomsg_thread, "pacahon-properties.json", cast(immutable)tids.keys);
                     }
                     else if (params.get("transport", "") == "zmq")
                     {

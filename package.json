@@ -7,5 +7,8 @@
 	"dependencies": {"zeromq":"~master"},
 	"license": "LGPL v3",
 	"libs":["zmq", "xapiand", "xapian", "nanomsg", "lmdb", "czmq", "rabbitmq"],
-	"buildOptions": ["release", "optimize", "inline"]
+	"buildOptions": ["releaseMode", "optimize", "inline"],
+	"sourceFiles":["lib64/libanl.a", "lib64/liblmdb.a", "lib64/libxapiand.a", "lib64/libxapian-main.a", 
+			"lib64/libxapian-backend.a", "lib64/libzmq.a", "lib64/libstdc++.a", "lib64/libuuid.a", 
+			"lib64/librabbitmq.a"]
 }
