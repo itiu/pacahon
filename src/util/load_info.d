@@ -1,4 +1,4 @@
-module pacahon.load_info;
+module util.load_info;
 
 private
 {

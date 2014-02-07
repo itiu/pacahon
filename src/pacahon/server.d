@@ -26,12 +26,12 @@ private
     import util.utils;
     import util.oi;
     import util.graph;
+    import util.load_info;
 
     import pacahon.context;
     import pacahon.command_multiplexor;
     import pacahon.know_predicates;
     import pacahon.log_msg;
-    import pacahon.load_info;
     import pacahon.thread_context;
     import pacahon.event_filter;
     import pacahon.define;
