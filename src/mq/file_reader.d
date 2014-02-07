@@ -18,7 +18,7 @@ import util.graph;
 import util.cbor;
 import util.utils;
 import util.turtle_parser;
-import util.json_ld.parser;
+import util.json_ld_parser;
 
 import pacahon.context;
 import pacahon.thread_context;
