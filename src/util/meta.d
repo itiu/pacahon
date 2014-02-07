@@ -11,7 +11,7 @@
  *   Vladimir Panteleev <vladimir@thecybershadow.net>
  */
 
-module ae.utils.meta;
+module util.meta;
 
 import std.traits;
 
@@ -117,7 +117,7 @@ unittest
     static assert(findValueOfTypeInTuple!(int, "a", int, Object, 42) == 42);
 }
 
-public import ae.utils.meta_x;
+public import util.meta_x;
 
 // ************************************************************************
 

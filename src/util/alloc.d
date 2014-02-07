@@ -87,7 +87,7 @@ module util.alloc;
 import std.conv : emplace;
 import std.traits : fullyQualifiedName;
 
-import ae.utils.meta : RefType, FromRefType, StorageType;
+import util.meta : RefType, FromRefType, StorageType;
 
 // TODO:
 // - GROWFUN callable alias parameter instead of BLOCKSIZE?
@@ -158,7 +158,7 @@ mixin template AllocatorExpr()
 /// Common declarations for an allocator mixin
 mixin template AllocatorCommon()
 {
-	alias ae.utils.alloc.StorageType StorageType;
+	alias util.alloc.StorageType StorageType;
 
 	RefType!T create(T, A...)(A args)
 	{
