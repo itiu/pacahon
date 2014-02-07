@@ -1,6 +1,6 @@
 module bind.libczmq_header;
 
-private import bind.libzmq_header;
+private import deimos.zmq.zmq;
 
 public static const byte ZFRAME_MORE     = 1;
 public static const byte ZFRAME_REUSE    = 2;

@@ -11,7 +11,7 @@ import std.datetime;
 import std.concurrency;
 import std.json;
 
-import bind.libzmq_header;
+import deimos.zmq.zmq;
 
 import pacahon.context;
 import pacahon.thread_context;
@@ -49,6 +49,8 @@ void zmq_thread(string props_file_name, int pos_in_listener_section, immutable s
 
 
     ubyte[] out_data;
+    try
+    {
     while (true)
     {
         ///  Wait for next request from client
@@ -87,6 +89,11 @@ void zmq_thread(string props_file_name, int pos_in_listener_section, immutable s
         }
     }
     ///  We never get here but if we did, this would be how we end
+    }
+    catch (Exception ex)
+    {
+    	
+    }
     zmq_close(responder);
     zmq_term(ctx);
 }

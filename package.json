@@ -1,0 +1,10 @@
+{
+	"name": "pacahon",
+	"targetType": "library",
+	"description": "veda storage",
+	"homepage": "http://github.com/itiu/pacahon",
+	"authors": ["Bushenev Valeriy"],
+	"dependencies": {"zeromq":"~master"},
+	"libs":["zmq", "xapiand", "xapian", "nanomsg", "lmdb", "czmq", "rabbitmq"],
+	"buildOptions": ["inline", "optimize"]
+}

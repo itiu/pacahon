@@ -14,7 +14,7 @@ private import std.outbuffer;
 
 version (linux) import std.c.linux.linux;
 
-private import bind.libzmq_header;
+private import deimos.zmq.zmq;
 private import bind.libczmq_header;
 private import util.logger;
 private import mq.mq_client;
