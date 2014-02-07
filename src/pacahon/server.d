@@ -61,6 +61,9 @@ string props_file_path = "pacahon-properties.json";
 
 void init_core()
 {
+    log    = new logger("pacahon", "log", "server");
+    io_msg = new logger("pacahon", "io", "server");
+
     try
     {
         log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
