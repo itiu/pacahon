@@ -21,7 +21,7 @@ private
     import storage.subject;
 
     import util.logger;
-    import util.json_ld.parser;
+    import util.json_ld_parser;
     import util.turtle_parser;
     import util.utils;
     import util.oi;

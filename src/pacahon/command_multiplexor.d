@@ -18,7 +18,7 @@ private
 
     import util.graph;
     import util.utils;
-    import util.json_ld.parser;
+    import util.json_ld_parser;
     import util.logger;
 
     import storage.ticket;

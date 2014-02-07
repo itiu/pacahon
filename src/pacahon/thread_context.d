@@ -12,7 +12,7 @@ private
 
     import mq.mq_client;
     import util.container;
-    import util.json_ld.parser;
+    import util.json_ld_parser;
     import util.logger;
     import util.oi : OI;
     import util.utils;

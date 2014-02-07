@@ -1,4 +1,4 @@
-module util.json_ld.parser;
+module util.json_ld_parser;
 
 private import std.outbuffer;
 private import std.stdio;
