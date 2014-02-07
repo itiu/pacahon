@@ -1,6 +1,6 @@
 {
 	"name": "pacahon",
-	"targetType": "executable",
+	"targetType": "library",
 	"description": "veda storage",
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
