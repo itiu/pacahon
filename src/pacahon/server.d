@@ -54,7 +54,7 @@ static this()
 
 string props_file_path = "pacahon-properties.json";
 
-void amain(char[][] args)
+void main(char[][] args)
 {
 	init_core ();
 }
