@@ -28,7 +28,7 @@ private
     import util.graph;
 
     import pacahon.context;
-    import pacahon.multiplexor;
+    import pacahon.command_multiplexor;
     import pacahon.know_predicates;
     import pacahon.log_msg;
     import pacahon.load_info;

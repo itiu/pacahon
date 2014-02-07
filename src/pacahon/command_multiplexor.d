@@ -1,6 +1,6 @@
 // TODO reason -> exception ?
 
-module pacahon.multiplexor;
+module pacahon.command_multiplexor;
 
 private
 {
