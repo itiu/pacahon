@@ -71,33 +71,39 @@ public void condition_thread(string props_file_name, immutable string[] tids_nam
     writeln("SPAWN: condition_thread");
     last_update_time = Clock.currTime().stdTime();
 
-    while (true)
-    {
     try
     {
-        receive((EVENT type, string msg)
-                {
+        while (true)
+        {
+            try
+            {
+                receive((EVENT type, string msg)
+                        {
 //          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
-          			if (msg !is null && msg.length > 3)
-          			{
-                    Subject doc = decode_cbor(msg);
+                            if (msg !is null && msg.length > 3)
+                            {
+                                Subject doc = decode_cbor(msg);
 
-                    foreach (mandat; mandats)
-                    {
-                        string token;
-                        Set!string whom;
-                        eval(mandat.expression, "", doc, token, whom);
-                    }
-                    }
-                });
+                                foreach (mandat; mandats)
+                                {
+                                    string token;
+                                    Set!string whom;
+                                    eval(mandat.expression, "", doc, token, whom);
+                                }
+                            }
+                        });
+            }
+            catch (Exception ex)
+            {
+                writeln("EX! condition: recieve");
+            }
+        }
     }
     catch (Exception ex)
     {
-    	writeln ("EX! condition: recieve");    	
-    }
+        writeln("EX! condition: main loop");
     }
     writeln("TERMINATED: condition_thread");
-    
 }
 
 
@@ -109,7 +115,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     Subjects res = new Subjects();
     vql.get(null,
             "return { 'veda-schema:script'}
-            filter { 'a' == 'veda-schema:Mandate'}"                                        ,
+            filter { 'a' == 'veda-schema:Mandate'}",
             res);
 
     int       count = 0;
@@ -120,10 +126,10 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
         try
         {
             string    condition_text = ss.getFirstLiteral(veda_schema__script);
-            writeln ("condition_text:", condition_text);
+            writeln("condition_text:", condition_text);
             JSONValue condition_json = parseJSON(condition_text);
-            writeln ("#1");
-            Mandat    mandat         = void;
+            writeln("#1");
+            Mandat    mandat = void;
 
             if (condition_json.type == JSON_TYPE.OBJECT)
             {

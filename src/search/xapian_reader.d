@@ -153,7 +153,7 @@ class XapianReader : SearchReader
             void collect_subject(string msg)
             {
                 res.addSubject(decode_cbor(msg));
-            };
+            }
             dg = &collect_subject;
 
             int state = -1;

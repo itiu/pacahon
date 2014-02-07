@@ -38,18 +38,18 @@ static this()
     log = new logger("pacahon", "log", "VQL");
 }
 
+static const int                        RETURN    = 0;
+static const int                        FILTER    = 1;
+static const int                        SORT      = 2;
+static const int                        RENDER    = 3;
+static const int                        AUTHORIZE = 4;
+static const int                        SOURCE    = 5;
+
+static const int                        XAPIAN = 2;
+static const int                        LMDB   = 3;
+
 class VQL
 {
-    const int                        RETURN    = 0;
-    const int                        FILTER    = 1;
-    const int                        SORT      = 2;
-    const int                        RENDER    = 3;
-    const int                        AUTHORIZE = 4;
-    const int                        SOURCE    = 5;
-
-    const int                        XAPIAN = 2;
-    const int                        LMDB   = 3;
-
     private string[]                 sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
     private bool[]                   section_is_found = [ false, false, false, false, false, false ];
     private string[]                 found_sections;

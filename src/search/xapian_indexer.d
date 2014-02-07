@@ -244,7 +244,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             void collect_subject(string msg)
                             {
                                 send(tid_sender, CMD.PUT, msg);
-                            };
+                            }
                             dg = &collect_subject;
 
                             int state = -1;
