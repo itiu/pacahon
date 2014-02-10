@@ -60,11 +60,12 @@ class ThreadContext : Context
 
     this(string property_file_path, string context_name)
     {
+        writeln("CREATE NEW CONTEXT:", context_name);
+        
         foreach (tid_name; THREAD_LIST)
         {
             tids[ tid_name ] = locate(tid_name);
         }
-        //writeln("context:", tids);
 
         _event_filters      = new Subjects();
         _ba2pacahon_records = new Subjects();
