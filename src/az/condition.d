@@ -52,9 +52,9 @@ struct Mandat
 }
 
 
-public void condition_thread(string props_file_name, immutable string[] tids_names)
+public void condition_thread(string props_file_name)
 {
-    Context context = new ThreadContext(null, "condition_thread", tids_names);
+    Context context = new ThreadContext(null, "condition_thread");
 
     Set!Mandat mandats;
     OrgStructureTree ost;

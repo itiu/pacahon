@@ -60,9 +60,9 @@ class XapianSynchronizedReader : SearchReader
     public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res)
     {
 //      writeln ("@ XapianSynchronizedReader.get #1");
-        Tid tid_subject_manager = context.getTid(thread.subject_manager);
+        Tid tid_subject_manager = context.getTid(THREAD.subject_manager);
 
-        send(context.getTid(thread.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
+        send(context.getTid(THREAD.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
 
         bool next_recieve = true;
         int  read_count;
@@ -161,7 +161,7 @@ class XapianReader : SearchReader
             {
                 state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,
                                                               dg,
-                                                              context.getTid(thread.subject_manager), context.getTid(thread.acl_manager));
+                                                              context.getTid(THREAD.subject_manager), context.getTid(THREAD.acl_manager));
                 if (state == -1)
                 {
                     close_db();

@@ -18,11 +18,11 @@ import pacahon.thread_context;
 import pacahon.server;
 import util.utils;
 
-void zmq_thread(string props_file_name, int pos_in_listener_section, immutable string[] tids_names)
+void zmq_thread(string props_file_name, int pos_in_listener_section)
 {
     writeln("SPAWN: zmq listener");
     
-    Context context = new ThreadContext(props_file_name, "zmq", tids_names);
+    Context context = new ThreadContext(props_file_name, "zmq");
 
     string[ string ] params;
     JSONValue[] _listeners;

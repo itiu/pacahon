@@ -26,7 +26,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
 //	writeln ("#bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
 //	Tid tid_condition = locate (thread.condition);
-	Tid tid_condition = context.getTid (thread.condition);
+	Tid tid_condition = context.getTid (THREAD.condition);
 
 	if (tid_condition != Tid.init)
 	{

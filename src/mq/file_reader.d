@@ -26,7 +26,7 @@ import pacahon.server;
 import pacahon.define;
 import pacahon.know_predicates;
 
-void file_reader_thread(string props_file_name, immutable string[] tids_names)
+void file_reader_thread(string props_file_name)
 {
     writeln("SPAWN: file reader");
 
@@ -42,7 +42,7 @@ void file_reader_thread(string props_file_name, immutable string[] tids_names)
 
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props_file_name, "file_reader", tids_names);
+    Context context = new ThreadContext(props_file_name, "file_reader");
 
     SysTime[ string ] prev_state_of_files;
 
@@ -80,7 +80,7 @@ private void prepare_file(string file_name, Context context)
     {
         auto buf = cast(ubyte[]) read(file_name);
 
-        Tid  tid_search_manager = context.getTid(thread.xapian_indexer);
+        Tid  tid_search_manager = context.getTid(THREAD.xapian_indexer);
 
         if (buf !is null && buf.length > 0)
         {

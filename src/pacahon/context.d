@@ -28,7 +28,7 @@ enum EVENT : byte
     REMOVE = 3
 }
 
-enum thread : string
+enum THREAD : string
 {
     ticket_manager             = "ticket_manager",
     subject_manager            = "subject_manager",
@@ -39,13 +39,16 @@ enum thread : string
     condition                  = "condition"
 }
 
+static THREAD[7] THREAD_LIST = [THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context, 
+						THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition];   
+
 interface Context
 {
     public JSONValue get_props();
 
     @property Tid tid_statistic_data_accumulator();
     @property Tid tid_ticket_manager();
-    Tid getTid(thread tid_name);
+    Tid getTid(THREAD tid_name);
 
 //	@property StopWatch sw ();
     @property Ticket *[ string ] user_of_ticket();

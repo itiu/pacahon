@@ -58,9 +58,9 @@ class ThreadContext : Context
 
     private Tid[ string ] tids;
 
-    this(string property_file_path, string context_name, immutable string[] _tids_names)
+    this(string property_file_path, string context_name)
     {
-        foreach (tid_name; _tids_names)
+        foreach (tid_name; THREAD_LIST)
         {
             tids[ tid_name ] = locate(tid_name);
         }
@@ -114,8 +114,8 @@ class ThreadContext : Context
 
                         if (oi.get_db_type == "xapian")
                         {
-                            writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tids[ thread.xapian_indexer ]);
-                            oi.embedded_gateway = tids[ thread.xapian_indexer ];
+                            writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tids[ THREAD.xapian_indexer ]);
+                            oi.embedded_gateway = tids[ THREAD.xapian_indexer ];
                         }
 
                         gws ~= oi;
@@ -137,7 +137,7 @@ class ThreadContext : Context
         }
     }
 
-    public Tid getTid(thread tid_name)
+    public Tid getTid(THREAD tid_name)
     {
         Tid res = tids.get(tid_name, Tid.init);
 
@@ -151,14 +151,14 @@ class ThreadContext : Context
         string res;
         string ss_as_cbor = encode_cbor(ss);
 
-        Tid    tid_subject_manager = getTid(thread.subject_manager);
+        Tid    tid_subject_manager = getTid(THREAD.subject_manager);
 
         if (tid_subject_manager != Tid.init)
         {
             send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
             receive((string msg, Tid from)
                     {
-                        if (from == tids[ thread.subject_manager ])
+                        if (from == tids[ THREAD.subject_manager ])
                         {
                             res = msg;
                             //writeln("context.store_subject:msg=", msg);
@@ -168,7 +168,7 @@ class ThreadContext : Context
 
         if (res.length == 1 && (res == "C" || res == "U"))
         {
-            Tid tid_search_manager = getTid(thread.xapian_indexer);
+            Tid tid_search_manager = getTid(THREAD.xapian_indexer);
 
             if (tid_search_manager != Tid.init)
             {
@@ -212,7 +212,7 @@ class ThreadContext : Context
 
     public int[ string ] get_key2slot()
     {
-        send(tids[ thread.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
+        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
         string msg = receiveOnly!(string)();
 
         int[ string ] key2slot;
@@ -231,7 +231,7 @@ class ThreadContext : Context
 
     public long get_last_update_time()
     {
-        send(tids[ thread.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
+        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
         long tm = receiveOnly!(long)();
         return tm;
     }
@@ -240,10 +240,10 @@ class ThreadContext : Context
     {
         Subject res = null;
 
-        send(tids[ thread.subject_manager ], CMD.FIND, uid, thisTid);
+        send(tids[ THREAD.subject_manager ], CMD.FIND, uid, thisTid);
         receive((string msg, Tid from)
                 {
-                    if (from == tids[ thread.subject_manager ])
+                    if (from == tids[ THREAD.subject_manager ])
                     {
                         res = decode_cbor(msg);
                     }
@@ -256,10 +256,10 @@ class ThreadContext : Context
     {
         string res;
 
-        send(tids[ thread.subject_manager ], CMD.FIND, uid, thisTid);
+        send(tids[ THREAD.subject_manager ], CMD.FIND, uid, thisTid);
         receive((string msg, Tid from)
                 {
-                    if (from == tids[ thread.subject_manager ])
+                    if (from == tids[ THREAD.subject_manager ])
                     {
                         res = msg;
                     }
@@ -274,21 +274,15 @@ class ThreadContext : Context
         return prefix_map;
     }
 
-//    private Tid tid_xapian_indexer;
-//    private Tid _tid_statistic_data_accumulator;
     @property Tid tid_statistic_data_accumulator()
     {
-        return tids[ thread.statistic_data_accumulator ];
+        return tids[ THREAD.statistic_data_accumulator ];
     }
 
-//    private Tid _tid_ticket_manager;
     @property Tid tid_ticket_manager()
     {
-        return tids[ thread.ticket_manager ];
+        return tids[ THREAD.ticket_manager ];
     }
-
-//	private StopWatch _sw;
-//	@property StopWatch sw () { return _sw; }
 
     private Ticket *[ string ] _user_of_ticket;
     @property Ticket *[ string ] user_of_ticket()
@@ -333,7 +327,7 @@ class ThreadContext : Context
 
     bool send_on_authorization(string bson_subject)
     {
-        send(tids[ thread.acl_manager ], CMD.AUTHORIZE, bson_subject, thisTid);
+        send(tids[ THREAD.acl_manager ], CMD.AUTHORIZE, bson_subject, thisTid);
         return true;
     }
 

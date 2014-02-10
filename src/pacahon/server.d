@@ -75,38 +75,38 @@ void init_core()
 
         Tid[ string ] tids;
 
-        tids[ thread.subject_manager ] = spawn(&subject_manager);
+        tids[ THREAD.subject_manager ] = spawn(&subject_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ thread.ticket_manager ]  = spawn(&ticket_manager);
+        tids[ THREAD.ticket_manager ]  = spawn(&ticket_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ thread.acl_manager ]     = spawn(&acl_manager);
+        tids[ THREAD.acl_manager ]     = spawn(&acl_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
 
-        tids[ thread.xapian_thread_context ] = spawn(&xapian_thread_context);
+        tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ thread.xapian_indexer ]   = spawn(&xapian_indexer, tids[ thread.subject_manager ], tids[ thread.acl_manager ], tids[ thread.xapian_thread_context ]);
+        tids[ THREAD.xapian_indexer ]   = spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        spawn(&xapian_indexer_commiter, tids[ thread.xapian_indexer ]);
+        spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        send(tids[ thread.xapian_indexer ], thisTid);
+        send(tids[ THREAD.xapian_indexer ], thisTid);
         receive((bool isReady)
                 {
                 });
 
-        tids[ thread.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
+        tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
         core.thread.Thread.sleep(dur!("msecs")(10));
-        spawn(&print_statistic, tids[ thread.statistic_data_accumulator ]);
+        spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
 
         foreach (key, value; tids)
         {
             register(key, value);
         }
 
-        tids[ thread.condition ] = spawn(&condition_thread, props_file_path, cast(immutable)tids.keys);
-        register(thread.condition, tids[ thread.condition ]);
+        tids[ THREAD.condition ] = spawn(&condition_thread, props_file_path);
+        register(THREAD.condition, tids[ THREAD.condition ]);
 
         writeln("registred spawned tids:", tids);
-        Tid tid_condition = locate (thread.condition);
+        Tid tid_condition = locate (THREAD.condition);
 //        writeln ("tid_condition=", tid_condition);
         
 
@@ -137,7 +137,7 @@ void init_core()
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn(&mq.file_reader.file_reader_thread, "pacahon-properties.json", cast(immutable)tids.keys);
+                        spawn(&mq.file_reader.file_reader_thread, "pacahon-properties.json");
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -150,7 +150,7 @@ void init_core()
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count, cast(immutable)tids.keys);
+                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
@@ -176,7 +176,7 @@ void init_core()
                             {
                                 rabbitmq_connection.set_callback(&get_message);
 
-                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path, "RABBITMQ", tids.keys);
+                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path, "RABBITMQ");
 
 //                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -544,10 +544,10 @@ class ServerThread : core.thread.Thread
 {
     ThreadContext resource;
 
-    this(void delegate() _dd, string props_file_path, string context_name, string[] tids_names)
+    this(void delegate() _dd, string props_file_path, string context_name)
     {
         super(_dd);
-        resource = new ThreadContext(props_file_path, context_name, cast(immutable)tids_names);
+        resource = new ThreadContext(props_file_path, context_name);
 
 //		resource.sw.start();
     }
