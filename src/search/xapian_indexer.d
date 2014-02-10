@@ -188,8 +188,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     bool                   is_exist_db = exists(xapian_search_db_path);
 
     // Open the database for update, creating a new database if necessary.
-//    indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
-    indexer_db = new_InMemoryWritableDatabase(&err);
+    indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
+//    indexer_db = new_InMemoryWritableDatabase(&err);
     if (err != 0)
     {
         writeln("!!!!!!! ERRR O_o");
