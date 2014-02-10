@@ -36,7 +36,6 @@ private
     import pacahon.event_filter;
     import pacahon.define;
 
-    import search.ba2pacahon;
     import search.xapian_indexer;
 
     import az.condition;
@@ -179,7 +178,7 @@ void init_core()
 
                                 ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path, "RABBITMQ", tids.keys);
 
-                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
+//                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
                                 thread_listener_for_rabbitmq.start();
 

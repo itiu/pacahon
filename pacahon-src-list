@@ -50,7 +50,6 @@ src/pacahon/myversion.d
 src/pacahon/server.d 
 src/pacahon/bus_event.d 
 
-src/search/ba2pacahon.d
 src/search/xapian_indexer.d
 src/search/xapian_reader.d
 src/search/xapian_vql.d
