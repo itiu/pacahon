@@ -24,8 +24,6 @@ private import pacahon.log_msg;
 private import pacahon.context;
 private import pacahon.define;
 
-private import onto.docs_base;
-
 logger log;
 
 

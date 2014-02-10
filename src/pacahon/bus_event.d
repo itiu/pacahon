@@ -13,7 +13,6 @@ private import util.graph;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
-private import onto.doc_template;
 
 logger log;
 

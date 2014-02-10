@@ -160,10 +160,10 @@ public const string link__exportPredicates = "link:exportPredicates";
 public const string class__identifier = "class:identifier";
 public const string class__version    = "class:version";
 
-public const string ba__systemInformation = "ba:systemInformation";
-public const string ba__description       = "ba:description";
-public const string ba__organizationTag   = "ba:organizationTag";
-public const string ba__readOnly          = "ba:readOnly";
-public const string ba__code              = "ba:code";
-public const string ba__doctype           = "ba:doctype";
+//public const string ba__systemInformation = "ba:systemInformation";
+//public const string ba__description       = "ba:description";
+//public const string ba__organizationTag   = "ba:organizationTag";
+//public const string ba__readOnly          = "ba:readOnly";
+//public const string ba__code              = "ba:code";
+//public const string ba__doctype           = "ba:doctype";
 

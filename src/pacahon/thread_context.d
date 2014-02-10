@@ -21,7 +21,6 @@ private
 
     import storage.ticket;
     import bind.xapian_d_header;
-    import onto.doc_template;
 
     import pacahon.know_predicates;
     import pacahon.define;
@@ -355,44 +354,6 @@ class ThreadContext : Context
         cache__subject_creator[ key ] = value;
     }
 /////////////////////////////////////////////////////////
-
-//	 TODO предусмотреть сброс кэша шаблонов
-    private DocTemplate[ string ][ string ] templates;
-
-    DocTemplate get_template(string uid, string v_dc_identifier, string v_docs_version)
-    {
-        DocTemplate res;
-
-        try
-        {
-            DocTemplate[ string ] rr;
-
-            if (uid !is null)
-            {
-                v_dc_identifier = uid;
-                v_docs_version  = "@";
-            }
-
-            rr = templates.get(v_dc_identifier, null);
-
-            if (rr !is null)
-            {
-                if (v_docs_version is null)
-                    res = rr.get("actual", null);
-                else
-                    res = rr.get(v_docs_version, null);
-            }
-        } catch (Exception ex)
-        {
-            // writeln("Ex!" ~ ex.msg);
-        }
-        return res;
-    }
-
-    void set_template(DocTemplate tmpl, string tmpl_subj, string v_id)
-    {
-        templates[ tmpl_subj ][ v_id ] = tmpl;
-    }
 
     mq_client client;
 

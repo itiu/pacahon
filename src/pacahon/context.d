@@ -8,7 +8,6 @@ private import util.container;
 private import util.graph;
 private import util.oi;
 private import search.vel;
-private import onto.doc_template;
 
 enum CMD : byte
 {
@@ -53,9 +52,6 @@ interface Context
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
     @property search.vql.VQL vql();
-
-    DocTemplate get_template(string uid, string v_dc_identifier, string v_docs_version);
-    void set_template(DocTemplate tmpl, string tmpl_subj, string v_id);
 
     Ticket *foundTicket(string ticket_id);
 
