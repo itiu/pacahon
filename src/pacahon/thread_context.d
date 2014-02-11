@@ -61,7 +61,7 @@ class ThreadContext : Context
     this(string property_file_path, string context_name)
     {
         writeln("CREATE NEW CONTEXT:", context_name);
-        
+
         foreach (tid_name; THREAD_LIST)
         {
             tids[ tid_name ] = locate(tid_name);
@@ -463,7 +463,8 @@ class ThreadContext : Context
             if (when !is null)
             {
                 if (trace_msg[ 24 ] == 1)
-                    log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when, duration, text(tt.parentUnitIds));
+                    log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when,
+                              duration, text(tt.parentUnitIds));
 
                 // TODO stringToTime очень медленная операция ~ 100 микросекунд
                 tt.end_time = stringToTime(when) + duration * 100_000_000_000;                 //? hnsecs?

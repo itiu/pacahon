@@ -52,15 +52,14 @@ static this()
 
 string props_file_path = "pacahon-properties.json";
 
-version(executable)
+version (executable)
 {
-void main(char[][] args)
-{
-	init_core ();
-    while (true)
-      core.thread.Thread.sleep(dur!("seconds")(1000));
-	
-}
+    void main(char[][] args)
+    {
+        init_core();
+        while (true)
+            core.thread.Thread.sleep(dur!("seconds")(1000));
+    }
 }
 
 void init_core()
@@ -79,14 +78,15 @@ void init_core()
 
         tids[ THREAD.subject_manager ] = spawn(&subject_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ THREAD.ticket_manager ]  = spawn(&ticket_manager);
+        tids[ THREAD.ticket_manager ] = spawn(&ticket_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ THREAD.acl_manager ]     = spawn(&acl_manager);
+        tids[ THREAD.acl_manager ] = spawn(&acl_manager);
         core.thread.Thread.sleep(dur!("msecs")(1));
 
         tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
         core.thread.Thread.sleep(dur!("msecs")(1));
-        tids[ THREAD.xapian_indexer ]   = spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
+        tids[ THREAD.xapian_indexer ] =
+            spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
         core.thread.Thread.sleep(dur!("msecs")(1));
         spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
         core.thread.Thread.sleep(dur!("msecs")(1));
@@ -108,9 +108,9 @@ void init_core()
         register(THREAD.condition, tids[ THREAD.condition ]);
 
         writeln("registred spawned tids:", tids);
-        Tid tid_condition = locate (THREAD.condition);
+        Tid tid_condition = locate(THREAD.condition);
 //        writeln ("tid_condition=", tid_condition);
-        
+
 
         {
             JSONValue props;
@@ -178,7 +178,8 @@ void init_core()
                             {
                                 rabbitmq_connection.set_callback(&get_message);
 
-                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path, "RABBITMQ");
+                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path,
+                                                                                             "RABBITMQ");
 
 //                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
 
@@ -198,7 +199,6 @@ void init_core()
                 }
             }
         }
-                
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);

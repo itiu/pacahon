@@ -19,4 +19,11 @@
 	<natures>
 		<nature>org.dsource.ddt.ide.core.nature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>zmq</name>
+			<type>2</type>
+			<locationURI>.dub/packages/zeromq-master/deimos/zmq</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

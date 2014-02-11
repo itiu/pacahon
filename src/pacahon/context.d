@@ -13,12 +13,12 @@ enum CMD : byte
 {
     STORE     = 1,
     PUT       = 1,
-    FIND     = 2,
+    FIND      = 2,
     GET       = 2,
     EXAMINE   = 4,
     AUTHORIZE = 8,
-    COMMIT	  = 16,
-    END_DATA  = 32	
+    COMMIT    = 16,
+    END_DATA  = 32
 }
 
 enum EVENT : byte
@@ -39,8 +39,11 @@ enum THREAD : string
     condition                  = "condition"
 }
 
-static THREAD[7] THREAD_LIST = [THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context, 
-						THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition];   
+static THREAD[ 7 ] THREAD_LIST =
+[
+    THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context,
+    THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition
+];
 
 interface Context
 {

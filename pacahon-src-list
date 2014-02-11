@@ -13,9 +13,6 @@ src/mq/file_reader.d
 src/util/turtle_parser.d 
 src/util/logger.d 
 src/util/utils.d 
-src/util/meta_x.d
-src/util/meta.d
-src/util/alloc.d
 src/util/container.d
 src/util/json_ld_parser.d 
 src/util/oi.d 

@@ -4,23 +4,23 @@ public static const byte _NONE = 0;
 public static const byte _RU   = 1;
 public static const byte _EN   = 2;
 
-public const string owl__Ontology 	  	= "owl:Ontology";
-public const string owl__versionInfo 	= "owl:versionInfo";
-public const string rdf__Property 		= "rdf:Property";
+public const string      owl__Ontology    = "owl:Ontology";
+public const string      owl__versionInfo = "owl:versionInfo";
+public const string      rdf__Property    = "rdf:Property";
 //public const string owl__imports = "owl:imports";
-public const string owl__Restriction    = "owl:Restriction";
+public const string      owl__Restriction = "owl:Restriction";
 //public const string owl__hasPart        = "owl:hasPart";
-public const string owl__onProperty     = "owl:onProperty";
-public const string owl__allValuesFrom  = "owl:allValuesFrom";
-public const string owl__someValuesFrom = "owl:someValuesFrom";
-public const string owl__maxCardinality = "owl:maxCardinality";
-public const string owl__minCardinality = "owl:minCardinality";
-public const string owl__ObjectProperty = "owl:ObjectProperty";
-public const string owl__DatatypeProperty = "owl:DatatypeProperty";
-public const string owl__unionOf = "owl:unionOf";
+public const string      owl__onProperty       = "owl:onProperty";
+public const string      owl__allValuesFrom    = "owl:allValuesFrom";
+public const string      owl__someValuesFrom   = "owl:someValuesFrom";
+public const string      owl__maxCardinality   = "owl:maxCardinality";
+public const string      owl__minCardinality   = "owl:minCardinality";
+public const string      owl__ObjectProperty   = "owl:ObjectProperty";
+public const string      owl__DatatypeProperty = "owl:DatatypeProperty";
+public const string      owl__unionOf          = "owl:unionOf";
 
 //public const string veda__mandat	= "veda:mandat";
-public const string veda_schema__script	= "veda-schema:script";
+public const string veda_schema__script = "veda-schema:script";
 
 //--------------------------------------------------------------------------------
 
@@ -42,7 +42,7 @@ public const string rdfs__Class      = "rdfs:Class";
 public const string rdfs__subClassOf = "rdfs:subClassOf";
 public const string rdfs__label      = "rdfs:label";
 public const string rdfs__comment    = "rdfs:comment";
-public const string rdfs__domain    = "rdfs:domain";
+public const string rdfs__domain     = "rdfs:domain";
 
 
 //http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#datatype
@@ -56,16 +56,16 @@ public const string xsd__decimal  = "xsd:decimal";
 //public const string process__Output        = "process:Output";
 //public const string process__parameterType = "process:parameterType";
 
-public const string dc__creator       = "dc:creator";
+public const string dc__creator = "dc:creator";
 //public const string dc__dateSubmitted = "dc:dateSubmitted";
-public const string dc__modified      = "dc:modified";
-public const string dc__created       = "dc:created";
-public const string dc__identifier    = "dc:identifier";
+public const string dc__modified   = "dc:modified";
+public const string dc__created    = "dc:created";
+public const string dc__identifier = "dc:identifier";
 //public const string dc__subject       = "dc:subject";
-public const string dc__title         = "dc:title";
+public const string dc__title = "dc:title";
 //public const string dc__type = "dc:type";
 //public const string dc__description = "dc:description";
-public const string dc__hasPart     = "dc:hasPart";
+public const string dc__hasPart = "dc:hasPart";
 
 // swrc
 //public const string swrc__Employee   = "swrc:Employee";
@@ -77,7 +77,7 @@ public const string swrc__name       = "swrc:name";
 //public const string swrc__email      = "swrc:email";
 //public const string swrc__phone      = "swrc:phone";
 
-public const string gost19__middleName     = "gost19:middleName";
+public const string gost19__middleName = "gost19:middleName";
 //public const string gost19__internal_phone = "gost19:internal_phone";
 
 public const string msg__Message     = "msg:Message";
@@ -99,8 +99,8 @@ public const string ticket__duration             = "ticket:duration";
 
 public const string auth__Authenticated = "auth:Authenticated";
 //public const string auth__ticket        = "auth:ticket";
-public const string auth__credential    = "auth:credential";
-public const string auth__login         = "auth:login";
+public const string auth__credential = "auth:credential";
+public const string auth__login      = "auth:login";
 
 public const string pacahon__on_trace_msg  = "pacahon:on-trace-msg";
 public const string pacahon__off_trace_msg = "pacahon:off-trace-msg";
