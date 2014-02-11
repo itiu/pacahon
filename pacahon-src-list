@@ -1,16 +1,12 @@
 ../../.dub/packages/zeromq-master/deimos/zmq/zmq.d
-src/bind/libczmq_header.d 
 src/bind/librabbitmq_headers.d
 src/bind/lmdb_header.d
-src/bind/nanomsg_header.d
 src/bind/xapian_d_header.d
 
 src/pacahon/define.d
 
 src/mq/mq_client.d 
-src/mq/zmq_pp_broker_client.d
 src/mq/rabbitmq_client.d
-src/mq/nanomsg_listener.d
 src/mq/zmq_listener.d
 src/mq/file_reader.d
 
@@ -30,9 +26,6 @@ src/util/cbor.d
 src/storage/ticket.d
 src/storage/subject.d
 
-src/onto/doc_template.d
-src/onto/docs_base.d
-src/onto/rdf_base.d
 src/onto/owl.d
 
 src/az/orgstructure_tree.d

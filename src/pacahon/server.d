@@ -52,7 +52,8 @@ static this()
 
 string props_file_path = "pacahon-properties.json";
 
-/*
+version(executable)
+{
 void main(char[][] args)
 {
 	init_core ();
@@ -60,7 +61,8 @@ void main(char[][] args)
       core.thread.Thread.sleep(dur!("seconds")(1000));
 	
 }
-*/
+}
+
 void init_core()
 {
     log    = new logger("pacahon", "log", "server");
