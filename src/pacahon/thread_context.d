@@ -18,6 +18,7 @@ private
     import util.utils;
     import util.sgraph;
     import util.cbor;
+    import util.cbor8sgraph;
 
     import storage.ticket;
     import bind.xapian_d_header;

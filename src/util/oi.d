@@ -11,6 +11,7 @@ private import mq.rabbitmq_client;
 private import util.logger;
 private import util.sgraph;
 private import util.cbor;
+private import util.cbor8sgraph;
 
 private import std.datetime;
 

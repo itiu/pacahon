@@ -15,6 +15,7 @@ private
     import util.logger;
     import util.sgraph;
     import util.cbor;
+    import util.cbor8sgraph;
 
     import pacahon.know_predicates;
     import pacahon.context;
