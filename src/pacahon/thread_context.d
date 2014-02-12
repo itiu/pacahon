@@ -16,7 +16,7 @@ private
     import util.logger;
     import util.oi : OI;
     import util.utils;
-    import util.graph;
+    import util.sgraph;
     import util.cbor;
 
     import storage.ticket;

@@ -14,7 +14,7 @@ private
     import std.c.string;
 
     import util.utils;
-    import util.graph;
+    import util.sgraph;
 }
 
 //  expression

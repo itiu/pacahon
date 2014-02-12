@@ -8,7 +8,7 @@ private import std.datetime;
 private import std.outbuffer;
 private import std.array;
 
-private import util.graph;
+private import util.sgraph;
 private import util.utils;
 
 /*

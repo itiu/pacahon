@@ -8,7 +8,7 @@ private
     import util.utils;
     import util.logger;
     import search.vql;
-    import util.graph;
+    import util.sgraph;
     import pacahon.context;
 }
 

@@ -7,7 +7,7 @@ private import std.ascii;
 private import std.utf;
 private import std.conv;
 
-private import util.graph;
+private import util.sgraph;
 private import util.utils;
 private import util.logger;
 

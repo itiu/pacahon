@@ -9,7 +9,7 @@ private import mq.mq_client;
 private import mq.rabbitmq_client;
 
 private import util.logger;
-private import util.graph;
+private import util.sgraph;
 private import util.cbor;
 
 private import std.datetime;

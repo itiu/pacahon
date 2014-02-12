@@ -16,7 +16,7 @@ private
     import std.uuid;
     import std.concurrency;
 
-    import util.graph;
+    import util.sgraph;
     import util.utils;
     import util.json_ld_parser;
     import util.logger;

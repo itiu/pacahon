@@ -18,7 +18,7 @@ private
     import util.oi;
     import util.logger;
     import util.utils;
-    import util.graph;
+    import util.sgraph;
     import util.cbor;
 
     import pacahon.context;

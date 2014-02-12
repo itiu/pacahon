@@ -5,7 +5,7 @@ private import std.datetime;
 private import std.json;
 
 private import util.container;
-private import util.graph;
+private import util.sgraph;
 private import util.oi;
 private import search.vel;
 

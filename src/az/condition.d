@@ -13,7 +13,7 @@ private
     import util.oi;
     import util.utils;
     import util.logger;
-    import util.graph;
+    import util.sgraph;
     import util.cbor;
 
     import pacahon.know_predicates;

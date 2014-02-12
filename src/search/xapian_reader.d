@@ -13,7 +13,7 @@ import std.file;
 
 import bind.xapian_d_header;
 import util.utils;
-import util.graph;
+import util.sgraph;
 import util.cbor;
 
 import pacahon.define;

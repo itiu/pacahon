@@ -16,7 +16,7 @@ private import std.digest.sha;
 private import util.logger;
 private import util.utils;
 private import util.json_ld_parser;
-private import util.graph;
+private import util.sgraph;
 private import util.cbor;
 
 private import pacahon.know_predicates;

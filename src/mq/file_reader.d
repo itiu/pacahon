@@ -14,7 +14,7 @@ import std.outbuffer;
 import std.string;
 
 import util.container;
-import util.graph;
+import util.sgraph;
 import util.cbor;
 import util.utils;
 import util.turtle_parser;

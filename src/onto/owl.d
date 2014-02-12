@@ -7,7 +7,7 @@ private import pacahon.know_predicates;
 private import pacahon.context;
 private import search.vql;
 private import util.utils;
-private import util.graph;
+private import util.sgraph;
 private import util.container;
 
 enum SRC : ubyte
@@ -19,7 +19,6 @@ enum SRC : ubyte
 class OWL
 {
     Subject[ string ] uid_2_subject;
-
 
 
     alias Property   = Tuple!(SRC, string);

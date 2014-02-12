@@ -11,7 +11,7 @@ private
 
     import util.logger;
     import util.utils;
-    import util.graph;
+    import util.sgraph;
     import util.cbor;
     import util.container;
 

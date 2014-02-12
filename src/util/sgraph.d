@@ -1,4 +1,4 @@
-module util.graph;
+module util.sgraph;
 
 /*
  * набор структур и методов для работы с фактами
@@ -770,5 +770,3 @@ class Objectz
         return literal;
     }
 }
-
-
