@@ -47,6 +47,7 @@ static THREAD[ 7 ] THREAD_LIST =
 
 interface Context
 {
+	public string get_name ();
     public JSONValue get_props();
 
     @property Tid tid_statistic_data_accumulator();

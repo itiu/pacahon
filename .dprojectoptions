@@ -2,7 +2,6 @@
 buildtype = EXECUTABLE
 out = bin
 outname = pacahon
-buildtool = $DEEBUILDER.COMPILEREXEPATH @build.rf
-extraOptions = -od$DEEBUILDER.OUTPUTPATH\n-of$DEEBUILDER.OUTPUTEXE\n$DEEBUILDER.SRCLIBS.-I\n$DEEBUILDER.SRCFOLDERS.-I\n$DEEBUILDER.SRCMODULES -L-lzmq -L-lxapiand -L-lxapian -L-lnanomsg -L-llmdb -L-lczmq -L-lrabbitmq
-
+buildtool = dub
+extraOptions = 
 

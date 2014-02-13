@@ -2,5 +2,4 @@
 <buildpath>
 	<buildpathentry kind="src" path="src"/>
 	<buildpathentry exported="true" kind="con" path="org.eclipse.dltk.launching.INTERPRETER_CONTAINER"/>
-	<buildpathentry external="true" kind="lib" path="/home/itiu/work/zmq/deimos"/>
 </buildpath>

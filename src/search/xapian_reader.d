@@ -46,7 +46,7 @@ string get_query_description(XapianQuery query)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 interface SearchReader
 {
-    public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res);
+    public int get(string str_query, string fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element);
 }
 
 class XapianSynchronizedReader : SearchReader
@@ -58,7 +58,7 @@ class XapianSynchronizedReader : SearchReader
         context = _context;
     }
 
-    public int get(string str_query, string fields, string sort, int count_authorize, ref Subjects res)
+    public int get(string str_query, string fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element)
     {
 //      writeln ("@ XapianSynchronizedReader.get #1");
         Tid tid_subject_manager = context.getTid(THREAD.subject_manager);
@@ -84,7 +84,7 @@ class XapianSynchronizedReader : SearchReader
                             if (tid_subject_manager != Tid.init)
                             {
                                 // writeln("msg:", msg);
-                                res.addSubject(decode_cbor(msg));
+                                add_out_element (msg);
                                 read_count++;
                             }
                         }
@@ -118,7 +118,7 @@ class XapianReader : SearchReader
     private static long refresh_db_timeout = 10000000 * 20;
     private long        prev_update_time;
 
-    public int get(string str_query, string str_fields, string sort, int count_authorize, ref Subjects res)
+    public int get(string str_query, string str_fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
 
@@ -150,18 +150,11 @@ class XapianReader : SearchReader
 
             XapianMultiValueKeyMaker  sorter = get_sorter(sort, key2slot);
 
-            void delegate(string msg) dg;
-            void collect_subject(string msg)
-            {
-                res.addSubject(decode_cbor(msg));
-            }
-            dg = &collect_subject;
-
             int state = -1;
             while (state == -1)
             {
                 state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,
-                                                              dg,
+                                                              add_out_element,
                                                               context.getTid(THREAD.subject_manager), context.getTid(THREAD.acl_manager));
                 if (state == -1)
                 {

@@ -1,4 +1,6 @@
 ../../.dub/packages/zeromq-master/deimos/zmq/zmq.d
+../../.dub/packages/dgraph-master/source/dgraph/graph.d
+
 src/bind/librabbitmq_headers.d
 src/bind/lmdb_header.d
 src/bind/xapian_d_header.d
@@ -17,8 +19,11 @@ src/util/container.d
 src/util/json_ld_parser.d 
 src/util/oi.d 
 src/util/load_info.d 
-src/util/graph.d 
+src/util/sgraph.d 
 src/util/cbor.d 
+src/util/cbor8sgraph.d
+src/util/lmultidigraph.d
+src/util/cbor8lmultidigraph.d
 
 src/storage/ticket.d
 src/storage/subject.d

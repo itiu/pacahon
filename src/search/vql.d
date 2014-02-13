@@ -4,15 +4,7 @@ module search.vql;
 
 private
 {
-    import std.string;
-    import std.array;
-    import std.stdio;
-    import std.conv;
-    import std.datetime;
-    import std.json;
-    import std.outbuffer;
-    import std.c.string;
-    import std.concurrency;
+    import std.string, std.array, std.stdio, std.conv, std.datetime, std.json, std.outbuffer, std.c.string, std.concurrency;
 
     import util.container;
     import util.oi;
@@ -20,6 +12,9 @@ private
     import util.utils;
     import util.sgraph;
     import util.cbor;
+    import util.cbor8sgraph;
+    import util.lmultidigraph;
+    import util.cbor8lmultidigraph;
 
     import pacahon.context;
     import pacahon.define;
@@ -38,15 +33,15 @@ static this()
     log = new logger("pacahon", "log", "VQL");
 }
 
-static const int                        RETURN    = 0;
-static const int                        FILTER    = 1;
-static const int                        SORT      = 2;
-static const int                        RENDER    = 3;
-static const int                        AUTHORIZE = 4;
-static const int                        SOURCE    = 5;
+static const int RETURN    = 0;
+static const int FILTER    = 1;
+static const int SORT      = 2;
+static const int RENDER    = 3;
+static const int AUTHORIZE = 4;
+static const int SOURCE    = 5;
 
-static const int                        XAPIAN = 2;
-static const int                        LMDB   = 3;
+static const int XAPIAN = 2;
+static const int LMDB   = 3;
 
 class VQL
 {
@@ -79,6 +74,61 @@ class VQL
     }
 
 
+    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg)
+    {
+        		StopWatch sw;
+        		sw.start();
+    	
+        split_on_section(query_str);
+        int render = 10000;
+        try
+        {
+            if (found_sections[ RENDER ] !is null && found_sections[ RENDER ].length > 0)
+                render = parse!int (found_sections[ RENDER ]);
+        } catch (Exception ex)
+        {
+        }
+        int count_authorize = 10000;
+        try
+        {
+            if (found_sections[ AUTHORIZE ] !is null && found_sections[ AUTHORIZE ].length > 0)
+                count_authorize = parse!int (found_sections[ AUTHORIZE ]);
+        } catch (Exception ex)
+        {
+        }
+        string sort;
+        if (section_is_found[ SORT ] == true)
+            sort = found_sections[ SORT ];
+        int type_source = XAPIAN;
+        if (found_sections[ SOURCE ] == "xapian")
+            type_source = XAPIAN;
+        else if (found_sections[ SOURCE ] == "lmdb")
+            type_source = LMDB;
+
+        string dummy;
+        double d_dummy;
+        int    res_count;
+
+        if (type_source == XAPIAN)
+        {
+            void delegate(string msg) dg;
+            void collect_subject(string msg)
+            {
+            	//writeln ("lmg=", cast(void*)lmg);
+                add_cbor_to_lmultidigraph(lmg, msg);
+            }
+            dg = &collect_subject;
+
+            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
+        }
+
+          sw.stop();
+          long t = cast(long) sw.peek().usecs;
+          writeln("execute:", t, " µs");
+
+        return res_count;
+    }
+
     public int get(Ticket *ticket, string query_str, ref Subjects res)
     {
         //		if (ticket !is null)
@@ -89,7 +139,6 @@ class VQL
         //		sw.start();
 
         split_on_section(query_str);
-
         int render = 10000;
         try
         {
@@ -98,7 +147,6 @@ class VQL
         } catch (Exception ex)
         {
         }
-
         int count_authorize = 10000;
         try
         {
@@ -107,24 +155,21 @@ class VQL
         } catch (Exception ex)
         {
         }
-
         string sort;
-
         if (section_is_found[ SORT ] == true)
             sort = found_sections[ SORT ];
-
-        int type_source       = XAPIAN;
-        OI  from_search_point = null;
-
-        if (from_search_points.size > 0)
-            from_search_point = from_search_points.items[ 0 ];
-
-        //writeln ("found_sections[SOURCE]=", found_sections[SOURCE]);
-
+        int type_source = XAPIAN;
         if (found_sections[ SOURCE ] == "xapian")
             type_source = XAPIAN;
         else if (found_sections[ SOURCE ] == "lmdb")
             type_source = LMDB;
+
+//        OI  from_search_point = null;
+
+//        if (from_search_points.size > 0)
+//            from_search_point = from_search_points.items[ 0 ];
+
+        //writeln ("found_sections[SOURCE]=", found_sections[SOURCE]);
 
         string dummy;
         double d_dummy;
@@ -137,7 +182,14 @@ class VQL
         }
         else if (type_source == XAPIAN)
         {
-            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, res);
+            void delegate(string msg) dg;
+            void collect_subject(string msg)
+            {
+                res.addSubject(decode_cbor(msg));
+            }
+            dg = &collect_subject;
+
+            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
         }
 
 //          sw.stop();
@@ -155,7 +207,7 @@ class VQL
         // TODO возможно не оптимальная фильтрация
         foreach (pp; ss.getPredicates)
         {
-//		writeln ("pp=", pp);
+//			writeln ("pp=", pp);
             if ((pp.predicate in fields) is null)
             {
                 pp.count_objects = 0;

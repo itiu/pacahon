@@ -9,6 +9,7 @@ private import search.vql;
 private import util.utils;
 private import util.sgraph;
 private import util.container;
+private import util.lmultidigraph;
 
 enum SRC : ubyte
 {
@@ -18,13 +19,19 @@ enum SRC : ubyte
 
 class OWL
 {
+	LabeledMultiDigraph lmg;
     Subject[ string ] uid_2_subject;
-
 
     alias Property   = Tuple!(SRC, string);
     alias Properties = Set!Property;
 
     Properties *[ string ] class_2_properties;
+
+    this()
+    {
+    	lmg = new LabeledMultiDigraph ();    	
+    }
+
     void add(Properties *[ string ], string class_name, string propery_name)
     {
         Properties *properies = class_2_properties.get(class_name, null);
@@ -41,19 +48,18 @@ class OWL
         *properies ~= pr;
     }
 
-    this()
-    {
-    }
-
     public void load(Context context)
     {
-        Subjects res = new Subjects();
-
+    	LabeledMultiDigraph lmg = new LabeledMultiDigraph ();
+    	 
+//        Subjects res = new Subjects();
+//		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
             filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
-                          res);
-        set_data_and_relink(res);
+                          lmg);
+//        set_data_and_relink(res);
+//		writeln ("load onto to graph..ok");
     }
 
     void set_data_and_relink(Subjects _subjs)

@@ -56,11 +56,18 @@ class ThreadContext : Context
 
     int     _count_command;
     int     _count_message;
+    string name;
 
     private Tid[ string ] tids;
+    
+    string get_name ()
+    {
+    	return name;
+    }
 
     this(string property_file_path, string context_name)
     {
+    	name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
 
         foreach (tid_name; THREAD_LIST)
