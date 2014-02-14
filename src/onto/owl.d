@@ -51,7 +51,6 @@ class OWL
     public void load(Context context)
     {
     	LabeledMultiDigraph lmg = new LabeledMultiDigraph ();
-    	 
 //        Subjects res = new Subjects();
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
@@ -60,6 +59,7 @@ class OWL
                           lmg);
 //        set_data_and_relink(res);
 //		writeln ("load onto to graph..ok");
+    	writeln ("# lmg.elements=", lmg.elements); 
     }
 
     void set_data_and_relink(Subjects _subjs)

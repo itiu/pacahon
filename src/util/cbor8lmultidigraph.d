@@ -6,14 +6,14 @@ import util.cbor;
 import util.lmultidigraph;
 
 /*
-struct Element
-{
+   struct Element
+   {
     MajorType type;
     TAG       tag = TAG.NONE;
     string    str;
     size_t    resource_idx;
-}
-*/
+   }
+ */
 string dummy;
 
 private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string _key, size_t subject_idx = NONE,
@@ -59,10 +59,26 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 
         if (subject_idx != NONE && predicate_idx != NONE)
         {
-//        	writeln ("*1");
-            lmg.addEdge(subject_idx, predicate_idx, str);
-//        	writeln ("*2");
-        }    
+//          writeln ("*1");
+            if (header.tag == TAG.NONE)
+            {
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);
+            }
+            else if (header.tag == TAG.TEXT_RU)
+            {
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.RU);
+            }
+            else if (header.tag == TAG.TEXT_EN)
+            {
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.EN);
+            }
+            else if (header.tag == TAG.URI)
+            {
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.Individual);
+            }
+
+//          writeln ("*2");
+        }
 
         pos = ep;
     }
