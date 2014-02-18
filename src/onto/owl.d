@@ -50,10 +50,11 @@ class Class : Thing
     override
     string toString()
     {
-        string res = id;
+        string res = "{\n " ~ id ~ "(" ~ text (label.items) ~ ")";
 
-        res ~= "\n  " ~ text(properties.items);
-        res ~= "\n  " ~ text(inherited_properties.items);
+        res ~= "\n	direct properties: " ~ text(properties.items);
+        res ~= "\n	inherited properties: " ~ text(inherited_properties.items) ;
+        res ~= "\n}";
         return res;
     }
 }
@@ -108,6 +109,8 @@ class OWL
                     in_class              = new Class();
                     in_class.id           = hh.data;
                     class_2_idx[ hh.idx ] = in_class;
+                    Set!Resource label = lmg.getTail(hh, rdfs__label);
+                    in_class.label = label; 
                 }
             }
         }
@@ -123,7 +126,10 @@ class OWL
                     prop                     = new Property();
                     prop.id                  = hh.data;
                     property_2_idx[ hh.idx ] = prop;
+                    Set!Resource label = lmg.getTail(hh, rdfs__label);
+                    prop.label = label; 
                 }
+                
 
                 Set!Resource domain = lmg.getTail(hh, rdfs__domain);
                 foreach (dc; domain)
@@ -180,7 +186,7 @@ class OWL
         writeln("#class_2_properties=");
         foreach (th; class_2_idx.values)
         {
-            writeln("#=>", th);
+            writeln(th);
         }
     }
 
