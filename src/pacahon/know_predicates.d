@@ -18,6 +18,8 @@ public const string      owl__minCardinality   = "owl:minCardinality";
 public const string      owl__ObjectProperty   = "owl:ObjectProperty";
 public const string      owl__DatatypeProperty = "owl:DatatypeProperty";
 public const string      owl__unionOf          = "owl:unionOf";
+public const string      owl__Thing            = "owl:Thing";
+public const string      owl__Class            = "owl:Class";
 
 //public const string veda__mandat	= "veda:mandat";
 public const string veda_schema__script = "veda-schema:script";

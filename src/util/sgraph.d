@@ -89,7 +89,7 @@ final class Subjects
     {
         string res = "[\n";
 
-        foreach (el; this.graphs.items)
+        foreach (el; this.graphs)
         {
             res ~= " " ~ el.toString() ~ ",\n";
         }

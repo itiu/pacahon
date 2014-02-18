@@ -1,1 +1,1 @@
-module pacahon.myversion; public static string major="1"; public static string minor="38"; public static string patch="4"; public static string author="Itiu"; public static string date="Thu Feb 13 17:27:09 2014 +0400"; public static string hash="5810d9d";
+module pacahon.myversion; public static string major="1"; public static string minor="38"; public static string patch="4"; public static string author="Itiu"; public static string date="Fri Feb 14 12:05:40 2014 +0400"; public static string hash="137ad4f";

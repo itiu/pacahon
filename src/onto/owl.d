@@ -1,7 +1,6 @@
 module onto.owl;
 
-private import std.stdio;
-private import std.typecons;
+private import std.stdio, std.typecons, std.conv;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
@@ -11,130 +10,194 @@ private import util.sgraph;
 private import util.container;
 private import util.lmultidigraph;
 
-enum SRC : ubyte
+class Property : Thing
 {
-    direct,
-    inherited
+    string id;
+    Set!Class domain;
+    Set!Resource label;
+    Set!Class range;
+
+    override
+    string toString()
+    {
+        string res = id;
+
+        //      res ~= text (label);
+        return res;
+    }
+}
+
+class Restriction : Thing
+{
+    string id;
+    Set!Class onClass;
+    Set!Class onProperty;
+    Set!Resource qualifiedCardinality;
+}
+
+class Class : Thing
+{
+    string id;
+    Set!Class subClassOf;
+    Set!Resource label;
+
+    Set!Property properties;
+    Set!Property inherited_properties;
+
+    Set!Restriction restriction;
+    Set!Class disjointWith;
+
+    override
+    string toString()
+    {
+        string res = id;
+
+        res ~= "\n  " ~ text(properties.items);
+        res ~= "\n  " ~ text(inherited_properties.items);
+        return res;
+    }
+}
+
+interface Thing
+{
 }
 
 class OWL
 {
-	LabeledMultiDigraph lmg;
-    Subject[ string ] uid_2_subject;
+    LabeledMultiDigraph lmg;
 
-    alias Property   = Tuple!(SRC, string);
-    alias Properties = Set!Property;
-
-    Properties *[ string ] class_2_properties;
+    Class[ size_t ] class_2_idx;
+    Property[ size_t ] property_2_idx;
 
     this()
     {
-    	lmg = new LabeledMultiDigraph ();    	
-    }
-
-    void add(Properties *[ string ], string class_name, string propery_name)
-    {
-        Properties *properies = class_2_properties.get(class_name, null);
-
-        if (properies is null)
-        {
-            properies                        = new Properties;
-            class_2_properties[ class_name ] = properies;
-        }
-
-        Property pr;
-        pr[ 0 ] = SRC.direct;
-        pr[ 1 ] = propery_name;
-        *properies ~= pr;
+        lmg = new LabeledMultiDigraph();
     }
 
     public void load(Context context)
     {
-    	LabeledMultiDigraph lmg = new LabeledMultiDigraph ();
+        LabeledMultiDigraph lmg = new LabeledMultiDigraph();
+
 //        Subjects res = new Subjects();
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
             filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
                           lmg);
-//        set_data_and_relink(res);
+        set_data(lmg);
 //		writeln ("load onto to graph..ok");
-    	writeln ("# lmg.elements=", lmg.elements); 
+
+//        writeln("# lmg.elements=", lmg.elements);
+//        lmg.getEdges1("mondi-schema:AdministrativeDocument");
     }
 
-    void set_data_and_relink(Subjects _subjs)
+    void set_data(LabeledMultiDigraph _lmg)
     {
-        foreach (ss; _subjs.data)
-        {
-            uid_2_subject[ ss.subject ] = ss;
-        }
-/*
-        foreach (ss; _subjs.data)
-        {
-            foreach (pp; ss.getPredicates())
-            {
-                foreach (oo; pp.getObjects())
-                {
-                    if (oo.type == OBJECT_TYPE.URI)
-                    {
-                        Subject link = uid_2_subject.get(oo.literal, null);
-                        if (link !is null)
-                        {
-                            oo.type    = OBJECT_TYPE.LINK_SUBJECT;
-                            oo.subject = link;
-                        }
-                    }
-                }
-            }
-        }
- */
-        foreach (ss; _subjs.data)
-        {
-//            writeln("\n#2.3 ss=", ss.subject);
-            if (ss.isExsistsPredicate(rdf__type, owl__ObjectProperty) == true || ss.isExsistsPredicate(rdf__type, owl__DatatypeProperty))
-            {
-                Predicate domain = ss.getPredicate(rdfs__domain);
-                if (domain !is null)
-                {
-                    foreach (dc; domain.getObjects())
-                    {
-                        Subject ssi;
-                        if (dc.type == OBJECT_TYPE.URI)
-                        {
-                            ssi = uid_2_subject.get(dc.literal, null);
-                        }
-                        else if (dc.type == OBJECT_TYPE.LINK_SUBJECT)
-                        {
-                            ssi = dc.subject;
-                        }
+        lmg            = _lmg;
+        class_2_idx    = (Class[ size_t ]).init;
+        property_2_idx = (Property[ size_t ]).init;
 
-                        if (ssi !is null)
+        // set classes
+        foreach (hh; lmg.getHeads())
+        {
+            if (lmg.isExsistsEdge(hh, rdf__type, owl__Class))
+            {
+                Class in_class = class_2_idx.get(hh.idx, null);
+                if (in_class is null)
+                {
+                    in_class              = new Class();
+                    in_class.id           = hh.data;
+                    class_2_idx[ hh.idx ] = in_class;
+                }
+            }
+        }
+
+        // set direct properties
+        foreach (hh; lmg.getHeads())
+        {
+            if (lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
+            {
+                Property prop = property_2_idx.get(hh.idx, null);
+                if (prop is null)
+                {
+                    prop                     = new Property();
+                    prop.id                  = hh.data;
+                    property_2_idx[ hh.idx ] = prop;
+                }
+
+                Set!Resource domain = lmg.getTail(hh, rdfs__domain);
+                foreach (dc; domain)
+                {
+                    Set!Resource unionOf = lmg.getTail(dc, owl__unionOf);
+
+                    if (unionOf.length > 0)
+                    {
+                        foreach (uo; unionOf)
                         {
-                            Predicate unionOf = ssi.getPredicate(owl__unionOf);
-                            if (unionOf !is null)
+//                            writeln("#head=", hh);
+//                            writeln("#domain=", dc);
+//                            writeln("#unionOf=", uo);
+                            if (uo.data != owl__Thing)
                             {
-                                foreach (uo; unionOf)
+                                Class in_class = class_2_idx.get(uo.idx, null);
+                                if (in_class is null)
                                 {
-                                    add(class_2_properties, uo.literal, ss.subject);
+                                    in_class              = new Class();
+                                    in_class.id           = uo.data;
+                                    class_2_idx[ uo.idx ] = in_class;
                                 }
+
+                                in_class.properties ~= prop;
                             }
-                            if (ssi.subject != "_:_")
+                        }
+                    }
+                    else
+                    {
+                        if (dc.data != owl__Thing)
+                        {
+                            Class in_class = class_2_idx.get(dc.idx, null);
+                            if (in_class is null)
                             {
-                                add(class_2_properties, ssi.subject, ss.subject);
+                                in_class              = new Class();
+                                in_class.id           = dc.data;
+                                class_2_idx[ dc.idx ] = in_class;
                             }
+                            in_class.properties ~= prop;
                         }
                     }
                 }
             }
         }
-/*
-        writeln("#class_2_properties=");
-        foreach (key, value; class_2_properties)
+
+        // set inherit properties
+        foreach (cl; class_2_idx.keys)
         {
-            Properties pt = *value;
-            writeln(key, "=>", pt.items);
+            Class ccl = class_2_idx.get(cl, null);
+            if (ccl !is null)
+                add_inherit_properies(ccl, cl);
         }
-*/
+
+        writeln("#class_2_properties=");
+        foreach (th; class_2_idx.values)
+        {
+            writeln("#=>", th);
+        }
     }
 
+    private void add_inherit_properies(Class to_cl, size_t look_cl_idx)
+    {
+        //writeln ("# add_inherit_properies, to_cl=", to_cl, ", look_cl_idx=", look_cl_idx);
+        Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
+        foreach (subClassOf; list_subClassOf)
+        {
+            add_inherit_properies(to_cl, subClassOf.idx);
+        }
+
+        //writeln ("#3 add_inherit_properies");
+        Class icl = class_2_idx.get(look_cl_idx, null);
+        if (icl !is null && icl != to_cl)
+        {
+            to_cl.inherited_properties ~= icl.properties;
+        }
+    }
 }

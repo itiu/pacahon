@@ -5,15 +5,6 @@ import std.outbuffer, std.stdio;
 import util.cbor;
 import util.lmultidigraph;
 
-/*
-   struct Element
-   {
-    MajorType type;
-    TAG       tag = TAG.NONE;
-    string    str;
-    size_t    resource_idx;
-   }
- */
 string dummy;
 
 private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string _key, size_t subject_idx = NONE,
@@ -24,8 +15,6 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 
     pos = read_header(src[ pos..$ ], &header);
 //    writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
-
-//    writeln ("pos +-> ", pos);
 
     if (header.type == MajorType.MAP)
     {
@@ -38,14 +27,22 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
         pos += read_element(lmg, src[ pos..$ ], val);
 
         if (key == "@")
-            new_subject_idx = lmg.addResource(val);
+        {
+            
+            if (subject_idx != NONE)
+            	new_subject_idx = lmg.addEdge(subject_idx, predicate_idx, val);
+            else
+            	new_subject_idx = lmg.addResource(val);            
+            
+//            writeln ("@ id:", val, ", idx=", new_subject_idx);
+         }   
 
         foreach (i; 1 .. header.len)
         {
             pos += read_element(lmg, src[ pos..$ ], key);
 
             size_t new_predicate_idx = lmg.addResource(key);
-
+            
             pos += read_element(lmg, src[ pos..$ ], dummy, new_subject_idx, new_predicate_idx);
         }
     }
@@ -60,24 +57,14 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
         if (subject_idx != NONE && predicate_idx != NONE)
         {
 //          writeln ("*1");
-            if (header.tag == TAG.NONE)
-            {
-                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);
-            }
-            else if (header.tag == TAG.TEXT_RU)
-            {
+			if (header.tag == TAG.TEXT_RU)
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.RU);
-            }
             else if (header.tag == TAG.TEXT_EN)
-            {
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.EN);
-            }
             else if (header.tag == TAG.URI)
-            {
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.Individual);
-            }
-
-//          writeln ("*2");
+            else
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);            	
         }
 
         pos = ep;

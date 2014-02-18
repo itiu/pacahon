@@ -7,6 +7,7 @@ private import std.stdio;
 private import std.datetime;
 private import std.outbuffer;
 private import std.array;
+private import std.uuid;
 
 private import util.sgraph;
 private import util.utils;
@@ -315,7 +316,9 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                         level++;
 //						writeln ("@ ++ level !!!:", level, ", predicate=", predicate);
                         ss    = new Subject();
-                        ss.subject = "_:_";
+                        //ss.subject = "_:_"; 
+                        UUID new_id = randomUUID();
+                        ss.subject = new_id.toString ();
                         state = 1;
                     }
                     else if (prev_el == ']')
