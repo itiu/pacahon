@@ -36,6 +36,17 @@ struct Restriction
 
 struct Class
 {
+    immutable this(string _id, immutable(Class[]) _subClassOf, immutable(Resource[]) _label, immutable(Property[]) _properties,
+                   immutable(Property[]) _inherited_properties)
+    {
+        id                   = _id;
+        subClassOf           = _subClassOf.idup;
+        label                = _label.idup;
+        properties           = _properties.idup;
+        inherited_properties = _inherited_properties.idup;
+//        writeln ("@2 label=", label);
+    }
+
     string        id;
     Class[]       subClassOf;
     Resource[]    label;
@@ -54,6 +65,13 @@ struct Class
         res ~= "\n	inherited properties: "~ text(inherited_properties);
         res ~= "\n}";
         return res;
+    }
+
+    immutable(Class) idup() const
+    {
+        immutable(Class) result = immutable Class(id, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
+                                                  cast(immutable)inherited_properties);
+        return result;
     }
 }
 
@@ -79,8 +97,8 @@ class OWL
 //        Subjects res = new Subjects();
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
-        	"return { '*'}
-            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
+                          "return { '*'}
+            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }"                                         ,
                           lmg);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
