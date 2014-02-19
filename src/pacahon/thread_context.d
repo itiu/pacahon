@@ -44,12 +44,14 @@ Tid dummy_tid;
 
 class ThreadContext : Context
 {
+	private OWL owl;
     private JSONValue props;
     public JSONValue get_props()
     {
         return props;
     }
 
+    
 
     bool    use_caching_of_documents = false;
     bool    IGNORE_EMPTY_TRIPLE      = false;
@@ -141,7 +143,7 @@ class ThreadContext : Context
             pacahon.event_filter.load_events(this);
             writeln(context_name ~ ": load events... ok");
 
-            OWL owl = new OWL();
+            owl = new OWL();
             owl.load(this);
         }
     }
@@ -282,6 +284,15 @@ class ThreadContext : Context
     {
         return prefix_map;
     }
+
+    @property Class[] owl_classes()
+    {
+    	if (owl !is null)
+    		return owl.class_2_idx.values;
+    	else
+    		return Class[].init;
+    }
+
 
     @property Tid tid_statistic_data_accumulator()
     {

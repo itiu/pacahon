@@ -8,6 +8,7 @@ private import util.container;
 private import util.sgraph;
 private import util.oi;
 private import search.vel;
+private import onto.owl;
 
 enum CMD : byte
 {
@@ -47,6 +48,8 @@ static THREAD[ 7 ] THREAD_LIST =
 
 interface Context
 {
+    @property Class[] owl_classes();
+    
 	public string get_name ();
     public JSONValue get_props();
 

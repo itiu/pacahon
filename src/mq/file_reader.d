@@ -32,7 +32,7 @@ void file_reader_thread(string props_file_name)
 
     try
     {
-        mkdir("core-onto");
+        mkdir("ontology");
     }
     catch (Exception ex)
     {
