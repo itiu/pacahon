@@ -43,7 +43,7 @@ extern (C) public void sighandler0(int sig) nothrow @system
     printf("signal %d caught...\n", sig);
     try
     {
-        system(cast(char *)("kill -kill " ~ text(getpid())));
+        system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
         //Runtime.terminate();
     }
     catch (Exception ex)

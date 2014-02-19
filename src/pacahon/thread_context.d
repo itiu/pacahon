@@ -285,12 +285,12 @@ class ThreadContext : Context
         return prefix_map;
     }
 
-    @property Class[] owl_classes()
+    @property Class*[] owl_classes()
     {
     	if (owl !is null)
     		return owl.class_2_idx.values;
     	else
-    		return Class[].init;
+    		return (Class*[]).init;
     }
 
 

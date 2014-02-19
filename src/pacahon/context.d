@@ -48,7 +48,7 @@ static THREAD[ 7 ] THREAD_LIST =
 
 interface Context
 {
-    @property Class[] owl_classes();
+    @property Class*[] owl_classes();
     
 	public string get_name ();
     public JSONValue get_props();

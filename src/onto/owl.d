@@ -10,15 +10,14 @@ private import util.sgraph;
 private import util.container;
 private import util.lmultidigraph;
 
-class Property : Thing
+struct Property
 {
-    string id;
-    Set!Class domain;
-    Set!Resource label;
-    Set!Class range;
+    string     id;
+    Class[]    domain;
+    Resource[] label;
+    Class[]    range;
 
-    override
-    string toString()
+    string     toString()
     {
         string res = id;
 
@@ -27,48 +26,46 @@ class Property : Thing
     }
 }
 
-class Restriction : Thing
+struct Restriction
 {
-    string id;
-    Set!Class onClass;
-    Set!Class onProperty;
-    Set!Resource qualifiedCardinality;
+    string     id;
+    Class[]    onClass;
+    Class[]    onProperty;
+    Resource[] qualifiedCardinality;
 }
 
-class Class : Thing
+struct Class
 {
-    string id;
-    Set!Class subClassOf;
-    Set!Resource label;
+    string        id;
+    Class[]       subClassOf;
+    Resource[]    label;
 
-    Set!Property properties;
-    Set!Property inherited_properties;
+    Property[]    properties;
+    Property[]    inherited_properties;
 
-    Set!Restriction restriction;
-    Set!Class disjointWith;
+    Restriction[] restriction;
+    Class[]       disjointWith;
 
-    override
-    string toString()
+    string        toString()
     {
-        string res = "{\n " ~ id ~ "(" ~ text (label.items) ~ ")";
+        string res = "{\n " ~ id ~ "(" ~ text(label) ~ ")";
 
-        res ~= "\n	direct properties: " ~ text(properties.items);
-        res ~= "\n	inherited properties: " ~ text(inherited_properties.items) ;
+        res ~= "\n	direct properties: "~ text(properties);
+        res ~= "\n	inherited properties: "~ text(inherited_properties);
         res ~= "\n}";
         return res;
     }
 }
 
-interface Thing
-{
-}
+Class    NilClass    = Class.init;
+Property NilProperty = Property.init;
 
 class OWL
 {
     LabeledMultiDigraph lmg;
 
-    Class[ size_t ] class_2_idx;
-    Property[ size_t ] property_2_idx;
+    Class *[ size_t ] class_2_idx;
+    Property *[ size_t ] property_2_idx;
 
     this()
     {
@@ -82,7 +79,7 @@ class OWL
 //        Subjects res = new Subjects();
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
-                          "return { '*'}
+        	"return { '*'}
             filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
                           lmg);
         set_data(lmg);
@@ -95,22 +92,23 @@ class OWL
     void set_data(LabeledMultiDigraph _lmg)
     {
         lmg            = _lmg;
-        class_2_idx    = (Class[ size_t ]).init;
-        property_2_idx = (Property[ size_t ]).init;
+        class_2_idx    = (Class *[ size_t ]).init;
+        property_2_idx = (Property *[ size_t ]).init;
 
         // set classes
         foreach (hh; lmg.getHeads())
         {
             if (lmg.isExsistsEdge(hh, rdf__type, owl__Class))
             {
-                Class in_class = class_2_idx.get(hh.idx, null);
+                Class *in_class = class_2_idx.get(hh.idx, null);
                 if (in_class is null)
                 {
-                    in_class              = new Class();
+                    in_class              = new Class;
                     in_class.id           = hh.data;
+                    in_class.properties   = new Property[ 0 ];
                     class_2_idx[ hh.idx ] = in_class;
-                    Set!Resource label = lmg.getTail(hh, rdfs__label);
-                    in_class.label = label; 
+                    Set!Resource label    = lmg.getTail(hh, rdfs__label);
+                    in_class.label        = label.items;
                 }
             }
         }
@@ -120,16 +118,16 @@ class OWL
         {
             if (lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
             {
-                Property prop = property_2_idx.get(hh.idx, null);
+                Property *prop = property_2_idx.get(hh.idx, null);
                 if (prop is null)
                 {
-                    prop                     = new Property();
+                    prop                     = new Property;
                     prop.id                  = hh.data;
                     property_2_idx[ hh.idx ] = prop;
-                    Set!Resource label = lmg.getTail(hh, rdfs__label);
-                    prop.label = label; 
+                    Set!Resource label       = lmg.getTail(hh, rdfs__label);
+                    prop.label               = label.items;
                 }
-                
+
 
                 Set!Resource domain = lmg.getTail(hh, rdfs__domain);
                 foreach (dc; domain)
@@ -145,15 +143,15 @@ class OWL
 //                            writeln("#unionOf=", uo);
                             if (uo.data != owl__Thing)
                             {
-                                Class in_class = class_2_idx.get(uo.idx, null);
+                                Class *in_class = class_2_idx.get(uo.idx, null);
                                 if (in_class is null)
                                 {
-                                    in_class              = new Class();
+                                    in_class              = new Class;
                                     in_class.id           = uo.data;
                                     class_2_idx[ uo.idx ] = in_class;
                                 }
 
-                                in_class.properties ~= prop;
+                                in_class.properties ~= *prop;
                             }
                         }
                     }
@@ -161,14 +159,16 @@ class OWL
                     {
                         if (dc.data != owl__Thing)
                         {
-                            Class in_class = class_2_idx.get(dc.idx, null);
+                            Class *in_class = class_2_idx.get(dc.idx, null);
                             if (in_class is null)
                             {
-                                in_class              = new Class();
+                                in_class = new Class;
+
                                 in_class.id           = dc.data;
                                 class_2_idx[ dc.idx ] = in_class;
                             }
-                            in_class.properties ~= prop;
+//                            in_class.properties.length += 1;
+                            in_class.properties ~= *prop;
                         }
                     }
                 }
@@ -178,19 +178,19 @@ class OWL
         // set inherit properties
         foreach (cl; class_2_idx.keys)
         {
-            Class ccl = class_2_idx.get(cl, null);
+            Class *ccl = class_2_idx.get(cl, null);
             if (ccl !is null)
                 add_inherit_properies(ccl, cl);
         }
 
-//        writeln("#class_2_properties=");
-//        foreach (th; class_2_idx.values)
-//        {
-//            writeln(th);
-//        }
+        writeln("#class_2_properties=");
+        foreach (th; class_2_idx.values)
+        {
+            writeln(th.toString());
+        }
     }
 
-    private void add_inherit_properies(Class to_cl, size_t look_cl_idx)
+    private void add_inherit_properies(Class *to_cl, size_t look_cl_idx)
     {
         //writeln ("# add_inherit_properies, to_cl=", to_cl, ", look_cl_idx=", look_cl_idx);
         Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
@@ -200,7 +200,7 @@ class OWL
         }
 
         //writeln ("#3 add_inherit_properies");
-        Class icl = class_2_idx.get(look_cl_idx, null);
+        Class *icl = class_2_idx.get(look_cl_idx, null);
         if (icl !is null && icl != to_cl)
         {
             to_cl.inherited_properties ~= icl.properties;
