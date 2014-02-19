@@ -2,15 +2,8 @@ module pacahon.server;
 
 private
 {
-    import core.thread;
-    import std.stdio;
-    import std.string;
-    import std.c.string;
-    import std.json;
-    import std.outbuffer;
-    import std.datetime;
-    import std.conv;
-    import std.concurrency;
+    import core.thread, std.stdio, std.string, std.c.string, std.json, std.outbuffer, std.datetime, std.conv, std.concurrency;
+    version (linux) import std.c.linux.linux, core.stdc.stdlib;
 
     import mq.mq_client;
     import mq.rabbitmq_client;
@@ -44,6 +37,20 @@ private
 logger log;
 logger io_msg;
 
+// Called upon a signal from Linux
+extern (C) public void sighandler0(int sig) nothrow @system
+{
+    printf("signal %d caught...\n", sig);
+    try
+    {
+        system(cast(char *)("kill -kill " ~ text(getpid())));
+        //Runtime.terminate();
+    }
+    catch (Exception ex)
+    {
+    }
+}
+
 static this()
 {
     log    = new logger("pacahon", "log", "server");
@@ -66,6 +73,15 @@ void init_core()
 {
     log    = new logger("pacahon", "log", "server");
     io_msg = new logger("pacahon", "io", "server");
+
+    version (linux)
+    {
+        // установим обработчик сигналов прерывания процесса
+        signal(SIGABRT, &sighandler0);
+        signal(SIGTERM, &sighandler0);
+        signal(SIGQUIT, &sighandler0);
+        signal(SIGINT, &sighandler0);
+    }
 
     try
     {
