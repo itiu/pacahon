@@ -139,9 +139,9 @@ class ThreadContext : Context
             Set!OI from_search = gateways.get("from-search", empty_set);
             _vql               = new search.vql.VQL(from_search, this);
 
-            writeln(context_name ~ ": load events");
-            pacahon.event_filter.load_events(this);
-            writeln(context_name ~ ": load events... ok");
+            //writeln(context_name ~ ": load events");
+            //pacahon.event_filter.load_events(this);
+            //writeln(context_name ~ ": load events... ok");
 
             owl = new OWL();
             owl.load(this);
