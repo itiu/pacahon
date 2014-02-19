@@ -183,11 +183,11 @@ class OWL
                 add_inherit_properies(ccl, cl);
         }
 
-        writeln("#class_2_properties=");
-        foreach (th; class_2_idx.values)
-        {
-            writeln(th);
-        }
+//        writeln("#class_2_properties=");
+//        foreach (th; class_2_idx.values)
+//        {
+//            writeln(th);
+//        }
     }
 
     private void add_inherit_properies(Class to_cl, size_t look_cl_idx)
