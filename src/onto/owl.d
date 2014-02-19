@@ -123,7 +123,7 @@ class OWL
                 {
                     in_class              = new Class;
                     in_class.id           = hh.data;
-                    in_class.properties   = new Property[ 0 ];
+                    //in_class.properties   = new Property[ 0 ];
                     class_2_idx[ hh.idx ] = in_class;
                     Set!Resource label    = lmg.getTail(hh, rdfs__label);
                     in_class.label        = label.items;
@@ -201,11 +201,11 @@ class OWL
                 add_inherit_properies(ccl, cl);
         }
 
-        writeln("#class_2_properties=");
-        foreach (th; class_2_idx.values)
-        {
-            writeln(th.toString());
-        }
+//        writeln("#class_2_properties=");
+//        foreach (th; class_2_idx.values)
+//        {
+//            writeln(th.toString());
+//        }
     }
 
     private void add_inherit_properies(Class *to_cl, size_t look_cl_idx)
