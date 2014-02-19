@@ -48,7 +48,7 @@ void file_reader_thread(string props_file_name)
 
     while (true)
     {
-        auto oFiles = dirEntries("./core-onto", "*.{ttl}", SpanMode.depth);
+        auto oFiles = dirEntries("./ontology", "*.{ttl}", SpanMode.depth);
 
         foreach (o; oFiles)
         {
