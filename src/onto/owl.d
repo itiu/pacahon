@@ -1,14 +1,17 @@
 module onto.owl;
 
-private import std.stdio, std.typecons, std.conv;
+private 
+{
+ import std.stdio, std.typecons, std.conv;
 
-private import pacahon.know_predicates;
-private import pacahon.context;
-private import search.vql;
-private import util.utils;
-private import util.sgraph;
-private import util.container;
-private import util.lmultidigraph;
+ import pacahon.know_predicates;
+ import pacahon.context;
+ import search.vql;
+ import util.utils;
+ import util.sgraph;
+ import util.container;
+ import util.lmultidigraph;
+}
 
 struct Property
 {
@@ -57,10 +60,10 @@ struct Class
     Restriction[] restriction;
     Class[]       disjointWith;
 
-    string        toString()
+    immutable string        toString()
     {
         string res = "{\n " ~ id ~ "(" ~ text(label) ~ ")";
-
+        res ~= "\n	subClassOf: "~ text(subClassOf);
         res ~= "\n	direct properties: "~ text(properties);
         res ~= "\n	inherited properties: "~ text(inherited_properties);
         res ~= "\n}";
@@ -75,9 +78,6 @@ struct Class
     }
 }
 
-Class    NilClass    = Class.init;
-Property NilProperty = Property.init;
-
 class OWL
 {
     LabeledMultiDigraph lmg;
@@ -85,7 +85,7 @@ class OWL
     Class *[ size_t ] class_2_idx;
     Property *[ size_t ] property_2_idx;
 
-    this()
+    public this()
     {
         lmg = new LabeledMultiDigraph();
     }
@@ -94,7 +94,6 @@ class OWL
     {
         LabeledMultiDigraph lmg = new LabeledMultiDigraph();
 
-//        Subjects res = new Subjects();
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
@@ -107,7 +106,7 @@ class OWL
 //        lmg.getEdges1("mondi-schema:AdministrativeDocument");
     }
 
-    void set_data(LabeledMultiDigraph _lmg)
+    public void set_data(LabeledMultiDigraph _lmg)
     {
         lmg            = _lmg;
         class_2_idx    = (Class *[ size_t ]).init;
@@ -222,6 +221,7 @@ class OWL
         if (icl !is null && icl != to_cl)
         {
             to_cl.inherited_properties ~= icl.properties;
+            to_cl.subClassOf ~= *icl;
         }
     }
 }
