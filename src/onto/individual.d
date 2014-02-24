@@ -22,12 +22,12 @@ struct Individual
     string uri;
     Resources[ string ]    resources;
     Individuals[ string ]  individuals;
-    Property *[ string ]  properties;
-    Class *[ string ] classes;
+    Property [ string ]  properties;
+    Class [ string ] classes;
 
     immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals,
-                   immutable(Property *[ string ]) _properties,
-                   immutable(Class *[ string ]) _classes)
+                   immutable(Property [ string ]) _properties,
+                   immutable(Class [ string ]) _classes)
     {
         uri         = _uri;
         resources   = _resources;
@@ -45,10 +45,10 @@ struct Individual
         immutable Individuals[ string ]    tmp2 = assumeUnique(individuals);
         
         properties.rehash();
-        immutable Property *[ string ]    tmp3 = assumeUnique(properties);
+        immutable Property [ string ]    tmp3 = assumeUnique(properties);
         
         classes.rehash();
-        immutable Class *[ string ]    tmp4 = assumeUnique(classes);
+        immutable Class [ string ]    tmp4 = assumeUnique(classes);
 
         immutable(Individual) result = immutable Individual(uri, tmp1, tmp2, tmp3, tmp4);
         return result;
