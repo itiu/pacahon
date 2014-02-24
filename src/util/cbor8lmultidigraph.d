@@ -63,7 +63,7 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
             else if (header.tag == TAG.TEXT_EN)
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.EN);
             else if (header.tag == TAG.URI)
-                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.Individual);
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.Uri);
             else
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);            	
         }

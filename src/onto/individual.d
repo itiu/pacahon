@@ -12,26 +12,45 @@ private
     import pacahon.context;
     import util.utils;
     import util.container;
+    import util.cbor8individual;
 }
+
+alias Individual[] Individuals;
 
 struct Individual
 {
-    string  name;
-    Resources[ string ]    properties;
-    Class[] classes;
+    string uri;
+    Resources[ string ]    resources;
+    Individuals[ string ]  individuals;
+    Property *[ string ]  properties;
+    Class *[ string ] classes;
 
-    immutable this(string _name, immutable(Resources[ string ]) _properties, immutable(Class[]) _classes)
+    immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals,
+                   immutable(Property *[ string ]) _properties,
+                   immutable(Class *[ string ]) _classes)
     {
-        name       = _name;
-        properties = _properties;
-        classes    = _classes.idup;
+        uri         = _uri;
+        resources   = _resources;
+        properties  = _properties;
+        individuals = _individuals;
+        classes     = _classes;
     }
 
     immutable(Individual) idup()
     {
-        immutable Resources[ string ]    tmp = assumeUnique(properties);
+        resources.rehash();
+        immutable Resources[ string ]    tmp1 = assumeUnique(resources);
+        
+        individuals.rehash();
+        immutable Individuals[ string ]    tmp2 = assumeUnique(individuals);
+        
+        properties.rehash();
+        immutable Property *[ string ]    tmp3 = assumeUnique(properties);
+        
+        classes.rehash();
+        immutable Class *[ string ]    tmp4 = assumeUnique(classes);
 
-        immutable(Individual) result = immutable Individual(name, tmp, cast(immutable)classes);
+        immutable(Individual) result = immutable Individual(uri, tmp1, tmp2, tmp3, tmp4);
         return result;
     }
 }
@@ -45,14 +64,17 @@ class Individual_IO
         context = _context;
     }
 
-
-
-    Individual getIndividual(string name, Ticket ticket)
+    Individual getIndividual(string uri, Ticket ticket, byte level = 0)
     {
-        return Individual.init;
+        string individual_as_cbor = context.get_subject_as_cbor(uri);
+
+        Individual individual = Individual (); 
+        cbor_to_individual(&individual, individual_as_cbor);
+
+        return individual;
     }
 
-    string putIndividual(string name, Individual individual, Ticket ticket)
+    string putIndividual(string uri, Individual individual, Ticket ticket)
     {
         return null;
     }

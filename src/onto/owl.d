@@ -16,14 +16,14 @@ private
 
 struct Property
 {
-    string     name;
+    string     uri;
     Class[]    domain;
     Resource[] label;
     Class[]    range;
 
     string     toString()
     {
-        string res = name;
+        string res = uri;
 
         //      res ~= text (label);
         return res;
@@ -32,7 +32,7 @@ struct Property
 
 struct Restriction
 {
-    string     name;
+    string     uri;
     Class[]    onClass;
     Class[]    onProperty;
     Resource[] qualifiedCardinality;
@@ -40,10 +40,10 @@ struct Restriction
 
 struct Class
 {
-    immutable this(string _name, immutable(Class[]) _subClassOf, immutable(Resource[]) _label, immutable(Property[]) _properties,
+    immutable this(string _uri, immutable(Class[]) _subClassOf, immutable(Resource[]) _label, immutable(Property[]) _properties,
                    immutable(Property[]) _inherited_properties)
     {
-        name                 = _name;
+        uri                  = _uri;
         subClassOf           = _subClassOf.idup;
         label                = _label.idup;
         properties           = _properties.idup;
@@ -51,7 +51,7 @@ struct Class
 //        writeln ("@2 label=", label);
     }
 
-    string           name;
+    string           uri;
     Class[]          subClassOf;
     Resource[]       label;
 
@@ -63,7 +63,7 @@ struct Class
 
     immutable string toString()
     {
-        string res = "{\n " ~ name ~ "(" ~ text(label) ~ ")";
+        string res = "{\n " ~ uri ~ "(" ~ text(label) ~ ")";
 
         res ~= "\n	subClassOf: "~ text(subClassOf);
         res ~= "\n	direct properties: "~ text(properties);
@@ -74,7 +74,7 @@ struct Class
 
     immutable(Class) idup() const
     {
-        immutable(Class) result = immutable Class(name, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
+        immutable(Class) result = immutable Class(uri, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
                                                   cast(immutable)inherited_properties);
         return result;
     }
@@ -124,8 +124,8 @@ class OWL
                 Class *in_class = class_2_idx.get(hh.idx, null);
                 if (in_class is null)
                 {
-                    in_class      = new Class;
-                    in_class.name = hh.name;
+                    in_class     = new Class;
+                    in_class.uri = hh.uri;
                     //in_class.properties   = new Property[ 0 ];
                     class_2_idx[ hh.idx ] = in_class;
                     Set!Resource label    = lmg.getTail(hh, rdfs__label);
@@ -143,7 +143,7 @@ class OWL
                 if (prop is null)
                 {
                     prop                     = new Property;
-                    prop.name                = hh.name;
+                    prop.uri                 = hh.uri;
                     property_2_idx[ hh.idx ] = prop;
                     Set!Resource label       = lmg.getTail(hh, rdfs__label);
                     prop.label               = label.items;
@@ -162,13 +162,13 @@ class OWL
 //                            writeln("#head=", hh);
 //                            writeln("#domain=", dc);
 //                            writeln("#unionOf=", uo);
-                            if (uo.name != owl__Thing)
+                            if (uo.uri != owl__Thing)
                             {
                                 Class *in_class = class_2_idx.get(uo.idx, null);
                                 if (in_class is null)
                                 {
                                     in_class              = new Class;
-                                    in_class.name         = uo.name;
+                                    in_class.uri          = uo.uri;
                                     class_2_idx[ uo.idx ] = in_class;
                                 }
 
@@ -178,14 +178,14 @@ class OWL
                     }
                     else
                     {
-                        if (dc.name != owl__Thing)
+                        if (dc.uri != owl__Thing)
                         {
                             Class *in_class = class_2_idx.get(dc.idx, null);
                             if (in_class is null)
                             {
                                 in_class = new Class;
 
-                                in_class.name         = dc.name;
+                                in_class.uri          = dc.uri;
                                 class_2_idx[ dc.idx ] = in_class;
                             }
 //                            in_class.properties.length += 1;

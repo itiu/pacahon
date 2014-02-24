@@ -24,6 +24,7 @@ src/util/cbor.d
 src/util/cbor8sgraph.d
 src/util/lmultidigraph.d
 src/util/cbor8lmultidigraph.d
+src/util/cbor8individual.d
 
 src/storage/ticket.d
 src/storage/subject.d
