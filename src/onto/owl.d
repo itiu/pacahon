@@ -201,7 +201,7 @@ class OWL
         {
             Class *ccl = class_2_idx.get(cl, null);
             if (ccl !is null)
-                add_inherit_properies(ccl, cl);
+                add_inherit_properies(ccl, cl, 0);
         }
 
 //        writeln("#class_2_properties=");
@@ -211,13 +211,13 @@ class OWL
 //        }
     }
 
-    private void add_inherit_properies(Class *to_cl, size_t look_cl_idx)
+    private void add_inherit_properies(Class *to_cl, size_t look_cl_idx, int level)
     {
         //writeln ("# add_inherit_properies, to_cl=", to_cl, ", look_cl_idx=", look_cl_idx);
         Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
         foreach (subClassOf; list_subClassOf)
         {
-            add_inherit_properies(to_cl, subClassOf.idx);
+            add_inherit_properies(to_cl, subClassOf.idx, level + 1);
         }
 
         //writeln ("#3 add_inherit_properies");
@@ -225,7 +225,8 @@ class OWL
         if (icl !is null && icl != to_cl)
         {
             to_cl.inherited_properties ~= icl.properties;
-            to_cl.subClassOf ~= *icl;
+            if (level == 0)
+            	to_cl.subClassOf ~= *icl;
         }
     }
 }
