@@ -349,7 +349,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     //StopWatch sw;
     //sw.start();
 
-    //    writeln ("query=", get_query_description (query));
+       // writeln ("@query=", get_query_description (query));
 
     byte err;
 
@@ -361,8 +361,8 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     if (err < 0)
         return err;
 
-    //  writeln ("found =",  matches.get_matches_estimated(&err));
-    //  writeln ("matches =",  matches.size (&err));
+    //  writeln ("@found =",  matches.get_matches_estimated(&err));
+    //  writeln ("@matches =",  matches.size (&err));
 
     if (matches !is null)
     {
@@ -374,7 +374,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
             uint   *data_len;
             it.get_document_data(&data_str, &data_len, &err);
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
-            //	writeln ("Subject_id:", subject_id);
+            //	writeln ("@subject_id:", subject_id);
             if (tid_subject_manager != Tid.init)
             {
                 send(tid_subject_manager, CMD.GET, subject_id, thisTid);

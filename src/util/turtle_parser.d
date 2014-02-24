@@ -11,7 +11,7 @@ private import std.uuid;
 
 private import util.sgraph;
 private import util.utils;
-
+private import pacahon.know_predicates;
 /*
  *  src - С-шная строка содержащая факты в формате n3 (ttl),
  *  len - длинна исходной строки,
@@ -409,8 +409,8 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
     {
         *state = 2;
         string cur_predicate = cast(immutable)element[ 0..el_length ];
-        if (cur_predicate == "rdf:type")
-            cur_predicate = "a";
+        if (cur_predicate == "a")
+            cur_predicate = rdf__type;
 
         Predicate pp = ss.getPredicate (cur_predicate);
         if (pp is null)
@@ -425,7 +425,7 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
     }
 
     if (*state == 2)
-    {
+    {    	
         Predicate pp = ss.getPredicate (in_predicate);
         string data = cast(immutable)element[ 0..el_length ];
        	if (data.indexOf ("\\\"") >= 0)
@@ -493,6 +493,9 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
         out_predicate = in_predicate;
         return 0;
     }
+
+        if (in_predicate == "a")
+            in_predicate = rdf__type;
 
     out_predicate = in_predicate;
     return 0;

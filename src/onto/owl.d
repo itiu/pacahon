@@ -72,6 +72,17 @@ struct Class
         return res;
     }
 
+    string toString()
+    {
+        string res = "{\n " ~ uri ~ "(" ~ text(label) ~ ")";
+
+        res ~= "\n	subClassOf: "~ text(subClassOf);
+        res ~= "\n	direct properties: "~ text(properties);
+        res ~= "\n	inherited properties: "~ text(inherited_properties);
+        res ~= "\n}";
+        return res;
+    }
+
     immutable(Class) idup() const
     {
         immutable(Class) result = immutable Class(uri, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
@@ -101,7 +112,7 @@ class OWL
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
-            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
+            filter { 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           lmg);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
@@ -197,18 +208,22 @@ class OWL
         }
 
         // set inherit properties
-        foreach (cl; class_2_idx.keys)
+        foreach (cl_idx; class_2_idx.keys)
         {
-            Class *ccl = class_2_idx.get(cl, null);
+            Class *ccl = class_2_idx.get(cl_idx, null);
             if (ccl !is null)
-                add_inherit_properies(ccl, cl, 0);
+                add_inherit_properies(ccl, cl_idx, 0);
         }
-
-//        writeln("#class_2_properties=");
-//        foreach (th; class_2_idx.values)
-//        {
-//            writeln(th.toString());
-//        }
+/*
+        writeln("#class_2_properties=");
+        foreach (key, value; class_2_idx)
+        {
+        		writeln(key);
+        	
+        	if (value !is null)
+        		writeln(value.toString());
+        }
+*/        
     }
 
     private void add_inherit_properies(Class *to_cl, size_t look_cl_idx, int level)
@@ -217,6 +232,13 @@ class OWL
         Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
         foreach (subClassOf; list_subClassOf)
         {
+        	//writeln ("# subClassOf", subClassOf); 
+            if (level == 0)
+            {	
+            	Class *icl = class_2_idx.get(subClassOf.idx, null);
+            	if (icl !is null)
+            		to_cl.subClassOf ~= *icl;
+            }	
             add_inherit_properies(to_cl, subClassOf.idx, level + 1);
         }
 
@@ -225,8 +247,6 @@ class OWL
         if (icl !is null && icl != to_cl)
         {
             to_cl.inherited_properties ~= icl.properties;
-            if (level == 0)
-            	to_cl.subClassOf ~= *icl;
         }
     }
 }

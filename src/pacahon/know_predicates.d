@@ -33,7 +33,7 @@ public const static string prefix_doc = "zdb:doc_";
 //public const static string prefix_person = "zdb:person_";
 //public const static string prefix_department = "zdb:dep_";
 
-public const string rdf__type      = "a"; // TODO a == rdf:type
+public const string rdf__type      = "rdf:type";
 public const string rdf__subject   = "rdf:subject";
 public const string rdf__predicate = "rdf:predicate";
 public const string rdf__object    = "rdf:object";
