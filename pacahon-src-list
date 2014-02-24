@@ -29,6 +29,8 @@ src/storage/ticket.d
 src/storage/subject.d
 
 src/onto/owl.d
+src/onto/resource.d
+src/onto/individual.d
 
 src/az/orgstructure_tree.d
 src/az/condition.d

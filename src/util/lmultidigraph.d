@@ -1,33 +1,10 @@
 module util.lmultidigraph;
 
 private import std.algorithm, std.stdio;
+private import onto.resource;
 private import dgraph.graph;
 private import util.cbor;
 private import util.container;
-
-enum LANG : ubyte
-{
-    NONE = 0,
-    RU   = 1,
-    EN   = 2
-}
-
-enum ResourceType : ubyte
-{
-    Individual,
-    String,
-    Integer,
-    Datetime,
-    Float
-}
-
-struct Resource
-{
-	size_t idx;
-    ResourceType type = ResourceType.Individual;
-    string       data;
-    LANG         lang = LANG.NONE;
-}
 
 struct HeadTail
 {
@@ -54,34 +31,35 @@ class LabeledMultiDigraph
     {
         Set!Resource res;
 
-        foreach (hh ; idx_2_individual.values)
+        foreach (hh; idx_2_individual.values)
         {
-        	res ~= elements[ hh ];
+            res ~= elements[ hh ];
         }
-    	
-    	return res;
+
+        return res;
     }
 
-    bool isExsistsEdge (Resource head, string edge_str, string tail_str)
+    bool isExsistsEdge(Resource head, string edge_str, string tail_str)
     {
-    	size_t     idx_edge = idx_2_individual.get(edge_str, NONE);
-    	size_t     idx_tail = idx_2_individual.get(tail_str, NONE);
-    	
-    	HeadTail ht;
+        size_t   idx_edge = idx_2_individual.get(edge_str, NONE);
+        size_t   idx_tail = idx_2_individual.get(tail_str, NONE);
+
+        HeadTail ht;
+
         ht.head = head.idx;
         ht.tail = idx_tail;
-        
+
         size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
 
-        return canFind(edge_idxs, idx_edge);    	
+        return canFind(edge_idxs, idx_edge);
     }
 
     Set!Resource getTail(Resource head, string edge_str)
     {
         Set!Resource res;
 
-    	size_t     idx_edge = idx_2_individual.get(edge_str, NONE);
-        auto nb = graph.neighboursOut(head.idx);
+        size_t   idx_edge = idx_2_individual.get(edge_str, NONE);
+        auto     nb       = graph.neighboursOut(head.idx);
 
         HeadTail ht;
         ht.head = head.idx;
@@ -89,25 +67,25 @@ class LabeledMultiDigraph
         int idx;
         foreach (nn; nb)
         {
-        	//writeln ("@1, nn=", elements[ nn ]);
-        	
-                ht.tail = nn;
-                
-                size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
-                
-                if (canFind(edge_idxs, idx_edge))
-                {
-                	res ~= elements[ nn ];
-                }
+            //writeln ("@1, nn=", elements[ nn ]);
+
+            ht.tail = nn;
+
+            size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
+
+            if (canFind(edge_idxs, idx_edge))
+            {
+                res ~= elements[ nn ];
+            }
         }
-            
+
         return res;
     }
     Set!Resource getTail(size_t head_idx, string edge_str)
     {
         Set!Resource res;
-    	size_t     idx_edge = idx_2_individual.get(edge_str, NONE);
-        auto nb = graph.neighboursOut(head_idx);
+        size_t   idx_edge = idx_2_individual.get(edge_str, NONE);
+        auto     nb       = graph.neighboursOut(head_idx);
 
         HeadTail ht;
         ht.head = head_idx;
@@ -115,14 +93,14 @@ class LabeledMultiDigraph
         int idx;
         foreach (nn; nb)
         {
-                ht.tail = nn;
-                
-                size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
-                
-                if (canFind(edge_idxs, idx_edge))
-                	res ~= elements[ nn ];
+            ht.tail = nn;
+
+            size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
+
+            if (canFind(edge_idxs, idx_edge))
+                res ~= elements[ nn ];
         }
-            
+
         return res;
     }
 
@@ -139,7 +117,7 @@ class LabeledMultiDigraph
             auto nb = graph.neighboursOut(idx_head);
 
             res = new Resource[ nb.length() ];
-            
+
             HeadTail ht;
             ht.head = idx_head;
 
@@ -147,8 +125,8 @@ class LabeledMultiDigraph
             foreach (nn; nb)
             {
                 res[ idx++ ] = elements[ nn ];
-                ht.tail = nn;
-                writeln ("@=", elements[ledges_2_head_tail[ht][0]]);
+                ht.tail      = nn;
+                writeln("@=", elements[ ledges_2_head_tail[ ht ][ 0 ] ]);
                 writeln("#neighbours=>", elements[ nn ]);
             }
         }
@@ -195,8 +173,8 @@ class LabeledMultiDigraph
         writeln("addEdge ", idx_head, ":", idx_tail);
         graph.addEdge(idx_head, idx_tail);
     }
-*/
-/*    
+ */
+/*
     void addEdge(size_t idx_head, string edge_str, size_t idx_tail)
     {
         size_t idx_edge = idx_2_individual.get(edge_str, NONE);
@@ -225,7 +203,7 @@ class LabeledMultiDigraph
         writeln("addEdge ", idx_head, ":", idx_tail);
         graph.addEdge(idx_head, idx_tail);
     }
-*/
+ */
     size_t addEdge(size_t idx_head, size_t idx_edge, string tail_str, ResourceType type = ResourceType.Individual, LANG lang = LANG.NONE)
     {
 //        writeln ("@1 lmg=,", cast(void*)this, ", graph=", cast(void*)graph);
@@ -235,10 +213,10 @@ class LabeledMultiDigraph
         if (idx_tail == NONE)
         {
             Resource tail;
-            tail.data = tail_str;
+            tail.name = tail_str;
             tail.type = type;
             tail.lang = lang;
-            tail.idx = elements.length;  
+            tail.idx  = elements.length;
             elements ~= tail;
             idx_tail = elements.length - 1;
             if (tail.type == ResourceType.Individual)
@@ -257,7 +235,7 @@ class LabeledMultiDigraph
 
         if (edge_idxs.length == 0 || (edge_idxs.length > 0 && canFind(edge_idxs, idx_edge) == false))
             edge_idxs ~= idx_edge;
-            
+
         ledges_2_head_tail[ ht ] = edge_idxs;
 //        writeln ("@4.1");
 
@@ -268,7 +246,7 @@ class LabeledMultiDigraph
 //        writeln ("addEdge ", idx_head, ":", idx_tail);
         graph.addEdge(idx_head, idx_tail);
 //      writeln ("@6");
-        
+
         return idx_tail;
     }
 
@@ -283,9 +261,9 @@ class LabeledMultiDigraph
             if (idx_resource == NONE)
             {
                 Resource rr;
-                rr.data = rr_str;
+                rr.name = rr_str;
                 rr.type = type;
-                rr.idx = elements.length;
+                rr.idx  = elements.length;
 
                 elements ~= rr;
                 idx_resource = elements.length - 1;
@@ -299,40 +277,41 @@ class LabeledMultiDigraph
 
     size_t addResource(Resource rr)
     {
-        size_t idx_rr = idx_2_individual.get(rr.data, NONE);
+        size_t idx_rr = idx_2_individual.get(rr.name, NONE);
 
         if (idx_rr == NONE)
         {
-        	rr.idx = elements.length; 
+            rr.idx = elements.length;
             elements ~= rr;
-            idx_2_individual[ rr.data ] = elements.length - 1;
+            idx_2_individual[ rr.name ] = elements.length - 1;
         }
         return idx_rr;
     }
 
     size_t addResource()
     {
-    	Resource rr = Resource.init;
-    	rr.idx = elements.length; 
+        Resource rr = Resource.init;
+
+        rr.idx = elements.length;
         elements ~= rr;
-        
+
         return elements.length - 1;
     }
 
     void setIndividual(size_t idx_rr, Resource rr)
     {
         if (rr.type == ResourceType.Individual)
-            idx_2_individual[ rr.data ] = idx_rr;
+            idx_2_individual[ rr.name ] = idx_rr;
     }
 
     void setResource(size_t idx_rr, string rr_str, ResourceType type = ResourceType.Individual)
     {
         Resource rr;
 
-        rr.data = rr_str;
+        rr.name = rr_str;
         rr.type = type;
-        rr.idx = idx_rr;
+        rr.idx  = idx_rr;
         if (rr.type == ResourceType.Individual)
-            idx_2_individual[ rr.data ] = idx_rr;
+            idx_2_individual[ rr.name ] = idx_rr;
     }
 }

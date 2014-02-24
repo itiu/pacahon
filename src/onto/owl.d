@@ -1,28 +1,29 @@
 module onto.owl;
 
-private 
+private
 {
- import std.stdio, std.typecons, std.conv;
+    import std.stdio, std.typecons, std.conv, std.exception : assumeUnique;
 
- import pacahon.know_predicates;
- import pacahon.context;
- import search.vql;
- import util.utils;
- import util.sgraph;
- import util.container;
- import util.lmultidigraph;
+    import onto.resource;
+    import pacahon.know_predicates;
+    import pacahon.context;
+    import search.vql;
+    import util.utils;
+    import util.sgraph;
+    import util.container;
+    import util.lmultidigraph;
 }
 
 struct Property
 {
-    string     id;
+    string     name;
     Class[]    domain;
     Resource[] label;
     Class[]    range;
 
     string     toString()
     {
-        string res = id;
+        string res = name;
 
         //      res ~= text (label);
         return res;
@@ -31,7 +32,7 @@ struct Property
 
 struct Restriction
 {
-    string     id;
+    string     name;
     Class[]    onClass;
     Class[]    onProperty;
     Resource[] qualifiedCardinality;
@@ -39,10 +40,10 @@ struct Restriction
 
 struct Class
 {
-    immutable this(string _id, immutable(Class[]) _subClassOf, immutable(Resource[]) _label, immutable(Property[]) _properties,
+    immutable this(string _name, immutable(Class[]) _subClassOf, immutable(Resource[]) _label, immutable(Property[]) _properties,
                    immutable(Property[]) _inherited_properties)
     {
-        id                   = _id;
+        name                 = _name;
         subClassOf           = _subClassOf.idup;
         label                = _label.idup;
         properties           = _properties.idup;
@@ -50,19 +51,20 @@ struct Class
 //        writeln ("@2 label=", label);
     }
 
-    string        id;
-    Class[]       subClassOf;
-    Resource[]    label;
+    string           name;
+    Class[]          subClassOf;
+    Resource[]       label;
 
-    Property[]    properties;
-    Property[]    inherited_properties;
+    Property[]       properties;
+    Property[]       inherited_properties;
 
-    Restriction[] restriction;
-    Class[]       disjointWith;
+    Restriction[]    restriction;
+    Class[]          disjointWith;
 
-    immutable string        toString()
+    immutable string toString()
     {
-        string res = "{\n " ~ id ~ "(" ~ text(label) ~ ")";
+        string res = "{\n " ~ name ~ "(" ~ text(label) ~ ")";
+
         res ~= "\n	subClassOf: "~ text(subClassOf);
         res ~= "\n	direct properties: "~ text(properties);
         res ~= "\n	inherited properties: "~ text(inherited_properties);
@@ -72,7 +74,7 @@ struct Class
 
     immutable(Class) idup() const
     {
-        immutable(Class) result = immutable Class(id, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
+        immutable(Class) result = immutable Class(name, cast(immutable)subClassOf, cast(immutable)label, cast(immutable)properties,
                                                   cast(immutable)inherited_properties);
         return result;
     }
@@ -80,24 +82,26 @@ struct Class
 
 class OWL
 {
+    Context             context;
     LabeledMultiDigraph lmg;
 
     Class *[ size_t ] class_2_idx;
     Property *[ size_t ] property_2_idx;
 
-    public this()
+    public this(Context _context)
     {
-        lmg = new LabeledMultiDigraph();
+        context = _context;
+        lmg     = new LabeledMultiDigraph();
     }
 
-    public void load(Context context)
+    public void load()
     {
         LabeledMultiDigraph lmg = new LabeledMultiDigraph();
 
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
-            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }"                                         ,
+            filter { 'a' == 'owl:Class' || 'a' == 'owl:ObjectProperty' || 'a' == 'owl:DatatypeProperty' }",
                           lmg);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
@@ -120,8 +124,8 @@ class OWL
                 Class *in_class = class_2_idx.get(hh.idx, null);
                 if (in_class is null)
                 {
-                    in_class              = new Class;
-                    in_class.id           = hh.data;
+                    in_class      = new Class;
+                    in_class.name = hh.name;
                     //in_class.properties   = new Property[ 0 ];
                     class_2_idx[ hh.idx ] = in_class;
                     Set!Resource label    = lmg.getTail(hh, rdfs__label);
@@ -139,7 +143,7 @@ class OWL
                 if (prop is null)
                 {
                     prop                     = new Property;
-                    prop.id                  = hh.data;
+                    prop.name                = hh.name;
                     property_2_idx[ hh.idx ] = prop;
                     Set!Resource label       = lmg.getTail(hh, rdfs__label);
                     prop.label               = label.items;
@@ -158,13 +162,13 @@ class OWL
 //                            writeln("#head=", hh);
 //                            writeln("#domain=", dc);
 //                            writeln("#unionOf=", uo);
-                            if (uo.data != owl__Thing)
+                            if (uo.name != owl__Thing)
                             {
                                 Class *in_class = class_2_idx.get(uo.idx, null);
                                 if (in_class is null)
                                 {
                                     in_class              = new Class;
-                                    in_class.id           = uo.data;
+                                    in_class.name         = uo.name;
                                     class_2_idx[ uo.idx ] = in_class;
                                 }
 
@@ -174,14 +178,14 @@ class OWL
                     }
                     else
                     {
-                        if (dc.data != owl__Thing)
+                        if (dc.name != owl__Thing)
                         {
                             Class *in_class = class_2_idx.get(dc.idx, null);
                             if (in_class is null)
                             {
                                 in_class = new Class;
 
-                                in_class.id           = dc.data;
+                                in_class.name         = dc.name;
                                 class_2_idx[ dc.idx ] = in_class;
                             }
 //                            in_class.properties.length += 1;

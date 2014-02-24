@@ -143,8 +143,8 @@ class ThreadContext : Context
             //pacahon.event_filter.load_events(this);
             //writeln(context_name ~ ": load events... ok");
 
-            owl = new OWL();
-            owl.load(this);
+            owl = new OWL(this);
+            owl.load();
         }
     }
 
