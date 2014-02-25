@@ -12,6 +12,7 @@ private
     import util.sgraph;
     import util.container;
     import util.lmultidigraph;
+    import onto.individual;
 }
 
 struct Property
@@ -96,6 +97,7 @@ class OWL
     Context             context;
     LabeledMultiDigraph lmg;
 
+    immutable(Individual)[string] individuals;
     Class *[ size_t ] class_2_idx;
     Property *[ size_t ] property_2_idx;
 
@@ -127,7 +129,7 @@ class OWL
         context.vql().get(null,
                           "return { '*'}
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
-                          lmg);
+                          lmg, individuals);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
 

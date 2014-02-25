@@ -9,6 +9,7 @@ private import util.sgraph;
 private import util.oi;
 private import search.vel;
 private import onto.owl;
+private import onto.individual;
 
 enum CMD : byte
 {
@@ -48,9 +49,10 @@ static THREAD[ 7 ] THREAD_LIST =
 
 interface Context
 {
-    @property Class *[] owl_classes();
-    @property Class *get_class(string ur);
-    @property Property *get_property(string ur);
+    Class *[] owl_classes();
+    Class *get_class(string ur);
+    Property *get_property(string ur);
+    immutable(Individual)[string] get_onto_as_map_individuals ();    
 
     public string get_name();
     public JSONValue get_props();

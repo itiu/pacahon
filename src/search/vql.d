@@ -15,6 +15,7 @@ private
     import util.cbor8sgraph;
     import util.lmultidigraph;
     import util.cbor8lmultidigraph;
+    import util.cbor8individual;
 
     import pacahon.context;
     import pacahon.define;
@@ -24,6 +25,7 @@ private
     import search.xapian_reader;
 
     import storage.subject;
+    import onto.individual;
 }
 
 logger log;
@@ -74,7 +76,7 @@ class VQL
     }
 
 
-    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg)
+    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg, ref immutable(Individual)[string] individuals)
     {
         		StopWatch sw;
         		sw.start();
@@ -115,7 +117,12 @@ class VQL
             void collect_subject(string msg)
             {
             	//writeln ("lmg=", cast(void*)lmg);
-                add_cbor_to_lmultidigraph(lmg, msg);
+                string uri = add_cbor_to_lmultidigraph(lmg, msg);
+
+                Individual individual = Individual();
+                cbor_to_individual(&individual, msg);
+                
+                individuals[uri] = individual.idup; 
             }
             dg = &collect_subject;
 

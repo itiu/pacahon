@@ -52,7 +52,6 @@ class Individual_IO
         string     individual_as_cbor = context.get_subject_as_cbor(uri);
 
         Individual individual = Individual();
-
         cbor_to_individual(&individual, individual_as_cbor);
 
         return individual;

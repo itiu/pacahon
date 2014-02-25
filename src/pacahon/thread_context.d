@@ -2,13 +2,7 @@ module pacahon.thread_context;
 
 private
 {
-    import std.json;
-    import std.stdio;
-    import std.format;
-    import std.datetime;
-    import std.concurrency;
-    import std.conv;
-    import std.outbuffer;
+    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer;
 
     import mq.mq_client;
     import util.container;
@@ -29,6 +23,7 @@ private
     import pacahon.event_filter;
     import pacahon.bus_event;
     import onto.owl;
+    import onto.individual;
 
 //	import search.vql;
 }
@@ -51,8 +46,6 @@ class ThreadContext : Context
         return props;
     }
 
-
-
     bool    use_caching_of_documents = false;
     bool    IGNORE_EMPTY_TRIPLE      = false;
 
@@ -66,6 +59,41 @@ class ThreadContext : Context
     {
         return name;
     }
+
+    Class *[] owl_classes()
+    {
+        if (owl !is null)
+            return owl.class_2_idx.values;
+        else
+            return (Class *[]).init;
+    }
+
+    Class *get_class(string uri)
+    {
+        if (owl !is null)
+            return owl.getClass(uri);
+        else
+            return null;
+    }
+
+    Property *get_property(string uri)
+    {
+        if (owl !is null)
+            return owl.getProperty(uri);
+        else
+            return null;
+    }
+
+    immutable(Individual)[string] get_onto_as_map_individuals ()
+    {
+        if (owl !is null)
+            return owl.individuals;
+        else
+            return (immutable(Individual)[string]).init;    	
+    } 
+
+
+
 
     this(string property_file_path, string context_name)
     {
@@ -283,30 +311,6 @@ class ThreadContext : Context
     ref     string[ string ] get_prefix_map()
     {
         return prefix_map;
-    }
-
-    @property Class *[] owl_classes()
-    {
-        if (owl !is null)
-            return owl.class_2_idx.values;
-        else
-            return (Class *[]).init;
-    }
-
-    @property Class *get_class(string uri)
-    {
-        if (owl !is null)
-            return owl.getClass(uri);
-        else
-            return null;
-    }
-
-    @property Property *get_property(string uri)
-    {
-        if (owl !is null)
-            return owl.getProperty(uri);
-        else
-            return null;
     }
 
     @property Tid tid_statistic_data_accumulator()

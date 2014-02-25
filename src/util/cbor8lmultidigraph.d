@@ -8,7 +8,7 @@ import util.lmultidigraph;
 
 string dummy;
 
-private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string _key, size_t subject_idx = NONE,
+private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string _key, out string uri, size_t subject_idx = NONE,
                                 size_t predicate_idx = NONE)
 {
     int           pos;
@@ -22,10 +22,10 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 //        writeln("IS MAP, length=", header.len, ", pos=", pos);
         size_t new_subject_idx = NONE;
         string key;
-        pos += read_element(lmg, src[ pos..$ ], key);
+        pos += read_element(lmg, src[ pos..$ ], key, dummy);
 
         string val;
-        pos += read_element(lmg, src[ pos..$ ], val);
+        pos += read_element(lmg, src[ pos..$ ], val, dummy);
 
         if (key == "@")
         {
@@ -35,16 +35,17 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
             else
             	new_subject_idx = lmg.addResource(val);            
             
+            uri = val;
 //            writeln ("@ id:", val, ", idx=", new_subject_idx);
          }   
 
         foreach (i; 1 .. header.len)
         {
-            pos += read_element(lmg, src[ pos..$ ], key);
+            pos += read_element(lmg, src[ pos..$ ], key, dummy);
 
             size_t new_predicate_idx = lmg.addResource(key);
             
-            pos += read_element(lmg, src[ pos..$ ], dummy, new_subject_idx, new_predicate_idx);
+            pos += read_element(lmg, src[ pos..$ ], dummy, dummy, new_subject_idx, new_predicate_idx);
         }
     }
     else if (header.type == MajorType.TEXT_STRING)
@@ -75,15 +76,17 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 //	writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
         foreach (i; 0 .. header.len)
         {
-            pos += read_element(lmg, src[ pos..$ ], dummy, subject_idx, predicate_idx);
+            pos += read_element(lmg, src[ pos..$ ], dummy, dummy, subject_idx, predicate_idx);
         }
     }
     return pos;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-public void add_cbor_to_lmultidigraph(LabeledMultiDigraph lmg, string in_str)
+public string add_cbor_to_lmultidigraph(LabeledMultiDigraph lmg, string in_str)
 {
-    read_element(lmg, cast(ubyte[])in_str, dummy);
+	string uri;
+    read_element(lmg, cast(ubyte[])in_str, dummy, uri);
+    return uri;
 }
 
