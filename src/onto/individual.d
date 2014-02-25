@@ -21,19 +21,11 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
-    Individuals[ string ]  individuals;
-    Property[ string ]  properties;
-    Class[ string ] classes;
 
-    immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals,
-                   immutable(Property[ string ]) _properties,
-                   immutable(Class[ string ]) _classes)
+    immutable this(string _uri, immutable(Resources[ string ]) _resources)
     {
         uri         = _uri;
         resources   = _resources;
-        properties  = _properties;
-        individuals = _individuals;
-        classes     = _classes;
     }
 
     immutable(Individual) idup()
@@ -41,16 +33,7 @@ struct Individual
         resources.rehash();
         immutable Resources[ string ]    tmp1 = assumeUnique(resources);
 
-        individuals.rehash();
-        immutable Individuals[ string ]    tmp2 = assumeUnique(individuals);
-
-        properties.rehash();
-        immutable Property[ string ]    tmp3 = assumeUnique(properties);
-
-        classes.rehash();
-        immutable Class[ string ]    tmp4 = assumeUnique(classes);
-
-        immutable(Individual) result = immutable Individual(uri, tmp1, tmp2, tmp3, tmp4);
+        immutable(Individual) result = immutable Individual(uri, tmp1);
         return result;
     }
 }
@@ -71,29 +54,6 @@ class Individual_IO
         Individual individual = Individual();
 
         cbor_to_individual(&individual, individual_as_cbor);
-
-        Resource[] types = individual.resources.get(rdf__type, null);
-
-        if (types !is null)
-        {
-            foreach (type; types)
-            {
-            	Class* tt = context.get_class(type.uri);
-            	if (tt !is null)
-            		individual.classes[ type.uri ] = *tt;
-            	else
-            		writeln ("@1 class[", type.uri, "] not found");
-            }
-        }
-
-        foreach (resr; individual.resources.keys)
-        {
-            Property *pp = context.get_property(resr);
-            if (pp !is null)
-            {
-            	individual.properties[ resr ] = *pp;
-            }
-        }
 
         return individual;
     }

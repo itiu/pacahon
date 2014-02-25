@@ -126,7 +126,7 @@ class OWL
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
-            filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
+            filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           lmg);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
@@ -162,7 +162,7 @@ class OWL
         // set direct properties
         foreach (hh; lmg.getHeads())
         {
-            if (lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
+            if (lmg.isExsistsEdge(hh, rdf__type, rdf__Property) || lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
             {
                 Property *prop = property_2_idx.get(hh.idx, null);
                 if (prop is null)
