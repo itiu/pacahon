@@ -48,9 +48,11 @@ static THREAD[ 7 ] THREAD_LIST =
 
 interface Context
 {
-    @property Class*[] owl_classes();
-    
-	public string get_name ();
+    @property Class *[] owl_classes();
+    @property Class *get_class(string ur);
+    @property Property *get_property(string ur);
+
+    public string get_name();
     public JSONValue get_props();
 
     @property Tid tid_statistic_data_accumulator();

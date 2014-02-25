@@ -27,6 +27,11 @@ class LabeledMultiDigraph
         graph = new IndexedEdgeList!true;
     }
 
+    size_t getIdxOfResource (string uri)
+    {
+    	return idx_2_uri.get (uri, NONE);
+    }
+
     Set!Resource getHeads()
     {
         Set!Resource res;

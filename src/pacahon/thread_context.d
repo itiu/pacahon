@@ -44,32 +44,32 @@ Tid dummy_tid;
 
 class ThreadContext : Context
 {
-	private OWL owl;
+    private OWL       owl;
     private JSONValue props;
     public JSONValue get_props()
     {
         return props;
     }
 
-    
+
 
     bool    use_caching_of_documents = false;
     bool    IGNORE_EMPTY_TRIPLE      = false;
 
     int     _count_command;
     int     _count_message;
-    string name;
+    string  name;
 
     private Tid[ string ] tids;
-    
-    string get_name ()
+
+    string get_name()
     {
-    	return name;
+        return name;
     }
 
     this(string property_file_path, string context_name)
     {
-    	name = context_name;
+        name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
 
         foreach (tid_name; THREAD_LIST)
@@ -285,14 +285,29 @@ class ThreadContext : Context
         return prefix_map;
     }
 
-    @property Class*[] owl_classes()
+    @property Class *[] owl_classes()
     {
-    	if (owl !is null)
-    		return owl.class_2_idx.values;
-    	else
-    		return (Class*[]).init;
+        if (owl !is null)
+            return owl.class_2_idx.values;
+        else
+            return (Class *[]).init;
     }
 
+    @property Class *get_class(string uri)
+    {
+        if (owl !is null)
+            return owl.getClass(uri);
+        else
+            return null;
+    }
+
+    @property Property *get_property(string uri)
+    {
+        if (owl !is null)
+            return owl.getProperty(uri);
+        else
+            return null;
+    }
 
     @property Tid tid_statistic_data_accumulator()
     {

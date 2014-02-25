@@ -105,6 +105,20 @@ class OWL
         lmg     = new LabeledMultiDigraph();
     }
 
+    Class *getClass(string uri)
+    {
+        size_t idx = lmg.getIdxOfResource(uri);
+
+        return class_2_idx.get(idx, null);
+    }
+
+    Property *getProperty(string uri)
+    {
+        size_t idx = lmg.getIdxOfResource(uri);
+
+        return property_2_idx.get(idx, null);
+    }
+
     public void load()
     {
         LabeledMultiDigraph lmg = new LabeledMultiDigraph();
@@ -218,12 +232,12 @@ class OWL
         writeln("#class_2_properties=");
         foreach (key, value; class_2_idx)
         {
-        		writeln(key);
-        	
-        	if (value !is null)
-        		writeln(value.toString());
+                        writeln(key);
+
+                if (value !is null)
+                        writeln(value.toString());
         }
-*/        
+ */
     }
 
     private void add_inherit_properies(Class *to_cl, size_t look_cl_idx, int level)
@@ -232,13 +246,13 @@ class OWL
         Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
         foreach (subClassOf; list_subClassOf)
         {
-        	//writeln ("# subClassOf", subClassOf); 
+            //writeln ("# subClassOf", subClassOf);
             if (level == 0)
-            {	
-            	Class *icl = class_2_idx.get(subClassOf.idx, null);
-            	if (icl !is null)
-            		to_cl.subClassOf ~= *icl;
-            }	
+            {
+                Class *icl = class_2_idx.get(subClassOf.idx, null);
+                if (icl !is null)
+                    to_cl.subClassOf ~= *icl;
+            }
             add_inherit_properies(to_cl, subClassOf.idx, level + 1);
         }
 

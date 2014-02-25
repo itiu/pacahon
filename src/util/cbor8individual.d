@@ -35,6 +35,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
                 Individual new_individual = Individual();
                 individual = &new_individual;
             }
+            individual.uri = val.dup;
 //              new_subject_uri = lmg.addEdge(subject_uri, predicate_uri, val);
 //             else
             new_subject_uri = val;

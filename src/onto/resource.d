@@ -21,16 +21,16 @@ alias Resource[] Resources;
 
 struct Resource
 {
-    size_t           idx;
-    ResourceType     type = ResourceType.Uri;
-    string           data;
-    LANG             lang = LANG.NONE;
+    size_t       idx;
+    ResourceType type = ResourceType.Uri;
+    string       data;
+    LANG         lang = LANG.NONE;
 
-    this (string str, ResourceType _type=ResourceType.Uri, LANG _lang=LANG.NONE)
+    this(string str, ResourceType _type = ResourceType.Uri, LANG _lang = LANG.NONE)
     {
-    	data = str;
-    	type = _type;
-    	lang = _lang;
+        data = str;
+        type = _type;
+        lang = _lang;
     }
 
     @property string uri()
