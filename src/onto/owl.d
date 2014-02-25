@@ -126,7 +126,7 @@ class OWL
 //		writeln (context.get_name, ", load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
-            filter { 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
+            filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           lmg);
         set_data(lmg);
 //		writeln ("load onto to graph..ok");
@@ -144,7 +144,7 @@ class OWL
         // set classes
         foreach (hh; lmg.getHeads())
         {
-            if (lmg.isExsistsEdge(hh, rdf__type, owl__Class))
+            if (lmg.isExsistsEdge(hh, rdf__type, owl__Class) || lmg.isExsistsEdge(hh, rdf__type, rdfs__Class))
             {
                 Class *in_class = class_2_idx.get(hh.idx, null);
                 if (in_class is null)

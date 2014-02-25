@@ -78,7 +78,11 @@ class Individual_IO
         {
             foreach (type; types)
             {
-                individual.classes[ type.uri ] = *context.get_class(type.uri);
+            	Class* tt = context.get_class(type.uri);
+            	if (tt !is null)
+            		individual.classes[ type.uri ] = *tt;
+            	else
+            		writeln ("@1 class[", type.uri, "] not found");
             }
         }
 
@@ -87,7 +91,7 @@ class Individual_IO
             Property *pp = context.get_property(resr);
             if (pp !is null)
             {
-        	individual.properties[ resr ] = *pp;
+            	individual.properties[ resr ] = *pp;
             }
         }
 
