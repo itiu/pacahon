@@ -46,7 +46,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
         {
             pos += read_element(individual, src[ pos..$ ], key);
 
-            string new_predicate_uri; // = lmg.addResource(key);
+            string new_predicate_uri = key;
 
             pos += read_element(individual, src[ pos..$ ], dummy, new_subject_uri, new_predicate_uri);
         }

@@ -112,7 +112,7 @@ void init_core()
                 });
 
         tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
-        core.thread.Thread.sleep(dur!("msecs")(10));
+        core.thread.Thread.sleep(dur!("msecs")(1));
         spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
 
         foreach (key, value; tids)
