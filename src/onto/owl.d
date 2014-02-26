@@ -97,7 +97,7 @@ class OWL
     Context             context;
     LabeledMultiDigraph lmg;
 
-    immutable(Individual)[string] individuals;
+    immutable(Individual)[ string ] individuals;
     Class *[ size_t ] class_2_idx;
     Property *[ size_t ] property_2_idx;
 
@@ -164,7 +164,9 @@ class OWL
         // set direct properties
         foreach (hh; lmg.getHeads())
         {
-            if (lmg.isExsistsEdge(hh, rdf__type, rdf__Property) || lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
+            if (lmg.isExsistsEdge(hh, rdf__type,
+                                  rdf__Property) ||
+                lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
             {
                 Property *prop = property_2_idx.get(hh.idx, null);
                 if (prop is null)

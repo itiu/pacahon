@@ -21,11 +21,13 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
+    Individuals[ string ]  individuals;
 
-    immutable this(string _uri, immutable(Resources[ string ]) _resources)
+    immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals)
     {
         uri         = _uri;
         resources   = _resources;
+        individuals = _individuals;
     }
 
     immutable(Individual) idup()
@@ -33,7 +35,10 @@ struct Individual
         resources.rehash();
         immutable Resources[ string ]    tmp1 = assumeUnique(resources);
 
-        immutable(Individual) result = immutable Individual(uri, tmp1);
+        individuals.rehash();
+        immutable Individuals[ string ]    tmp2 = assumeUnique(individuals);
+
+        immutable(Individual) result = immutable Individual(uri, tmp1, tmp2);
         return result;
     }
 }
@@ -52,7 +57,23 @@ class Individual_IO
         string     individual_as_cbor = context.get_subject_as_cbor(uri);
 
         Individual individual = Individual();
+
         cbor_to_individual(&individual, individual_as_cbor);
+
+        while (level > 0)
+        {
+            foreach (key, values; individual.resources)
+            {
+                Individuals ids;
+                foreach (ruri; values)
+                {
+                    ids ~= getIndividual(ruri.uri, ticket, level);
+                }
+                individual.individuals[ key ] = ids;
+            }
+
+            level--;
+        }
 
         return individual;
     }
