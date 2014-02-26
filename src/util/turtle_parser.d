@@ -28,20 +28,20 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
     if (len == 0)
         return null;
 
-    char         *ptr          = src - 1;
-    char         *new_line_ptr = src;
-    char         ch            = *src;
-    char         prev_ch       = 0;
+    char      *ptr          = src - 1;
+    char      *new_line_ptr = src;
+    char      ch            = *src;
+    char      prev_ch       = 0;
 
-    Subjects res = new Subjects();
+    Subjects  res = new Subjects();
 
-    Subject[]    subject_level = new Subject[ 4 ];
-    string[]     predicate_level = new string[ 4 ];
-    char         prev_el;
-    Subject      ss;
-    string    	 predicate;
-    int          level = 0;
-    byte         state = 0;
+    Subject[] subject_level   = new Subject[ 4 ];
+    string[]  predicate_level = new string[ 4 ];
+    char      prev_el;
+    Subject   ss;
+    string    predicate;
+    int       level = 0;
+    byte      state = 0;
 
     while (ch != 0 && ptr - src < len)
     {
@@ -101,7 +101,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 
                     if (*(ptr - 1) == '/')
                         ptr--;
-                        
+
                     string url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
 //                  writeln ("# url=", url);
 
@@ -295,12 +295,12 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     if (ss is null)
                         ss = new Subject();
 
-                    string out_predicate;    
-                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, is_literal);
+                    string out_predicate;
+                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, is_literal, prefix_map);
 //					writeln ("@ ++ predicate=", predicate, ", out_predicate=", out_predicate);
 
                     predicate = out_predicate;
-                    
+
                     if (prev_el == '.')
                     {
 //						writeln ("@ add to res:", ss.subject);
@@ -311,24 +311,24 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     }
                     else if (prev_el == '[')
                     {
-                        subject_level[ level ] = ss;
+                        subject_level[ level ]   = ss;
                         predicate_level[ level ] = predicate;
                         level++;
 //						writeln ("@ ++ level !!!:", level, ", predicate=", predicate);
-                        ss    = new Subject();
-                        //ss.subject = "_:_"; 
+                        ss = new Subject();
+                        //ss.subject = "_:_";
                         UUID new_id = randomUUID();
-                        ss.subject = new_id.toString ();
-                        state = 1;
+                        ss.subject = new_id.toString();
+                        state      = 1;
                     }
                     else if (prev_el == ']')
                     {
                         level--;
-                        predicate = predicate_level [level];
-//                    	writeln ("@ ++ 1], predicate=", predicate, "=>", ss);
-                    	Subject inner_subject = ss;
+                        predicate = predicate_level[ level ];
+//                      writeln ("@ ++ 1], predicate=", predicate, "=>", ss);
+                        Subject inner_subject = ss;
                         ss = subject_level[ level ];
-                        ss.addPredicate (predicate, inner_subject);                        
+                        ss.addPredicate(predicate, inner_subject);
 //						writeln ("@ -- 2 level !!!:", level, ", ss=", ss);
                     }
                     else if (prev_el == ';')
@@ -342,7 +342,6 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 //					writeln ("@ new empty predicate");
 //                        pp = new Predicate();
 //                    }
-					
                 }
 //				writeln ("1 END CH:", *ptr);
 
@@ -366,13 +365,14 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
     return res.data;
 }
 
-private char next_element(char *element, int el_length, Subject ss, string in_predicate, out string out_predicate, byte *state, bool is_literal)
+private char next_element(char *element, int el_length, Subject ss, string in_predicate, out string out_predicate, byte *state,
+                          bool is_literal, ref string[ string ] prefix_map)
 {
     if (element is null)
     {
         out_predicate = in_predicate;
         return 0;
-    }    
+    }
 
     //writeln ("el:*", element[0..el_length], "*, el_length:", el_length);
 
@@ -382,13 +382,13 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
     {
         out_predicate = in_predicate;
         return *element;
-    }   
+    }
 
     if (el_length == 1 && (ch == ']' || ch == ';' || ch == '.'))
     {
         out_predicate = in_predicate;
         return *element;
-    }   
+    }
 
     if (*element == '"')
     {
@@ -398,10 +398,19 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
 
     if (ss.subject is null)
     {
-        ss.subject = cast(immutable)element[ 0..el_length ];
+        string uri = cast(immutable)element[ 0..el_length ];
+
+        if (uri.length > 0 && uri.indexOf("://") > 0)
+        {
+            string tmp_uri = prefix_map.get(uri, null);
+            if (tmp_uri !is null)
+                uri = tmp_uri;
+        }
+
+        ss.subject = uri;
 //	    writeln ("@ add new subject=", ss.subject);
-        *state = 1;
-        out_predicate = in_predicate;        
+        *state        = 1;
+        out_predicate = in_predicate;
         return 0;
     }
 
@@ -412,90 +421,89 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
         if (cur_predicate == "a")
             cur_predicate = rdf__type;
 
-        Predicate pp = ss.getPredicate (cur_predicate);
+        Predicate pp = ss.getPredicate(cur_predicate);
         if (pp is null)
         {
-        	pp = new Predicate ();
-        	pp.predicate = cur_predicate;
-        	ss.addPredicate(pp);        	
+            pp           = new Predicate();
+            pp.predicate = cur_predicate;
+            ss.addPredicate(pp);
         }
-        out_predicate = cur_predicate;    
+        out_predicate = cur_predicate;
 //	    writeln ("@ add predicate=,", pp.predicate);
         return 0;
     }
 
     if (*state == 2)
-    {    	
-        Predicate pp = ss.getPredicate (in_predicate);
-        string data = cast(immutable)element[ 0..el_length ];
-       	if (data.indexOf ("\\\"") >= 0)
-       	{
-       		data = data.replace ("\\\"", "\"");
-//       		writeln ("@data=", data);
-       	}	 
+    {
+        Predicate pp   = ss.getPredicate(in_predicate);
+        string    data = cast(immutable)element[ 0..el_length ];
+        if (data.indexOf("\\\"") >= 0)
+        {
+            data = data.replace("\\\"", "\"");
+//              writeln ("@data=", data);
+        }
 
 
         if (is_literal == true)
         {
             if (data[ $ - 3 ] == '@')
             {
-            	LANG lang = LANG.NONE;
+                LANG lang = LANG.NONE;
                 if (data[ $ - 2 ] == 'r')
                     lang = LANG.RU;
                 else if (data[ $ - 2 ] == 'e')
                     lang = LANG.EN;
                 el_length -= 4;
-                
-                pp.addLiteral(data[0..$-4], lang);
+
+                pp.addLiteral(data[ 0..$ - 4 ], lang);
             }
-            else if (data[$] != '"')
+            else if (data[ $ ] != '"')
             {
-            	int end_pos_str = el_length;
-            	while (data[end_pos_str] != '"' && end_pos_str > 0)
-            		end_pos_str--;
-            	            	
-            	if (data[end_pos_str] == '"' && data[end_pos_str + 1] == '^')
-            	{
-            		string type = data[end_pos_str + 3..$];
-            		data = data[0..end_pos_str];
-            		            		
-            		if (type == "xsd:nonNegativeInteger")
-            		{
-//            			writeln ("LITERAL TYPE=", type);
-            			pp.addLiteral(data, OBJECT_TYPE.UNSIGNED_INTEGER);            	            			
-            		}
-            		else if (type == "xsd:string")
-            		{
-            			pp.addLiteral(data);            	            			
-            		}
-            		else
-            		{	
-            			pp.addLiteral(data);            	            			
-            		}            			
-            	}
-            	else
-            	{
-            		pp.addLiteral(data);            	            			            		
-            	}            	
-            	
+                int end_pos_str = el_length;
+                while (data[ end_pos_str ] != '"' && end_pos_str > 0)
+                    end_pos_str--;
+
+                if (data[ end_pos_str ] == '"' && data[ end_pos_str + 1 ] == '^')
+                {
+                    string type = data[ end_pos_str + 3..$ ];
+                    data = data[ 0..end_pos_str ];
+
+                    if (type == "xsd:nonNegativeInteger")
+                    {
+//                      writeln ("LITERAL TYPE=", type);
+                        pp.addLiteral(data, OBJECT_TYPE.UNSIGNED_INTEGER);
+                    }
+                    else if (type == "xsd:string")
+                    {
+                        pp.addLiteral(data);
+                    }
+                    else
+                    {
+                        pp.addLiteral(data);
+                    }
+                }
+                else
+                {
+                    pp.addLiteral(data);
+                }
             }
             else
             {
-                pp.addLiteral(data);            	
+                pp.addLiteral(data);
             }
         }
         else
         {
             pp.addLiteral(data, OBJECT_TYPE.URI);
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
-        }   
+        }
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
         out_predicate = in_predicate;
         return 0;
     }
 
-        if (in_predicate == "a")
-            in_predicate = rdf__type;
+    if (in_predicate == "a")
+        in_predicate = rdf__type;
 
     out_predicate = in_predicate;
     return 0;
