@@ -1,11 +1,10 @@
 module util.cbor8individual;
 
-import std.outbuffer, std.stdio;
-
+private import std.outbuffer, std.stdio, std.string;
 private import onto.resource;
 private import onto.individual;
-import util.cbor;
-import util.lmultidigraph;
+private import util.cbor;
+private import util.lmultidigraph;
 
 string dummy;
 
@@ -67,13 +66,18 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
             Resources resources = individual.resources.get(predicate_uri, Resources.init);
 
             if (header.tag == TAG.TEXT_RU)
-                resources ~= Resource(str, ResourceType.String, LANG.RU);
+                resources ~= Resource(ResourceType.String, str, LANG.RU);
             else if (header.tag == TAG.TEXT_EN)
-                resources ~= Resource(str, ResourceType.String, LANG.EN);
+                resources ~= Resource(ResourceType.String, str, LANG.EN);
             else if (header.tag == TAG.URI)
-                resources ~= Resource(str, ResourceType.Uri);
+            {
+            	if (str.indexOf ('/') > 0)
+            		resources ~= Resource(str, ResourceOrigin.external);
+            	else
+            		resources ~= Resource(str, ResourceOrigin.local);            		
+            }    
             else
-                resources ~= Resource(str, ResourceType.String);
+                resources ~= Resource(ResourceType.String, str);
 
             individual.resources[ predicate_uri ] = resources;
         }

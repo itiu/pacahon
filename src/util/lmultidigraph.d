@@ -1,6 +1,6 @@
 module util.lmultidigraph;
 
-private import std.algorithm, std.stdio;
+private import std.stdio, std.string;
 private import onto.resource;
 private import dgraph.graph;
 private import util.cbor;
@@ -56,7 +56,7 @@ class LabeledMultiDigraph
 
         size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
 
-        return canFind(edge_idxs, idx_edge);
+        return std.algorithm.canFind(edge_idxs, idx_edge);
     }
 
     Set!Resource getTail(Resource head, string edge_str)
@@ -78,7 +78,7 @@ class LabeledMultiDigraph
 
             size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
 
-            if (canFind(edge_idxs, idx_edge))
+            if (std.algorithm.canFind(edge_idxs, idx_edge))
             {
                 res ~= elements[ nn ];
             }
@@ -102,7 +102,7 @@ class LabeledMultiDigraph
 
             size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
 
-            if (canFind(edge_idxs, idx_edge))
+            if (std.algorithm.canFind(edge_idxs, idx_edge))
                 res ~= elements[ nn ];
         }
 
@@ -120,6 +120,12 @@ class LabeledMultiDigraph
             Resource tail;
             tail.data = tail_str;
             tail.type = type;
+            if (tail.type == ResourceType.Uri)
+            {
+            	if (tail.data.indexOf ('/') > 0)
+            		tail.origin = ResourceOrigin.external;
+            }
+            
             tail.lang = lang;
             tail.idx  = elements.length;
             elements ~= tail;
@@ -141,7 +147,7 @@ class LabeledMultiDigraph
 
 //        writeln ("@4 edge_idxs=", edge_idxs);
 
-        if (edge_idxs.length == 0 || (edge_idxs.length > 0 && canFind(edge_idxs, idx_edge) == false))
+        if (edge_idxs.length == 0 || (edge_idxs.length > 0 && std.algorithm.canFind(edge_idxs, idx_edge) == false))
             edge_idxs ~= idx_edge;
 
         ledges_2_head_tail[ ht ] = edge_idxs;
@@ -150,7 +156,7 @@ class LabeledMultiDigraph
         size_t curr_count_vertex = graph.vertexCount;
 //      writeln ("@5 idx_head=", idx_head, ", idx_tail=", idx_tail, ", graph.vertexCount=", graph.vertexCount);
 
-        graph.vertexCount = max(idx_tail, idx_head, curr_count_vertex) + 1;
+        graph.vertexCount = std.algorithm.max(idx_tail, idx_head, curr_count_vertex) + 1;
 //        writeln ("addEdge ", idx_head, ":", idx_tail);
         graph.addEdge(idx_head, idx_tail);
 //      writeln ("@6");
@@ -171,6 +177,11 @@ class LabeledMultiDigraph
                 Resource rr;
                 rr.data = rr_str;
                 rr.type = type;
+            if (rr.type == ResourceType.Uri)
+            {
+            	if (rr.data.indexOf ('/') > 0)
+            		rr.origin = ResourceOrigin.external;
+            }                
                 rr.idx  = elements.length;
 
                 elements ~= rr;
