@@ -357,7 +357,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     if (sorter !is null)
         xapian_enquire.set_sort_by_key(sorter, true, &err);
 
-       writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize); 
+    //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize); 
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
     if (err < 0)
         return err;

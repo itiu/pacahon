@@ -88,7 +88,6 @@ class XapianReader : SearchReader
     private XapianEnquire     xapian_enquire;
     private XapianQueryParser xapian_qp;
 
-    private int[ string ] key2slot;
     private Context context;
 
     this(Context _context)
@@ -118,7 +117,7 @@ class XapianReader : SearchReader
 //      writeln ("prev_update_time=", prev_update_time);
         prev_update_time = last_update_time;
 
-        key2slot = context.get_key2slot();
+        int[ string ] key2slot = context.get_key2slot();
         //writeln ("key2slot=", key2slot);
 
         auto        fields = get_fields(str_fields);

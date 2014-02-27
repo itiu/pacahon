@@ -96,8 +96,9 @@ private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatab
     send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
 }
 
-private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
+private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
 {
+	int[ string ] key2slot;
     string      query_string = xapian_metadata_doc_id;
 
     XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
@@ -106,8 +107,8 @@ private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, Xapi
 
     XapianMSet matches = enquire.get_mset(0, 1, &err);
 
-//       writeln ("found =",  matches.get_matches_estimated(&err));
-//       writeln ("matches =",  matches.size (&err));
+       writeln ("found =",  matches.get_matches_estimated(&err));
+       writeln ("matches =",  matches.size (&err));
 
     XapianMSetIterator it = matches.iterator(&err);
 
@@ -123,10 +124,11 @@ private void read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, Xapi
         send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
         //writeln ("data=[", data, "]");
 
-        //           key2slot = deserialize_key2slot (data);
+         key2slot = deserialize_key2slot (data);
     }
 
-//       writeln("slot size=", key2slot.length);
+       writeln("slot size=", key2slot.length);
+       return key2slot;
 }
 
 private void printTid(string tag)
@@ -205,7 +207,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 //    indexer_db = new_InMemoryWritableDatabase(&err);
     if (err != 0)
     {
-        writeln("!!!!!!! ERRR O_o, err=", err);
+        writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
         return;
     }
 
@@ -225,8 +227,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
     int[ string ] key2slot;
 
-    if (is_exist_db == true)
-        read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
+    //if (is_exist_db == true)
+        key2slot = read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -239,7 +241,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
         receive((CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
                 {
                 	//writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
-                	
+                	//writeln ("@xapian_indexer:key2slot=", key2slot);
                     if (cmd == CMD.FIND)
                     {
                         auto fields = get_fields(str_fields);
@@ -271,7 +273,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                                                           tid_acl_manager);
                                 if (state == -1)
                                 {
-                                	writeln ("@2 state=", state);
+                                	writeln ("@2 ERR state=", state);
                                     xapian_enquire = indexer_db.new_Enquire(&err);
                                 }
                             }

@@ -265,6 +265,7 @@ class ThreadContext : Context
         else
             key2slot = old_key2slot;
 
+        //writeln ("@get_key2slot=", key2slot);    
         return key2slot;
     }
 
