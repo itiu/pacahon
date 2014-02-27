@@ -449,9 +449,9 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
             if (data[ $ - 3 ] == '@')
             {
                 LANG lang = LANG.NONE;
-                if (data[ $ - 2 ] == 'r')
+                if (data[ $ - 2 ] == 'r' && data[ $ - 1 ] == 'u')
                     lang = LANG.RU;
-                else if (data[ $ - 2 ] == 'e')
+                else if (data[ $ - 2 ] == 'e' && data[ $ - 1 ] == 'n')
                     lang = LANG.EN;
                 el_length -= 4;
 
