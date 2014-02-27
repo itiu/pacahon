@@ -19,9 +19,9 @@ private import pacahon.know_predicates;
 
 enum ResourceType : ubyte
 {
-	Literal,
-	ExternalUri,
-	Unknown
+    Literal,
+    ExternalUri,
+    Unknown
 }
 
 public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] prefix_map)
@@ -153,9 +153,9 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                 char *start_el = ptr;
                 char *end_el   = ptr;
                 //writeln ("2 CH0 [", *start_el, "]");
-                
+
                 ResourceType resource_type = ResourceType.Unknown;
-                
+
                 // пропускаем термы в кавычках (" или """)
                 bool is_multiline_quote = false;
                 if (*start_el == '"')
@@ -255,7 +255,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     {
                         if (ch == '>')
                         {
-                        	resource_type = ResourceType.ExternalUri;
+                            resource_type = ResourceType.ExternalUri;
                             break;
                         }
                         end_el++;
@@ -503,6 +503,13 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
         }
         else
         {
+            if (data.length > 0 && data.indexOf("://") > 0)
+            {
+                string tmp_uri = prefix_map.get(data, null);
+                if (tmp_uri !is null)
+                    data = tmp_uri;
+            }
+
             pp.addLiteral(data, OBJECT_TYPE.URI);
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }

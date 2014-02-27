@@ -9,17 +9,17 @@ enum LANG : ubyte
 
 enum ResourceType : ubyte
 {
-    Uri = 1,
-    String = 2,
-    Integer = 4,
+    Uri      = 1,
+    String   = 2,
+    Integer  = 4,
     Datetime = 8,
-    Float = 16
+    Float    = 16
 }
 
 enum ResourceOrigin : ubyte
 {
-	local = 1,
-	external = 2
+    local    = 1,
+    external = 2
 }
 
 alias Resource[] Resources;
@@ -27,16 +27,16 @@ alias Resource[] Resources;
 
 struct Resource
 {
-    size_t       idx;
-    ResourceType type = ResourceType.Uri;
+    size_t         idx;
+    ResourceType   type   = ResourceType.Uri;
     ResourceOrigin origin = ResourceOrigin.local;
-    string       data;
-    LANG         lang = LANG.NONE;
+    string         data;
+    LANG           lang = LANG.NONE;
 
     this(string str, ResourceOrigin _origin)
     {
-        data = str;
-        type = ResourceType.Uri;
+        data   = str;
+        type   = ResourceType.Uri;
         origin = _origin;
     }
 
