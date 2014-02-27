@@ -17,6 +17,13 @@ private import pacahon.know_predicates;
  *  len - длинна исходной строки,
  */
 
+enum ResourceType : ubyte
+{
+	Literal,
+	ExternalUri,
+	Unknown
+}
+
 public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] prefix_map)
 {
 //	StopWatch sw;
@@ -146,8 +153,9 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                 char *start_el = ptr;
                 char *end_el   = ptr;
                 //writeln ("2 CH0 [", *start_el, "]");
-
-                bool is_literal = false;
+                
+                ResourceType resource_type = ResourceType.Unknown;
+                
                 // пропускаем термы в кавычках (" или """)
                 bool is_multiline_quote = false;
                 if (*start_el == '"')
@@ -171,7 +179,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     {
                         if (ch == '"')
                         {
-                            is_literal = true;
+                            resource_type = ResourceType.Literal;
                             if (is_multiline_quote == true && end_el - src < len - 2 && *(end_el + 1) == '"' && *(end_el + 2) == '"')
                             {
                                 end_el += 2;
@@ -247,6 +255,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                     {
                         if (ch == '>')
                         {
+                        	resource_type = ResourceType.ExternalUri;
                             break;
                         }
                         end_el++;
@@ -296,7 +305,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
                         ss = new Subject();
 
                     string out_predicate;
-                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, is_literal, prefix_map);
+                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, resource_type, prefix_map);
 //					writeln ("@ ++ predicate=", predicate, ", out_predicate=", out_predicate);
 
                     predicate = out_predicate;
@@ -366,7 +375,7 @@ public Subject[] parse_turtle_string(char *src, int len, ref string[ string ] pr
 }
 
 private char next_element(char *element, int el_length, Subject ss, string in_predicate, out string out_predicate, byte *state,
-                          bool is_literal, ref string[ string ] prefix_map)
+                          ResourceType resource_type, ref string[ string ] prefix_map)
 {
     if (element is null)
     {
@@ -444,7 +453,7 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
         }
 
 
-        if (is_literal == true)
+        if (resource_type == ResourceType.Literal)
         {
             if (data[ $ - 3 ] == '@')
             {
