@@ -38,7 +38,7 @@ class OrgStructureTree
         log.trace_log_and_console("start load org structure links");
 
         Subjects res = new Subjects();
-        vql.get(null, "return { 'docs:parentUnit'} filter { 'a' == 'docs:unit_card' }", res);
+        vql.get(null, "return { 'docs:parentUnit'} filter { 'rdf:type' == 'docs:unit_card' }", res);
 
         foreach (ss; res.data)
         {

@@ -39,7 +39,13 @@ static this()
 void statistic_data_accumulator()
 {
     long[] stat = new long[ 3 ];
-    writeln("SPAWN: statistic_data_accumulator");
+//    writeln("SPAWN: statistic_data_accumulator");
+
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });    
     while (true)
     {
         receive(
@@ -62,14 +68,19 @@ void statistic_data_accumulator()
 
 void print_statistic(Tid _statistic_data_accumulator)
 {
-    writeln("SPAWN: print_statistic");
+//    writeln("SPAWN: print_statistic");
 
     long sleep_time = 1;
-    Thread.sleep(dur!("seconds")(sleep_time));
+//    Thread.sleep(dur!("seconds")(sleep_time));
 
     long prev_count       = 0;
     long prev_worked_time = 0;
 
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
     while (!cinfo_exit)
     {
         sleep_time = 1;

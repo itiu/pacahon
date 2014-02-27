@@ -30,7 +30,7 @@ static this()
 
 void ticket_manager()
 {
-    writeln("SPAWN: ticket manager");
+//    writeln("SPAWN: ticket manager");
 
     MDB_env *env;
     MDB_dbi dbi;
@@ -55,31 +55,38 @@ void ticket_manager()
     {
     }
 
-    int rc;
-    rc = mdb_env_create(&env);
-//    rc = mdb_env_set_mapsize(env, 10485760);
-    	rc = -1;
-    	while (rc != 0)
-    	{
-    		rc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP | MDB_RDONLY, std.conv.octal !664);
-    		if (rc != 0)
-    			core.thread.Thread.sleep(dur!("msecs")(1));
-    	}	
-    if (!rc)
+   int rc;
+   int rrc;
+    rrc = mdb_env_create(&env);
+    if (rrc != 0)
+        writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
+    else
     {
-    	rc = -1;
-    	while (rc != 0)
-    	{
-    		rc = mdb_txn_begin(env, null, 0, &txn);    		
-    		if (rc != 0)
-    			core.thread.Thread.sleep(dur!("msecs")(1));
-    	}	
-    		
-//        rc = mdb_dbi_open(txn, null, MDB_CREATE | MDB_DUPSORT, &dbi);
-        rc = mdb_dbi_open(txn, null, MDB_DUPSORT, &dbi);
+        // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
+        // if (rrc != 0)
+        //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
+        // else
+        {
+            rrc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
+
+            if (rrc != 0)
+                writeln("ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)));
+            else
+            {
+                if (!rrc)
+                {
+                    rrc = mdb_txn_begin(env, null, 0, &txn);
+                    rrc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
+                }
+            }
+        }
     }
 
-
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
     while (true)
     {
         string res = "?";

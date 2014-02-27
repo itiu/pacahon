@@ -48,7 +48,7 @@ void acl_manager()
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
 
-    writeln("SPAWN: ALC manager");    
+//    writeln("SPAWN: ALC manager");    
 
     try
     {
@@ -81,6 +81,11 @@ void acl_manager()
     XapianEnquire xapian_enquire = indexer_db.new_Enquire(&err);
 
 
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
     while (true)
     {
         string res = "";

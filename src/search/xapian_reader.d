@@ -27,22 +27,6 @@ import search.xapian_vql;
 
 byte err;
 
-
-string get_query_description(XapianQuery query)
-{
-    if (query !is null)
-    {
-        char *descr_str;
-        uint *descr_len;
-        query.get_description(&descr_str, &descr_len, &err);
-        if (descr_len !is null)
-        {
-            return cast(immutable)descr_str[ 0..(*descr_len) ];
-        }
-    }
-    return "NULL";
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 interface SearchReader
 {

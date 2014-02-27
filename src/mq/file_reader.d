@@ -57,7 +57,7 @@ void file_reader_thread(string props_file_name)
             {
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
                 {
-                    writeln("file is modifed [", o.name, "]");
+                    //writeln("file is modifed [", o.name, "]");
                     prepare_file(o.name, context);
                     prev_state_of_files[ o.name ] = o.timeLastModified;
                 }
@@ -65,7 +65,7 @@ void file_reader_thread(string props_file_name)
             else
             {
                 prev_state_of_files[ o.name ] = o.timeLastModified;
-                writeln("new file [", o.name, "]");
+                //writeln("new file [", o.name, "]");
                 prepare_file(o.name, context);
             }
         }
@@ -99,10 +99,10 @@ private void prepare_file(string file_name, Context context)
                     if (ss.isExsistsPredicate(rdf__type, owl__Ontology))
                     {
                         string version_onto = ss.getFirstLiteral(owl__versionInfo);
-                        writeln(prefix, ", version=", version_onto);
+//                        writeln(prefix, ", version=", version_onto);
 
                         // проверить какая версия данной онтологии в хранилище
-                        writeln("look in storage[", ss.subject, "]");
+//                        writeln("look in storage[", ss.subject, "]");
                         Subject sss = context.get_subject(ss.subject);
 
                         if (sss !is null)
@@ -112,11 +112,11 @@ private void prepare_file(string file_name, Context context)
                             {
                                 if (aaa.isExistLiteral(version_onto))
                                 {
-                                    writeln("This version [", version_onto, "] onto[", prefix, "] already exist");
+//                                    writeln("This version [", version_onto, "] onto[", prefix, "] already exist");
                                 }
                                 else
                                 {
-                                    writeln("1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+//                                    writeln("1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
                                     for_load[ prefix ]     = true;
                                     for_load[ ss.subject ] = true;
                                 }
@@ -124,7 +124,7 @@ private void prepare_file(string file_name, Context context)
                         }
                         else
                         {
-                            writeln("2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+//                            writeln("2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
                             for_load[ prefix ]     = true;
                             for_load[ ss.subject ] = true;
                         }
@@ -132,7 +132,8 @@ private void prepare_file(string file_name, Context context)
                 }
             }
 
-            writeln("Onto for load:", for_load);
+            if (for_load.length > 0)
+            	writeln("Onto for load:", for_load);
 
             foreach (ss; ss_list)
             {

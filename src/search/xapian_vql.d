@@ -349,7 +349,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     //StopWatch sw;
     //sw.start();
 
-       // writeln ("@query=", get_query_description (query));
+//    writeln ("@query=", get_query_description (query));
 
     byte err;
 
@@ -357,12 +357,13 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     if (sorter !is null)
         xapian_enquire.set_sort_by_key(sorter, true, &err);
 
+       writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize); 
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
     if (err < 0)
         return err;
 
-    //  writeln ("@found =",  matches.get_matches_estimated(&err));
-    //  writeln ("@matches =",  matches.size (&err));
+//      writeln ("@found =",  matches.get_matches_estimated(&err));
+//      writeln ("@matches =",  matches.size (&err));
 
     if (matches !is null)
     {
@@ -463,3 +464,17 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     return read_count;
 }
 
+string get_query_description(XapianQuery query)
+{
+    if (query !is null)
+    {
+        char *descr_str;
+        uint *descr_len;
+        query.get_description(&descr_str, &descr_len, &err);
+        if (descr_len !is null)
+        {
+            return cast(immutable)descr_str[ 0..(*descr_len) ];
+        }
+    }
+    return "NULL";
+}

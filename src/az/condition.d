@@ -61,19 +61,25 @@ public void condition_thread(string props_file_name)
     OrgStructureTree ost;
     VQL              vql;
 
-    vql = new VQL(context);
 //	ost = new OrgStructureTree(context);
 //	ost.load();
+    vql = new VQL(context);
     load(context, vql, mandats);
 
     string key2slot_str;
     long   last_update_time;
 
-    writeln("SPAWN: condition_thread");
+//    writeln("SPAWN: condition_thread");
     last_update_time = Clock.currTime().stdTime();
 
     try
     {
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
+        	
         while (true)
         {
             try
@@ -116,7 +122,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     Subjects res = new Subjects();
     vql.get(null,
             "return { 'veda-schema:script'}
-            filter { 'a' == 'veda-schema:Mandate'}",
+            filter { 'rdf:type' == 'veda-schema:Mandate'}",
             res);
 
     int       count = 0;
@@ -129,7 +135,6 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
             string    condition_text = ss.getFirstLiteral(veda_schema__script);
             writeln("condition_text:", condition_text);
             JSONValue condition_json = parseJSON(condition_text);
-            writeln("#1");
             Mandat    mandat = void;
 
             if (condition_json.type == JSON_TYPE.OBJECT)

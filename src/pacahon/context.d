@@ -38,7 +38,9 @@ enum THREAD : string
     xapian_thread_context      = "xapian_thread_context",
     xapian_indexer             = "xapian_indexer",
     statistic_data_accumulator = "statistic_data_accumulator",
-    condition                  = "condition"
+    condition                  = "condition",
+    xapian_indexer_commiter	   = "xapian_indexer_commiter",
+    print_statistic			   = "print_statistic"		
 }
 
 static THREAD[ 7 ] THREAD_LIST =

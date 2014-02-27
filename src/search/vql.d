@@ -47,8 +47,8 @@ static const int LMDB   = 3;
 
 class VQL
 {
-    private string[]                 sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
-    private bool[]                   section_is_found = [ false, false, false, false, false, false ];
+    private string[]                 sections;
+    private bool[]                   section_is_found;
     private string[]                 found_sections;
 
     private                          Set!OI from_search_points;
@@ -63,6 +63,7 @@ class VQL
         Set!OI empty_set;
         this(empty_set, _context);
         xr = new XapianSynchronizedReader(_context);
+        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
     }
 
     this(ref Set!OI _from_search_points, Context _context)
@@ -73,6 +74,7 @@ class VQL
         found_sections     = new string[ 6 ];
 
         transTable1 = makeTrans(":()-,", "_____");
+        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
     }
 
 
@@ -224,7 +226,7 @@ class VQL
 
     private void split_on_section(string query)
     {
-        section_is_found[] = false;
+        section_is_found = [ false, false, false, false, false, false ];
         for (int pos = 0; pos < query.length; pos++)
         {
             for (int i = 0; i < sections.length; i++)

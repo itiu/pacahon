@@ -69,6 +69,16 @@ version (executable)
     }
 }
 
+void wait_starting_thread (THREAD tid_idx, ref Tid[ string ] tids)
+{
+		Tid tid = tids[tid_idx];
+        send(tid, thisTid);
+        receive((bool isReady)
+                {
+                	writeln ("STARTED THREAD: ", tid_idx);
+                });	
+}
+
 void init_core()
 {
     log    = new logger("pacahon", "log", "server");
@@ -88,32 +98,33 @@ void init_core()
         log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
                                   pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
 
-        core.thread.Thread.sleep(dur!("msecs")(1));
-
         Tid[ string ] tids;
 
         tids[ THREAD.subject_manager ] = spawn(&subject_manager);
-        core.thread.Thread.sleep(dur!("msecs")(1));
+        wait_starting_thread (THREAD.subject_manager, tids);        
+        
+        
         tids[ THREAD.ticket_manager ] = spawn(&ticket_manager);
-        core.thread.Thread.sleep(dur!("msecs")(1));
+        wait_starting_thread (THREAD.ticket_manager, tids);        
+        
         tids[ THREAD.acl_manager ] = spawn(&acl_manager);
-        core.thread.Thread.sleep(dur!("msecs")(1));
+        wait_starting_thread (THREAD.acl_manager, tids);        
 
         tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
-        core.thread.Thread.sleep(dur!("msecs")(1));
+        wait_starting_thread (THREAD.xapian_thread_context, tids);        
+        
         tids[ THREAD.xapian_indexer ] =
             spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
-        core.thread.Thread.sleep(dur!("msecs")(1));
-        spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
-        core.thread.Thread.sleep(dur!("msecs")(1));
-        send(tids[ THREAD.xapian_indexer ], thisTid);
-        receive((bool isReady)
-                {
-                });
-
+        wait_starting_thread (THREAD.xapian_indexer, tids);        
+            
+        tids[ THREAD.xapian_indexer_commiter] = spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
+        wait_starting_thread (THREAD.xapian_indexer_commiter, tids);        
+        
         tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
-        core.thread.Thread.sleep(dur!("msecs")(1));
-        spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
+        wait_starting_thread (THREAD.statistic_data_accumulator, tids);        
+
+        tids[ THREAD.print_statistic ] = spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
+        wait_starting_thread (THREAD.print_statistic, tids);        
 
         foreach (key, value; tids)
         {
@@ -121,9 +132,11 @@ void init_core()
         }
 
         tids[ THREAD.condition ] = spawn(&condition_thread, props_file_path);
+        wait_starting_thread (THREAD.condition, tids);          
+        
         register(THREAD.condition, tids[ THREAD.condition ]);
 
-        writeln("registred spawned tids:", tids);
+        //writeln("registred spawned tids:", tids);
         Tid tid_condition = locate(THREAD.condition);
 //        writeln ("tid_condition=", tid_condition);
 

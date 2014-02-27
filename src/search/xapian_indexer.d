@@ -31,9 +31,15 @@ public void xapian_thread_context()
     string key2slot_str;
     long   last_update_time;
 
-    writeln("SPAWN: xapian_thread_io");
+//    writeln("SPAWN: xapian_thread_io");
     last_update_time = Clock.currTime().stdTime();
 
+
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
     while (true)
     {
         receive(
@@ -130,6 +136,12 @@ private void printTid(string tag)
 
 void xapian_indexer_commiter(Tid tid)
 {
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
+	
     while (true)
     {
         core.thread.Thread.sleep(dur!("seconds")(20));
@@ -159,7 +171,7 @@ void xapian_indexer_commiter(Tid tid)
 //		}
 void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
-    writeln("SPAWN: Xapian Indexer");
+//    writeln("SPAWN: Xapian Indexer");
 
     try
     {
@@ -193,7 +205,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 //    indexer_db = new_InMemoryWritableDatabase(&err);
     if (err != 0)
     {
-        writeln("!!!!!!! ERRR O_o");
+        writeln("!!!!!!! ERRR O_o, err=", err);
         return;
     }
 
@@ -216,7 +228,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     if (is_exist_db == true)
         read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
 
-    writeln("xapian_indexer ready");
+    // SEND ready
     receive((Tid tid_response_reciever)
             {
                 send(tid_response_reciever, true);
@@ -226,6 +238,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     {
         receive((CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
                 {
+                	//writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
+                	
                     if (cmd == CMD.FIND)
                     {
                         auto fields = get_fields(str_fields);
@@ -257,6 +271,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                                                           tid_acl_manager);
                                 if (state == -1)
                                 {
+                                	writeln ("@2 state=", state);
                                     xapian_enquire = indexer_db.new_Enquire(&err);
                                 }
                             }
@@ -271,6 +286,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                 },
                 (CMD cmd, string msg)
                 {
+                	//writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);
                     if (cmd == CMD.COMMIT)
                     {
                         //writeln ("@@ COMMIT");

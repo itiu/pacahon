@@ -29,7 +29,7 @@ static this()
 
 public void subject_manager()
 {
-    writeln("SPAWN: Subject manager");
+//    writeln("SPAWN: Subject manager");
 
     MDB_env *env;
     MDB_dbi dbi;
@@ -80,6 +80,12 @@ public void subject_manager()
     }
 
     int rc;
+
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
 
     while (true)
     {
