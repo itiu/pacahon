@@ -59,88 +59,62 @@ class VQL
 
     this(Context _context)
     {
+        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+        found_sections   = new string[ sections.length ];
+        section_is_found = new bool[ sections.length ];
+
         context = _context;
         Set!OI empty_set;
         this(empty_set, _context);
-        xr       = new XapianSynchronizedReader(_context);
-        sections = [ "return", "filter", "sort", "render", "authorize", "source" ];
+        xr = new XapianSynchronizedReader(_context);
     }
 
     this(ref Set!OI _from_search_points, Context _context)
     {
+        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+        found_sections   = new string[ sections.length ];
+        section_is_found = new bool[ sections.length ];
+
         context            = _context;
         xr                 = new XapianSynchronizedReader(_context);
         from_search_points = _from_search_points;
-        found_sections     = new string[ 6 ];
 
         transTable1 = makeTrans(":()-,", "_____");
-        sections    = [ "return", "filter", "sort", "render", "authorize", "source" ];
     }
 
-    public int get(Ticket *ticket, string query_str, ref immutable(Individual)[] individuals)
+    public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
+                   ref immutable(Individual)[] individuals)
     {
-        StopWatch sw;
+//        StopWatch sw;
+//        sw.start();
 
-        sw.start();
+        int                       res_count;
 
-        split_on_section(query_str);
-        int render = 10000;
-        try
+        void delegate(string msg) dg;
+        void collect_subject(string msg)
         {
-            if (found_sections[ RENDER ] !is null && found_sections[ RENDER ].length > 0)
-                render = parse!int (found_sections[ RENDER ]);
-        } catch (Exception ex)
-        {
+            Individual individual = Individual();
+
+            cbor_to_individual(&individual, msg);
+
+            individuals ~= individual.idup;
         }
-        int count_authorize = 10000;
-        try
-        {
-            if (found_sections[ AUTHORIZE ] !is null && found_sections[ AUTHORIZE ].length > 0)
-                count_authorize = parse!int (found_sections[ AUTHORIZE ]);
-        } catch (Exception ex)
-        {
-        }
-        string sort;
-        if (section_is_found[ SORT ] == true)
-            sort = found_sections[ SORT ];
-        int type_source = XAPIAN;
-        if (found_sections[ SOURCE ] == "xapian")
-            type_source = XAPIAN;
-        else if (found_sections[ SOURCE ] == "lmdb")
-            type_source = LMDB;
+        dg = &collect_subject;
+//        writeln ("@2 found_sections[ FILTER ]=", found_sections[ FILTER ]);
 
-        string dummy;
-        double d_dummy;
-        int    res_count;
+        res_count = xr.get(filter, freturn, sort, count_authorize, dg);
 
-        if (type_source == XAPIAN)
-        {
-            void delegate(string msg) dg;
-            void collect_subject(string msg)
-            {
-                Individual individual = Individual();
-
-                cbor_to_individual(&individual, msg);
-
-                individuals ~= individual.idup;
-            }
-            dg = &collect_subject;
-
-            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
-        }
-
-        sw.stop();
-        long t = cast(long)sw.peek().usecs;
-        writeln("execute:", t, " µs");
+//        sw.stop();
+//        long t = cast(long)sw.peek().usecs;
+//        writeln("execute:", t, " µs");
 
         return res_count;
     }
 
     public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg, ref immutable(Individual)[ string ] individuals)
     {
-        StopWatch sw;
-
-        sw.start();
+//        StopWatch sw;
+//        sw.start();
 
         split_on_section(query_str);
         int render = 10000;
@@ -188,12 +162,13 @@ class VQL
             }
             dg = &collect_subject;
 
+//        writeln ("@@1 found_sections[ FILTER ]=", found_sections[ FILTER ]);
             res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
         }
 
-        sw.stop();
-        long t = cast(long)sw.peek().usecs;
-        writeln("execute:", t, " µs");
+//        sw.stop();
+//        long t = cast(long)sw.peek().usecs;
+//        writeln("execute:", t, " µs");
 
         return res_count;
     }
@@ -246,8 +221,11 @@ class VQL
 
         if (type_source == LMDB)
         {
-            TTA tta = parse_expr(found_sections[ FILTER ]);
-            transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
+            if (found_sections[ FILTER ] !is null)
+            {
+                TTA tta = parse_expr(found_sections[ FILTER ]);
+                transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
+            }
         }
         else if (type_source == XAPIAN)
         {
@@ -286,7 +264,10 @@ class VQL
 
     private void split_on_section(string query)
     {
-        section_is_found = [ false, false, false, false, false, false ];
+        section_is_found[] = false;
+        if (query is null)
+            return;
+
         for (int pos = 0; pos < query.length; pos++)
         {
             for (int i = 0; i < sections.length; i++)
@@ -294,6 +275,8 @@ class VQL
                 char cc = query[ pos ];
                 if (section_is_found[ i ] == false)
                 {
+                    found_sections[ i ] = null;
+
                     int j     = 0;
                     int t_pos = pos;
                     while (sections[ i ][ j ] == cc && t_pos < query.length && j < sections[ i ].length)

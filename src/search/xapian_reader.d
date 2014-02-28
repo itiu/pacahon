@@ -44,6 +44,9 @@ class XapianSynchronizedReader : SearchReader
 
     public int get(string str_query, string fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element)
     {
+        if (str_query is null)
+            return 0;
+
 //      writeln ("@ XapianSynchronizedReader.get #1");
         Tid tid_subject_manager = context.getTid(THREAD.subject_manager);
 

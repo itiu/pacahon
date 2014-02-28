@@ -1,5 +1,6 @@
 module onto.individual;
 
+private import std.string;
 private import onto.resource;
 
 private
@@ -55,7 +56,10 @@ class Individual_IO
     immutable(Individual)[] getIndividualsViaQuery(string query_str, Ticket ticket, byte level = 0)
     {
         immutable(Individual)[] res;
-        context.vql.get(&ticket, query_str, res);
+        if (query_str.indexOf(' ') <= 0)
+            query_str = "'*' == '" ~ query_str ~ "'";
+
+        context.vql.get(&ticket, query_str, null, null, 10, 10000, res);
         return res;
     }
 
