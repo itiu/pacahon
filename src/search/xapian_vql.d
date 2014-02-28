@@ -19,23 +19,7 @@ public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTh
 
 byte                err;
 
-public int get_slot(string field, ref int[ string ] key2slot)
-{
-//	writeln ("get_slot:", field);
-    int slot = key2slot.get(field, -1);
-
-    if (slot == -1)
-    {
-        // create new slot
-        slot              = cast(int)key2slot.length + 1;
-        key2slot[ field ] = slot;
-//        send (key2slot_accumulator, PUT, data);
-    }
-
-    return slot;
-}
-
-public string[ string ] get_fields(string str_fields)
+public              string[ string ] get_fields(string str_fields)
 {
     string[ string ] fields;
 
@@ -85,7 +69,7 @@ public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2sl
                 else
                     asc_desc = true;
 
-                int slot = get_slot(key, key2slot);
+                int slot = key2slot.get(key, -1);
                 sorter.add_value(slot, asc_desc, &err);
             }
         }
@@ -175,7 +159,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                 }
                 else
                 {
-                    int slot = get_slot(ls, key2slot);
+                    int slot = key2slot.get(ls, -1);
                     //writeln ("slot=", slot);
                     if (indexOf(rs, '*') > 0 && rs.length > 3)
                     {
@@ -271,7 +255,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 //			writeln ("c_from=", c_from);
 //			writeln ("c_to=", c_to);
 
-            int slot = get_slot(token_L, key2slot);
+            int slot = key2slot.get(token_L, -1);
 //			writeln ("#E1");
 
             query_r = new_Query_range(xapian_op.OP_VALUE_RANGE, slot, c_from, c_to, &err);
@@ -357,7 +341,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     if (sorter !is null)
         xapian_enquire.set_sort_by_key(sorter, true, &err);
 
-    //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize); 
+    //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
     if (err < 0)
         return err;

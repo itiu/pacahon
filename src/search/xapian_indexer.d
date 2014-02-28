@@ -98,7 +98,7 @@ private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatab
 
 private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
 {
-	int[ string ] key2slot;
+    int[ string ] key2slot;
     string      query_string = xapian_metadata_doc_id;
 
     XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
@@ -107,8 +107,8 @@ private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser
 
     XapianMSet matches = enquire.get_mset(0, 1, &err);
 
-       writeln ("found =",  matches.get_matches_estimated(&err));
-       writeln ("matches =",  matches.size (&err));
+    writeln("found =", matches.get_matches_estimated(&err));
+    writeln("matches =", matches.size(&err));
 
     XapianMSetIterator it = matches.iterator(&err);
 
@@ -124,11 +124,11 @@ private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser
         send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
         //writeln ("data=[", data, "]");
 
-         key2slot = deserialize_key2slot (data);
+        key2slot = deserialize_key2slot(data);
     }
 
-       writeln("slot size=", key2slot.length);
-       return key2slot;
+    writeln("slot size=", key2slot.length);
+    return key2slot;
 }
 
 private void printTid(string tag)
@@ -143,7 +143,7 @@ void xapian_indexer_commiter(Tid tid)
             {
                 send(tid_response_reciever, true);
             });
-	
+
     while (true)
     {
         core.thread.Thread.sleep(dur!("seconds")(20));
@@ -228,7 +228,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     int[ string ] key2slot;
 
     //if (is_exist_db == true)
-        key2slot = read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
+    key2slot = read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -240,8 +240,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     {
         receive((CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
                 {
-                	//writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
-                	//writeln ("@xapian_indexer:key2slot=", key2slot);
+                    //writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
+                    //writeln ("@xapian_indexer:key2slot=", key2slot);
                     if (cmd == CMD.FIND)
                     {
                         auto fields = get_fields(str_fields);
@@ -273,7 +273,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                                                           tid_acl_manager);
                                 if (state == -1)
                                 {
-                                	writeln ("@2 ERR state=", state);
+                                    writeln("@2 ERR state=", state);
                                     xapian_enquire = indexer_db.new_Enquire(&err);
                                 }
                             }
@@ -288,7 +288,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                 },
                 (CMD cmd, string msg)
                 {
-                	//writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);
+                    //writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);
                     if (cmd == CMD.COMMIT)
                     {
                         //writeln ("@@ COMMIT");
@@ -329,7 +329,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             foreach (pp; ss.getPredicates())
                             {
                                 string prefix;
-                                int slot = get_slot(pp.predicate, key2slot);
+                                int slot = get_slot_and_set_if_not_found(pp.predicate, key2slot);
 
                                 all_text.write(escaping_or_uuid2search(pp.predicate));
                                 all_text.write('|');
@@ -359,7 +359,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                                 p_text_en ~= oo.literal;
                                         }
 
-                                        int slot_L1 = get_slot(pp.predicate, key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate, key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         string data = escaping_or_uuid2search(oo.literal);
@@ -378,7 +378,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                         }
                                         else
                                         {
-                                            int slot_L1 = get_slot(pp.predicate, key2slot);
+                                            int slot_L1 = get_slot_and_set_if_not_found(pp.predicate, key2slot);
                                             prefix = "X" ~ text(slot_L1) ~ "X";
 
                                             string data = to_lower_and_replace_delimeters(oo.literal);
@@ -396,7 +396,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 {
                                     if (p_text_ru.length > 0)
                                     {
-                                        int slot_L1 = get_slot(pp.predicate ~ "_ru", key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ "_ru", key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_ru.ptr, p_text_ru.length, prefix.ptr, prefix.length, &err);
@@ -406,7 +406,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
                                     if (p_text_en.length > 0)
                                     {
-                                        int slot_L1 = get_slot(pp.predicate ~ "_en", key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ "_en", key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_en.ptr, p_text_en.length, prefix.ptr, prefix.length, &err);
@@ -426,7 +426,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                         {
                                             if (sp == true)
                                             {
-                                                slot_L1 = get_slot(pp.predicate ~ ".text_ru", key2slot);
+                                                slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".text_ru", key2slot);
                                                 prefix = "X" ~ text(slot_L1) ~ "X";
 
                                                 sp = false;
@@ -449,7 +449,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                         {
                                             if (sp == true)
                                             {
-                                                slot_L1 = get_slot(pp.predicate ~ ".text_en", key2slot);
+                                                slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".text_en", key2slot);
                                                 prefix = "X" ~ text(slot_L1) ~ "X";
 
                                                 sp = false;
@@ -466,7 +466,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 }
                                 else if (type == xsd__decimal)
                                 {
-                                    slot_L1 = get_slot(pp.predicate ~ ".decimal", key2slot);
+                                    slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".decimal", key2slot);
                                     prefix = "X" ~ text(slot_L1) ~ "X";
 
                                     foreach (oo; pp.getObjects())
@@ -484,7 +484,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 }
                                 else if (type == xsd__dateTime)
                                 {
-                                    slot_L1 = get_slot(pp.predicate ~ ".dateTime", key2slot);
+                                    slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".dateTime", key2slot);
                                     prefix = "X" ~ text(slot_L1) ~ "X";
 
                                     foreach (oo; pp.getObjects())
@@ -535,6 +535,22 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                     }
                 });
     }
+}
+
+private int get_slot_and_set_if_not_found(string field, ref int[ string ] key2slot)
+{
+//	writeln ("get_slot:", field);
+    int slot = key2slot.get(field, -1);
+
+    if (slot == -1)
+    {
+        // create new slot
+        slot              = cast(int)key2slot.length + 1;
+        key2slot[ field ] = slot;
+//        send (key2slot_accumulator, PUT, data);
+    }
+
+    return slot;
 }
 
 

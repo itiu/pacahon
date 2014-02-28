@@ -52,6 +52,13 @@ class Individual_IO
         context = _context;
     }
 
+    immutable(Individual)[] getIndividualsViaQuery(string query_str, Ticket ticket, byte level = 0)
+    {
+        immutable(Individual)[] res;
+        context.vql.get(&ticket, query_str, res);
+        return res;
+    }
+
     Individual getIndividual(string uri, Ticket ticket, byte level = 0)
     {
         string     individual_as_cbor = context.get_subject_as_cbor(uri);

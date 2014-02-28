@@ -68,7 +68,7 @@ class XapianSynchronizedReader : SearchReader
                             if (tid_subject_manager != Tid.init)
                             {
                                 // writeln("msg:", msg);
-                                add_out_element (msg);
+                                add_out_element(msg);
                                 read_count++;
                             }
                         }
@@ -88,7 +88,7 @@ class XapianReader : SearchReader
     private XapianEnquire     xapian_enquire;
     private XapianQueryParser xapian_qp;
 
-    private Context context;
+    private Context           context;
 
     this(Context _context)
     {
@@ -101,7 +101,8 @@ class XapianReader : SearchReader
     private static long refresh_db_timeout = 10000000 * 20;
     private long        prev_update_time;
 
-    public int get(string str_query, string str_fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element)
+    public int get(string str_query, string str_fields, string sort, int count_authorize,
+                   void delegate(string cbor_subject) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
 
@@ -131,9 +132,9 @@ class XapianReader : SearchReader
             int count = 0;
             xapian_enquire = xapian_db.new_Enquire(&err);
 
-            XapianMultiValueKeyMaker  sorter = get_sorter(sort, key2slot);
+            XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
 
-            int state = -1;
+            int                      state = -1;
             while (state == -1)
             {
                 state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,

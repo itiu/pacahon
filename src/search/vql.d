@@ -62,8 +62,8 @@ class VQL
         context = _context;
         Set!OI empty_set;
         this(empty_set, _context);
-        xr = new XapianSynchronizedReader(_context);
-        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+        xr       = new XapianSynchronizedReader(_context);
+        sections = [ "return", "filter", "sort", "render", "authorize", "source" ];
     }
 
     this(ref Set!OI _from_search_points, Context _context)
@@ -74,15 +74,15 @@ class VQL
         found_sections     = new string[ 6 ];
 
         transTable1 = makeTrans(":()-,", "_____");
-        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
+        sections    = [ "return", "filter", "sort", "render", "authorize", "source" ];
     }
 
-
-    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg, ref immutable(Individual)[string] individuals)
+    public int get(Ticket *ticket, string query_str, ref immutable(Individual)[] individuals)
     {
-        		StopWatch sw;
-        		sw.start();
-    	
+        StopWatch sw;
+
+        sw.start();
+
         split_on_section(query_str);
         int render = 10000;
         try
@@ -118,22 +118,82 @@ class VQL
             void delegate(string msg) dg;
             void collect_subject(string msg)
             {
-            	//writeln ("lmg=", cast(void*)lmg);
-                string uri = add_cbor_to_lmultidigraph(lmg, msg);
-
                 Individual individual = Individual();
+
                 cbor_to_individual(&individual, msg);
-                
-                individuals[uri] = individual.idup; 
+
+                individuals ~= individual.idup;
             }
             dg = &collect_subject;
 
             res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
         }
 
-          sw.stop();
-          long t = cast(long) sw.peek().usecs;
-          writeln("execute:", t, " µs");
+        sw.stop();
+        long t = cast(long)sw.peek().usecs;
+        writeln("execute:", t, " µs");
+
+        return res_count;
+    }
+
+    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg, ref immutable(Individual)[ string ] individuals)
+    {
+        StopWatch sw;
+
+        sw.start();
+
+        split_on_section(query_str);
+        int render = 10000;
+        try
+        {
+            if (found_sections[ RENDER ] !is null && found_sections[ RENDER ].length > 0)
+                render = parse!int (found_sections[ RENDER ]);
+        } catch (Exception ex)
+        {
+        }
+        int count_authorize = 10000;
+        try
+        {
+            if (found_sections[ AUTHORIZE ] !is null && found_sections[ AUTHORIZE ].length > 0)
+                count_authorize = parse!int (found_sections[ AUTHORIZE ]);
+        } catch (Exception ex)
+        {
+        }
+        string sort;
+        if (section_is_found[ SORT ] == true)
+            sort = found_sections[ SORT ];
+        int type_source = XAPIAN;
+        if (found_sections[ SOURCE ] == "xapian")
+            type_source = XAPIAN;
+        else if (found_sections[ SOURCE ] == "lmdb")
+            type_source = LMDB;
+
+        string dummy;
+        double d_dummy;
+        int    res_count;
+
+        if (type_source == XAPIAN)
+        {
+            void delegate(string msg) dg;
+            void collect_subject(string msg)
+            {
+                //writeln ("lmg=", cast(void*)lmg);
+                string     uri = add_cbor_to_lmultidigraph(lmg, msg);
+
+                Individual individual = Individual();
+
+                cbor_to_individual(&individual, msg);
+
+                individuals[ uri ] = individual.idup;
+            }
+            dg = &collect_subject;
+
+            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
+        }
+
+        sw.stop();
+        long t = cast(long)sw.peek().usecs;
+        writeln("execute:", t, " µs");
 
         return res_count;
     }
