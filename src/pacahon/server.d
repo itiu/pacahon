@@ -10,6 +10,7 @@ private
     import io.file_reader;
 
     import az.acl;
+    import az.condition;
     import storage.ticket;
     import storage.subject;
 
@@ -17,9 +18,9 @@ private
     import util.json_ld_parser;
     import util.turtle_parser;
     import util.utils;
-    import io.oi;
     import util.sgraph;
     import util.load_info;
+    import io.oi;
 
     import pacahon.context;
     import pacahon.command_multiplexor;
@@ -30,8 +31,6 @@ private
     import pacahon.define;
 
     import search.xapian_indexer;
-
-    import az.condition;
 }
 
 logger log;
@@ -40,9 +39,9 @@ logger io_msg;
 // Called upon a signal from Linux
 extern (C) public void sighandler0(int sig) nothrow @system
 {
-    printf("signal %d caught...\n", sig);
     try
     {
+    	log.trace_log_and_console("signal %d caught...\n", sig);
         system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
         //Runtime.terminate();
     }
@@ -75,7 +74,7 @@ void wait_starting_thread (THREAD tid_idx, ref Tid[ string ] tids)
         send(tid, thisTid);
         receive((bool isReady)
                 {
-                	writeln ("STARTED THREAD: ", tid_idx);
+                	log.trace_log_and_console ("STARTED THREAD: %s", tid_idx);
                 });	
 }
 

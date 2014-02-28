@@ -107,8 +107,8 @@ private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser
 
     XapianMSet matches = enquire.get_mset(0, 1, &err);
 
-    writeln("found =", matches.get_matches_estimated(&err));
-    writeln("matches =", matches.size(&err));
+    //writeln("found =", matches.get_matches_estimated(&err));
+    //writeln("matches =", matches.size(&err));
 
     XapianMSetIterator it = matches.iterator(&err);
 
@@ -127,7 +127,7 @@ private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser
         key2slot = deserialize_key2slot(data);
     }
 
-    writeln("slot size=", key2slot.length);
+    //writeln("slot size=", key2slot.length);
     return key2slot;
 }
 

@@ -133,7 +133,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
         try
         {
             string    condition_text = ss.getFirstLiteral(veda_schema__script);
-            writeln("condition_text:", condition_text);
+            //writeln("condition_text:", condition_text);
             JSONValue condition_json = parseJSON(condition_text);
             Mandat    mandat = void;
 
