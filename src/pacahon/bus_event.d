@@ -6,7 +6,7 @@ private import std.concurrency;
 private import std.datetime;
 
 private import util.container;
-private import util.oi;
+private import io.oi;
 private import util.logger;
 private import util.utils;
 private import util.sgraph;

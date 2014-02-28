@@ -1,5 +1,5 @@
-../../.dub/packages/zeromq-master/deimos/zmq/zmq.d
-../../.dub/packages/dgraph-master/source/dgraph/graph.d
+~/.dub/packages/zeromq-master/deimos/zmq/zmq.d
+~/.dub/packages/dgraph-master/source/dgraph/graph.d
 
 src/bind/librabbitmq_headers.d
 src/bind/lmdb_header.d
@@ -7,17 +7,17 @@ src/bind/xapian_d_header.d
 
 src/pacahon/define.d
 
-src/mq/mq_client.d 
-src/mq/rabbitmq_client.d
-src/mq/zmq_listener.d
-src/mq/file_reader.d
+src/io/mq_client.d 
+src/io/rabbitmq_client.d
+src/io/zmq_listener.d
+src/io/file_reader.d
+src/io/oi.d 
 
 src/util/turtle_parser.d 
 src/util/logger.d 
 src/util/utils.d 
 src/util/container.d
 src/util/json_ld_parser.d 
-src/util/oi.d 
 src/util/load_info.d 
 src/util/sgraph.d 
 src/util/cbor.d 

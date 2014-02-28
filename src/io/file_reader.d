@@ -1,4 +1,4 @@
-module mq.file_reader;
+module io.file_reader;
 
 import core.stdc.stdio;
 import core.stdc.errno;

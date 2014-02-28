@@ -4,11 +4,11 @@ private
 {
     import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer;
 
-    import mq.mq_client;
+    import io.mq_client;
     import util.container;
     import util.json_ld_parser;
     import util.logger;
-    import util.oi : OI;
+    import io.oi : OI;
     import util.utils;
     import util.sgraph;
     import util.cbor;

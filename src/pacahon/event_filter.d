@@ -2,20 +2,12 @@
 
 module pacahon.event_filter;
 
-private import std.stdio;
-private import std.string;
-private import std.conv;
-private import std.math;
-private import std.exception;
-private import std.datetime;
-private import std.uuid;
-private import std.array : appender;
-private import std.regex;
+private import std.stdio, std.string, std.conv, std.math, std.exception, std.datetime, std.uuid, std.regex;
 
 private import util.container;
 private import util.logger;
 private import util.utils;
-private import util.oi;
+private import io.oi;
 private import util.sgraph;
 
 private import pacahon.know_predicates;

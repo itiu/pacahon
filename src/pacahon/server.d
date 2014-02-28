@@ -5,9 +5,9 @@ private
     import core.thread, std.stdio, std.string, std.c.string, std.json, std.outbuffer, std.datetime, std.conv, std.concurrency;
     version (linux) import std.c.linux.linux, core.stdc.stdlib;
 
-    import mq.mq_client;
-    import mq.rabbitmq_client;
-    import mq.file_reader;
+    import io.mq_client;
+    import io.rabbitmq_client;
+    import io.file_reader;
 
     import az.acl;
     import storage.ticket;
@@ -17,7 +17,7 @@ private
     import util.json_ld_parser;
     import util.turtle_parser;
     import util.utils;
-    import util.oi;
+    import io.oi;
     import util.sgraph;
     import util.load_info;
 
@@ -168,7 +168,7 @@ void init_core()
 
                     if (params.get("transport", "") == "file_reader")
                     {
-                        spawn(&mq.file_reader.file_reader_thread, "pacahon-properties.json");
+                        spawn(&io.file_reader.file_reader_thread, "pacahon-properties.json");
                     }
                     else if (params.get("transport", "") == "zmq")
                     {
@@ -181,7 +181,7 @@ void init_core()
                         {
                             try
                             {
-                                spawn(&mq.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
+                                spawn(&io.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
                                 log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();

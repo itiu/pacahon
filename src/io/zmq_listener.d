@@ -1,4 +1,4 @@
-module mq.zmq_listener;
+module io.zmq_listener;
 
 import core.stdc.stdio;
 import core.stdc.errno;

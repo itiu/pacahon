@@ -10,7 +10,7 @@ private
     import std.concurrency;
 
     import util.container;
-    import util.oi;
+    import io.oi;
     import util.utils;
     import util.logger;
     import util.sgraph;

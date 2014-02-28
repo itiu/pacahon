@@ -1,4 +1,4 @@
-module mq.rabbitmq_client;
+module io.rabbitmq_client;
 
 private import core.thread;
 private import std.stdio;
@@ -10,7 +10,7 @@ private import std.uuid;
 private import std.conv;
 
 private import bind.librabbitmq_headers;
-private import mq.mq_client;
+private import io.mq_client;
 private import util.logger;
 private import pacahon.context;
 

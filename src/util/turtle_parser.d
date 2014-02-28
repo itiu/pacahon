@@ -1,13 +1,6 @@
 module util.turtle_parser;
 
-private import std.string;
-private import std.c.stdlib;
-private import std.c.string;
-private import std.stdio;
-private import std.datetime;
-private import std.outbuffer;
-private import std.array;
-private import std.uuid;
+private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, std.outbuffer, std.array, std.uuid;
 
 private import util.sgraph;
 private import util.utils;
@@ -451,7 +444,6 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
             data = data.replace("\\\"", "\"");
 //              writeln ("@data=", data);
         }
-
 
         if (resource_type == ResourceType.Literal)
         {

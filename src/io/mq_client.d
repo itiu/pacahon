@@ -1,5 +1,5 @@
 // TODO переделать на абстрактную модель, отправитель <---> получатель (socket --> uid)
-module mq.mq_client;
+module io.mq_client;
 
 private import std.outbuffer;
 private import pacahon.context;

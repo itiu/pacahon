@@ -1,12 +1,10 @@
 module pacahon.context;
 
-private import std.concurrency;
-private import std.datetime;
-private import std.json;
+private import std.concurrency, std.datetime, std.json;
 
 private import util.container;
 private import util.sgraph;
-private import util.oi;
+private import io.oi;
 private import search.vel;
 private import onto.owl;
 private import onto.individual;
