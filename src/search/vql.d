@@ -7,7 +7,6 @@ private
     import std.string, std.array, std.stdio, std.conv, std.datetime, std.json, std.outbuffer, std.c.string, std.concurrency;
 
     import util.container;
-    import io.oi;
     import util.logger;
     import util.utils;
     import util.sgraph;
@@ -51,9 +50,6 @@ class VQL
     private bool[]                   section_is_found;
     private string[]                 found_sections;
 
-    private                          Set!OI from_search_points;
-
-    private string                   transTable1;
     private Context                  context;
     private XapianSynchronizedReader xr;
 
@@ -63,23 +59,8 @@ class VQL
         found_sections   = new string[ sections.length ];
         section_is_found = new bool[ sections.length ];
 
-        context = _context;
-        Set!OI empty_set;
-        this(empty_set, _context);
-        xr = new XapianSynchronizedReader(_context);
-    }
-
-    this(ref Set!OI _from_search_points, Context _context)
-    {
-        sections         = [ "return", "filter", "sort", "render", "authorize", "source" ];
-        found_sections   = new string[ sections.length ];
-        section_is_found = new bool[ sections.length ];
-
         context            = _context;
         xr                 = new XapianSynchronizedReader(_context);
-        from_search_points = _from_search_points;
-
-        transTable1 = makeTrans(":()-,", "_____");
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,

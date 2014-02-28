@@ -1,12 +1,12 @@
-module io.oi;
+module util.oi;
 
 private import std.json;
 private import std.stdio;
 private import std.concurrency;
 private import std.conv;
 
-private import io.mq_client;
-private import io.rabbitmq_client;
+private import mq.mq_client;
+private import mq.rabbitmq_client;
 
 private import util.logger;
 private import util.sgraph;

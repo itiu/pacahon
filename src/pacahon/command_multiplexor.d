@@ -24,7 +24,6 @@ private
     import storage.ticket;
 
     import pacahon.command_io;
-    import pacahon.event_filter;
     import pacahon.context;
     import pacahon.know_predicates;
     import pacahon.log_msg;

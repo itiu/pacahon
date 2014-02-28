@@ -4,7 +4,6 @@ private import std.concurrency, std.datetime, std.json;
 
 private import util.container;
 private import util.sgraph;
-private import io.oi;
 private import search.vel;
 private import onto.owl;
 private import onto.individual;
@@ -72,8 +71,6 @@ interface Context
     int get_subject_creator_size();
     string get_subject_creator(string pp);
     void set_subject_creator(string key, string value);
-
-    Set!OI get_gateways(string name);
 
     @property int count_command();
     @property int count_message();

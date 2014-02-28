@@ -8,7 +8,6 @@ private
     import util.container;
     import util.json_ld_parser;
     import util.logger;
-    import io.oi : OI;
     import util.utils;
     import util.sgraph;
     import util.cbor;
@@ -20,7 +19,6 @@ private
     import pacahon.know_predicates;
     import pacahon.define;
     import pacahon.context;
-    import pacahon.event_filter;
     import pacahon.bus_event;
     import onto.owl;
     import onto.individual;
@@ -125,47 +123,7 @@ class ThreadContext : Context
                     use_caching_of_documents = true;
             }
 
-            JSONValue[] _gateways;
-            if (("gateways" in props.object) !is null)
-            {
-                _gateways = props.object[ "gateways" ].array;
-                foreach (gateway; _gateways)
-                {
-                    if (("alias" in gateway.object) !is null)
-                    {
-                        string[ string ] params;
-                        foreach (key; gateway.object.keys)
-                            params[ key ] = gateway[ key ].str;
-
-                        string io_alias = gateway.object[ "alias" ].str;
-
-                        Set!OI empty_set;
-                        Set!OI gws = gateways.get(io_alias, empty_set);
-
-                        if (gws.size == 0)
-                            gateways[ io_alias ] = empty_set;
-
-                        OI oi = new OI();
-                        if (oi.connect(params) == 0)
-                            writeln("#A1:", oi.get_alias);
-                        else
-                            writeln("#A2:", oi.get_alias);
-
-                        if (oi.get_db_type == "xapian")
-                        {
-                            writeln("gateway [", gateway.object[ "alias" ].str, "] is embeded, tid=", tids[ THREAD.xapian_indexer ]);
-                            oi.embedded_gateway = tids[ THREAD.xapian_indexer ];
-                        }
-
-                        gws ~= oi;
-                        gateways[ io_alias ] = gws;
-                    }
-                }
-            }
-
-            Set!OI empty_set;
-            Set!OI from_search = gateways.get("from-search", empty_set);
-            _vql               = new search.vql.VQL(from_search, this);
+            _vql               = new search.vql.VQL(this);
 
             //writeln(context_name ~ ": load events");
             //pacahon.event_filter.load_events(this);
@@ -234,7 +192,6 @@ class ThreadContext : Context
                         else
                             event_type = EVENT.CREATE;
 
-                        processed_events(ss, event_type, this);
                         bus_event(ss, ss_as_cbor, event_type, this);
                     }
                 }
@@ -390,15 +347,6 @@ class ThreadContext : Context
 /////////////////////////////////////////////////////////
 
     mq_client client;
-
-    private   Set!OI[ string ] gateways;
-
-    Set!OI empty_set;
-    Set!OI get_gateways(string name)
-    {
-        return gateways.get(name, empty_set);
-    }
-
 
     bool authorize(Ticket *ticket, Subject doc)
     {

@@ -20,14 +20,12 @@ private
     import util.utils;
     import util.sgraph;
     import util.load_info;
-    import io.oi;
 
     import pacahon.context;
     import pacahon.command_multiplexor;
     import pacahon.know_predicates;
     import pacahon.log_msg;
     import pacahon.thread_context;
-    import pacahon.event_filter;
     import pacahon.define;
 
     import search.xapian_indexer;
