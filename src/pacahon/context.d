@@ -36,22 +36,24 @@ enum THREAD : string
     xapian_indexer             = "xapian_indexer",
     statistic_data_accumulator = "statistic_data_accumulator",
     condition                  = "condition",
-    xapian_indexer_commiter	   = "xapian_indexer_commiter",
-    print_statistic			   = "print_statistic"		
+    xapian_indexer_commiter    = "xapian_indexer_commiter",
+    print_statistic            = "print_statistic",
+    interthread_signals        = "interthread_signals"
 }
 
-static THREAD[ 7 ] THREAD_LIST =
+static THREAD[ 8 ] THREAD_LIST =
 [
     THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context,
-    THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition
+    THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition, THREAD.interthread_signals
 ];
 
 interface Context
 {
-    Class *[] owl_classes();
+    // Class *[] owl_classes();
+    immutable(Class)[ string ] get_owl_classes();
     Class *get_class(string ur);
     Property *get_property(string ur);
-    immutable(Individual)[string] get_onto_as_map_individuals ();    
+    immutable(Individual)[ string ] get_onto_as_map_individuals();
 
     public string get_name();
     public JSONValue get_props();
@@ -65,6 +67,10 @@ interface Context
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
     @property search.vql.VQL vql();
+
+    public void push_signal(string key, long value);
+    public long look_signal(string key);
+
 
     Ticket *foundTicket(string ticket_id);
 

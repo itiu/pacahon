@@ -2,7 +2,7 @@ module onto.owl;
 
 private
 {
-    import std.stdio, std.typecons, std.conv, std.exception : assumeUnique;
+    import std.stdio, std.datetime, std.conv, std.exception : assumeUnique;
 
     import onto.resource;
     import pacahon.know_predicates;
@@ -100,6 +100,33 @@ class OWL
     immutable(Individual)[ string ] individuals;
     Class *[ size_t ] class_2_idx;
     Property *[ size_t ] property_2_idx;
+    immutable(Class)[ string ] owl_classes;
+
+    private long last_time_onto_signal       = 0;
+    private long last_time_check_onto_signal = 0;
+
+    bool check_for_reload()
+    {
+        long now = Clock.currStdTime() / 10000;
+
+        if (now - last_time_check_onto_signal > 1000 || now - last_time_check_onto_signal < 0)
+        {
+            last_time_check_onto_signal = now;
+
+            long now_time_onto_signal;
+
+            now_time_onto_signal = context.look_signal("onto");
+            if (now_time_onto_signal - last_time_onto_signal > 1000 || now_time_onto_signal - last_time_onto_signal < 0)
+            {
+                last_time_onto_signal = now_time_onto_signal;
+                writeln("RELOAD ONTO");
+                load();
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public this(Context _context)
     {
@@ -135,6 +162,16 @@ class OWL
 
 //        writeln("# lmg.elements=", lmg.elements);
 //        lmg.getEdges1("mondi-schema:AdministrativeDocument");
+
+        foreach (cl_idx; class_2_idx.keys)
+        {
+            Class *ccl = class_2_idx.get(cl_idx, null);
+            if (ccl !is null)
+            {
+                immutable Class iic = ccl.idup;
+                owl_classes[ iic.uri ] = iic;
+            }
+        }
     }
 
     public void set_data(LabeledMultiDigraph _lmg)

@@ -59,8 +59,8 @@ class VQL
         found_sections   = new string[ sections.length ];
         section_is_found = new bool[ sections.length ];
 
-        context            = _context;
-        xr                 = new XapianSynchronizedReader(_context);
+        context = _context;
+        xr      = new XapianSynchronizedReader(_context);
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,

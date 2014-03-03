@@ -42,6 +42,35 @@ struct Individual
         immutable(Individual) result = immutable Individual(uri, tmp1, tmp2);
         return result;
     }
+
+    bool isExist(string predicate, string object)
+    {
+        Resources rss;
+
+        rss = resources.get(predicate, rss);
+        foreach (rs; rss)
+        {
+            if (rs.data == object)
+                return true;
+        }
+        return false;
+    }
+
+    bool anyExist(string predicate, string[] objects)
+    {
+        Resources rss;
+
+        rss = resources.get(predicate, rss);
+        foreach (rs; rss)
+        {
+            foreach (object; objects)
+            {
+                if (rs.data == object)
+                    return true;
+            }
+        }
+        return false;
+    }
 }
 
 class Individual_IO

@@ -1,17 +1,16 @@
 module pacahon.bus_event;
 
-private import std.outbuffer;
-private import std.stdio;
-private import std.concurrency;
-private import std.datetime;
+private import std.outbuffer, std.stdio, std.concurrency, std.datetime, std.conv;
 
 private import util.container;
 private import util.logger;
 private import util.utils;
 private import util.sgraph;
+private import util.cbor8individual;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
+private import onto.individual;
 
 logger log;
 
@@ -20,28 +19,46 @@ static this()
     log = new logger("bus_event", "log", "bus_event");
 }
 
+int count;
+
 void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context context)
 {
-//	writeln ("#bus_event B subject_as_cbor=[", subject_as_cbor, "]");
+    //writeln ("@bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
 //	Tid tid_condition = locate (thread.condition);
-	Tid tid_condition = context.getTid (THREAD.condition);
+    Tid tid_condition = context.getTid(THREAD.condition);
 
-	if (tid_condition != Tid.init)
-	{
+    if (tid_condition != Tid.init)
+    {
 //		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
-		try
-		{
+        try
+        {
 //			 core.thread.Thread.sleep(dur!("seconds")(10));
-		send (tid_condition, type, subject_as_cbor);
-		}
-		catch (Exception ex)
-		{
-			writeln ("EX!bus_event:", ex.msg);
-		}
+            // отправляем информацию об изменении индивидуала в модуль авторизации
+            send(tid_condition, type, subject_as_cbor);
+        }
+        catch (Exception ex)
+        {
+            writeln("EX!bus_event:", ex.msg);
+        }
 //		writeln ("#bus_event #2");
-	}	
+    }
 
+    Individual individual;
+    cbor_to_individual(&individual, subject_as_cbor);
+
+    if (individual.anyExist(rdf__type, owl_tags) == true)
+    {
+        try
+        {
+            // изменения в онтологии, послать в interthread сигнал о необходимости перезагрузки онтологии
+            context.push_signal("onto", Clock.currStdTime() / 10000);
+        }
+        catch (Exception ex)
+        {
+            writeln("EX!bus_event:", ex.msg);
+        }
+    }
 //	writeln ("#bus_event E");
 //    if (graph.docTemplate !is null && graph.docTemplate.isExsistsPredicate(docs__full_text_search, "0"))
 //        return;
@@ -49,13 +66,13 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
 /*
     if (graph.isExsistsPredicate(rdf__type, docs__Document) && graph.isExsistsPredicate(docs__actual, "true"))
     {
-//		writeln ("#to search !!!");
+   //		writeln ("#to search !!!");
         Set!OI search_points = context.get_gateways("to-search");
 
-//		writeln ("GWS:", context.gateways);
+   //		writeln ("GWS:", context.gateways);
         if (search_points.size > 0)
         {
-//		    writeln ("#C1");
+   //		    writeln ("#C1");
             foreach (search_point; search_points.items)
             {
                 if (search_point.get_db_type == "xapian")
@@ -77,7 +94,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
             foreach (report_point; report_points.items)
             {
                 OutBuffer outbuff = new OutBuffer();
-//				toJson_search(graph, outbuff, 0, false, null, context);
+   //				toJson_search(graph, outbuff, 0, false, null, context);
                 ubyte[]   bb = outbuff.toBytes();
 
                 report_point.send(bb);
@@ -90,7 +107,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
                       graph.subject, "to-report");
         }
     }
-*/
+ */
 }
 
 

@@ -2,14 +2,7 @@
 
 module search.xapian_indexer;
 
-import std.concurrency;
-import std.outbuffer;
-import std.datetime;
-import std.conv;
-import std.typecons;
-import std.stdio;
-import std.string;
-import std.file;
+import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 
 import bind.xapian_d_header;
 import util.utils;

@@ -27,6 +27,7 @@ private
     import pacahon.log_msg;
     import pacahon.thread_context;
     import pacahon.define;
+    import pacahon.interthread_signals;
 
     import search.xapian_indexer;
 }
@@ -39,7 +40,7 @@ extern (C) public void sighandler0(int sig) nothrow @system
 {
     try
     {
-    	log.trace_log_and_console("signal %d caught...\n", sig);
+        log.trace_log_and_console("signal %d caught...\n", sig);
         system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
         //Runtime.terminate();
     }
@@ -66,14 +67,15 @@ version (executable)
     }
 }
 
-void wait_starting_thread (THREAD tid_idx, ref Tid[ string ] tids)
+void wait_starting_thread(THREAD tid_idx, ref Tid[ string ] tids)
 {
-		Tid tid = tids[tid_idx];
-        send(tid, thisTid);
-        receive((bool isReady)
-                {
-                	log.trace_log_and_console ("STARTED THREAD: %s", tid_idx);
-                });	
+    Tid tid = tids[ tid_idx ];
+
+    send(tid, thisTid);
+    receive((bool isReady)
+            {
+                log.trace_log_and_console("STARTED THREAD: %s", tid_idx);
+            });
 }
 
 void init_core()
@@ -98,39 +100,39 @@ void init_core()
         Tid[ string ] tids;
 
         tids[ THREAD.subject_manager ] = spawn(&subject_manager);
-        wait_starting_thread (THREAD.subject_manager, tids);        
-        
-        
+        wait_starting_thread(THREAD.subject_manager, tids);
+
         tids[ THREAD.ticket_manager ] = spawn(&ticket_manager);
-        wait_starting_thread (THREAD.ticket_manager, tids);        
-        
+        wait_starting_thread(THREAD.ticket_manager, tids);
+
         tids[ THREAD.acl_manager ] = spawn(&acl_manager);
-        wait_starting_thread (THREAD.acl_manager, tids);        
+        wait_starting_thread(THREAD.acl_manager, tids);
 
         tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
-        wait_starting_thread (THREAD.xapian_thread_context, tids);        
-        
+        wait_starting_thread(THREAD.xapian_thread_context, tids);
+
         tids[ THREAD.xapian_indexer ] =
             spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
-        wait_starting_thread (THREAD.xapian_indexer, tids);        
-            
-        tids[ THREAD.xapian_indexer_commiter] = spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
-        wait_starting_thread (THREAD.xapian_indexer_commiter, tids);        
-        
+        wait_starting_thread(THREAD.xapian_indexer, tids);
+
+        tids[ THREAD.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
+        wait_starting_thread(THREAD.xapian_indexer_commiter, tids);
+
         tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
-        wait_starting_thread (THREAD.statistic_data_accumulator, tids);        
+        wait_starting_thread(THREAD.statistic_data_accumulator, tids);
 
         tids[ THREAD.print_statistic ] = spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
-        wait_starting_thread (THREAD.print_statistic, tids);        
+        wait_starting_thread(THREAD.print_statistic, tids);
+
+        tids[ THREAD.interthread_signals ] = spawn(&interthread_signals_thread);
+        wait_starting_thread(THREAD.interthread_signals, tids);
 
         foreach (key, value; tids)
-        {
             register(key, value);
-        }
 
         tids[ THREAD.condition ] = spawn(&condition_thread, props_file_path);
-        wait_starting_thread (THREAD.condition, tids);          
-        
+        wait_starting_thread(THREAD.condition, tids);
+
         register(THREAD.condition, tids[ THREAD.condition ]);
 
         //writeln("registred spawned tids:", tids);
@@ -138,89 +140,88 @@ void init_core()
 //        writeln ("tid_condition=", tid_condition);
 
 
+
+        JSONValue props;
+
+        try
         {
-            JSONValue props;
+            props = read_props(props_file_path);
+        } catch (Exception ex1)
+        {
+            throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
+        }
 
-            try
-            {
-                props = read_props(props_file_path);
-            } catch (Exception ex1)
-            {
-                throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-            }
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-            JSONValue[] _listeners;
-            if (("listeners" in props.object) !is null)
+        JSONValue[] _listeners;
+        if (("listeners" in props.object) !is null)
+        {
+            _listeners = props.object[ "listeners" ].array;
+            int listener_section_count = 0;
+            foreach (listener; _listeners)
             {
-                _listeners = props.object[ "listeners" ].array;
-                int listener_section_count = 0;
-                foreach (listener; _listeners)
+                listener_section_count++;
+                string[ string ] params;
+                foreach (key; listener.object.keys)
+                    params[ key ] = listener[ key ].str;
+
+                if (params.get("transport", "") == "file_reader")
                 {
-                    listener_section_count++;
-                    string[ string ] params;
-                    foreach (key; listener.object.keys)
-                        params[ key ] = listener[ key ].str;
+                    spawn(&io.file_reader.file_reader_thread, "pacahon-properties.json");
+                }
+                else if (params.get("transport", "") == "zmq")
+                {
+                    mq_client zmq_connection = null;
 
-                    if (params.get("transport", "") == "file_reader")
-                    {
-                        spawn(&io.file_reader.file_reader_thread, "pacahon-properties.json");
-                    }
-                    else if (params.get("transport", "") == "zmq")
-                    {
-                        mq_client zmq_connection = null;
-
-                        string    zmq_connect_type = params.get("zmq_connect_type", "server");
+                    string    zmq_connect_type = params.get("zmq_connect_type", "server");
 //						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
 
-                        if (zmq_connect_type == "server")
+                    if (zmq_connect_type == "server")
+                    {
+                        try
                         {
-                            try
-                            {
-                                spawn(&io.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
-                                log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
+                            spawn(&io.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
+                            log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
 //								zmq_connection.connect_as_listener(params);
-                            } catch (Exception ex)
-                            {
-                            }
-                        }
-                    }
-                    else if (params.get("transport", "") == "rabbitmq")
-                    {
-                        mq_client rabbitmq_connection = null;
-
-                        // прием данных по каналу rabbitmq
-                        log.trace_log_and_console("LISTENER: connect to rabbitmq");
-
-                        try
-                        {
-                            rabbitmq_connection = new rabbitmq_client();
-                            rabbitmq_connection.connect_as_listener(params);
-
-                            if (rabbitmq_connection.is_success() == true)
-                            {
-                                rabbitmq_connection.set_callback(&get_message);
-
-                                ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path,
-                                                                                             "RABBITMQ");
-
-//                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
-
-                                thread_listener_for_rabbitmq.start();
-
-//								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
-//								load_info_thread1.start();
-                            }
-                            else
-                            {
-                                writeln(rabbitmq_connection.get_fail_msg);
-                            }
                         } catch (Exception ex)
                         {
                         }
+                    }
+                }
+                else if (params.get("transport", "") == "rabbitmq")
+                {
+                    mq_client rabbitmq_connection = null;
+
+                    // прием данных по каналу rabbitmq
+                    log.trace_log_and_console("LISTENER: connect to rabbitmq");
+
+                    try
+                    {
+                        rabbitmq_connection = new rabbitmq_client();
+                        rabbitmq_connection.connect_as_listener(params);
+
+                        if (rabbitmq_connection.is_success() == true)
+                        {
+                            rabbitmq_connection.set_callback(&get_message);
+
+                            ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path,
+                                                                                         "RABBITMQ");
+
+//                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
+
+                            thread_listener_for_rabbitmq.start();
+
+//								LoadInfoThread load_info_thread1 = new LoadInfoThread(&thread_listener_for_rabbitmq.getStatistic);
+//								load_info_thread1.start();
+                        }
+                        else
+                        {
+                            writeln(rabbitmq_connection.get_fail_msg);
+                        }
+                    } catch (Exception ex)
+                    {
                     }
                 }
             }

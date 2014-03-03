@@ -20,10 +20,11 @@ private
     import pacahon.define;
     import pacahon.context;
     import pacahon.bus_event;
+    import pacahon.interthread_signals;
+
     import onto.owl;
     import onto.individual;
-
-//	import search.vql;
+    //	import search.vql;
 }
 
 logger log;
@@ -58,18 +59,36 @@ class ThreadContext : Context
         return name;
     }
 
+    immutable(Class)[ string ] get_owl_classes()
+    {
+        if (owl !is null)
+        {
+            owl.check_for_reload();
+            return owl.owl_classes;
+        }
+        else
+            return (immutable(Class)[ string ]).init;
+    }
+
+/*
     Class *[] owl_classes()
     {
         if (owl !is null)
+        {
+                owl.check_for_reload();
             return owl.class_2_idx.values;
+        }
         else
             return (Class *[]).init;
     }
-
+ */
     Class *get_class(string uri)
     {
         if (owl !is null)
+        {
+            owl.check_for_reload();
             return owl.getClass(uri);
+        }
         else
             return null;
     }
@@ -77,21 +96,57 @@ class ThreadContext : Context
     Property *get_property(string uri)
     {
         if (owl !is null)
+        {
+            owl.check_for_reload();
             return owl.getProperty(uri);
+        }
         else
             return null;
     }
 
-    immutable(Individual)[string] get_onto_as_map_individuals ()
+    immutable(Individual)[ string ] get_onto_as_map_individuals()
     {
         if (owl !is null)
+        {
+            owl.check_for_reload();
             return owl.individuals;
+        }
         else
-            return (immutable(Individual)[string]).init;    	
-    } 
+            return (immutable(Individual)[ string ]).init;
+    }
 
 
 
+    public void push_signal(string key, long value)
+    {
+        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+
+        if (tid_interthread_signals != Tid.init)
+        {
+            send(tid_interthread_signals, CMD.PUT, key, value);
+        }
+    }
+
+    public long look_signal(string key)
+    {
+        Tid myTid                   = thisTid;
+        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+
+        if (tid_interthread_signals !is Tid.init)
+        {
+            send(tid_interthread_signals, CMD.GET, key, myTid);
+
+            long res;
+
+            receive((long msg)
+                    {
+                        res = msg;
+                    });
+
+            return res;
+        }
+        return 0;
+    }
 
     this(string property_file_path, string context_name)
     {
@@ -123,7 +178,7 @@ class ThreadContext : Context
                     use_caching_of_documents = true;
             }
 
-            _vql               = new search.vql.VQL(this);
+            _vql = new search.vql.VQL(this);
 
             //writeln(context_name ~ ": load events");
             //pacahon.event_filter.load_events(this);
@@ -222,7 +277,7 @@ class ThreadContext : Context
         else
             key2slot = old_key2slot;
 
-        //writeln ("@get_key2slot=", key2slot);    
+        //writeln ("@get_key2slot=", key2slot);
         return key2slot;
     }
 
