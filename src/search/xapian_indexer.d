@@ -324,8 +324,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 string prefix;
                                 int slot = get_slot_and_set_if_not_found(pp.predicate, key2slot);
 
-                                all_text.write(escaping_or_uuid2search(pp.predicate));
-                                all_text.write('|');
+                                //all_text.write(escaping_or_uuid2search(pp.predicate));
+                                //all_text.write('|');
 
                                 string type = "?";
 
@@ -499,6 +499,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 }
                             }
                             string data = all_text.toString;
+                            writeln ("@index = ", data);
                             indexer.index_text(data.ptr, data.length, &err);
 
                             string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);

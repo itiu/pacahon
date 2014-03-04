@@ -88,6 +88,7 @@ class Individual_IO
         if (query_str.indexOf(' ') <= 0)
             query_str = "'*' == '" ~ query_str ~ "'";
 
+	//writeln (query_str);
         context.vql.get(&ticket, query_str, null, null, 10, 10000, res);
         return res;
     }
