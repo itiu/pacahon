@@ -160,6 +160,12 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                         feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
                         if (tta.op == "!=")
                         {
+/*	TODO                    	
+                    	 вероятно получаются не оптимальнми запросы вида
+                    	 '*' == 'rdf' && '*' != 'List*'
+                    	 @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
+*/                    
+                        	
                             flags     = flags | feature_flag.FLAG_PURE_NOT;
                             query_str = "NOT " ~ query_str;
                         }
@@ -187,10 +193,16 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                 if (indexOf(xtr, '*') > 0 && xtr.length > 3)
                 {
                     feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
-                    if (tta.op == "!=")
+                    if (tta.op == "!=")                    
                     {
+/*	TODO                    	
+                    	 вероятно получаются не оптимальнми запросы вида
+                    	 '*' == 'rdf' && '*' != 'List*'
+                    	 @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
+*/                    
+                    	
                         flags = flags | feature_flag.FLAG_PURE_NOT;
-                        xtr   = "NOT " ~ xtr;
+                        xtr   = "NOT " ~ xtr;  
                     }
 
                     query = qp.parse_query(cast(char *)xtr, xtr.length, flags, &err);
