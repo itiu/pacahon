@@ -321,8 +321,8 @@ interface XapianQueryParser
     void set_database(XapianWritableDatabase db, byte *err);
     void set_stemming_strategy(stem_strategy strategy, byte *err);
     XapianQuery parse_query(char *query_string, ulong query_string_len, byte *err);
-    XapianQuery parse_query(char *query_string, ulong query_string_len, feature_flag flags, byte *err);
-    XapianQuery parse_query(char *query_string, ulong query_string_len, feature_flag flags, char *prefix_string, ulong prefix_string_len, byte *err);
+    XapianQuery parse_query(char *query_string, ulong query_string_len, uint flags, byte *err);
+    XapianQuery parse_query(char *query_string, ulong query_string_len, uint flags, char *prefix_string, ulong prefix_string_len, byte *err);
     void add_prefix(char *field_string, ulong field_string_len, char *prefix_string, ulong prefix_string_len, byte *err);
     void add_valuerangeprocessor(XapianNumberValueRangeProcessor pp, byte *err);
 }

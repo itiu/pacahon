@@ -499,7 +499,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                 }
                             }
                             string data = all_text.toString;
-                            writeln ("@index = ", data);
+                            //writeln("@index = ", data);
                             indexer.index_text(data.ptr, data.length, &err);
 
                             string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);

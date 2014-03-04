@@ -82,8 +82,8 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 {
 //	string eee = "                                                                                       ";
 //	string e1 = text(level) ~ eee[0..level*3];
-
 //	writeln (e1, " #1, tta=", tta);
+
     string      dummy;
     double      rd, ld;
     XapianQuery query_r;
@@ -117,16 +117,6 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
             {
             }
 
-//			bool is_digit = true;
-//			foreach (rr ; rs)
-//			{
-//				if (isDigit (rr) == false)
-//				{
-//					is_digit = false;
-//					break;
-//				}
-//			}
-
             if (is_digit)
             {
                 // это число
@@ -136,7 +126,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
             }
         }
     }
-    else if (tta.op == "==")
+    else if (tta.op == "==" || tta.op == "!=")
     {
         string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
         string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
@@ -165,8 +155,16 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                     {
 //                  xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
                         string query_str = to_lower_and_replace_delimeters(rs);
-                        xtr   = "X" ~ text(slot) ~ "X";
-                        query = qp.parse_query(cast(char *)query_str, query_str.length, feature_flag.FLAG_WILDCARD, cast(char *)xtr,
+                        xtr = "X" ~ text(slot) ~ "X";
+
+                        feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
+                        if (tta.op == "!=")
+                        {
+                            flags     = flags | feature_flag.FLAG_PURE_NOT;
+                            query_str = "NOT " ~ query_str;
+                        }
+
+                        query = qp.parse_query(cast(char *)query_str, query_str.length, flags, cast(char *)xtr,
                                                xtr.length, &err);
                         if (err != 0)
                             writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
@@ -188,7 +186,14 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 
                 if (indexOf(xtr, '*') > 0 && xtr.length > 3)
                 {
-                    query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
+                    feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
+                    if (tta.op == "!=")
+                    {
+                        flags = flags | feature_flag.FLAG_PURE_NOT;
+                        xtr   = "NOT " ~ xtr;
+                    }
+
+                    query = qp.parse_query(cast(char *)xtr, xtr.length, flags, &err);
                     if (err != 0)
                         writeln("XAPIAN:transform_vql_to_xapian:parse_query('*'=*)", err);
                 }
@@ -199,14 +204,16 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                         writeln("XAPIAN:transform_vql_to_xapian:parse_query('*'=x)", err);
                 }
             }
-
-            destroy_Query(query_l);
-            destroy_Query(query_r);
         }
+
+        if (query_l !is null)
+            destroy_Query(query_l);
+        if (query_r !is null)
+            destroy_Query(query_r);
     }
     else if (tta.op == "&&")
     {
-//	writeln ("#3.0 &&");
+        //writeln ("#3.0 &&, p_op=", p_op);
         string t_op_l;
         string t_op_r;
         string token_L;
@@ -333,7 +340,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     //StopWatch sw;
     //sw.start();
 
-//    writeln ("@query=", get_query_description (query));
+    writeln("@query=", get_query_description(query));
 
     byte err;
 
