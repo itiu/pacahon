@@ -125,7 +125,7 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
                 if (ticket !is null && graph.isExsistsPredicate(dc__creator) == false)
                 {
                     // добавим признак dc:creator
-                    graph.addPredicate(dc__creator, ticket.userId);
+                    graph.addPredicate(dc__creator, ticket.user_uri);
                 }
 
                 context.store_subject(graph, prepareEvents);
@@ -217,7 +217,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 }
                 /////////////////////////////////////////////////////////////////////////////////////////
                 if (trace_msg[ 58 ] == 1)
-                    log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.userId);
+                    log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.user_uri);
 
                 // авторизуем найденные субьекты
                 int    count_authorized_subjects = res.length;
@@ -316,7 +316,7 @@ Subject remove(Subject message, Predicate sender, Ticket *ticket, Context contex
         string userId;
 
         if (ticket !is null)
-            userId = ticket.userId;
+            userId = ticket.user_uri;
 
         bool result_of_az = false;
 

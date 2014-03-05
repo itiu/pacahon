@@ -1,6 +1,5 @@
 module onto.individual;
 
-private import std.string;
 private import onto.resource;
 
 private
@@ -70,62 +69,5 @@ struct Individual
             }
         }
         return false;
-    }
-}
-
-class Individual_IO
-{
-    Context context;
-
-    public this(Context _context)
-    {
-        context = _context;
-    }
-
-    immutable(Individual)[] getIndividualsViaQuery(string query_str, Ticket ticket, byte level = 0)
-    {
-        immutable(Individual)[] res;
-        if (query_str.indexOf(' ') <= 0)
-            query_str = "'*' == '" ~ query_str ~ "'";
-
-	//writeln (query_str);
-        context.vql.get(&ticket, query_str, null, null, 10, 10000, res);
-        return res;
-    }
-
-    Individual getIndividual(string uri, Ticket ticket, byte level = 0)
-    {
-        string     individual_as_cbor = context.get_subject_as_cbor(uri);
-
-        Individual individual = Individual();
-
-        cbor_to_individual(&individual, individual_as_cbor);
-
-        while (level > 0)
-        {
-            foreach (key, values; individual.resources)
-            {
-                Individuals ids;
-                foreach (ruri; values)
-                {
-                    ids ~= getIndividual(ruri.uri, ticket, level);
-                }
-                individual.individuals[ key ] = ids;
-            }
-
-            level--;
-        }
-
-        return individual;
-    }
-
-    string putIndividual(string uri, Individual individual, Ticket ticket)
-    {
-        return null;
-    }
-
-    string postIndividual(Individual individual, Ticket ticket)
-    {
-        return null;
     }
 }

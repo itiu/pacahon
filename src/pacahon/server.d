@@ -448,7 +448,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 
                     if (ticket_id != "@local")
                     {
-                        ticket = context.foundTicket(ticket_id);
+                        ticket = context.get_ticket(ticket_id);
 
                         // проверим время жизни тикета
                         if (ticket !is null)
@@ -463,7 +463,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
                             }
                             else
                             {
-                                userId = ticket.userId;
+                                userId = ticket.user_uri;
                                 // продляем тикет
 
                                 ticket.end_time = now.stdTime + 3600;

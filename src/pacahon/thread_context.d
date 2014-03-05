@@ -2,7 +2,7 @@ module pacahon.thread_context;
 
 private
 {
-    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer;
+    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid;
 
     import io.mq_client;
     import util.container;
@@ -11,6 +11,7 @@ private
     import util.utils;
     import util.cbor;
     import util.cbor8sgraph;
+    import util.cbor8individual;
 
 //    import storage.tickets;
     import bind.xapian_d_header;
@@ -24,6 +25,7 @@ private
     import onto.owl;
     import onto.individual;
     import onto.sgraph;
+    import onto.resource;
     //	import search.vql;
 }
 
@@ -336,12 +338,6 @@ class ThreadContext : Context
         return tids[ THREAD.ticket_manager ];
     }
 
-    private Ticket *[ string ] _user_of_ticket;
-    @property Ticket *[ string ] user_of_ticket()
-    {
-        return _user_of_ticket;
-    }
-
     private Subjects _ba2pacahon_records;
     @property Subjects ba2pacahon_records()
     {
@@ -399,20 +395,87 @@ class ThreadContext : Context
     {
         cache__subject_creator[ key ] = value;
     }
-/////////////////////////////////////////////////////////
-
-    mq_client client;
 
     bool authorize(Ticket *ticket, Subject doc)
     {
         return false;        //mandat_manager.ca;
     }
 
-    Ticket *foundTicket(string ticket_id)
+    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+
+    private Ticket *[ string ] user_of_ticket;
+    bool is_ticket_valid(string ticket_id)
+    {
+    	writeln ("@is_ticket_valid, ", ticket_id);
+        Ticket *ticket = user_of_ticket.get(ticket_id, null);
+
+        if (ticket is null)
+            return false;
+
+        SysTime now = Clock.currTime();
+        if (now.stdTime < ticket.end_time)
+            return true;
+
+        return false;
+    }
+
+    Ticket new_ticket(string login, string password)
+    {
+    	writeln ("@new_ticket, login=", login, ", password=", password);
+
+        Ticket                  ticket;
+
+        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__userName ~ "' == '" ~ login ~ "'", null);
+        foreach (user; candidate_users)
+        {
+           	writeln ("@1 user=", user);
+            iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
+            if (pass.length > 0 && pass[ 0 ].data == password)
+            {
+            	writeln ("@2 new_ticket pass is ok");
+            	
+                Subject new_ticket = new Subject;
+                new_ticket.addPredicate(rdf__type, ticket__Ticket);
+
+                UUID new_id = randomUUID();
+                new_ticket.subject = new_id.toString();
+
+                new_ticket.addPredicate(ticket__accessor, user.uri);
+                new_ticket.addPredicate(ticket__when, getNowAsString());
+                new_ticket.addPredicate(ticket__duration, "40000");
+
+                // store ticket
+                string ss_as_cbor = encode_cbor(new_ticket);
+
+                Tid    tid_ticket_manager = getTid(THREAD.ticket_manager);
+
+                if (tid_ticket_manager != Tid.init)
+                {
+                    send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
+                    receive((string msg, Tid from)
+                            {
+                                if (from == tids[ THREAD.ticket_manager ])
+                                {
+//                            res = msg;
+                                    //writeln("context.store_subject:msg=", msg);
+                                    subject2Ticket(new_ticket, &ticket);
+                                    user_of_ticket[ ticket.id ] = &ticket;
+                                }
+                            });
+                }
+
+
+
+                return ticket;
+            }
+        }
+
+        return Ticket.init;
+    }
+
+    Ticket *get_ticket(string ticket_id)
     {
         Ticket *tt = user_of_ticket.get(ticket_id, null);
-
-        //	trace_msg[2] = 0;
 
         if (tt is null)
         {
@@ -425,93 +488,10 @@ class ThreadContext : Context
             {
                 tt = new Ticket;
                 Subject ticket = decode_cbor(ticket_str);
+                subject2Ticket(ticket, tt);
+                user_of_ticket[ tt.id ] = tt;
+
 //				writeln ("Ticket=",ticket);
-                tt.id     = ticket.subject;
-                tt.userId = ticket.getFirstLiteral(ticket__accessor);
-                when      = ticket.getFirstLiteral(ticket__when);
-                string dd = ticket.getFirstLiteral(ticket__duration);
-                duration = parse!uint (dd);
-
-//				writeln ("tt.userId=", tt.userId);
-            }
-
-            //////////////////////////////
-/*
-                        tt.id = ticket_id;
-
-                        if(trace_msg[18] == 1)
-                        {
-                                log.trace("найдем пользователя по сессионному билету ticket=%s", ticket_id);
-                                //			printf("T count: %d, %d [µs] start get data\n", count, cast(long) sw.peek().microseconds);
-                        }
-
-                        string when = null;
-                        int duration = 0;
-
-                        // найдем пользователя по сессионному билету и проверим просрочен билет или нет
-                        if(ticket_id !is null && ticket_id.length > 10)
-                        {
-                                TLIterator it = ts.getTriples(ticket_id, null, null);
-
-                                if(trace_msg[19] == 1)
-                                        if(it is null)
-                                                log.trace("сессионный билет не найден");
-
-                                foreach(triple; it)
-                                {
-                                        if(trace_msg[20] == 1)
-                                                log.trace("foundTicket: %s %s %s", triple.S, triple.P, triple.O);
-
-                                        if(triple.P == ticket__accessor)
-                                        {
-                                                tt.userId = triple.O;
-                                        }
-                                        else if(triple.P == ticket__when)
-                                        {
-                                                when = triple.O;
-                                        }
-                                        else if(triple.P == ticket__duration)
-                                        {
-                                                duration = parse!uint(triple.O);
-                                        }
-                                        else if(triple.P == ticket__parentUnitOfAccessor)
-                                        {
-                                                tt.parentUnitIds ~= triple.O;
-                                        }
-
-   //					if(tt.userId !is null && when !is null && duration > 10)
-   //						break;
-                                }
-
-                                delete (it);
-                        }
- */
-            if (trace_msg[ 20 ] == 1)
-                log.trace("foundTicket end");
-
-            if (tt.userId is null)
-            {
-                if (trace_msg[ 22 ] == 1)
-                    log.trace("найденный сессионный билет не полон, пользователь не найден");
-            }
-
-            if (tt.userId !is null && (when is null || duration < 10))
-            {
-                if (trace_msg[ 23 ] == 1)
-                    log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
-                tt.userId = null;
-            }
-
-            if (when !is null)
-            {
-                if (trace_msg[ 24 ] == 1)
-                    log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d, parentUnitIds=%s", ticket_id, tt.userId, when,
-                              duration, text(tt.parentUnitIds));
-
-                // TODO stringToTime очень медленная операция ~ 100 микросекунд
-                tt.end_time = stringToTime(when) + duration * 100_000_000_000;                 //? hnsecs?
-
-                _user_of_ticket[ ticket_id ] = tt;
             }
         }
         else
@@ -521,5 +501,91 @@ class ThreadContext : Context
         }
 
         return tt;
+    }
+
+    private void subject2Ticket(Subject ticket, Ticket *tt)
+    {
+        string when;
+        long   duration;
+
+        tt.id       = ticket.subject;
+        tt.user_uri = ticket.getFirstLiteral(ticket__accessor);
+        when        = ticket.getFirstLiteral(ticket__when);
+        string dd = ticket.getFirstLiteral(ticket__duration);
+        duration = parse!uint (dd);
+
+//				writeln ("tt.userId=", tt.userId);
+
+        if (tt.user_uri is null)
+        {
+            if (trace_msg[ 22 ] == 1)
+                log.trace("найденный сессионный билет не полон, пользователь не найден");
+        }
+
+        if (tt.user_uri !is null && (when is null || duration < 10))
+        {
+            if (trace_msg[ 23 ] == 1)
+                log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
+            tt.user_uri = null;
+        }
+
+        if (when !is null)
+        {
+            if (trace_msg[ 24 ] == 1)
+                log.trace("сессионный билет %s Ok, user=%s, when=%s, duration=%d", tt.id, tt.user_uri, when,
+                          duration);
+
+            // TODO stringToTime очень медленная операция ~ 100 микросекунд
+            tt.end_time = stringToTime(when) + duration * 100_000_000_000;                     //? hnsecs?
+        }
+    }
+
+    ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+
+    immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0)
+    {
+        immutable(Individual)[] res;
+        if (query_str.indexOf(' ') <= 0)
+            query_str = "'*' == '" ~ query_str ~ "'";
+
+        //writeln (query_str);
+        vql.get(ticket, query_str, null, null, 10, 10000, res);
+        return res;
+    }
+
+    Individual get_individual(string uri, Ticket ticket, byte level = 0)
+    {
+        string     individual_as_cbor = get_subject_as_cbor(uri);
+
+        Individual individual = Individual();
+
+        cbor_to_individual(&individual, individual_as_cbor);
+
+        while (level > 0)
+        {
+            foreach (key, values; individual.resources)
+            {
+                Individuals ids;
+                foreach (ruri; values)
+                {
+                    ids ~= get_individual(ruri.uri, ticket, level);
+                }
+                individual.individuals[ key ] = ids;
+            }
+
+            level--;
+        }
+
+        return individual;
+    }
+
+    string put_individual(string uri, Individual individual, Ticket ticket)
+    {
+        return null;
+    }
+
+    string post_individual(Individual individual, Ticket ticket)
+    {
+        return null;
     }
 }

@@ -47,13 +47,34 @@ static THREAD[ 8 ] THREAD_LIST =
     THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition, THREAD.interthread_signals
 ];
 
+struct Ticket
+{
+    string id;
+    string user_uri;
+//    string[] parentUnitIds = new string[ 0 ];
+
+    long   end_time;
+
+    immutable this(string _id, string _user_uri, long _end_time)
+    {
+        id       = _id;
+        user_uri = _user_uri;
+        end_time = _end_time;
+    }
+
+    immutable(Ticket) idup()
+    {
+        immutable(Ticket) result = immutable Ticket(id, user_uri, end_time);
+        return result;
+    }
+}
+
 interface Context
 {
-    // Class *[] owl_classes();
     immutable(Class)[ string ] get_owl_classes();
+    immutable(Individual)[ string ] get_onto_as_map_individuals();
     Class *get_class(string ur);
     Property *get_property(string ur);
-    immutable(Individual)[ string ] get_onto_as_map_individuals();
 
     public string get_name();
     public JSONValue get_props();
@@ -62,17 +83,12 @@ interface Context
     @property Tid tid_ticket_manager();
     Tid getTid(THREAD tid_name);
 
-//	@property StopWatch sw ();
-    @property Ticket *[ string ] user_of_ticket();
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
     @property search.vql.VQL vql();
 
     public void push_signal(string key, long value);
     public long look_signal(string key);
-
-
-    Ticket *foundTicket(string ticket_id);
 
     int get_subject_creator_size();
     string get_subject_creator(string pp);
@@ -94,20 +110,17 @@ interface Context
     public long get_last_update_time();
 
     public void store_subject(Subject ss, bool prepareEvents = true);
+
+    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+
+	Ticket new_ticket(string login, string password);
+    Ticket *get_ticket(string ticket_id);
+    bool is_ticket_valid(string ticket_id);
+
+    ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0);
+    public Individual get_individual(string uri, Ticket ticket, byte level = 0);
+    public string put_individual(string uri, Individual individual, Ticket ticket);
+    public string post_individual(Individual individual, Ticket ticket);    
 }
 
-enum event_type
-{
-    EVENT_INSERT,
-    EVENT_UPDATE,
-    EVENT_DELETE
-}
-
-struct Ticket
-{
-    string   id;
-    string   userId;
-    string[] parentUnitIds = new string[ 0 ];
-
-    long     end_time;
-}

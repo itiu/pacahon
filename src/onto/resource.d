@@ -18,7 +18,9 @@ enum ResourceOrigin : ubyte
 }
 
 alias Resource[] Resources;
-
+alias immutable(Resource)[] iResources;
+Resources _empty_Resources = Resources.init;
+iResources _empty_iResources = iResources.init;
 
 struct Resource
 {

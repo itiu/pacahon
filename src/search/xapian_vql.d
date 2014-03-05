@@ -361,8 +361,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     if (err < 0)
         return err;
 
-//      writeln ("@found =",  matches.get_matches_estimated(&err));
-//      writeln ("@matches =",  matches.size (&err));
+    writeln ("@found =",  matches.get_matches_estimated(&err), ", @matches =",  matches.size (&err));
 
     if (matches !is null)
     {

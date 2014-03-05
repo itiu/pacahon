@@ -27,12 +27,12 @@ private import pacahon.know_predicates;
 
 enum OBJECT_TYPE : byte
 {
-    TEXT_STRING  = 0,
-    LINK_SUBJECT =  10,
-    LINK_CLUSTER  = 20,
-    URI = 30,
-    UNSIGNED_INTEGER = 31,
-    STANDARD_DATE_TIME = 32    
+    TEXT_STRING        = 0,
+    LINK_SUBJECT       =  10,
+    LINK_CLUSTER       = 20,
+    URI                = 30,
+    UNSIGNED_INTEGER   = 31,
+    STANDARD_DATE_TIME = 32
 }
 
 enum STRATEGY : byte
@@ -47,11 +47,11 @@ final class Subjects
 //    private      Subject[ string ][ string ] i1PO;
 //    private      Subject[ string ] graphs_of_subject;
 
-    private Set!Subject graphs;
+    private   Set!Subject graphs;
 
     Subject[] data()
     {
-            return graphs.items;
+        return graphs.items;
     }
 
     Subject addSubject(string subject_id)
@@ -72,7 +72,7 @@ final class Subjects
 
     int length()
     {
-            return cast(uint)graphs.length;
+        return cast(uint)graphs.length;
     }
 
     override string toString()
@@ -111,18 +111,18 @@ final class Subject
 
     int opApply(int delegate(ref Predicate) dg)
     {
-    	int result = 0;
+        int result = 0;
 
-    	foreach (val; edges[ 0 .. _count_edges ])
-    	{
-    		result = dg(val);
-    		if (result)
-    			break;
-    	}
+        foreach (val; edges[ 0 .. _count_edges ])
+        {
+            result = dg(val);
+            if (result)
+                break;
+        }
 
-    	return result;
+        return result;
     }
-  
+
     Predicate[] getPredicates()
     {
         return edges[ 0 .. _count_edges ];
@@ -243,7 +243,7 @@ final class Subject
         }
         needReidex = true;
     }
-    
+
     Objectz addResource(string predicate, string object)
     {
         if (object is null)
@@ -264,10 +264,10 @@ final class Subject
         _count_edges++;
 
         needReidex = true;
-        
+
         return edges[ _count_edges - 1 ].objects[ 0 ];
     }
-    
+
     Objectz addPredicate(string predicate, string object, LANG lang = LANG.NONE)
     {
         if (object is null)
@@ -523,7 +523,7 @@ final class Subject
 
     override string toString()
     {
-    	return subject;
+        return subject;
     }
 
     Subject[] get_metadata()
@@ -535,7 +535,6 @@ final class Subject
         }
         return array;
     }
-
 }
 
 class Predicate
@@ -551,25 +550,25 @@ class Predicate
     {
         return objects[ 0 .. count_objects ];
     }
-    
+
 
     short length()
     {
         return count_objects;
     }
-        
-  int opApply(int delegate(ref Objectz) dg)
-  {
-    int result = 0;
 
-    for (int i = 0; i < count_objects; i++)
+    int opApply(int delegate(ref Objectz) dg)
     {
-      result = dg(objects[i]);
-      if (result)
-        break;
+        int result = 0;
+
+        for (int i = 0; i < count_objects; i++)
+        {
+            result = dg(objects[ i ]);
+            if (result)
+                break;
+        }
+        return result;
     }
-    return result;
-  }    
 
     Objectz getObject(string literal)
     {
@@ -641,7 +640,7 @@ class Predicate
         count_objects++;
         return objects[ count_objects - 1 ];
     }
-       
+
     Objectz addLiteral(string val, OBJECT_TYPE type)
     {
         if (val is null)
@@ -654,7 +653,7 @@ class Predicate
         objects[ count_objects ].type    = type;
         count_objects++;
         return objects[ count_objects - 1 ];
-    }   
+    }
 
     void addCluster(Subjects cl)
     {
@@ -697,17 +696,17 @@ class Predicate
         count_objects = cast(ushort)oo.length;
     }
 
-	void opOpAssign(string OP)(Objectz item)
-		if (OP=="~")
-	{
-		addObjectz(item);
-	}
+    void opOpAssign(string OP) (Objectz item)
+    if (OP == "~")
+    {
+        addObjectz(item);
+    }
 
-	void opOpAssign(string OP)(string item)
-		if (OP=="~")
-	{
-		addLiteral(item);
-	}
+    void opOpAssign(string OP) (string item)
+    if (OP == "~")
+    {
+        addLiteral(item);
+    }
 
     override string toString()
     {
@@ -741,19 +740,18 @@ class Predicate
 
         return res;
     }
-
 }
 
 class Objectz
 {
-    string       literal;            // если type == LITERAL | RESOURCE | UNSIGNED_INTEGER | STANDARD_DATE_TIME
-    Subject      subject;            // если type == LINK_SUBJECT
-    Subjects 	 cluster;            // если type == LINK_CLUSTER
+    string   literal;                // если type == LITERAL | RESOURCE | UNSIGNED_INTEGER | STANDARD_DATE_TIME
+    Subject  subject;                // если type == LINK_SUBJECT
+    Subjects cluster;                // если type == LINK_CLUSTER
 
-    Subject      reification = null; // реификация для данного значения
+    Subject  reification = null;     // реификация для данного значения
 
-    byte         type = OBJECT_TYPE.TEXT_STRING;
-    LANG         lang;
+    byte     type = OBJECT_TYPE.TEXT_STRING;
+    LANG     lang;
 
     override string toString()
     {

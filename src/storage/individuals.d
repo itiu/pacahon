@@ -99,7 +99,7 @@ public void subject_manager()
                             {
                                 try
                                 {
-//                                	writeln ("#b");
+//                                  writeln ("#b");
                                     Subject graph = decode_cbor(msg);
 
                                     MDB_val key;
@@ -131,11 +131,11 @@ public void subject_manager()
                                         throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 
                                     send(tid_response_reciever, res, thisTid);
-//                                	writeln ("#e");
+//                                  writeln ("#e");
                                 }
                                 catch (Exception ex)
                                 {
-                                    send(tid_response_reciever, res, thisTid);
+                                    send(tid_response_reciever, ex.msg, thisTid);
                                 }
                             }
                             else if (cmd == CMD.FIND)
@@ -146,10 +146,10 @@ public void subject_manager()
 
                                 //	writeln ("%%0, rc:", rc);
                                 //if (rc != 0)
-                                   // writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
+                                // writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
                                 //else
                                 {
-                                    //	writeln ("%%1");
+                                //	writeln ("%%1");
                                     MDB_val key;
                                     key.mv_size = msg.length;
                                     key.mv_data = cast(char *)msg;
@@ -187,7 +187,8 @@ public void subject_manager()
     }
 }
 
-public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level, ref Subjects res, Context context)
+public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level,
+                                                ref Subjects res, Context context)
 {
     string dummy;
     double rd, ld;

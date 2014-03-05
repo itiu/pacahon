@@ -1,9 +1,5 @@
 module pacahon.know_predicates;
 
-//public static const byte _NONE = 0;
-//public static const byte _RU   = 1;
-//public static const byte _EN   = 2;
-
 public const string      owl__Ontology    = "owl:Ontology";
 public const string      owl__versionInfo = "owl:versionInfo";
 public const string      rdf__Property    = "rdf:Property";
@@ -23,6 +19,8 @@ public const string      owl__Class            = "owl:Class";
 
 //public const string veda__mandat	= "veda:mandat";
 public const string veda_schema__script = "veda-schema:script";
+public const string veda_schema__userName = "veda-schema:userName";
+public const string veda_schema__password = "veda-schema:password";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------

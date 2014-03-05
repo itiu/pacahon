@@ -7,7 +7,7 @@ private
     import onto.sgraph;
     import onto.resource;
     import onto.individual;
-    
+
     import pacahon.know_predicates;
     import pacahon.context;
     import search.vql;

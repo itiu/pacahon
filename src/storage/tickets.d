@@ -5,12 +5,12 @@ private
     import std.stdio, std.concurrency, std.file, std.datetime;
 
     import bind.lmdb_header;
-    
+
     import onto.sgraph;
 
     import util.logger;
     import util.utils;
-    import util.cbor;    
+    import util.cbor;
     import util.cbor8sgraph;
 
     import pacahon.context;
@@ -35,7 +35,8 @@ void ticket_manager()
     MDB_txn *txn;
 
     string  path = "./data/lmdb-tickets";
-//    string  path = "./data/lmdb-subjects";    
+
+//    string  path = "./data/lmdb-subjects";
 
     try
     {
@@ -53,8 +54,8 @@ void ticket_manager()
     {
     }
 
-   int rc;
-   int rrc;
+    int rc;
+    int rrc;
     rrc = mdb_env_create(&env);
     if (rrc != 0)
         writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
@@ -88,30 +89,50 @@ void ticket_manager()
     while (true)
     {
         string res = "?";
-        receive((CMD cmd, string msg, Tid tid_sender)
+        receive((CMD cmd, string msg, Tid tid_response_reciever)
                 {
                     if (cmd == CMD.STORE)
                     {
-                        Subject ticket = decode_cbor(msg);
+                        try
+                        {
+//                                  writeln ("#b");
+                            Subject graph = decode_cbor(msg);
 
-                        MDB_val key;
-                        key.mv_data = cast(char *)ticket.subject;
-                        key.mv_size = ticket.subject.length;
+                            MDB_val key;
+                            key.mv_data = cast(char *)graph.subject;
+                            key.mv_size = graph.subject.length;
 
-                        MDB_val data;
-                        data.mv_data = cast(char *)msg;
-                        data.mv_size = msg.length;
+                            MDB_val data;
 
-                        rc = mdb_put(txn, dbi, &key, &data, MDB_NODUPDATA);
-                        if (rc == 0)
-                            res = "Ok";
-                        else
-                            res = "Fail:" ~  fromStringz(mdb_strerror(rc));
+                            // проверим был есть ли такой субьект в базе
+                            int rc = mdb_get(txn, dbi, &key, &data);
+                            if (rc == 0)
+                                res = "U";
+                            else
+                                res = "C";
 
-                        send(tid_sender, res);
+                            data.mv_data = cast(char *)msg;
+                            data.mv_size = msg.length;
 
-                        rc = mdb_txn_commit(txn);
-                        rc = mdb_txn_begin(env, null, 0, &txn);
+                            rc = mdb_put(txn, dbi, &key, &data, 0);
+                            if (rc != 0)
+                                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                            rc = mdb_txn_commit(txn);
+                            if (rc != 0)
+                                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                            rc = mdb_txn_begin(env, null, 0, &txn);
+                            if (rc != 0)
+                                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+                            send(tid_response_reciever, res, thisTid);
+//                                  writeln ("#e");
+                        }
+                        catch (Exception ex)
+                        {
+                            send(tid_response_reciever, ex.msg, thisTid);
+                        }
                     }
                     else if (cmd == CMD.FIND)
                     {
@@ -133,11 +154,11 @@ void ticket_manager()
                             res = "?";
 
                         mdb_txn_abort(txn_r);
-                        send(tid_sender, res);
+                        send(tid_response_reciever, res);
                     }
                     else
                     {
-                        send(tid_sender, "?");
+                        send(tid_response_reciever, "?");
                     }
                 });
     }
