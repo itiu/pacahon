@@ -1,4 +1,4 @@
-module storage.subject;
+module storage.individuals;
 
 private
 {

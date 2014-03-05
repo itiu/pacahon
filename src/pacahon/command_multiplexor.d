@@ -21,7 +21,7 @@ private
     import util.json_ld_parser;
     import util.logger;
 
-    import storage.ticket;
+    //import storage.tickets;
 
     import pacahon.command_io;
     import pacahon.context;
@@ -29,6 +29,7 @@ private
     import pacahon.log_msg;
     import pacahon.define;
     import pacahon.context;
+    import storage.individuals;
 }
 
 logger log;
@@ -42,7 +43,7 @@ static this()
  * команда получения тикета
  */
 
-import storage.subject;
+
 Subject get_ticket(Subject message, Predicate sender, Context context, out bool isOk,
                    out string reason, out Ticket *ticket)
 {

@@ -2,14 +2,7 @@
 
 module search.xapian_reader;
 
-import std.concurrency;
-import std.outbuffer;
-import std.datetime;
-import std.conv;
-import std.typecons;
-import std.stdio;
-import std.string;
-import std.file;
+import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 
 import bind.xapian_d_header;
 import util.utils;
@@ -20,10 +13,9 @@ import util.cbor8sgraph;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
-import storage.subject;
+//import storage.subject;
 import search.vel;
 import search.xapian_vql;
-
 
 byte err;
 

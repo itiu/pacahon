@@ -11,8 +11,8 @@ private
 
     import az.acl;
     import az.condition;
-    import storage.ticket;
-    import storage.subject;
+    import storage.tickets;
+    import storage.individuals;
 
     import util.logger;
     import util.json_ld_parser;

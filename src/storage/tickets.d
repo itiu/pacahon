@@ -1,4 +1,4 @@
-module storage.ticket;
+module storage.tickets;
 
 private
 {

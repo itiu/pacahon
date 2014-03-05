@@ -13,7 +13,7 @@ import util.cbor8sgraph;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
-import storage.subject;
+//import storage.subject;
 import search.vel;
 import search.xapian_vql;
 

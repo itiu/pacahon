@@ -23,7 +23,7 @@ private
     import search.vel;
     import search.xapian_reader;
 
-    import storage.subject;
+    import storage.individuals;
     import onto.individual;
 }
 
