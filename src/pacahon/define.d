@@ -26,3 +26,11 @@ interface Outer
 	void put (string data); 
 }
 
+enum Type : ubyte
+{
+    Uri      = 1,
+    String   = 2,
+    Integer  = 4,
+    Datetime = 8,
+    Float    = 16
+}

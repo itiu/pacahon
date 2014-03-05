@@ -117,7 +117,7 @@ class ThreadContext : Context
             return (immutable(Individual)[ string ]).init;
     }
 
-
+///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
 
     public void push_signal(string key, long value)
     {
@@ -129,14 +129,24 @@ class ThreadContext : Context
         }
     }
 
-    public long look_signal(string key)
+    public void push_signal(string key, string value)
+    {
+        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+
+        if (tid_interthread_signals != Tid.init)
+        {
+            send(tid_interthread_signals, CMD.PUT, key, value);
+        }
+    }
+
+    public long look_integer_signal(string key)
     {
         Tid myTid                   = thisTid;
         Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
 
         if (tid_interthread_signals !is Tid.init)
         {
-            send(tid_interthread_signals, CMD.GET, key, myTid);
+            send(tid_interthread_signals, CMD.GET, key, Type.Integer, myTid);
 
             long res;
 
@@ -149,6 +159,29 @@ class ThreadContext : Context
         }
         return 0;
     }
+
+    public string look_string_signal(string key)
+    {
+        Tid myTid                   = thisTid;
+        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+
+        if (tid_interthread_signals !is Tid.init)
+        {
+            send(tid_interthread_signals, CMD.GET, key, Type.String, myTid);
+
+            string res;
+
+            receive((string msg)
+                    {
+                        res = msg;
+                    });
+
+            return res;
+        }
+        return null;
+    }
+
+///////////////////////////////////////////////////////////////////////////////////////////////
 
     this(string property_file_path, string context_name)
     {
@@ -428,12 +461,9 @@ class ThreadContext : Context
         immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__userName ~ "' == '" ~ login ~ "'", null);
         foreach (user; candidate_users)
         {
-           	writeln ("@1 user=", user);
             iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
             if (pass.length > 0 && pass[ 0 ].data == password)
             {
-            	writeln ("@2 new_ticket pass is ok");
-            	
                 Subject new_ticket = new Subject;
                 new_ticket.addPredicate(rdf__type, ticket__Ticket);
 

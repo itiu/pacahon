@@ -86,10 +86,7 @@ interface Context
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
     @property search.vql.VQL vql();
-
-    public void push_signal(string key, long value);
-    public long look_signal(string key);
-
+    
     int get_subject_creator_size();
     string get_subject_creator(string pp);
     void set_subject_creator(string key, string value);
@@ -111,8 +108,13 @@ interface Context
 
     public void store_subject(Subject ss, bool prepareEvents = true);
 
-    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+    ///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
+    public void push_signal(string key, long value);
+    public void push_signal(string key, string value);
+    public long look_integer_signal(string key);
+    public string look_string_signal(string key);
 
+    //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
 	Ticket new_ticket(string login, string password);
     Ticket *get_ticket(string ticket_id);
     bool is_ticket_valid(string ticket_id);

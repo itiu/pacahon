@@ -116,7 +116,7 @@ class OWL
 
             long now_time_onto_signal;
 
-            now_time_onto_signal = context.look_signal("onto");
+            now_time_onto_signal = context.look_integer_signal("onto");
             if (now_time_onto_signal - last_time_onto_signal > 1000 || now_time_onto_signal - last_time_onto_signal < 0)
             {
                 last_time_onto_signal = now_time_onto_signal;
