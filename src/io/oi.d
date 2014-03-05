@@ -1,20 +1,15 @@
-module util.oi;
+module io.oi;
 
-private import std.json;
-private import std.stdio;
-private import std.concurrency;
-private import std.conv;
+private import std.json, std.stdio, std.concurrency, std.conv, std.datetime;
 
-private import mq.mq_client;
-private import mq.rabbitmq_client;
+private import io.mq_client;
+private import io.rabbitmq_client;
+
+private import onto.sgraph;
 
 private import util.logger;
-private import util.sgraph;
 private import util.cbor;
 private import util.cbor8sgraph;
-
-private import std.datetime;
-
 
 logger log;
 logger oi_msg;

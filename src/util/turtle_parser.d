@@ -2,9 +2,11 @@ module util.turtle_parser;
 
 private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, std.outbuffer, std.array, std.uuid;
 
-private import util.sgraph;
 private import util.utils;
 private import pacahon.know_predicates;
+private import onto.lang;
+private import onto.sgraph;
+
 /*
  *  src - С-шная строка содержащая факты в формате n3 (ttl),
  *  len - длинна исходной строки,

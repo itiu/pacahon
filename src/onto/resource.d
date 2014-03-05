@@ -1,11 +1,6 @@
 module onto.resource;
 
-enum LANG : ubyte
-{
-    NONE = 0,
-    RU   = 1,
-    EN   = 2
-}
+import onto.lang;
 
 enum ResourceType : ubyte
 {

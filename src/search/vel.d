@@ -4,17 +4,10 @@ module search.vel;
 
 private
 {
-    import std.string;
-    import std.array;
-    import std.stdio;
-    import std.conv;
-    import std.datetime;
-    import std.json;
-    import std.outbuffer;
-    import std.c.string;
+    import std.string, std.array, std.stdio, std.conv, std.datetime, std.json, std.outbuffer, std.c.string;
 
     import util.utils;
-    import util.sgraph;
+    import onto.sgraph;
 }
 
 //  expression

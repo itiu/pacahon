@@ -3,6 +3,7 @@ module util.cbor8lmultidigraph;
 import std.outbuffer, std.stdio;
 
 private import onto.resource;
+private import onto.lang;
 import util.cbor;
 import util.lmultidigraph;
 

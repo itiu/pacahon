@@ -1,12 +1,10 @@
 //////////////////////////////////////////// USE XAPIAN SEARCH ///////////////////////////////////////////////////////////////
-
 module search.xapian_reader;
 
 import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 
 import bind.xapian_d_header;
 import util.utils;
-import util.sgraph;
 import util.cbor;
 import util.cbor8sgraph;
 
@@ -16,6 +14,8 @@ import pacahon.context;
 //import storage.subject;
 import search.vel;
 import search.xapian_vql;
+
+import onto.sgraph;
 
 byte err;
 

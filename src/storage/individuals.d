@@ -2,21 +2,20 @@ module storage.individuals;
 
 private
 {
-    import std.stdio;
-    import std.concurrency;
-    import std.file;
+    import std.stdio, std.concurrency, std.file;
 
     import bind.lmdb_header;
 
     import util.logger;
     import util.utils;
-    import util.sgraph;
     import util.cbor;
     import util.cbor8sgraph;
 
     import pacahon.context;
     import pacahon.define;
     import search.vel;
+
+    import onto.sgraph;
 }
 
 logger log;

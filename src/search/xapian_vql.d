@@ -1,18 +1,14 @@
 module search.xapian_vql;
 
-import std.string;
-import std.concurrency;
-import std.stdio;
-import std.datetime;
-import std.conv;
+import std.string, std.concurrency, std.stdio, std.datetime, std.conv;
 
 import bind.xapian_d_header;
 import util.utils;
-import util.sgraph;
 import util.cbor;
 import util.cbor8sgraph;
 import search.vel;
 import pacahon.context;
+import onto.sgraph;
 
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";

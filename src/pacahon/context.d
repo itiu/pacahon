@@ -3,10 +3,10 @@ module pacahon.context;
 private import std.concurrency, std.datetime, std.json;
 
 private import util.container;
-private import util.sgraph;
 private import search.vel;
 private import onto.owl;
 private import onto.individual;
+private import onto.sgraph;
 
 enum CMD : byte
 {

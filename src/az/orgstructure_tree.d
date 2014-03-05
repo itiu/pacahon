@@ -2,13 +2,11 @@ module az.orgstructure_tree;
 
 private
 {
-    import std.stdio;
-    import std.string;
-    import std.array;
+    import std.stdio, std.string, std.array;
     import util.utils;
     import util.logger;
     import search.vql;
-    import util.sgraph;
+    import onto.sgraph;
     import pacahon.context;
 }
 

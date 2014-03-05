@@ -1,22 +1,13 @@
 module pacahon.command_io;
 
-private import core.stdc.stdio;
-private import core.stdc.stdlib;
-private import std.concurrency;
-private import std.c.string;
-private import std.string;
-private import std.conv;
-private import std.datetime;
-private import std.stdio;
-private import std.outbuffer;
-private import std.datetime;
-private import std.base64;
-private import std.digest.sha;
+private import core.stdc.stdio, core.stdc.stdlib;
+private import std.concurrency, std.c.string, std.string, std.conv, std.datetime, std.stdio, std.outbuffer, std.datetime, std.base64, std.digest.sha;
+
+private import onto.sgraph;
 
 private import util.logger;
 private import util.utils;
 private import util.json_ld_parser;
-private import util.sgraph;
 private import util.cbor;
 
 private import pacahon.know_predicates;
@@ -25,7 +16,6 @@ private import pacahon.context;
 private import pacahon.define;
 
 logger log;
-
 
 static this()
 {

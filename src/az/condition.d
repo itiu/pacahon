@@ -2,17 +2,13 @@ module az.condition;
 
 private
 {
-    import std.json;
-    import std.stdio;
-    import std.string;
-    import std.array;
-    import std.datetime;
-    import std.concurrency;
+    import std.json, std.stdio, std.string, std.array, std.datetime, std.concurrency;
+
+    import onto.sgraph;
 
     import util.container;
     import util.utils;
     import util.logger;
-    import util.sgraph;
     import util.cbor;
     import util.cbor8sgraph;
 

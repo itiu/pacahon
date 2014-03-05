@@ -1,15 +1,12 @@
 module util.json_ld_parser;
 
-private import std.outbuffer;
-private import std.stdio;
-private import std.range;
-private import std.ascii;
-private import std.utf;
-private import std.conv;
+private import std.outbuffer, std.stdio, std.range, std.ascii, std.utf, std.conv;
 
-private import util.sgraph;
+private import onto.sgraph;
 private import util.utils;
 private import util.logger;
+
+private import onto.lang;
 
 logger log;
 

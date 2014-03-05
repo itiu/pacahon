@@ -2,6 +2,7 @@ module util.lmultidigraph;
 
 private import std.stdio, std.string;
 private import onto.resource;
+private import onto.lang;
 private import dgraph.graph;
 private import util.cbor;
 private import util.container;

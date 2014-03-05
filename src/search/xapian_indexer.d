@@ -6,14 +6,16 @@ import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std
 
 import bind.xapian_d_header;
 import util.utils;
-import util.sgraph;
 import util.cbor;
 import util.cbor8sgraph;
+
+import onto.resource;
+import onto.lang;
+import onto.sgraph;
 
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
-//import storage.subject;
 import search.vel;
 import search.xapian_vql;
 
@@ -415,7 +417,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                     bool sp = true;
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _RU || oo.lang == _NONE))
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == LANG.RU || oo.lang == LANG.NONE))
                                         {
                                             if (sp == true)
                                             {
@@ -438,7 +440,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                                     sp = true;
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == _EN))
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == LANG.EN))
                                         {
                                             if (sp == true)
                                             {

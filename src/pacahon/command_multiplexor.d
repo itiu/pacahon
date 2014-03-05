@@ -4,19 +4,10 @@ module pacahon.command_multiplexor;
 
 private
 {
-    import core.stdc.stdio;
-    import core.stdc.stdlib;
-    import std.c.string;
-    import std.string;
-    import std.datetime;
-    import std.stdio;
-    import std.outbuffer;
-    import std.datetime;
-    import std.conv;
-    import std.uuid;
-    import std.concurrency;
+    import core.stdc.stdio, core.stdc.stdlib;
+    import std.c.string, std.string, std.datetime, std.stdio, std.outbuffer, std.datetime, std.conv, std.uuid, std.concurrency;
 
-    import util.sgraph;
+    import onto.sgraph;
     import util.utils;
     import util.json_ld_parser;
     import util.logger;

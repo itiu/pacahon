@@ -1,4 +1,4 @@
-module util.sgraph;
+module onto.sgraph;
 
 /*
  * набор структур и методов для работы с фактами
@@ -16,16 +16,13 @@ module util.sgraph;
  * - серилизации графа в строку
  */
 
-private import std.c.string;
-private import std.string;
-private import std.outbuffer;
-private import std.conv;
-private import std.stdio;
+private import std.c.string, std.string, std.outbuffer, std.conv, std.stdio;
 
 private import util.utils;
 //private import util.json_ld.parser;
 private import util.container;
 
+private import onto.lang;
 private import pacahon.know_predicates;
 
 enum OBJECT_TYPE : byte
@@ -36,13 +33,6 @@ enum OBJECT_TYPE : byte
     URI = 30,
     UNSIGNED_INTEGER = 31,
     STANDARD_DATE_TIME = 32    
-}
-
-enum LANG : ubyte
-{
-    NONE = 0,
-    RU   = 1,
-    EN   = 2
 }
 
 enum STRATEGY : byte

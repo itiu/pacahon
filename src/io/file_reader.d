@@ -1,20 +1,11 @@
 module io.file_reader;
 
-import core.stdc.stdio;
-import core.stdc.errno;
-import core.stdc.string;
-import core.stdc.stdlib;
-import std.conv;
-import std.stdio : writeln;
-import std.datetime;
-import std.concurrency;
-import std.json;
-import std.file;
-import std.outbuffer;
-import std.string;
+import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
+import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.stdio : writeln;
+
+import onto.sgraph;
 
 import util.container;
-import util.sgraph;
 import util.cbor;
 import util.utils;
 import util.turtle_parser;

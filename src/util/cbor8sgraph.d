@@ -1,8 +1,9 @@
 module util.cbor8sgraph;
 
 import std.outbuffer;
-import util.sgraph;
 import util.cbor;
+import onto.lang;
+import onto.sgraph;
 
 struct Element
 {

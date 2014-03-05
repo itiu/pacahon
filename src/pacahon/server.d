@@ -18,8 +18,9 @@ private
     import util.json_ld_parser;
     import util.turtle_parser;
     import util.utils;
-    import util.sgraph;
     import util.load_info;
+
+    import onto.sgraph;
 
     import pacahon.context;
     import pacahon.command_multiplexor;

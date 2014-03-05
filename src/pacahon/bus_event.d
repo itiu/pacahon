@@ -5,12 +5,12 @@ private import std.outbuffer, std.stdio, std.concurrency, std.datetime, std.conv
 private import util.container;
 private import util.logger;
 private import util.utils;
-private import util.sgraph;
 private import util.cbor8individual;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
 private import onto.individual;
+private import onto.sgraph;
 
 logger log;
 

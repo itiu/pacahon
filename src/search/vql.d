@@ -9,7 +9,6 @@ private
     import util.container;
     import util.logger;
     import util.utils;
-    import util.sgraph;
     import util.cbor;
     import util.cbor8sgraph;
     import util.lmultidigraph;
@@ -25,6 +24,7 @@ private
 
     import storage.individuals;
     import onto.individual;
+    import onto.sgraph;
 }
 
 logger log;

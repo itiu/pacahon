@@ -9,7 +9,6 @@ private
     import util.json_ld_parser;
     import util.logger;
     import util.utils;
-    import util.sgraph;
     import util.cbor;
     import util.cbor8sgraph;
 
@@ -24,6 +23,7 @@ private
 
     import onto.owl;
     import onto.individual;
+    import onto.sgraph;
     //	import search.vql;
 }
 

@@ -4,15 +4,16 @@ private
 {
     import std.stdio, std.datetime, std.conv, std.exception : assumeUnique;
 
+    import onto.sgraph;
     import onto.resource;
+    import onto.individual;
+    
     import pacahon.know_predicates;
     import pacahon.context;
     import search.vql;
     import util.utils;
-    import util.sgraph;
     import util.container;
     import util.lmultidigraph;
-    import onto.individual;
 }
 
 struct Property
