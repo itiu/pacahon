@@ -439,7 +439,7 @@ class ThreadContext : Context
     private Ticket *[ string ] user_of_ticket;
     bool is_ticket_valid(string ticket_id)
     {
-    	writeln ("@is_ticket_valid, ", ticket_id);
+        writeln("@is_ticket_valid, ", ticket_id);
         Ticket *ticket = user_of_ticket.get(ticket_id, null);
 
         if (ticket is null)
@@ -454,7 +454,7 @@ class ThreadContext : Context
 
     Ticket new_ticket(string login, string password)
     {
-    	writeln ("@new_ticket, login=", login, ", password=", password);
+        writeln("@new_ticket, login=", login, ", password=", password);
 
         Ticket                  ticket;
 

@@ -86,7 +86,7 @@ interface Context
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
     @property search.vql.VQL vql();
-    
+
     int get_subject_creator_size();
     string get_subject_creator(string pp);
     void set_subject_creator(string key, string value);
@@ -115,7 +115,7 @@ interface Context
     public string look_string_signal(string key);
 
     //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
-	Ticket new_ticket(string login, string password);
+    Ticket new_ticket(string login, string password);
     Ticket *get_ticket(string ticket_id);
     bool is_ticket_valid(string ticket_id);
 
@@ -123,6 +123,6 @@ interface Context
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0);
     public Individual get_individual(string uri, Ticket ticket, byte level = 0);
     public string put_individual(string uri, Individual individual, Ticket ticket);
-    public string post_individual(Individual individual, Ticket ticket);    
+    public string post_individual(Individual individual, Ticket ticket);
 }
 

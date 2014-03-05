@@ -43,7 +43,7 @@ void file_reader_thread(string props_file_name)
 
         foreach (o; oFiles)
         {
-//	    	writeln ("@@ file:", o);
+//	        writeln ("@@ file:", o);
             if ((o.name in prev_state_of_files) !is null)
             {
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
@@ -83,9 +83,9 @@ private void prepare_file(string file_name, Context context)
             {
                 string prefix = context.get_prefix_map.get(ss.subject, null);
 
-               	//						writeln ("found prefix=", prefix);                    
+                //						writeln ("found prefix=", prefix);
                 if (prefix !is null)
-                {                    
+                {
                     if (ss.isExsistsPredicate(rdf__type, owl__Ontology))
                     {
                         string version_onto = ss.getFirstLiteral(owl__versionInfo);
@@ -123,16 +123,16 @@ private void prepare_file(string file_name, Context context)
             }
 
             if (for_load.length > 0)
-            	writeln("Onto for load:", for_load);
+                writeln("Onto for load:", for_load);
 
             foreach (ss; ss_list)
             {
                 if (ss.isExsistsPredicate(veda_schema__userName, "veda"))
                 {
-               		writeln ("FOUND SYSTEM ACCOUNT = ", ss);
-               		context.push_signal ("43", ss.getFirstLiteral(veda_schema__password));
+                    writeln("FOUND SYSTEM ACCOUNT = ", ss);
+                    context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
                 }
-            	
+
                 long pos_path_delimiter = indexOf(ss.subject, '/');
 
                 if (pos_path_delimiter < 0)
@@ -152,13 +152,13 @@ private void prepare_file(string file_name, Context context)
                 {
                     if (for_load.get(ss.subject, false) == true)
                     {
-                       // writeln("#2 file_reader:store, ss=\n", ss);
+                        // writeln("#2 file_reader:store, ss=\n", ss);
                         context.store_subject(ss);
                     }
                 }
             }
 
-            Tid  tid_search_manager = context.getTid(THREAD.xapian_indexer);
+            Tid tid_search_manager = context.getTid(THREAD.xapian_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
             //put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)

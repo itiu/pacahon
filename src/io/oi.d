@@ -96,7 +96,7 @@ class OI
             //Subject[] metadata = graph.get_metadata ();
 
             // отправляем данные документа
-            string data = encode_cbor (graph);
+            string data = encode_cbor(graph);
             std.concurrency.send(embedded_gateway, data);
 /*
                 // отправляем метаданные

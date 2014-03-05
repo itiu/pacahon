@@ -72,7 +72,9 @@ class rabbitmq_client : mq_client
         conn = amqp_new_connection();
 
         int port = to!(int)(params.get("port", "5672"));
-        die_on_error(sockfd = amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"), port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+        die_on_error(sockfd =
+                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
         die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
@@ -114,7 +116,9 @@ class rabbitmq_client : mq_client
 
         conn = amqp_new_connection();
 
-        die_on_error(sockfd = amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"), port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+        die_on_error(sockfd =
+                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
         die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
@@ -141,7 +145,9 @@ class rabbitmq_client : mq_client
         // открываем уже без опции consume
         conn = amqp_new_connection();
 
-        die_on_error(sockfd = amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"), port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+        die_on_error(sockfd =
+                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
         die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
@@ -157,7 +163,8 @@ class rabbitmq_client : mq_client
     }
 
     // set callback function for listener ()
-    void set_callback(void function(byte *txt, int size, mq_client from_client, ref ubyte[] out_data, Context context = null) _message_acceptor)
+    void set_callback(void function(byte *txt, int size, mq_client from_client, ref ubyte[] out_data,
+                                    Context context = null) _message_acceptor)
     {
         message_acceptor = _message_acceptor;
     }

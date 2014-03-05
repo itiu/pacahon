@@ -26,12 +26,12 @@ public void interthread_signals_thread()
                         //writeln ("@get signal ", key);
                         send(tid_sender, res);
                     }
-                    else if(cmd == CMD.GET && type == Type.String)
+                    else if (cmd == CMD.GET && type == Type.String)
                     {
                         string res;
                         res = str_signals.get(key, "");
                         //writeln ("@get signal ", key);
-                        send(tid_sender, res);                    	
+                        send(tid_sender, res);
                     }
                     else
                         send(tid_sender, "unknown command");
@@ -49,7 +49,7 @@ public void interthread_signals_thread()
                     if (cmd == CMD.PUT)
                     {
                         str_signals[ key ] = value;
-                        writeln ("@set signal ", key, "=", value);
+                        writeln("@set signal ", key, "=", value);
                     }
                 }
                 );
