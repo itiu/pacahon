@@ -67,6 +67,9 @@ void file_reader_thread(string props_file_name)
 
 private void prepare_file(string file_name, Context context)
 {
+    // 1. читает файл, парсит индивидов, сравнивает owl:versionInfo с версией в хранилище, для всех rdf:type == owl:Ontology,
+    //    запоминает несуществующие или отличающиеся версией, для последующей загрузки
+    // 2. попутно находит системный аккаунт (veda)
     try
     {
         auto buf = cast(ubyte[]) read(file_name);

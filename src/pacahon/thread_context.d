@@ -40,6 +40,7 @@ Tid dummy_tid;
 
 class ThreadContext : Context
 {
+    //Ticket system
     private OWL       owl;
     private JSONValue props;
     public JSONValue get_props()
@@ -440,10 +441,12 @@ class ThreadContext : Context
     bool is_ticket_valid(string ticket_id)
     {
         writeln("@is_ticket_valid, ", ticket_id);
-        Ticket *ticket = user_of_ticket.get(ticket_id, null);
+        Ticket *ticket = get_ticket(ticket_id);
 
         if (ticket is null)
+        {
             return false;
+        }
 
         SysTime now = Clock.currTime();
         if (now.stdTime < ticket.end_time)
@@ -452,9 +455,9 @@ class ThreadContext : Context
         return false;
     }
 
-    Ticket new_ticket(string login, string password)
+    Ticket authenticate(string login, string password)
     {
-        writeln("@new_ticket, login=", login, ", password=", password);
+        writeln("@authenticate, login=", login, ", password=", password);
 
         Ticket                  ticket;
 
@@ -493,8 +496,6 @@ class ThreadContext : Context
                                 }
                             });
                 }
-
-
 
                 return ticket;
             }
@@ -566,7 +567,7 @@ class ThreadContext : Context
                           duration);
 
             // TODO stringToTime очень медленная операция ~ 100 микросекунд
-            tt.end_time = stringToTime(when) + duration * 100_000_000_000;                     //? hnsecs?
+            tt.end_time = stringToTime(when) + duration * 10_000_000;                     //? hnsecs?
         }
     }
 

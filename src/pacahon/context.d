@@ -115,7 +115,7 @@ interface Context
     public string look_string_signal(string key);
 
     //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
-    Ticket new_ticket(string login, string password);
+    Ticket authenticate(string login, string password);
     Ticket *get_ticket(string ticket_id);
     bool is_ticket_valid(string ticket_id);
 

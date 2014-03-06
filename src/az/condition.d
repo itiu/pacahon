@@ -69,12 +69,12 @@ public void condition_thread(string props_file_name)
 
     try
     {
-    // SEND ready
-    receive((Tid tid_response_reciever)
-            {
-                send(tid_response_reciever, true);
-            });
-        	
+        // SEND ready
+        receive((Tid tid_response_reciever)
+                {
+                    send(tid_response_reciever, true);
+                });
+
         while (true)
         {
             try
@@ -130,7 +130,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
             string    condition_text = ss.getFirstLiteral(veda_schema__script);
             //writeln("condition_text:", condition_text);
             JSONValue condition_json = parseJSON(condition_text);
-            Mandat    mandat = void;
+            Mandat    mandat         = void;
 
             if (condition_json.type == JSON_TYPE.OBJECT)
             {

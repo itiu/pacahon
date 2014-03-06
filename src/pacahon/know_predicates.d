@@ -1,24 +1,24 @@
 module pacahon.know_predicates;
 
-public const string      owl__Ontology    = "owl:Ontology";
-public const string      owl__versionInfo = "owl:versionInfo";
-public const string      rdf__Property    = "rdf:Property";
-//public const string 		owl__imports = "owl:imports";
-public const string      owl__Restriction = "owl:Restriction";
-//public const string 		owl__hasPart        = "owl:hasPart";
-public const string      owl__onProperty       = "owl:onProperty";
-public const string      owl__allValuesFrom    = "owl:allValuesFrom";
-public const string      owl__someValuesFrom   = "owl:someValuesFrom";
-public const string      owl__maxCardinality   = "owl:maxCardinality";
-public const string      owl__minCardinality   = "owl:minCardinality";
-public const string      owl__ObjectProperty   = "owl:ObjectProperty";
-public const string      owl__DatatypeProperty = "owl:DatatypeProperty";
-public const string      owl__unionOf          = "owl:unionOf";
-public const string      owl__Thing            = "owl:Thing";
-public const string      owl__Class            = "owl:Class";
+public const string owl__Ontology    = "owl:Ontology";
+public const string owl__versionInfo = "owl:versionInfo";
+public const string rdf__Property    = "rdf:Property";
+//public const string       owl__imports = "owl:imports";
+public const string owl__Restriction = "owl:Restriction";
+//public const string       owl__hasPart        = "owl:hasPart";
+public const string owl__onProperty       = "owl:onProperty";
+public const string owl__allValuesFrom    = "owl:allValuesFrom";
+public const string owl__someValuesFrom   = "owl:someValuesFrom";
+public const string owl__maxCardinality   = "owl:maxCardinality";
+public const string owl__minCardinality   = "owl:minCardinality";
+public const string owl__ObjectProperty   = "owl:ObjectProperty";
+public const string owl__DatatypeProperty = "owl:DatatypeProperty";
+public const string owl__unionOf          = "owl:unionOf";
+public const string owl__Thing            = "owl:Thing";
+public const string owl__Class            = "owl:Class";
 
 //public const string veda__mandat	= "veda:mandat";
-public const string veda_schema__script = "veda-schema:script";
+public const string veda_schema__script   = "veda-schema:script";
 public const string veda_schema__userName = "veda-schema:userName";
 public const string veda_schema__password = "veda-schema:password";
 
@@ -100,7 +100,7 @@ public const string query__all_predicates = "query:all_predicates";
 public const string query__get_reifed     = "query:get_reifed";
 public const string query__get            = "query:get";
 
-public const string event__Event        = "event:Event";        // субьект типа Событие
+public const string event__Event = "event:Event";               // субьект типа Событие
 //public const string event__autoremove   = "event:autoremove";   // если == "yes", фильтр должен будет удален после исполнения
 //public const string event__subject_type = "event:subject_type"; // тип отслеживаемого субьекта
 //public const string event__when         = "event:when";         // after/before

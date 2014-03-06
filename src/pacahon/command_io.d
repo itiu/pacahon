@@ -1,7 +1,8 @@
 module pacahon.command_io;
 
 private import core.stdc.stdio, core.stdc.stdlib;
-private import std.concurrency, std.c.string, std.string, std.conv, std.datetime, std.stdio, std.outbuffer, std.datetime, std.base64, std.digest.sha;
+private import std.concurrency, std.c.string, std.string, std.conv, std.datetime, std.stdio, std.outbuffer, std.datetime, std.base64,
+               std.digest.sha;
 
 private import onto.sgraph;
 
@@ -255,11 +256,15 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 }
                 else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
                 {
-                    reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text(count_authorized_subjects);
+                    reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text(
+                                                                                                                               count_authorized_subjects);
                 }
                 else if (count_authorized_subjects == 0 && count_found_subjects > 0)
                 {
-                    reason = "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:" ~ authorize_reason;
+                    reason =
+                        "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:"
+                        ~
+                        authorize_reason;
                 }
 
                 isOk = true;
