@@ -130,7 +130,7 @@ private void prepare_file(string file_name, Context context)
 
             foreach (ss; ss_list)
             {
-                if (ss.isExsistsPredicate(veda_schema__userName, "veda"))
+                if (ss.isExsistsPredicate(veda_schema__login, "veda"))
                 {
                     writeln("FOUND SYSTEM ACCOUNT = ", ss);
                     context.push_signal("43", ss.getFirstLiteral(veda_schema__password));

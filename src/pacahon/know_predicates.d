@@ -19,7 +19,7 @@ public const string owl__Class            = "owl:Class";
 
 //public const string veda__mandat	= "veda:mandat";
 public const string veda_schema__script   = "veda-schema:script";
-public const string veda_schema__userName = "veda-schema:userName";
+public const string veda_schema__login    = "veda-schema:login";
 public const string veda_schema__password = "veda-schema:password";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];

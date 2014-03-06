@@ -461,7 +461,7 @@ class ThreadContext : Context
 
         Ticket                  ticket;
 
-        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__userName ~ "' == '" ~ login ~ "'", null);
+        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'", null);
         foreach (user; candidate_users)
         {
             iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
