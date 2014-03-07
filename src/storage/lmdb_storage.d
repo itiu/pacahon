@@ -70,7 +70,23 @@ class LmdbStorage
         }
     }
 
+    public EVENT update_or_create(string cbor)
+    {
+        // TODO не оптимально!
+        Individual ind;
+
+        cbor2individual(&ind, cbor);
+        return update_or_create(ind.uri, cbor);
+    }
+
     public EVENT update_or_create(Individual *ind)
+    {
+        string content = individual2cbor(ind);
+
+        return update_or_create(ind.uri, content);
+    }
+
+    public EVENT update_or_create(string uri, string content)
     {
         int     rc;
         MDB_dbi dbi;
@@ -87,8 +103,8 @@ class LmdbStorage
         EVENT   ev = EVENT.NONE;
         MDB_val key;
 
-        key.mv_data = cast(char *)ind.uri;
-        key.mv_size = ind.uri.length;
+        key.mv_data = cast(char *)uri;
+        key.mv_size = uri.length;
 
         MDB_val data;
 
@@ -99,9 +115,8 @@ class LmdbStorage
         else
             ev = EVENT.CREATE;
 
-        string str = individual2cbor(ind);
-        data.mv_data = cast(char *)str;
-        data.mv_size = str.length;
+        data.mv_data = cast(char *)content;
+        data.mv_size = content.length;
 
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
@@ -111,17 +126,26 @@ class LmdbStorage
         if (rc != 0)
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 
-
         mdb_dbi_close(env, dbi);
         return ev;
     }
 
-    public Individual find(string uri)
+    public Individual find_individual(string uri)
     {
         Individual ind;
-        int        rc;
-        MDB_txn    *txn_r;
-        MDB_dbi    dbi;
+        string     str = find(uri);
+
+        if (str !is null)
+            cbor2individual(&ind, str);
+        return ind;
+    }
+
+    public string find(string uri)
+    {
+        string  str;
+        int     rc;
+        MDB_txn *txn_r;
+        MDB_dbi dbi;
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc != 0)
@@ -141,16 +165,15 @@ class LmdbStorage
             rc = mdb_get(txn_r, dbi, &key, &data);
             if (rc == 0)
             {
-                string str = cast(string)(data.mv_data[ 0..data.mv_size ]);
-                cbor2individual(&ind, str);
+                str = cast(string)(data.mv_data[ 0..data.mv_size ]);
             }
         }catch (Exception ex)
         {
         }
 
-
         mdb_txn_abort(txn_r);
-        return ind;
+
+        return str;
     }
 }
 

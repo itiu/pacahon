@@ -248,7 +248,7 @@ class ThreadContext : Context
 
     public void store_subject(Subject ss, bool prepareEvents = true)
     {
-        string res;
+        EVENT  ev         = EVENT.NONE;
         string ss_as_cbor = subject2cbor(ss);
 
         Tid    tid_subject_manager = getTid(THREAD.subject_manager);
@@ -256,17 +256,14 @@ class ThreadContext : Context
         if (tid_subject_manager != Tid.init)
         {
             send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-            receive((string msg, Tid from)
+            receive((EVENT _ev, Tid from)
                     {
                         if (from == tids[ THREAD.subject_manager ])
-                        {
-                            res = msg;
-                            //writeln("context.store_subject:msg=", msg);
-                        }
+                            ev = _ev;
                     });
         }
 
-        if (res.length == 1 && (res == "C" || res == "U"))
+        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
         {
             Tid tid_search_manager = getTid(THREAD.xapian_indexer);
 
@@ -288,21 +285,14 @@ class ThreadContext : Context
                     }
                     else
                     {
-                        EVENT event_type;
-
-                        if (res == "U")
-                            event_type = EVENT.UPDATE;
-                        else
-                            event_type = EVENT.CREATE;
-
-                        bus_event(ss, ss_as_cbor, event_type, this);
+                        bus_event(ss, ss_as_cbor, ev, this);
                     }
                 }
             }
         }
         else
         {
-            writeln("Ex! store_subject:", res);
+            writeln("Ex! store_subject:", ev);
         }
     }
 
@@ -342,7 +332,8 @@ class ThreadContext : Context
                 {
                     if (from == tids[ THREAD.subject_manager ])
                     {
-                        res = cbor2subject(msg);
+                        if (msg !is null && msg.length > 1)
+                            res = cbor2subject(msg);
                     }
                 });
 
@@ -590,24 +581,26 @@ class ThreadContext : Context
     Individual get_individual(string uri, Ticket ticket, byte level = 0)
     {
         string     individual_as_cbor = get_subject_as_cbor(uri);
+        Individual individual         = Individual();
 
-        Individual individual = Individual();
-
-        cbor2individual(&individual, individual_as_cbor);
-
-        while (level > 0)
+        if (individual_as_cbor !is null && individual_as_cbor.length > 1)
         {
-            foreach (key, values; individual.resources)
-            {
-                Individuals ids;
-                foreach (ruri; values)
-                {
-                    ids ~= get_individual(ruri.uri, ticket, level);
-                }
-                individual.individuals[ key ] = ids;
-            }
+            cbor2individual(&individual, individual_as_cbor);
 
-            level--;
+            while (level > 0)
+            {
+                foreach (key, values; individual.resources)
+                {
+                    Individuals ids;
+                    foreach (ruri; values)
+                    {
+                        ids ~= get_individual(ruri.uri, ticket, level);
+                    }
+                    individual.individuals[ key ] = ids;
+                }
+
+                level--;
+            }
         }
 
         return individual;
