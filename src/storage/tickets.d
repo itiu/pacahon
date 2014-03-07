@@ -96,7 +96,7 @@ void ticket_manager()
                         try
                         {
 //                                  writeln ("#b");
-                            Subject graph = decode_cbor(msg);
+                            Subject graph = cbor2subject(msg);
 
                             MDB_val key;
                             key.mv_data = cast(char *)graph.subject;

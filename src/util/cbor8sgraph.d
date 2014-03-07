@@ -17,7 +17,7 @@ struct Element
     }
 }
 
-public void write_subject(Subject ss, ref OutBuffer ou)
+private void write_subject(Subject ss, ref OutBuffer ou)
 {
     ulong     map_len = ss.length + 1;
     MajorType type    = MajorType.MAP;
@@ -32,7 +32,7 @@ public void write_subject(Subject ss, ref OutBuffer ou)
     }
 }
 
-public void write_predicate(Predicate vv, ref OutBuffer ou)
+private void write_predicate(Predicate vv, ref OutBuffer ou)
 {
     write_string(vv.predicate, ou);
     if (vv.length > 1)

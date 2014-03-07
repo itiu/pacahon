@@ -99,7 +99,7 @@ public void individuals_manager()
                                 try
                                 {
 //                                  writeln ("#b");
-                                    Subject graph = decode_cbor(msg);
+                                    Subject graph = cbor2subject(msg);
 
                                     MDB_val key;
                                     key.mv_data = cast(char *)graph.subject;
@@ -201,7 +201,7 @@ public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string
         if (ls == "@")
         {
             string  rr = context.get_subject_as_cbor(rs);
-            Subject ss = decode_cbor(rr);
+            Subject ss = cbor2subject(rr);
             res.addSubject(ss);
         }
     }
