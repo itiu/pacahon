@@ -42,4 +42,6 @@ enum EVENT : byte
     REMOVE = 3,
     NONE   = 4
 }
- 
+
+const string individuals_db_path = "./data/lmdb-individuals";
+const string tickets_db_path     = "./data/lmdb-tickets";

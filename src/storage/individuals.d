@@ -33,7 +33,7 @@ public void individuals_manager()
     MDB_dbi dbi;
     MDB_txn *txn;
 
-    string  path = "./data/lmdb-subjects";
+    string  path = individuals_db_path;
 
     try
     {

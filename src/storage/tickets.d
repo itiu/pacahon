@@ -34,9 +34,7 @@ void ticket_manager()
     MDB_dbi dbi;
     MDB_txn *txn;
 
-    string  path = "./data/lmdb-tickets";
-
-//    string  path = "./data/lmdb-subjects";
+    string  path = tickets_db_path;
 
     try
     {
