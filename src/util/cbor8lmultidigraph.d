@@ -30,22 +30,21 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 
         if (key == "@")
         {
-            
             if (subject_idx != NONE)
-            	new_subject_idx = lmg.addEdge(subject_idx, predicate_idx, val);
+                new_subject_idx = lmg.addEdge(subject_idx, predicate_idx, val);
             else
-            	new_subject_idx = lmg.addResource(val);            
-            
+                new_subject_idx = lmg.addResource(val);
+
             uri = val;
 //            writeln ("@ id:", val, ", idx=", new_subject_idx);
-         }   
+        }
 
         foreach (i; 1 .. header.len)
         {
             pos += read_element(lmg, src[ pos..$ ], key, dummy);
 
             size_t new_predicate_idx = lmg.addResource(key);
-            
+
             pos += read_element(lmg, src[ pos..$ ], dummy, dummy, new_subject_idx, new_predicate_idx);
         }
     }
@@ -60,14 +59,14 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
         if (subject_idx != NONE && predicate_idx != NONE)
         {
 //          writeln ("*1");
-			if (header.tag == TAG.TEXT_RU)
+            if (header.tag == TAG.TEXT_RU)
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.RU);
             else if (header.tag == TAG.TEXT_EN)
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String, LANG.EN);
             else if (header.tag == TAG.URI)
                 lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.Uri);
             else
-                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);            	
+                lmg.addEdge(subject_idx, predicate_idx, str, ResourceType.String);
         }
 
         pos = ep;
@@ -86,7 +85,8 @@ private static int read_element(LabeledMultiDigraph lmg, ubyte[] src, out string
 /////////////////////////////////////////////////////////////////////////////////////
 public string add_cbor_to_lmultidigraph(LabeledMultiDigraph lmg, string in_str)
 {
-	string uri;
+    string uri;
+
     read_element(lmg, cast(ubyte[])in_str, dummy, uri);
     return uri;
 }

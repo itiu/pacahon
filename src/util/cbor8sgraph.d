@@ -168,8 +168,8 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
             }
             else if (arr_el.type == MajorType.MAP)
             {
-               if (vals is null)
-                  vals = new Predicate();
+                if (vals is null)
+                    vals = new Predicate();
                 vals.addSubject(arr_el.subject);
             }
         }
@@ -191,7 +191,7 @@ public string subject2cbor(Subject in_obj)
 }
 
 
-public Subject cbor2subject (string in_str, byte fields = ALL)
+public Subject cbor2subject(string in_str, byte fields = ALL)
 {
 //    StopWatch sw;
 //    sw.start();

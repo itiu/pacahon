@@ -72,11 +72,11 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
                 resources ~= Resource(ResourceType.String, str, LANG.EN);
             else if (header.tag == TAG.URI)
             {
-            	if (str.indexOf ('/') > 0)
-            		resources ~= Resource(str, ResourceOrigin.external);
-            	else
-            		resources ~= Resource(str, ResourceOrigin.local);            		
-            }    
+                if (str.indexOf('/') > 0)
+                    resources ~= Resource(str, ResourceOrigin.external);
+                else
+                    resources ~= Resource(str, ResourceOrigin.local);
+            }
             else
                 resources ~= Resource(ResourceType.String, str);
 
