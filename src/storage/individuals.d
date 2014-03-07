@@ -31,7 +31,6 @@ public void individuals_manager()
 
     MDB_env *env;
     MDB_dbi dbi;
-    MDB_txn *txn;
 
     string  path = individuals_db_path;
 
@@ -54,7 +53,7 @@ public void individuals_manager()
     int rrc;
     rrc = mdb_env_create(&env);
     if (rrc != 0)
-        writeln("ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
+        writeln("individuals_manager:ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
     else
     {
         // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
@@ -62,18 +61,10 @@ public void individuals_manager()
         //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
         // else
         {
-            rrc = mdb_env_open(env, cast(char *)path, MDB_FIXEDMAP, std.conv.octal !664);
+            rrc = mdb_env_open(env, cast(char *)path, 0, std.conv.octal !664);
 
             if (rrc != 0)
-                writeln("ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)));
-            else
-            {
-                if (!rrc)
-                {
-                    rrc = mdb_txn_begin(env, null, 0, &txn);
-                    rrc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
-                }
-            }
+                writeln("individuals_manager:ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)));
         }
     }
 
@@ -98,7 +89,14 @@ public void individuals_manager()
                             {
                                 try
                                 {
-//                                  writeln ("#b");
+                                    MDB_txn *txn;
+                                    rc = mdb_txn_begin(env, null, 0, &txn);
+                                    if (rc != 0)
+                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                                    rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
+                                    if (rc != 0)
+                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
                                     Subject graph = cbor2subject(msg);
 
                                     MDB_val key;
@@ -125,12 +123,10 @@ public void individuals_manager()
                                     if (rc != 0)
                                         throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 
-                                    rc = mdb_txn_begin(env, null, 0, &txn);
-                                    if (rc != 0)
-                                        throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                                    mdb_dbi_close(env, dbi);
+
 
                                     send(tid_response_reciever, res, thisTid);
-//                                  writeln ("#e");
                                 }
                                 catch (Exception ex)
                                 {
@@ -139,47 +135,44 @@ public void individuals_manager()
                             }
                             else if (cmd == CMD.FIND)
                             {
-//					writeln ("%1 ", msg);
-//					MDB_txn *txn_r;
-//					rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                                int rc;
+                                MDB_txn *txn;
 
-                                //	writeln ("%%0, rc:", rc);
-                                //if (rc != 0)
-                                // writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
-                                //else
-                                {
+                                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn);
+                                if (rc != 0)
+                                    throw new Exception("mdb_txn_begin:Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+
                                 //	writeln ("%%1");
-                                    MDB_val key;
-                                    key.mv_size = msg.length;
-                                    key.mv_data = cast(char *)msg;
+                                MDB_val key;
+                                key.mv_size = msg.length;
+                                key.mv_data = cast(char *)msg;
 
-                                    //	writeln ("%%2");
-                                    MDB_val data;
-                                    int rc = mdb_get(txn, dbi, &key, &data);
+                                //	writeln ("%%2");
+                                MDB_val data;
+                                rc = mdb_get(txn, dbi, &key, &data);
 
-                                    if (rc == 0)
-                                        res = cast(string)(data.mv_data[ 0..data.mv_size ]);
-                                    else
-                                    {
-                                        res = "";
+                                if (rc == 0)
+                                    res = cast(string)(data.mv_data[ 0..data.mv_size ]);
+                                else
+                                {
+                                    res = "";
 //                      writeln ("#1 rc:", rc, ", [", msg, "] , ", fromStringz (mdb_strerror (rc)));
-                                    }
-//                                      writeln ("%%4 msg=", msg , ", res=", res);
-
-                                    send(tid_response_reciever, res, thisTid);
-//					mdb_txn_abort(txn_r);
                                 }
-//                                  writeln ("%%5");
+//                                      writeln ("%%4 msg=", msg , ", res=", res);
+                                mdb_txn_abort(txn);
+
+                                send(tid_response_reciever, res, thisTid);
                             }
                             else
                             {
-                                writeln("%3 ", msg);
+                                //writeln("%3 ", msg);
                                 send(tid_response_reciever, "", thisTid);
                             }
                         }
                         catch (Exception ex)
                         {
-                            writeln("EX!", ex.msg);
+                            writeln("individuals_manager:EX!", ex.msg);
                         }
                     }
                 });
