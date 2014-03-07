@@ -96,9 +96,52 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     return pos;
 }
 
+private void write_individual(Individual *ii, ref OutBuffer ou)
+{
+    ulong     map_len = ii.resources.length + 1;
+    MajorType type    = MajorType.MAP;
+
+    write_header(type, map_len, ou);
+    write_string("@", ou);
+    write_string(ii.uri, ou);
+
+    foreach (key, pp; ii.resources)
+    {
+        write_resources(key, pp, ou);
+    }
+}
+
+private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
+{
+    write_string(uri, ou);
+    if (vv.length > 1)
+        write_header(MajorType.ARRAY, vv.length, ou);
+    foreach (value; vv)
+    {
+        if (value.type == ResourceType.Uri)
+        {
+            write_header(MajorType.TAG, TAG.URI, ou);
+            write_string(value.data, ou);
+        }
+        else
+        {
+            if (value.lang != LANG.NONE)
+                write_header(MajorType.TAG, value.lang + 41, ou);
+            write_string(value.data, ou);
+        }
+    }
+}
 /////////////////////////////////////////////////////////////////////////////////////
 public void cbor2individual(Individual *individual, string in_str)
 {
     read_element(individual, cast(ubyte[])in_str, dummy);
 }
 
+public string individual2cbor(Individual *in_obj)
+{
+    OutBuffer ou = new OutBuffer();
+
+    write_individual(in_obj, ou);
+
+    return ou.toString();
+}
