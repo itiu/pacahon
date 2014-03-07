@@ -318,7 +318,8 @@ amqp_rpc_reply_t amqp_get_rpc_reply(amqp_connection_state_t *state);
 
 extern(C)
 amqp_basic_consume_ok_t * amqp_basic_consume(amqp_connection_state_t * state, amqp_channel_t channel, amqp_bytes_t queue,
-                                             amqp_bytes_t consumer_tag, amqp_boolean_t no_local, amqp_boolean_t no_ack, amqp_boolean_t exclusive,
+                                             amqp_bytes_t consumer_tag, amqp_boolean_t no_local, amqp_boolean_t no_ack,
+                                             amqp_boolean_t exclusive,
                                              amqp_table_t arguments);
 
 
@@ -339,7 +340,8 @@ struct amqp_queue_bind_ok_t
 
 
 extern(C)
-amqp_queue_bind_ok_t * amqp_queue_bind(amqp_connection_state_t * state, amqp_channel_t channel, amqp_bytes_t queue, amqp_bytes_t exchange, amqp_bytes_t routing_key, amqp_table_t arguments);
+amqp_queue_bind_ok_t * amqp_queue_bind(amqp_connection_state_t * state, amqp_channel_t channel, amqp_bytes_t queue, amqp_bytes_t exchange,
+                                       amqp_bytes_t routing_key, amqp_table_t arguments);
 
 struct amqp_queue_declare_t
 {
@@ -361,7 +363,9 @@ struct amqp_queue_declare_ok_t
 };
 
 extern (C)
-amqp_queue_declare_ok_t * amqp_queue_declare(amqp_connection_state_t * state, amqp_channel_t channel, amqp_bytes_t queue, amqp_boolean_t passive, amqp_boolean_t durable, amqp_boolean_t exclusive, amqp_boolean_t auto_delete, amqp_table_t arguments);
+amqp_queue_declare_ok_t * amqp_queue_declare(amqp_connection_state_t * state, amqp_channel_t channel, amqp_bytes_t queue,
+                                             amqp_boolean_t passive, amqp_boolean_t durable, amqp_boolean_t exclusive,
+                                             amqp_boolean_t auto_delete, amqp_table_t arguments);
 
 
 extern(C)

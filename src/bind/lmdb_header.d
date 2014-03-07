@@ -31,38 +31,39 @@ alias void MDB_rel_func(MDB_val *item, void *oldptr, void *newptr, void *relctx)
 // mdb_env
 enum
 {
-    MDB_FIXEDMAP   =      0x01,
-    MDB_NOSUBDIR   =      0x4000,
-    MDB_NOSYNC     =        0x10000,
-    MDB_RDONLY     =        0x20000,
+    MDB_FIXEDMAP   =    0x01,
+    MDB_NOSUBDIR   =    0x4000,
+    MDB_NOSYNC     =    0x10000,
+    MDB_RDONLY     =    0x20000,
     MDB_NOMETASYNC =    0x40000,
-    MDB_WRITEMAP   =      0x80000,
-    MDB_MAPASYNC   =      0x100000,
-    MDB_NOTLS      =         0x200000,
+    MDB_WRITEMAP   =    0x80000,
+    MDB_MAPASYNC   =    0x100000,
+    MDB_NOTLS      =    0x200000,
+    MDB_NOLOCK     =    0x400000
 }
 
 // mdb_dbi_open
 enum
 {
     MDB_REVERSEKEY =    0x02,
-    MDB_DUPSORT    =       0x04,
+    MDB_DUPSORT    =    0x04,
     MDB_INTEGERKEY =    0x08,
-    MDB_DUPFIXED   =      0x10,
+    MDB_DUPFIXED   =    0x10,
     MDB_INTEGERDUP =    0x20,
     MDB_REVERSEDUP =    0x40,
-    MDB_CREATE     =        0x40000
+    MDB_CREATE     =    0x40000
 }
 
 // mdb_put
 enum
 {
     MDB_NOOVERWRITE =   0x10,
-    MDB_NODUPDATA   =     0x20,
-    MDB_CURRENT     =       0x40,
-    MDB_RESERVE     =       0x10000,
-    MDB_APPEND      =        0x20000,
-    MDB_APPENDDUP   =     0x40000,
-    MDB_MULTIPLE    =      0x80000
+    MDB_NODUPDATA   =   0x20,
+    MDB_CURRENT     =   0x40,
+    MDB_RESERVE     =   0x10000,
+    MDB_APPEND      =   0x20000,
+    MDB_APPENDDUP   =   0x40000,
+    MDB_MULTIPLE    =   0x80000
 }
 
 // cursor get operations
