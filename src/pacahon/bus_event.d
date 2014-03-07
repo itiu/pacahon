@@ -9,6 +9,7 @@ private import util.cbor8individual;
 
 private import pacahon.know_predicates;
 private import pacahon.context;
+private import pacahon.define;
 private import onto.individual;
 private import onto.sgraph;
 
@@ -45,7 +46,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
     }
 
     Individual individual;
-    cbor_to_individual(&individual, subject_as_cbor);
+    cbor2individual(&individual, subject_as_cbor);
 
     if (individual.anyExist(rdf__type, owl_tags) == true)
     {

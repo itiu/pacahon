@@ -76,7 +76,7 @@ class VQL
         {
             Individual individual = Individual();
 
-            cbor_to_individual(&individual, msg);
+            cbor2individual(&individual, msg);
 
             individuals ~= individual.idup;
         }
@@ -137,7 +137,7 @@ class VQL
 
                 Individual individual = Individual();
 
-                cbor_to_individual(&individual, msg);
+                cbor2individual(&individual, msg);
 
                 individuals[ uri ] = individual.idup;
             }
@@ -213,7 +213,7 @@ class VQL
             void delegate(string msg) dg;
             void collect_subject(string msg)
             {
-                res.addSubject(decode_cbor(msg));
+                res.addSubject(cbor2subject(msg));
             }
             dg = &collect_subject;
 

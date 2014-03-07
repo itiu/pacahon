@@ -310,7 +310,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                     {
                         counter++;
 
-                        Subject ss = decode_cbor(msg);
+                        Subject ss = cbor2subject(msg);
 
                         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 

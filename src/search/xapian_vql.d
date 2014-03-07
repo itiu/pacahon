@@ -407,7 +407,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
                             if (msg.length > 16)
                             {
 //                                    writeln ("!!!", msg);
-                                Subject sss = decode_cbor(msg, LINKS);
+                                Subject sss = cbor2subject(msg, LINKS);
 
                                 if (sss !is null)
                                 {

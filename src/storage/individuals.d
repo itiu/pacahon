@@ -25,8 +25,7 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-
-public void subject_manager()
+public void individuals_manager()
 {
 //    writeln("SPAWN: Subject manager");
 

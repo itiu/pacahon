@@ -237,7 +237,7 @@ class ThreadContext : Context
     public void store_subject(Subject ss, bool prepareEvents = true)
     {
         string res;
-        string ss_as_cbor = encode_cbor(ss);
+        string ss_as_cbor = subject2cbor(ss);
 
         Tid    tid_subject_manager = getTid(THREAD.subject_manager);
 
@@ -333,7 +333,7 @@ class ThreadContext : Context
                 {
                     if (from == tids[ THREAD.subject_manager ])
                     {
-                        res = decode_cbor(msg);
+                        res = cbor2subject(msg);
                     }
                 });
 
@@ -478,7 +478,7 @@ class ThreadContext : Context
                 new_ticket.addPredicate(ticket__duration, "40000");
 
                 // store ticket
-                string ss_as_cbor = encode_cbor(new_ticket);
+                string ss_as_cbor = subject2cbor(new_ticket);
 
                 Tid    tid_ticket_manager = getTid(THREAD.ticket_manager);
 
@@ -518,7 +518,7 @@ class ThreadContext : Context
             if (ticket_str !is null && ticket_str.length > 128)
             {
                 tt = new Ticket;
-                Subject ticket = decode_cbor(ticket_str);
+                Subject ticket = cbor2subject(ticket_str);
                 subject2Ticket(ticket, tt);
                 user_of_ticket[ tt.id ] = tt;
 
@@ -590,7 +590,7 @@ class ThreadContext : Context
 
         Individual individual = Individual();
 
-        cbor_to_individual(&individual, individual_as_cbor);
+        cbor2individual(&individual, individual_as_cbor);
 
         while (level > 0)
         {

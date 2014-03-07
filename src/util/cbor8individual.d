@@ -97,7 +97,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-public void cbor_to_individual(Individual *individual, string in_str)
+public void cbor2individual(Individual *individual, string in_str)
 {
     read_element(individual, cast(ubyte[])in_str, dummy);
 }

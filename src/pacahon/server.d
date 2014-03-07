@@ -100,7 +100,7 @@ void init_core()
 
         Tid[ string ] tids;
 
-        tids[ THREAD.subject_manager ] = spawn(&subject_manager);
+        tids[ THREAD.subject_manager ] = spawn(&individuals_manager);
         wait_starting_thread(THREAD.subject_manager, tids);
 
         tids[ THREAD.ticket_manager ] = spawn(&ticket_manager);

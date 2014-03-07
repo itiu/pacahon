@@ -179,7 +179,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-public string encode_cbor(Subject in_obj)
+public string subject2cbor(Subject in_obj)
 {
 //    writeln("encode_cbor #1, subject:", in_obj);
     OutBuffer ou = new OutBuffer();
@@ -191,7 +191,7 @@ public string encode_cbor(Subject in_obj)
 }
 
 
-public Subject decode_cbor(string in_str, byte fields = ALL)
+public Subject cbor2subject (string in_str, byte fields = ALL)
 {
 //    StopWatch sw;
 //    sw.start();

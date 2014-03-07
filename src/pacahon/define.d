@@ -34,3 +34,11 @@ enum Type : ubyte
     Datetime = 8,
     Float    = 16
 }
+
+enum EVENT : byte
+{
+    CREATE = 1,
+    UPDATE = 2,
+    REMOVE = 3
+}
+ 

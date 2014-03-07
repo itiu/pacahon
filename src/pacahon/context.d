@@ -20,13 +20,6 @@ enum CMD : byte
     END_DATA  = 32
 }
 
-enum EVENT : byte
-{
-    CREATE = 1,
-    UPDATE = 2,
-    REMOVE = 3
-}
-
 enum THREAD : string
 {
     ticket_manager             = "ticket_manager",

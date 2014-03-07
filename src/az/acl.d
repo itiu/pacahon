@@ -105,7 +105,7 @@ void acl_manager()
                     if (cmd == CMD.AUTHORIZE)
                     {
 //                            writeln ("is AUTHORIZE msg=[", msg, "]");
-                        Subject sss = decode_cbor(msg, TYPE);
+                        Subject sss = cbor2subject(msg, TYPE);
 
                         send(tid_response_reciever, msg, thisTid);
                     }
@@ -126,7 +126,7 @@ void acl_manager()
                         try
                         {
 //                                  writeln ("#b");
-                            Subject graph = decode_cbor(msg);
+                            Subject graph = cbor2subject(msg);
 
                             MDB_val key;
                             key.mv_data = cast(char *)graph.subject;

@@ -14,6 +14,7 @@ private
 
     import pacahon.know_predicates;
     import pacahon.context;
+    import pacahon.define;
     import pacahon.thread_context;
 
     import search.vel;
@@ -84,7 +85,7 @@ public void condition_thread(string props_file_name)
 //          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
                             if (msg !is null && msg.length > 3)
                             {
-                                Subject doc = decode_cbor(msg);
+                                Subject doc = cbor2subject(msg);
 
                                 foreach (mandat; mandats)
                                 {
