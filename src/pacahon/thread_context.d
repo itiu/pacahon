@@ -40,29 +40,79 @@ Tid dummy_tid;
 
 class ThreadContext : Context
 {
-    //Ticket system
     private OWL       owl;
     private JSONValue props;
+
+    private bool      use_caching_of_documents = false;
+    private bool      IGNORE_EMPTY_TRIPLE      = false;
+
+    private int       _count_command;
+    private int       _count_message;
+    private string    name;
+
+    private           Tid[ string ] tids;
+    private string    old_msg_key2slot;
+    private int[ string ] old_key2slot;
+
+    private Subjects       _ba2pacahon_records;
+    private                string[ string ] prefix_map;
+    private Subjects       _event_filters;
+    private search.vql.VQL _vql;
+    private Ticket *[ string ] user_of_ticket;
+    private                string[ string ] cache__subject_creator;
+
+    this(string property_file_path, string context_name)
+    {
+        name = context_name;
+        writeln("CREATE NEW CONTEXT:", context_name);
+
+        foreach (tid_name; THREAD_LIST)
+        {
+            tids[ tid_name ] = locate(tid_name);
+        }
+
+        _event_filters      = new Subjects();
+        _ba2pacahon_records = new Subjects();
+
+        if (property_file_path !is null)
+        {
+            try
+            {
+                props = read_props(property_file_path);
+            } catch (Exception ex1)
+            {
+                throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
+            }
+
+            // использование кеша документов
+            if (("use_caching_of_documents" in props.object) !is null)
+            {
+                if (props.object[ "use_caching_of_documents" ].str == "true")
+                    use_caching_of_documents = true;
+            }
+
+            _vql = new search.vql.VQL(this);
+
+            //writeln(context_name ~ ": load events");
+            //pacahon.event_filter.load_events(this);
+            //writeln(context_name ~ ": load events... ok");
+
+            owl = new OWL(this);
+            owl.load();
+        }
+    }
+
     public JSONValue get_props()
     {
         return props;
     }
 
-    bool    use_caching_of_documents = false;
-    bool    IGNORE_EMPTY_TRIPLE      = false;
-
-    int     _count_command;
-    int     _count_message;
-    string  name;
-
-    private Tid[ string ] tids;
-
-    string get_name()
+    public string get_name()
     {
         return name;
     }
 
-    immutable(Class)[ string ] get_owl_classes()
+    public immutable(Class)[ string ] get_owl_classes()
     {
         if (owl !is null)
         {
@@ -85,7 +135,7 @@ class ThreadContext : Context
             return (Class *[]).init;
     }
  */
-    Class *get_class(string uri)
+    public Class *get_class(string uri)
     {
         if (owl !is null)
         {
@@ -96,7 +146,7 @@ class ThreadContext : Context
             return null;
     }
 
-    Property *get_property(string uri)
+    public Property *get_property(string uri)
     {
         if (owl !is null)
         {
@@ -107,7 +157,7 @@ class ThreadContext : Context
             return null;
     }
 
-    immutable(Individual)[ string ] get_onto_as_map_individuals()
+    public immutable(Individual)[ string ] get_onto_as_map_individuals()
     {
         if (owl !is null)
         {
@@ -184,47 +234,6 @@ class ThreadContext : Context
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    this(string property_file_path, string context_name)
-    {
-        name = context_name;
-        writeln("CREATE NEW CONTEXT:", context_name);
-
-        foreach (tid_name; THREAD_LIST)
-        {
-            tids[ tid_name ] = locate(tid_name);
-        }
-
-        _event_filters      = new Subjects();
-        _ba2pacahon_records = new Subjects();
-
-        if (property_file_path !is null)
-        {
-            try
-            {
-                props = read_props(property_file_path);
-            } catch (Exception ex1)
-            {
-                throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-            }
-
-            // использование кеша документов
-            if (("use_caching_of_documents" in props.object) !is null)
-            {
-                if (props.object[ "use_caching_of_documents" ].str == "true")
-                    use_caching_of_documents = true;
-            }
-
-            _vql = new search.vql.VQL(this);
-
-            //writeln(context_name ~ ": load events");
-            //pacahon.event_filter.load_events(this);
-            //writeln(context_name ~ ": load events... ok");
-
-            owl = new OWL(this);
-            owl.load();
-        }
-    }
-
     public Tid getTid(THREAD tid_name)
     {
         Tid res = tids.get(tid_name, Tid.init);
@@ -232,7 +241,6 @@ class ThreadContext : Context
         assert(res != Tid.init);
         return res;
     }
-
 
     public void store_subject(Subject ss, bool prepareEvents = true)
     {
@@ -294,9 +302,6 @@ class ThreadContext : Context
         }
     }
 
-    private string old_msg_key2slot;
-    int[ string ] old_key2slot;
-
     public int[ string ] get_key2slot()
     {
         send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
@@ -356,8 +361,7 @@ class ThreadContext : Context
         return res;
     }
 
-    private string[ string ] prefix_map;
-    ref     string[ string ] get_prefix_map()
+    ref string[ string ] get_prefix_map()
     {
         return prefix_map;
     }
@@ -372,19 +376,16 @@ class ThreadContext : Context
         return tids[ THREAD.ticket_manager ];
     }
 
-    private Subjects _ba2pacahon_records;
     @property Subjects ba2pacahon_records()
     {
         return _ba2pacahon_records;
     }
 
-    private Subjects _event_filters;
     @property Subjects event_filters()
     {
         return _event_filters;
     }
 
-    private search.vql.VQL _vql;
     @property search.vql.VQL vql()
     {
         return _vql;
@@ -414,7 +415,6 @@ class ThreadContext : Context
     }
 
 /////////////////////////////////////////////////////////
-    private string[ string ] cache__subject_creator;
     int get_subject_creator_size()
     {
         return cast(int)cache__subject_creator.length;
@@ -437,7 +437,6 @@ class ThreadContext : Context
 
     ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
 
-    private Ticket *[ string ] user_of_ticket;
     bool is_ticket_valid(string ticket_id)
     {
         writeln("@is_ticket_valid, ", ticket_id);
