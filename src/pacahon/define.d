@@ -40,7 +40,8 @@ enum EVENT : byte
     CREATE = 1,
     UPDATE = 2,
     REMOVE = 3,
-    NONE   = 4
+    NONE   = 4,
+    ERROR  = 5
 }
 
 const string individuals_db_path = "./data/lmdb-individuals";

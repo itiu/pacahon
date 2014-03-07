@@ -11,8 +11,7 @@ private
 
     import az.acl;
     import az.condition;
-    import storage.tickets;
-    import storage.individuals;
+    import storage.storage_thread;
 
     import util.logger;
     import util.json_ld_parser;
@@ -100,10 +99,10 @@ void init_core()
 
         Tid[ string ] tids;
 
-        tids[ THREAD.subject_manager ] = spawn(&individuals_manager);
+        tids[ THREAD.subject_manager ] = spawn(&individuals_manager, individuals_db_path);
         wait_starting_thread(THREAD.subject_manager, tids);
 
-        tids[ THREAD.ticket_manager ] = spawn(&ticket_manager);
+        tids[ THREAD.ticket_manager ] = spawn(&individuals_manager, tickets_db_path);
         wait_starting_thread(THREAD.ticket_manager, tids);
 
         tids[ THREAD.acl_manager ] = spawn(&acl_manager);

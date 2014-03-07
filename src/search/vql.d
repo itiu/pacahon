@@ -22,7 +22,7 @@ private
     import search.vel;
     import search.xapian_reader;
 
-    import storage.individuals;
+    import storage.storage_thread;
     import onto.individual;
     import onto.sgraph;
 }

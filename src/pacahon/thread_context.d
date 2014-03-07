@@ -479,7 +479,7 @@ class ThreadContext : Context
                 if (tid_ticket_manager != Tid.init)
                 {
                     send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
-                    receive((string msg, Tid from)
+                    receive((EVENT ev, Tid from)
                             {
                                 if (from == tids[ THREAD.ticket_manager ])
                                 {
@@ -507,17 +507,19 @@ class ThreadContext : Context
             string when     = null;
             int    duration = 0;
             send(tid_ticket_manager, CMD.FIND, ticket_id, thisTid);
-            string ticket_str = receiveOnly!(string);
 
-            if (ticket_str !is null && ticket_str.length > 128)
-            {
-                tt = new Ticket;
-                Subject ticket = cbor2subject(ticket_str);
-                subject2Ticket(ticket, tt);
-                user_of_ticket[ tt.id ] = tt;
+            receive((string ticket_str, Tid from)
+                    {
+                        if (ticket_str !is null && ticket_str.length > 128)
+                        {
+                            tt = new Ticket;
+                            Subject ticket = cbor2subject(ticket_str);
+                            subject2Ticket(ticket, tt);
+                            user_of_ticket[ tt.id ] = tt;
 
 //				writeln ("Ticket=",ticket);
-            }
+                        }
+                    });
         }
         else
         {

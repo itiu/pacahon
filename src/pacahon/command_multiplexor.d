@@ -20,7 +20,6 @@ private
     import pacahon.log_msg;
     import pacahon.define;
     import pacahon.context;
-    import storage.individuals;
 }
 
 logger log;
