@@ -39,6 +39,7 @@ enum EVENT : byte
 {
     CREATE = 1,
     UPDATE = 2,
-    REMOVE = 3
+    REMOVE = 3,
+    NONE   = 4
 }
  
