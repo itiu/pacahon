@@ -27,6 +27,7 @@ private
     import onto.sgraph;
     import onto.resource;
     //	import search.vql;
+    import storage.lmdb_storage;
 }
 
 logger log;
@@ -60,9 +61,12 @@ class ThreadContext : Context
     private search.vql.VQL _vql;
     private Ticket *[ string ] user_of_ticket;
     private                string[ string ] cache__subject_creator;
+    LmdbStorage            inividuals_storage;
 
     this(string property_file_path, string context_name)
     {
+        inividuals_storage = new LmdbStorage(individuals_db_path);
+
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
 
