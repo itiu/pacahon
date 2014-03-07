@@ -134,10 +134,10 @@ void ticket_manager()
                     }
                     else if (cmd == CMD.FIND)
                     {
-                        writeln("%1 ", msg);
+                        //writeln("%1 ", msg);
                         MDB_txn *txn_r;
                         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-                        writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
+                        //writeln("%2 tnx begin:", fromStringz(mdb_strerror(rc)));
 
                         MDB_val key;
                         key.mv_size = msg.length;
