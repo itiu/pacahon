@@ -91,27 +91,39 @@ class XapianReader : SearchReader
         open_db();
     }
 
-    private string      dummy;
-    private double      d_dummy;
-    private static long refresh_db_timeout = 10000000 * 20;
-    private long        prev_update_time;
+    private string dummy;
+    private double d_dummy;
+//    private static long refresh_db_timeout = 10000000 * 20;
+    private long   last_time_signal       = 0;
+    private long   last_time_check_signal = 0;
+
+    bool check_for_reload()
+    {
+        long now = Clock.currStdTime();
+
+        if (now - last_time_check_signal > 1000 || now - last_time_check_signal < 0)
+        {
+            last_time_check_signal = now;
+
+            long now_time_signal = context.look_integer_signal("onto");
+            if (now_time_signal - last_time_signal > 1000 || now_time_signal - last_time_signal < 0)
+            {
+                last_time_signal = now_time_signal;
+                writeln("REOPEN");
+                close_db();
+                open_db();
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public int get(string str_query, string str_fields, string sort, int count_authorize,
                    void delegate(string cbor_subject) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
-
-        long last_update_time = context.get_last_update_time();
-
-        if (last_update_time - prev_update_time > refresh_db_timeout)
-        {
-            writeln("REOPEN");
-            close_db();
-            open_db();
-        }
-//      writeln ("last_update_time=", last_update_time);
-//      writeln ("prev_update_time=", prev_update_time);
-        prev_update_time = last_update_time;
+        check_for_reload();
 
         int[ string ] key2slot = context.get_key2slot();
         //writeln ("key2slot=", key2slot);

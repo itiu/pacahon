@@ -103,23 +103,21 @@ class OWL
     Property *[ size_t ] property_2_idx;
     immutable(Class)[ string ] owl_classes;
 
-    private long last_time_onto_signal       = 0;
-    private long last_time_check_onto_signal = 0;
+    private long last_time_signal       = 0;
+    private long last_time_check_signal = 0;
 
     bool check_for_reload()
     {
         long now = Clock.currStdTime() / 10000;
 
-        if (now - last_time_check_onto_signal > 1000 || now - last_time_check_onto_signal < 0)
+        if (now - last_time_check_signal > 1000 || now - last_time_check_signal < 0)
         {
-            last_time_check_onto_signal = now;
+            last_time_check_signal = now;
 
-            long now_time_onto_signal;
-
-            now_time_onto_signal = context.look_integer_signal("onto");
-            if (now_time_onto_signal - last_time_onto_signal > 1000 || now_time_onto_signal - last_time_onto_signal < 0)
+            long now_time_signal = context.look_integer_signal("onto");
+            if (now_time_signal - last_time_signal > 1000 || now_time_signal - last_time_signal < 0)
             {
-                last_time_onto_signal = now_time_onto_signal;
+                last_time_signal = now_time_signal;
                 writeln("RELOAD ONTO");
                 load();
                 return true;
@@ -154,7 +152,8 @@ class OWL
         LabeledMultiDigraph lmg = new LabeledMultiDigraph();
 
 //		writeln (context.get_name, ", load onto to graph..");
-        context.vql().get(null,
+        context.vql().get(
+                          null,
                           "return { '*'}
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           lmg, individuals);

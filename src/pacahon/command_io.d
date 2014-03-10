@@ -144,7 +144,9 @@ public void store_graphs(Subject[] graphs_on_put, Ticket *ticket, Context contex
         else
         {
             if (type is null)
-                reason = "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.subject;
+                reason =
+                    "добавление фактов не возможно: не указан rdf:type для субьекта" ~ graph.
+                    subject;
         }
     }
 }
@@ -218,7 +220,8 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 }
                 /////////////////////////////////////////////////////////////////////////////////////////
                 if (trace_msg[ 58 ] == 1)
-                    log.trace("авторизуем найденные субьекты, для пользователя %s", ticket.user_uri);
+                    log.trace("авторизуем найденные субьекты, для пользователя %s",
+                              ticket.user_uri);
 
                 // авторизуем найденные субьекты
                 int    count_authorized_subjects = res.length;
@@ -252,17 +255,24 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                  */
                 if (count_found_subjects == count_authorized_subjects)
                 {
-                    reason = "запрос выполнен: авторизованны все найденные субьекты :" ~ text(count_found_subjects);
+                    reason =
+                        "запрос выполнен: авторизованны все найденные субьекты :" ~ text(
+                                                                                                                                        count_found_subjects);
                 }
                 else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
                 {
-                    reason = "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~ ", успешно авторизованно : " ~ text(
-                                                                                                                               count_authorized_subjects);
+                    reason =
+                        "запрос выполнен: найденнo : " ~ text(count_found_subjects) ~
+                        ", успешно авторизованно : "
+                        ~ text(
+                               count_authorized_subjects);
                 }
                 else if (count_authorized_subjects == 0 && count_found_subjects > 0)
                 {
                     reason =
-                        "запрос выполнен: ни один из найденных субьектов (" ~ text(count_found_subjects) ~ "), не был успешно авторизован:"
+                        "запрос выполнен: ни один из найденных субьектов (" ~ text(
+                                                                                                                           count_found_subjects)
+                        ~ "), не был успешно авторизован:"
                         ~
                         authorize_reason;
                 }

@@ -3,7 +3,8 @@ module pacahon.server;
 private
 {
     import core.thread, std.stdio, std.string, std.c.string, std.json, std.outbuffer, std.datetime, std.conv, std.concurrency;
-    version (linux) import std.c.linux.linux, core.stdc.stdlib;
+    version (linux)
+        import std.c.linux.linux, core.stdc.stdlib;
 
     import io.mq_client;
     import io.rabbitmq_client;
@@ -411,7 +412,9 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 
             if (command.count_edges < 3)
             {
-                log.trace("данная команда [%s] не является полной (command.count_edges < 3), пропустим\n", command.subject);
+                log.trace(
+                          "данная команда [%s] не является полной (command.count_edges < 3), пропустим\n",
+                          command.subject);
                 continue;
             }
 

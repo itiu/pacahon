@@ -321,13 +321,15 @@ class ThreadContext : Context
 
     public long get_last_update_time()
     {
+        long lut;
+
         send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
         receive((long tm)
                 {
-                    return tm;
+                    lut = tm;
                 });
 //        long tm = receiveOnly!(long)();
-        return 0;
+        return lut;
     }
 
     public Subject get_subject(string uri)

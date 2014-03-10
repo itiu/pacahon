@@ -28,7 +28,7 @@ private import pacahon.know_predicates;
 enum OBJECT_TYPE : byte
 {
     TEXT_STRING        = 0,
-    LINK_SUBJECT       =  10,
+    LINK_SUBJECT       = 10,
     LINK_CLUSTER       = 20,
     URI                = 30,
     UNSIGNED_INTEGER   = 31,

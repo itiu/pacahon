@@ -58,12 +58,12 @@ public void xapian_thread_context()
                     {
                         if (cname == CNAME.KEY2SLOT)
                         {
-//                          writeln ("GET:\n", key2slot_str);
+                            //writeln ("GET:\n", key2slot_str);
                             send(tid_sender, key2slot_str);
                         }
                         else if (cname == CNAME.LAST_UPDATE_TIME)
                         {
-//                          writeln ("GET:\n", last_update_time, ", tid_sender=", tid_sender);
+                            //writeln ("GET:\n", last_update_time, ", tid_sender=", tid_sender);
                             send(tid_sender, last_update_time);
                         }
                     }
@@ -217,7 +217,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     xapian_qp.set_database(indexer_db, &err);
 
     int   counter                         = 0;
-    int   last_counter_afrer_timed_commit = 0;
+    int   last_counter_after_timed_commit = 0;
     ulong last_size_key2slot              = 0;
 
     int[ string ] key2slot;
@@ -288,7 +288,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                     {
                         //writeln ("@@ COMMIT");
 
-                        if (counter - last_counter_afrer_timed_commit > 0)
+                        if (counter - last_counter_after_timed_commit > 0)
                         {
                             printf("counter: %d, timer: commit index..", counter);
                             if (key2slot.length - last_size_key2slot > 0)
@@ -299,11 +299,12 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             }
 
                             indexer_db.commit(&err);
-                            printf("ok\n");
+//                            printf("ok\n");
 
                             //indexer_db.close (&err);
                             //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
-                            last_counter_afrer_timed_commit = counter;
+                            last_counter_after_timed_commit = counter;
+                            send(key2slot_accumulator, CMD.PUT, CNAME.LAST_UPDATE_TIME, "");
                         }
                     }
                     else
