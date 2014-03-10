@@ -7,11 +7,13 @@ private
     import bind.lmdb_header;
 
     import onto.individual;
+    import onto.sgraph;
 
     import util.logger;
     import util.utils;
     import util.cbor;
     import util.cbor8individual;
+    import util.cbor8sgraph;
 
     import pacahon.context;
     import pacahon.define;
@@ -128,6 +130,16 @@ class LmdbStorage
 
         mdb_dbi_close(env, dbi);
         return ev;
+    }
+
+    public Subject find_subject(string uri)
+    {
+        Subject ind;
+        string  str = find(uri);
+
+        if (str !is null)
+            ind = cbor2subject(str);
+        return ind;
     }
 
     public Individual find_individual(string uri)

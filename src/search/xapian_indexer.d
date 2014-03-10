@@ -29,7 +29,6 @@ public void xapian_thread_context()
 //    writeln("SPAWN: xapian_thread_io");
     last_update_time = Clock.currTime().stdTime();
 
-
     // SEND ready
     receive((Tid tid_response_reciever)
             {
@@ -64,6 +63,7 @@ public void xapian_thread_context()
                         }
                         else if (cname == CNAME.LAST_UPDATE_TIME)
                         {
+//                          writeln ("GET:\n", last_update_time, ", tid_sender=", tid_sender);
                             send(tid_sender, last_update_time);
                         }
                     }

@@ -9,6 +9,7 @@ import util.cbor8sgraph;
 import search.vel;
 import pacahon.context;
 import onto.sgraph;
+import storage.lmdb_storage;
 
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
@@ -340,6 +341,67 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire,
                                                  int count_authorize,
                                                  ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
+                                                 Context context)
+{
+    int read_count = 0;
+
+    //StopWatch sw;
+    //sw.start();
+
+    writeln("@query=", get_query_description(query));
+
+    byte err;
+
+    xapian_enquire.set_query(query, &err);
+    if (sorter !is null)
+        xapian_enquire.set_sort_by_key(sorter, true, &err);
+
+    //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
+    XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
+    if (err < 0)
+        return err;
+
+    writeln("@found =", matches.get_matches_estimated(&err), ", @matches =", matches.size(&err));
+
+    if (matches !is null)
+    {
+        XapianMSetIterator it = matches.iterator(&err);
+
+        while (it.is_next(&err) == true)
+        {
+            char   *data_str;
+            uint   *data_len;
+            it.get_document_data(&data_str, &data_len, &err);
+            string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
+//              writeln ("@subject_id:", subject_id);
+            string msg = context.get_subject_as_cbor(subject_id);
+
+            if (msg !is null)
+            {
+                add_out_element(msg);
+                read_count++;
+            }
+
+
+            it.next(&err);
+        }
+
+        //sw.stop();
+        //long t = cast(long) sw.peek().usecs;
+        //writeln("1 execute:", t, " µs");
+
+        destroy_MSetIterator(it);
+        destroy_MSet(matches);
+    }
+
+
+//    writeln ("@ read_count=", read_count);
+    return read_count;
+}
+
+public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire,
+                                                 int count_authorize,
+                                                 ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
                                                  Tid tid_subject_manager,
                                                  Tid tid_acl_manager)
 {
@@ -373,7 +435,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
             uint   *data_len;
             it.get_document_data(&data_str, &data_len, &err);
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
-            //	writeln ("@subject_id:", subject_id);
+            writeln("@subject_id:", subject_id);
             if (tid_subject_manager != Tid.init)
             {
                 send(tid_subject_manager, CMD.GET, subject_id, thisTid);
@@ -383,6 +445,7 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
             it.next(&err);
         }
 
+        writeln("*1");
         //sw.stop();
         //long t = cast(long) sw.peek().usecs;
         //writeln("1 execute:", t, " µs");

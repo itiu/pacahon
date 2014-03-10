@@ -133,8 +133,7 @@ class XapianReader : SearchReader
             while (state == -1)
             {
                 state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,
-                                                              add_out_element,
-                                                              context.getTid(THREAD.subject_manager), context.getTid(THREAD.acl_manager));
+                                                              add_out_element, context);
                 if (state == -1)
                 {
                     close_db();

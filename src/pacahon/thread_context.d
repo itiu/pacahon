@@ -58,10 +58,11 @@ class ThreadContext : Context
     private Subjects       _ba2pacahon_records;
     private                string[ string ] prefix_map;
     private Subjects       _event_filters;
-    private search.vql.VQL _vql;
     private Ticket *[ string ] user_of_ticket;
     private                string[ string ] cache__subject_creator;
-    LmdbStorage            inividuals_storage;
+
+    private LmdbStorage    inividuals_storage;
+    private search.vql.VQL _vql;
 
     this(string property_file_path, string context_name)
     {
@@ -298,62 +299,45 @@ class ThreadContext : Context
 
     public int[ string ] get_key2slot()
     {
-        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
-        string msg = receiveOnly!(string)();
-
         int[ string ] key2slot;
+        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
+//        string msg = receiveOnly!(string)();
+        receive((string msg)
+                {
+                    if (msg != old_msg_key2slot)
+                    {
+                        key2slot = deserialize_key2slot(msg);
+                        old_msg_key2slot = msg;
+                        old_key2slot = key2slot;
+                    }
+                    else
+                        key2slot = old_key2slot;
 
-        if (msg != old_msg_key2slot)
-        {
-            key2slot         = deserialize_key2slot(msg);
-            old_msg_key2slot = msg;
-            old_key2slot     = key2slot;
-        }
-        else
-            key2slot = old_key2slot;
+                    //writeln ("@get_key2slot=", key2slot);
+                });
 
-        //writeln ("@get_key2slot=", key2slot);
         return key2slot;
     }
 
     public long get_last_update_time()
     {
         send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
-        long tm = receiveOnly!(long)();
-        return tm;
+        receive((long tm)
+                {
+                    return tm;
+                });
+//        long tm = receiveOnly!(long)();
+        return 0;
     }
 
-    public Subject get_subject(string uid)
+    public Subject get_subject(string uri)
     {
-        Subject res = null;
-
-        send(tids[ THREAD.subject_manager ], CMD.FIND, uid, thisTid);
-        receive((string msg, Tid from)
-                {
-                    if (from == tids[ THREAD.subject_manager ])
-                    {
-                        if (msg !is null && msg.length > 1)
-                            res = cbor2subject(msg);
-                    }
-                });
-
-        return res;
+        return inividuals_storage.find_subject(uri);
     }
 
-    public string get_subject_as_cbor(string uid)
+    public string get_subject_as_cbor(string uri)
     {
-        string res;
-
-        send(tids[ THREAD.subject_manager ], CMD.FIND, uid, thisTid);
-        receive((string msg, Tid from)
-                {
-                    if (from == tids[ THREAD.subject_manager ])
-                    {
-                        res = msg;
-                    }
-                });
-
-        return res;
+        return inividuals_storage.find(uri);
     }
 
     ref string[ string ] get_prefix_map()
@@ -552,7 +536,8 @@ class ThreadContext : Context
         if (tt.user_uri !is null && (when is null || duration < 10))
         {
             if (trace_msg[ 23 ] == 1)
-                log.trace("найденный сессионный билет не полон, считаем что пользователь не был найден");
+                log.trace(
+                          "найденный сессионный билет не полон, считаем что пользователь не был найден");
             tt.user_uri = null;
         }
 

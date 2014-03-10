@@ -46,12 +46,12 @@ static const int LMDB   = 3;
 
 class VQL
 {
-    private string[]                 sections;
-    private bool[]                   section_is_found;
-    private string[]                 found_sections;
+    private string[]     sections;
+    private bool[]       section_is_found;
+    private string[]     found_sections;
 
-    private Context                  context;
-    private XapianSynchronizedReader xr;
+    private Context      context;
+    private XapianReader xr;
 
     this(Context _context)
     {
@@ -60,7 +60,7 @@ class VQL
         section_is_found = new bool[ sections.length ];
 
         context = _context;
-        xr      = new XapianSynchronizedReader(_context);
+        xr      = new XapianReader(_context);
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
