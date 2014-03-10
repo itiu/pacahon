@@ -110,12 +110,12 @@ class OWL
     {
         long now = Clock.currStdTime() / 10000;
 
-        if (now - last_time_check_signal > 1000 || now - last_time_check_signal < 0)
+        if (now - last_time_check_signal > 10000 || now - last_time_check_signal < 0)
         {
             last_time_check_signal = now;
 
             long now_time_signal = context.look_integer_signal("onto");
-            if (now_time_signal - last_time_signal > 1000 || now_time_signal - last_time_signal < 0)
+            if (now_time_signal - last_time_signal > 10000 || now_time_signal - last_time_signal < 0)
             {
                 last_time_signal = now_time_signal;
                 writeln("RELOAD ONTO");
