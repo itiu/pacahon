@@ -257,7 +257,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 {
                     reason =
                         "запрос выполнен: авторизованны все найденные субьекты :" ~ text(
-                                                                                                                                        count_found_subjects);
+                                                                                         count_found_subjects);
                 }
                 else if (count_found_subjects > count_authorized_subjects && count_authorized_subjects > 0)
                 {
@@ -271,7 +271,7 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
                 {
                     reason =
                         "запрос выполнен: ни один из найденных субьектов (" ~ text(
-                                                                                                                           count_found_subjects)
+                                                                                   count_found_subjects)
                         ~ "), не был успешно авторизован:"
                         ~
                         authorize_reason;

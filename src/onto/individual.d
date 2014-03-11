@@ -42,6 +42,17 @@ struct Individual
         return result;
     }
 
+    Resource getFirstResource(string predicate)
+    {
+        Resources rss;
+
+        rss = resources.get(predicate, rss);
+        if (rss.length > 0)
+            return rss[ 0 ];
+
+        return Resource.init;
+    }
+
     bool isExist(string predicate, string object)
     {
         Resources rss;

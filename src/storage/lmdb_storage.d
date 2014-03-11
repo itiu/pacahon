@@ -88,11 +88,44 @@ class LmdbStorage
         return update_or_create(ind.uri, content);
     }
 
+    public void put(string _key, string value)
+    {
+        int     rc;
+        MDB_dbi dbi;
+        MDB_txn *txn;
+
+        rc = mdb_txn_begin(env, null, 0, &txn);
+        if (rc != 0)
+            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
+        if (rc != 0)
+            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+        MDB_val key;
+
+        key.mv_data = cast(char *)_key;
+        key.mv_size = _key.length;
+
+        MDB_val data;
+
+        data.mv_data = cast(char *)value;
+        data.mv_size = value.length;
+
+        rc = mdb_put(txn, dbi, &key, &data, 0);
+        if (rc != 0)
+            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+        rc = mdb_txn_commit(txn);
+        if (rc != 0)
+            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+        mdb_dbi_close(env, dbi);
+    }
+
     public EVENT update_or_create(string uri, string content)
     {
         int     rc;
         MDB_dbi dbi;
-
         MDB_txn *txn;
 
         rc = mdb_txn_begin(env, null, 0, &txn);
@@ -160,14 +193,14 @@ class LmdbStorage
         MDB_dbi dbi;
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-        
-        if (rc == -30783)
+
+        if (rc == MDB_BAD_RSLOT)
         {
             writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
-        	mdb_txn_abort(txn_r);
-        	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);        	
+            mdb_txn_abort(txn_r);
+            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
-        
+
         if (rc != 0)
             writeln("LmdbStorage:find #2, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
 

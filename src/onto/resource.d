@@ -59,3 +59,26 @@ struct Resource
     }
 }
 
+bool anyExist(Resources rss, string[] objects)
+{
+    foreach (rs; rss)
+    {
+        foreach (object; objects)
+        {
+            if (rs.data == object)
+                return true;
+        }
+    }
+    return false;
+}
+
+bool anyExist(Resources rss, string object)
+{
+    foreach (rs; rss)
+    {
+        if (rs.data == object)
+            return true;
+    }
+    return false;
+}
+

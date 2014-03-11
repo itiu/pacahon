@@ -18,9 +18,17 @@ public const string owl__Thing            = "owl:Thing";
 public const string owl__Class            = "owl:Class";
 
 //public const string veda__mandat	= "veda:mandat";
-public const string veda_schema__script   = "veda-schema:script";
-public const string veda_schema__login    = "veda-schema:login";
-public const string veda_schema__password = "veda-schema:password";
+public const string veda_schema__script              = "veda-schema:script";
+public const string veda_schema__login               = "veda-schema:login";
+public const string veda_schema__password            = "veda-schema:password";
+public const string veda_schema__PermissionStatement = "veda-schema:PermissionStatement";
+public const string veda_schema__canCreate           = "veda-schema:canCreate";
+public const string veda_schema__canDelete           = "veda-schema:canDelete";
+public const string veda_schema__canRead             = "veda-schema:canRead";
+public const string veda_schema__canUpdate           = "veda-schema:canUpdate";
+public const string veda_schema__created             = "veda-schema:created";
+public const string veda_schema__permissionObject    = "veda-schema:permissionObject";
+public const string veda_schema__permissionSubject   = "veda-schema:permissionSubject";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------

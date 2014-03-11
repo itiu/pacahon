@@ -63,7 +63,7 @@ public void xapian_thread_context()
                         }
                         else if (cname == CNAME.LAST_UPDATE_TIME)
                         {
-                            writeln ("GET:\n", last_update_time, ", tid_sender=", tid_sender);
+                            //writeln ("GET:\n", last_update_time, ");
                             send(tid_sender, last_update_time);
                         }
                     }
