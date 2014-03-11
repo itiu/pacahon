@@ -44,6 +44,19 @@ enum EVENT : byte
     ERROR  = 5
 }
 
+enum Access : ubyte
+{
+    can_create  = 1,
+    can_read    = 2,
+    can_update  = 4,
+    can_delete  = 8,
+    cant_create = 16,
+    cant_read   = 32,
+    cant_update = 64,
+    cant_delete = 128
+}
+
+
 const string individuals_db_path = "./data/lmdb-individuals";
 const string tickets_db_path     = "./data/lmdb-tickets";
 const string acl_indexes_db_path = "./data/acl-indexes";

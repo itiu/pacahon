@@ -25,6 +25,7 @@ private
     import storage.storage_thread;
     import onto.individual;
     import onto.sgraph;
+    import az.acl;
 }
 
 logger log;
@@ -83,7 +84,7 @@ class VQL
         dg = &collect_subject;
 //        writeln ("@2 found_sections[ FILTER ]=", found_sections[ FILTER ]);
 
-        res_count = xr.get(filter, freturn, sort, count_authorize, dg);
+        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
 
 //        sw.stop();
 //        long t = cast(long)sw.peek().usecs;
@@ -144,7 +145,7 @@ class VQL
             dg = &collect_subject;
 
 //        writeln ("@@1 found_sections[ FILTER ]=", found_sections[ FILTER ]);
-            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
+            res_count = xr.get(ticket, found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
         }
 
 //        sw.stop();
@@ -217,7 +218,7 @@ class VQL
             }
             dg = &collect_subject;
 
-            res_count = xr.get(found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
+            res_count = xr.get(ticket, found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
         }
 
 //          sw.stop();

@@ -7,6 +7,7 @@ private import search.vel;
 private import onto.owl;
 private import onto.individual;
 private import onto.sgraph;
+private import pacahon.define;
 
 enum CMD : byte
 {
@@ -44,9 +45,10 @@ struct Ticket
 {
     string id;
     string user_uri;
+
 //    string[] parentUnitIds = new string[ 0 ];
 
-    long   end_time;
+    long end_time;
 
     immutable this(string _id, string _user_uri, long _end_time)
     {
@@ -90,6 +92,7 @@ interface Context
     @property void count_message(int n);
 
     bool send_on_authorization(string msg);
+    bool authorize(string uri, Ticket *ticket, Access request_acess);
 
     ref string[ string ] get_prefix_map();
 

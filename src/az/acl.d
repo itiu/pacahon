@@ -18,18 +18,6 @@ private
     import storage.lmdb_storage;
 }
 
-enum
-{
-    can_create  = 1,
-    can_read    = 2,
-    can_update  = 4,
-    can_delete  = 8,
-    cant_create = 16,
-    cant_read   = 32,
-    cant_update = 64,
-    cant_delete = 128
-}
-
 //////////////// ACLManager
 
 /*********************************************************************
@@ -50,6 +38,17 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
+bool authorize(LmdbStorage storage, string uri, Ticket *ticket, Access request_acess)
+{
+    if (ticket is null)
+        return true;
+
+    // группы пользователя
+//	ticket.user_uri
+
+    return false;
+}
+
 void acl_manager()
 {
 //    writeln("SPAWN: acl manager");
@@ -62,8 +61,6 @@ void acl_manager()
             });
     while (true)
     {
-        string res = "?";
-
         receive((CMD cmd, EVENT type, string msg)
                 {
                     if (cmd == CMD.STORE)
@@ -79,36 +76,36 @@ void acl_manager()
                         if (canCreate !is Resource.init)
                         {
                             if (canCreate.data == "true")
-                                access = access | can_create;
+                                access = access | Access.can_create;
                             else
-                                access = access | cant_create;
+                                access = access | Access.cant_create;
                         }
 
                         Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
                         if (canDelete !is Resource.init)
                         {
                             if (canDelete.data == "true")
-                                access = access | can_delete;
+                                access = access | Access.can_delete;
                             else
-                                access = access | cant_delete;
+                                access = access | Access.cant_delete;
                         }
 
                         Resource canRead = ind.getFirstResource(veda_schema__canRead);
                         if (canRead !is Resource.init)
                         {
                             if (canRead.data == "true")
-                                access = access | can_read;
+                                access = access | Access.can_read;
                             else
-                                access = access | cant_read;
+                                access = access | Access.cant_read;
                         }
 
                         Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
                         if (canUpdate !is Resource.init)
                         {
                             if (canUpdate.data == "true")
-                                access = access | can_update;
+                                access = access | Access.can_update;
                             else
-                                access = access | cant_update;
+                                access = access | Access.cant_update;
                         }
 
 

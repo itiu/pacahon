@@ -28,6 +28,7 @@ private
     import onto.resource;
     //	import search.vql;
     import storage.lmdb_storage;
+    import az.acl;
 }
 
 logger log;
@@ -48,6 +49,11 @@ class ThreadContext : Context
     private Subjects _ba2pacahon_records;
     /// deprecated ^^^
 
+    // // // authorization
+    private LmdbStorage acl_indexes;
+
+    // //////////////////////////////
+
     private OWL       owl;
     private JSONValue props;
 
@@ -56,6 +62,7 @@ class ThreadContext : Context
     private string    name;
 
     private           Tid[ string ] tids;
+
     private string    old_msg_key2slot;
     private int[ string ] old_key2slot;
 
@@ -63,13 +70,12 @@ class ThreadContext : Context
     private Subjects       _event_filters;
 
     private LmdbStorage    inividuals_storage;
-    private LmdbStorage    acl_indexes;
     private search.vql.VQL _vql;
 
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
-        acl_indexes = new LmdbStorage(acl_indexes_db_path);
+        acl_indexes        = new LmdbStorage(acl_indexes_db_path);
 
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
@@ -108,6 +114,11 @@ class ThreadContext : Context
             owl = new OWL(this);
             owl.load();
         }
+    }
+
+    bool authorize(string uri, Ticket *ticket, Access request_acess)
+    {
+        return az.acl.authorize(acl_indexes, uri, ticket, request_acess);
     }
 
     public JSONValue get_props()
@@ -413,17 +424,17 @@ class ThreadContext : Context
     {
         cache__subject_creator[ key ] = value;
     }
-
+/*
     bool authorize(Ticket *ticket, Subject doc)
     {
         return false;        //mandat_manager.ca;
     }
-
+ */
     ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
 
     bool is_ticket_valid(string ticket_id)
     {
-        writeln("@is_ticket_valid, ", ticket_id);
+//        writeln("@is_ticket_valid, ", ticket_id);
         Ticket *ticket = get_ticket(ticket_id);
 
         if (ticket is null)
@@ -572,8 +583,9 @@ class ThreadContext : Context
 
     Individual get_individual(string uri, Ticket ticket, byte level = 0)
     {
+        Individual individual = Individual();
+
         string     individual_as_cbor = get_subject_as_cbor(uri);
-        Individual individual         = Individual();
 
         if (individual_as_cbor !is null && individual_as_cbor.length > 1)
         {

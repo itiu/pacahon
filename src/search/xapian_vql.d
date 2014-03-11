@@ -8,6 +8,7 @@ import util.cbor;
 import util.cbor8sgraph;
 import search.vel;
 import pacahon.context;
+import pacahon.define;
 import onto.sgraph;
 import storage.lmdb_storage;
 
@@ -338,7 +339,8 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     return null;
 }
 
-public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire,
+public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
+                                                 XapianEnquire xapian_enquire,
                                                  int count_authorize,
                                                  ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
                                                  Context context)
@@ -374,14 +376,16 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
             it.get_document_data(&data_str, &data_len, &err);
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
 //              writeln ("@subject_id:", subject_id);
-            string msg = context.get_subject_as_cbor(subject_id);
-
-            if (msg !is null)
+            if (context.authorize(subject_id, ticket, Access.can_read))
             {
-                add_out_element(msg);
-                read_count++;
-            }
+                string msg = context.get_subject_as_cbor(subject_id);
 
+                if (msg !is null)
+                {
+                    add_out_element(msg);
+                    read_count++;
+                }
+            }
 
             it.next(&err);
         }
@@ -399,7 +403,8 @@ public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiV
     return read_count;
 }
 
-public int exec_xapian_query_and_queue_authorize(XapianQuery query, XapianMultiValueKeyMaker sorter, XapianEnquire xapian_enquire,
+public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
+                                                 XapianEnquire xapian_enquire,
                                                  int count_authorize,
                                                  ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
                                                  Tid tid_subject_manager,

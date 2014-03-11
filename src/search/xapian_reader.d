@@ -22,7 +22,8 @@ byte err;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 interface SearchReader
 {
-    public int get(string str_query, string fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element);
+    public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
+                   void delegate(string cbor_subject) add_out_element);
 }
 
 class XapianSynchronizedReader : SearchReader
@@ -34,7 +35,8 @@ class XapianSynchronizedReader : SearchReader
         context = _context;
     }
 
-    public int get(string str_query, string fields, string sort, int count_authorize, void delegate(string cbor_subject) add_out_element)
+    public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
+                   void delegate(string cbor_subject) add_out_element)
     {
         if (str_query is null)
             return 0;
@@ -99,7 +101,7 @@ class XapianReader : SearchReader
 
     bool check_for_reload()
     {
-        long now = Clock.currStdTime()/10000;
+        long now = Clock.currStdTime() / 10000;
 
         if (now - last_time_check_signal > 10000 || now - last_time_check_signal < 0)
         {
@@ -119,7 +121,7 @@ class XapianReader : SearchReader
     }
 
 
-    public int get(string str_query, string str_fields, string sort, int count_authorize,
+    public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
                    void delegate(string cbor_subject) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
@@ -144,7 +146,7 @@ class XapianReader : SearchReader
             int                      state = -1;
             while (state == -1)
             {
-                state = exec_xapian_query_and_queue_authorize(query, sorter, xapian_enquire, count_authorize, fields,
+                state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, fields,
                                                               add_out_element, context);
                 if (state == -1)
                 {
