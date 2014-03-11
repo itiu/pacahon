@@ -160,8 +160,16 @@ class LmdbStorage
         MDB_dbi dbi;
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        
+        if (rc == -30783)
+        {
+            writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+        	mdb_txn_abort(txn_r);
+        	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);        	
+        }
+        
         if (rc != 0)
-            writeln("%1 tnx begin:", fromStringz(mdb_strerror(rc)));
+            writeln("LmdbStorage:find #2, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
 
         try
         {
