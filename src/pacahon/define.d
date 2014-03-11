@@ -46,3 +46,4 @@ enum EVENT : byte
 
 const string individuals_db_path = "./data/lmdb-individuals";
 const string tickets_db_path     = "./data/lmdb-tickets";
+const string acl_indexes_db_path = "./data/acl-indexes";

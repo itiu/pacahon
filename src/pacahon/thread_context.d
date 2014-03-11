@@ -41,11 +41,15 @@ Tid dummy_tid;
 
 class ThreadContext : Context
 {
+    /// deprecated vvv
+    private Ticket *[ string ] user_of_ticket;
+    private          string[ string ] cache__subject_creator;
+    private bool     use_caching_of_documents = false;
+    private Subjects _ba2pacahon_records;
+    /// deprecated ^^^
+
     private OWL       owl;
     private JSONValue props;
-
-    private bool      use_caching_of_documents = false;
-    private bool      IGNORE_EMPTY_TRIPLE      = false;
 
     private int       _count_command;
     private int       _count_message;
@@ -55,18 +59,17 @@ class ThreadContext : Context
     private string    old_msg_key2slot;
     private int[ string ] old_key2slot;
 
-    private Subjects       _ba2pacahon_records;
     private                string[ string ] prefix_map;
     private Subjects       _event_filters;
-    private Ticket *[ string ] user_of_ticket;
-    private                string[ string ] cache__subject_creator;
 
     private LmdbStorage    inividuals_storage;
+    private LmdbStorage    acl_indexes;
     private search.vql.VQL _vql;
 
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
+        acl_indexes = new LmdbStorage(acl_indexes_db_path);
 
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);

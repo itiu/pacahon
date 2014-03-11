@@ -18,8 +18,6 @@ private
     import storage.lmdb_storage;
 }
 
-private const string db_path = "data/acl-indexes";
-
 enum
 {
     can_create  = 1,
@@ -55,7 +53,7 @@ static this()
 void acl_manager()
 {
 //    writeln("SPAWN: acl manager");
-    LmdbStorage storage = new LmdbStorage(db_path);
+    LmdbStorage storage = new LmdbStorage(acl_indexes_db_path);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -78,28 +76,40 @@ void acl_manager()
                         ubyte access;
 
                         Resource canCreate = ind.getFirstResource(veda_schema__canCreate);
-                        if (canCreate.data == "true")
-                            access = access | can_create;
-                        else
-                            access = access | cant_create;
+                        if (canCreate !is Resource.init)
+                        {
+                            if (canCreate.data == "true")
+                                access = access | can_create;
+                            else
+                                access = access | cant_create;
+                        }
 
                         Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
-                        if (canDelete.data == "true")
-                            access = access | can_delete;
-                        else
-                            access = access | cant_delete;
+                        if (canDelete !is Resource.init)
+                        {
+                            if (canDelete.data == "true")
+                                access = access | can_delete;
+                            else
+                                access = access | cant_delete;
+                        }
 
                         Resource canRead = ind.getFirstResource(veda_schema__canRead);
-                        if (canRead.data == "true")
-                            access = access | can_read;
-                        else
-                            access = access | cant_read;
+                        if (canRead !is Resource.init)
+                        {
+                            if (canRead.data == "true")
+                                access = access | can_read;
+                            else
+                                access = access | cant_read;
+                        }
 
                         Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
-                        if (canUpdate.data == "true")
-                            access = access | can_update;
-                        else
-                            access = access | cant_update;
+                        if (canUpdate !is Resource.init)
+                        {
+                            if (canUpdate.data == "true")
+                                access = access | can_update;
+                            else
+                                access = access | cant_update;
+                        }
 
 
                         storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
