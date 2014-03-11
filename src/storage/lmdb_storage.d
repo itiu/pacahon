@@ -2,7 +2,7 @@ module storage.lmdb_storage;
 
 private
 {
-    import std.stdio, std.file, std.datetime;
+    import std.stdio, std.file, std.datetime, std.conv;
 
     import bind.lmdb_header;
 
@@ -64,10 +64,25 @@ class LmdbStorage
             //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
             // else
             {
+//              foreach (i ; 1..10)
+///             {
                 rrc = mdb_env_open(env, cast(char *)path, 0, std.conv.octal !664);
+                //               if (rrc == 0)
+                //                  break;
+
+//                core.thread.Thread.sleep(dur!("seconds")(1));
 
                 if (rrc != 0)
-                    writeln("LmdbStorage:ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)), " (", rrc, ")");
+                    writeln("LmdbStorage(", path, "):ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)), " (", rrc, ")");
+//                    }
+
+/*                MDB_txn *txn_r;
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                if (rc == MDB_BAD_RSLOT)
+                {
+                    writeln("LmdbStorage:find #0, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+                }
+                mdb_txn_abort(txn_r);*/
             }
         }
     }
@@ -193,7 +208,6 @@ class LmdbStorage
         MDB_dbi dbi;
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-
         if (rc == MDB_BAD_RSLOT)
         {
             writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));

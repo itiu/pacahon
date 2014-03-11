@@ -50,7 +50,7 @@ class ThreadContext : Context
     /// deprecated ^^^
 
     // // // authorization
-    private LmdbStorage acl_indexes;
+    private Authorization acl_indexes;
 
     // //////////////////////////////
 
@@ -75,7 +75,7 @@ class ThreadContext : Context
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
-        acl_indexes        = new LmdbStorage(acl_indexes_db_path);
+        acl_indexes        = new Authorization(acl_indexes_db_path);
 
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
@@ -118,7 +118,7 @@ class ThreadContext : Context
 
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
-        return az.acl.authorize(acl_indexes, uri, ticket, request_acess);
+        return acl_indexes.authorize(uri, ticket, request_acess);
     }
 
     public JSONValue get_props()

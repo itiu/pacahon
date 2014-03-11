@@ -7,6 +7,8 @@ private
     import onto.individual;
     import onto.resource;
 
+    import bind.lmdb_header;
+
     import util.logger;
     import util.utils;
     import util.cbor;
@@ -30,23 +32,73 @@ private
 *********************************************************************/
 byte err;
 
+class Authorization : LmdbStorage
+{
+    this(string _path)
+    {
+        super(_path);
+    }
+
+    bool authorize(string uri, Ticket *ticket, Access request_acess)
+    {
+        MDB_txn *txn_r;
+        MDB_dbi dbi;
+        string  str;
+        int     rc;
+
+        rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        if (rc == MDB_BAD_RSLOT)
+        {
+            writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+            mdb_txn_abort(txn_r);
+            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        }
+
+        if (rc != 0)
+            writeln("LmdbStorage:find #2, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+
+        try
+        {
+            rc = mdb_dbi_open(txn_r, null, MDB_CREATE, &dbi);
+            if (rc != 0)
+                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+
+            // 1. читаем группы object
+            // 2. читаем группы subject
+            // 3. читаем группы acl
+
+            MDB_val key;
+            key.mv_size = uri.length;
+            key.mv_data = cast(char *)uri;
+
+            MDB_val data;
+            rc = mdb_get(txn_r, dbi, &key, &data);
+            if (rc == 0)
+            {
+                str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+            }
+        }catch (Exception ex)
+        {
+        }
+
+        mdb_txn_abort(txn_r);
+
+
+        if (ticket is null)
+            return true;
+
+        // группы пользователя
+//	ticket.user_uri
+
+        return false;
+    }
+}
 
 logger log;
 
 static this()
 {
     log = new logger("pacahon", "log", "server");
-}
-
-bool authorize(LmdbStorage storage, string uri, Ticket *ticket, Access request_acess)
-{
-    if (ticket is null)
-        return true;
-
-    // группы пользователя
-//	ticket.user_uri
-
-    return false;
 }
 
 void acl_manager()
