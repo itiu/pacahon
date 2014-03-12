@@ -41,6 +41,11 @@ class Authorization : LmdbStorage
 
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
+        if (ticket is null)
+            return true;
+
+        bool    isAcessAllow = false;
+
         MDB_txn *txn_r;
         MDB_dbi dbi;
         string  str;
@@ -63,10 +68,10 @@ class Authorization : LmdbStorage
             if (rc != 0)
                 throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 
-            // 1. читаем группы object
-            // 2. читаем группы subject
-            // 3. читаем группы acl
+            string[] object_groups;
+            string[] subject_groups;
 
+            // 1. читаем группы object (uri)
             MDB_val key;
             key.mv_size = uri.length;
             key.mv_data = cast(char *)uri;
@@ -75,22 +80,67 @@ class Authorization : LmdbStorage
             rc = mdb_get(txn_r, dbi, &key, &data);
             if (rc == 0)
             {
-                str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+                string groups_str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+
+                object_groups = groups_str.split(";");
+            }
+            object_groups ~= uri;
+
+            // 2. читаем группы subject (ticket.user_uri)
+            key.mv_size = ticket.user_uri.length;
+            key.mv_data = cast(char *)ticket.user_uri;
+
+            rc = mdb_get(txn_r, dbi, &key, &data);
+            if (rc == 0)
+            {
+                string groups_str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+
+                subject_groups = groups_str.split(";");
+            }
+            subject_groups ~= ticket.user_uri;
+
+            writeln("@authorize:subject_groups=", subject_groups);
+            writeln("@authorize:object_groups=", object_groups);
+
+            foreach (subject_group; subject_groups)
+            {
+                if (isAcessAllow)
+                    break;
+                if (subject_group.length > 1)
+                {
+                    foreach (object_group; object_groups)
+                    {
+                        if (object_group.length > 1)
+                        {
+                            // 3. поиск подходящего acl
+                            string acl_key = subject_group ~ "+" ~ object_group;
+
+                            key.mv_size = acl_key.length;
+                            key.mv_data = cast(char *)acl_key;
+
+                            rc = mdb_get(txn_r, dbi, &key, &data);
+                            if (rc == 0)
+                            {
+                                str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+                                if ((str[ 0 ] && request_acess) == true)
+                                {
+                                    isAcessAllow = true;
+                                    break;
+                                }
+                            }
+                            isAcessAllow = false;
+                        }
+                    }
+                }
             }
         }catch (Exception ex)
         {
         }
-
-        mdb_txn_abort(txn_r);
-
-
-        if (ticket is null)
-            return true;
-
-        // группы пользователя
-//	ticket.user_uri
-
-        return false;
+        finally
+        {
+            mdb_txn_abort(txn_r);
+        }
+        return isAcessAllow;
     }
 }
 
@@ -176,9 +226,7 @@ void acl_manager()
                             Resources memberOf = ind.getResources(veda_schema__memberOf);
 
                             foreach (mb; memberOf)
-                            {
                                 add_memberOf[ mb.uri ] = true;
-                            }
 
                             foreach (rs; resource)
                             {
@@ -189,7 +237,8 @@ void acl_manager()
                                     string[] groups = groups_str.split(";");
                                     foreach (group; groups)
                                     {
-                                        new_memberOf[ group ] = true;
+                                        if (group.length > 0)
+                                            new_memberOf[ group ] = true;
                                     }
                                 }
 

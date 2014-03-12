@@ -454,8 +454,9 @@ class ThreadContext : Context
         writeln("@authenticate, login=", login, ", password=", password);
 
         Ticket                  ticket;
+        Ticket                  *sys_ticket;
 
-        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'", null);
+        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'", sys_ticket);
         foreach (user; candidate_users)
         {
             iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
@@ -570,6 +571,13 @@ class ThreadContext : Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
+    immutable(Individual)[] get_individuals_via_query(string query_str, string sticket, byte level = 0)
+    {
+        Ticket *ticket = get_ticket(sticket);
+
+        return get_individuals_via_query(query_str, ticket, level);
+    }
+
     immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0)
     {
         immutable(Individual)[] res;
@@ -581,7 +589,14 @@ class ThreadContext : Context
         return res;
     }
 
-    Individual get_individual(string uri, Ticket ticket, byte level = 0)
+    Individual get_individual(string uri, string sticket, byte level = 0)
+    {
+        Ticket *ticket = get_ticket(sticket);
+
+        return get_individual(uri, ticket, level);
+    }
+
+    Individual get_individual(string uri, Ticket *ticket, byte level = 0)
     {
         Individual individual = Individual();
 
