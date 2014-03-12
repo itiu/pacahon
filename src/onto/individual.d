@@ -53,6 +53,14 @@ struct Individual
         return Resource.init;
     }
 
+    Resources getResources(string predicate)
+    {
+        Resources rss;
+
+        rss = resources.get(predicate, rss);
+        return rss;
+    }
+
     bool isExist(string predicate, string object)
     {
         Resources rss;

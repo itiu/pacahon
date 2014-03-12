@@ -220,7 +220,7 @@ class LmdbStorage
 
         try
         {
-            rc = mdb_dbi_open(txn_r, null, MDB_CREATE, &dbi);
+            rc = mdb_dbi_open(txn_r, null, 0, &dbi);
             if (rc != 0)
                 throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
 

@@ -64,7 +64,7 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
         }
     }
 
-    if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
+    if (rdfType.anyExist(veda_schema__PermissionStatement) == true || rdfType.anyExist(veda_schema__Membership) == true)
     {
         Tid tid_acl = context.getTid(THREAD.acl_manager);
         if (tid_acl != Tid.init)

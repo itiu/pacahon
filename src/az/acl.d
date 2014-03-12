@@ -2,7 +2,7 @@ module az.acl;
 
 private
 {
-    import std.stdio, std.concurrency, std.file, std.datetime, std.array;
+    import std.stdio, std.concurrency, std.file, std.datetime, std.array, std.outbuffer;
 
     import onto.individual;
     import onto.resource;
@@ -119,51 +119,91 @@ void acl_manager()
                     {
                         Individual ind;
                         cbor2individual(&ind, msg);
-                        Resource permissionObject = ind.getFirstResource(veda_schema__permissionObject);
-                        Resource permissionSubject = ind.getFirstResource(veda_schema__permissionSubject);
 
-                        ubyte access;
+                        Resources rdfType = ind.resources[ rdf__type ];
 
-                        Resource canCreate = ind.getFirstResource(veda_schema__canCreate);
-                        if (canCreate !is Resource.init)
+                        if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
                         {
-                            if (canCreate.data == "true")
-                                access = access | Access.can_create;
-                            else
-                                access = access | Access.cant_create;
-                        }
+                            Resource permissionObject = ind.getFirstResource(veda_schema__permissionObject);
+                            Resource permissionSubject = ind.getFirstResource(veda_schema__permissionSubject);
 
-                        Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
-                        if (canDelete !is Resource.init)
+                            ubyte access;
+
+                            Resource canCreate = ind.getFirstResource(veda_schema__canCreate);
+                            if (canCreate !is Resource.init)
+                            {
+                                if (canCreate.data == "true")
+                                    access = access | Access.can_create;
+                                else
+                                    access = access | Access.cant_create;
+                            }
+
+                            Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
+                            if (canDelete !is Resource.init)
+                            {
+                                if (canDelete.data == "true")
+                                    access = access | Access.can_delete;
+                                else
+                                    access = access | Access.cant_delete;
+                            }
+
+                            Resource canRead = ind.getFirstResource(veda_schema__canRead);
+                            if (canRead !is Resource.init)
+                            {
+                                if (canRead.data == "true")
+                                    access = access | Access.can_read;
+                                else
+                                    access = access | Access.cant_read;
+                            }
+
+                            Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
+                            if (canUpdate !is Resource.init)
+                            {
+                                if (canUpdate.data == "true")
+                                    access = access | Access.can_update;
+                                else
+                                    access = access | Access.cant_update;
+                            }
+
+                            storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
+
+                            writeln("ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                        }
+                        else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
-                            if (canDelete.data == "true")
-                                access = access | Access.can_delete;
-                            else
-                                access = access | Access.cant_delete;
+                            bool[ string ] add_memberOf;
+                            Resources resource = ind.getResources(veda_schema__resource);
+                            Resources memberOf = ind.getResources(veda_schema__memberOf);
+
+                            foreach (mb; memberOf)
+                            {
+                                add_memberOf[ mb.uri ] = true;
+                            }
+
+                            foreach (rs; resource)
+                            {
+                                bool[ string ] new_memberOf = add_memberOf.dup;
+                                string groups_str = storage.find(rs.uri);
+                                if (groups_str !is null)
+                                {
+                                    string[] groups = groups_str.split(";");
+                                    foreach (group; groups)
+                                    {
+                                        new_memberOf[ group ] = true;
+                                    }
+                                }
+
+                                OutBuffer outbuff = new OutBuffer();
+                                foreach (key; new_memberOf.keys)
+                                {
+                                    outbuff.write(key);
+                                    outbuff.write(';');
+                                }
+
+                                storage.put(rs.uri, outbuff.toString());
+                                writeln("MemberShip: ", rs.uri, " : ", outbuff.toString());
+                            }
                         }
-
-                        Resource canRead = ind.getFirstResource(veda_schema__canRead);
-                        if (canRead !is Resource.init)
-                        {
-                            if (canRead.data == "true")
-                                access = access | Access.can_read;
-                            else
-                                access = access | Access.cant_read;
-                        }
-
-                        Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
-                        if (canUpdate !is Resource.init)
-                        {
-                            if (canUpdate.data == "true")
-                                access = access | Access.can_update;
-                            else
-                                access = access | Access.cant_update;
-                        }
-
-
-                        storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
-
-                        writeln(permissionObject.uri ~ "+" ~ permissionSubject.uri);
                     }
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)

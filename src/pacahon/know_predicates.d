@@ -30,6 +30,10 @@ public const string veda_schema__created             = "veda-schema:created";
 public const string veda_schema__permissionObject    = "veda-schema:permissionObject";
 public const string veda_schema__permissionSubject   = "veda-schema:permissionSubject";
 
+public const string veda_schema__resource		= "veda-schema:resource";
+public const string veda_schema__memberOf		= "veda-schema:memberOf";
+public const string veda_schema__Membership	= "veda-schema:Membership";
+
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------
 
