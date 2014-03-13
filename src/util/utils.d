@@ -579,3 +579,38 @@ void print_2(ref Set!string *[ string ] res)
     }
 }
 
+// based on std.functional.memoize
+/*
+         Copyright Andrei Alexandrescu 2008 - 2009.
+Distributed under the Boost Software License, Version 1.0.
+   (See accompanying file LICENSE_1_0.txt or copy at
+         http://www.boost.org/LICENSE_1_0.txt)
+*/
+
+enum cacheize_use 
+{	
+	common_use,	
+	execute_and_update
+}
+
+template cacheize(alias fun, uint maxSize = uint.max)
+{
+    ReturnType!fun cacheize(ParameterTypeTuple!fun args, cacheize_use use = cacheize_use.common_use)
+    {
+        static ReturnType!fun[Tuple!(typeof(args))] memo;        
+        auto t = tuple(args);
+        if (use == cacheize_use.common_use)
+        {
+        auto p = t in memo;
+        if (p) return *p;
+        	static if (maxSize != uint.max)
+        	{
+        		if (memo.length >= maxSize) memo = null;
+            }
+        }
+        auto r = fun(args);
+        //writeln("Inserting result ", typeof(r).stringof, "(", r, ") for parameters ", t);
+        memo[t] = r;
+        return r;
+    }
+}
