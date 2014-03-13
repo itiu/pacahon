@@ -109,7 +109,7 @@ class Authorization : LmdbStorage
 
             foreach (subject_group; subject_groups)
             {
-                if (isAcessAllow)
+                if (isAccessAllow)
                     break;
                 if (subject_group.length > 1)
                 {
@@ -146,7 +146,7 @@ class Authorization : LmdbStorage
         {
             mdb_txn_abort(txn_r);
         }
-        return isAcessAllow;
+        return isAccessAllow;
     }
 }
 
