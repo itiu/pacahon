@@ -317,39 +317,12 @@ void die_on_amqp_error(amqp_rpc_reply_t x, string context)
         return;
 
     case amqp_response_type_enum.AMQP_RESPONSE_NONE:
-        printf("%s: missing RPC reply type!\n", context);
+        writeln(context, ": missing RPC reply type!");
         break;
 
     case amqp_response_type_enum.AMQP_RESPONSE_LIBRARY_EXCEPTION:
-        printf("%s: %s\n", context, amqp_error_string(x.library_error));
+        writeln (context, amqp_error_string(x.library_error));
         break;
-
-//  case amqp_response_type_enum.AMQP_RESPONSE_SERVER_EXCEPTION:
-//    switch (x.reply.id) {
-//    case AMQP_CONNECTION_CLOSE_METHOD: {
-//      amqp_connection_close_t *m = cast(amqp_connection_close_t *) x.reply.decoded;
-//      printf("%s: server connection error %d, message: %.*s\n",
-//              context,
-//              m.reply_code,
-//              cast(int) m.reply_text.len, cast(char *) m.reply_text.bytes);
-//      break;
-//    }
-
-//    case AMQP_CHANNEL_CLOSE_METHOD: {
-//      amqp_channel_close_t *m = cast(amqp_channel_close_t *) x.reply.decoded;
-//      printf("%s: server channel error %d, message: %.*s\n",
-//              context,
-//              m.reply_code,
-//              cast(int) m.reply_text.len, cast(char *) m.reply_text.bytes);
-//      break;
-//    }
-
-//    default:
-//      printf("%s: unknown server error, method id 0x%08X\n", context, x.reply.id);
-//      break;
-//    }
-
-//    break;
 
     default:
         break;

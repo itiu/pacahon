@@ -101,29 +101,16 @@ public JSONValue read_props(string file_name)
     }
     else
     {
-        res.type = JSON_TYPE.OBJECT;
+        JSONValue listeners = JSONValue ([2]);
 
-        JSONValue listeners;
-        listeners.type = JSON_TYPE.ARRAY;
-
-        JSONValue transport;
-        transport.type = JSON_TYPE.OBJECT;        
-        JSONValue point;
-        point.str                   = "tcp://*:5559";
-        transport.object[ "point" ] = point;
-        JSONValue tt;
-        tt.str                          = "zmq";
-        transport.object[ "transport" ] = tt;
+        JSONValue transport = JSONValue(["point" : JSONValue("tcp://*:5559")]);
+        transport.object["transport"] = JSONValue("zmq");
         listeners.array ~= transport;
         
-        JSONValue transport1;
-        transport1.type = JSON_TYPE.OBJECT;        
-        JSONValue tt1;
-        tt1.str                          = "file_reader";
-        transport1.object[ "transport" ] = tt1;
+        JSONValue transport1 = JSONValue(["transport" : JSONValue("file_reader")]);
         listeners.array ~= transport1;
 
-        res.object[ "listeners" ] = listeners;
+        res = JSONValue (["listeners" : listeners]);
 
         string buff = toJSON(&res);
 

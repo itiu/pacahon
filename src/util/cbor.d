@@ -179,7 +179,7 @@ public void write_string(string vv, ref OutBuffer ou)
 
 private short short_from_buff(ubyte[] buff, int pos)
 {
-    short res = buff[ pos + 0 ] + ((cast(short)buff[ pos + 1 ]) << 8);
+    short res = cast(short) (buff[ pos + 0 ] + ((cast(short)buff[ pos + 1 ]) << 8));
 
     return res;
 }
