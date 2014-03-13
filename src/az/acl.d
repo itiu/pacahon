@@ -44,7 +44,7 @@ class Authorization : LmdbStorage
         if (ticket is null)
             return true;
 
-        bool    isAcessAllow = false;
+        bool    isAccessAllow = false;
 
         MDB_txn *txn_r;
         MDB_dbi dbi;
@@ -85,6 +85,8 @@ class Authorization : LmdbStorage
                 object_groups = groups_str.split(";");
             }
             object_groups ~= uri;
+            object_groups ~= veda_schema__AllResourcesGroup;
+
 
             // 2. читаем группы subject (ticket.user_uri)
             key.mv_size = ticket.user_uri.length;
@@ -128,11 +130,11 @@ class Authorization : LmdbStorage
                                 str = cast(string)(data.mv_data[ 0..data.mv_size ]);
                                 if ((str[ 0 ] && request_acess) == true)
                                 {
-                                    isAcessAllow = true;
+                                    isAccessAllow = true;
                                     break;
                                 }
                             }
-                            isAcessAllow = false;
+                            isAccessAllow = false;
                         }
                     }
                 }
