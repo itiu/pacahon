@@ -29,11 +29,12 @@ public const string veda_schema__canUpdate           = "veda-schema:canUpdate";
 public const string veda_schema__created             = "veda-schema:created";
 public const string veda_schema__permissionObject    = "veda-schema:permissionObject";
 public const string veda_schema__permissionSubject   = "veda-schema:permissionSubject";
+public const string veda_schema__AllResourcesGroup   = "veda-schema:AllResourcesGroup";
 
-public const string veda_schema__resource		= "veda-schema:resource";
-public const string veda_schema__memberOf		= "veda-schema:memberOf";
-public const string veda_schema__Membership	= "veda-schema:Membership";
-public const string veda_schema__owner 		= "veda-schema:owner";
+public const string veda_schema__resource   = "veda-schema:resource";
+public const string veda_schema__memberOf   = "veda-schema:memberOf";
+public const string veda_schema__Membership = "veda-schema:Membership";
+public const string veda_schema__owner      = "veda-schema:owner";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------

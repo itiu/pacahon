@@ -23,7 +23,7 @@ static this()
 
 int count;
 
-void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context context)
+void bus_event(Individual individual, string subject_as_cbor, EVENT type, Context context)
 {
     //writeln ("@bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
@@ -43,9 +43,6 @@ void bus_event(Subject graph, string subject_as_cbor, EVENT type, Context contex
             writeln("EX!bus_event:", ex.msg);
         }
     }
-
-    Individual individual;
-    cbor2individual(&individual, subject_as_cbor);
 
     Resources rdfType = individual.resources[ rdf__type ];
 

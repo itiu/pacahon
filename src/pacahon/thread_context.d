@@ -263,52 +263,11 @@ class ThreadContext : Context
 
     public void store_subject(Subject ss, bool prepareEvents = true)
     {
-        EVENT  ev         = EVENT.NONE;
-        string ss_as_cbor = subject2cbor(ss);
+        string     ss_as_cbor = subject2cbor(ss);
+        Individual indv;
 
-        Tid    tid_subject_manager = getTid(THREAD.subject_manager);
-
-        if (tid_subject_manager != Tid.init)
-        {
-            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-            receive((EVENT _ev, Tid from)
-                    {
-                        if (from == tids[ THREAD.subject_manager ])
-                            ev = _ev;
-                    });
-        }
-
-        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
-        {
-            Tid tid_search_manager = getTid(THREAD.xapian_indexer);
-
-            if (tid_search_manager != Tid.init)
-            {
-                send(tid_search_manager, CMD.STORE, ss_as_cbor);
-
-                if (prepareEvents == true)
-                {
-                    Predicate type = ss.getPredicate(rdf__type);
-
-
-                    if (type.isExistLiteral(event__Event))
-                    {
-                        // если данный субьект - фильтр событий, то дополнительно сохраним его в кеше
-                        event_filters.addSubject(ss);
-
-                        writeln("add new event_filter [", ss.subject, "]");
-                    }
-                    else
-                    {
-                        bus_event(ss, ss_as_cbor, ev, this);
-                    }
-                }
-            }
-        }
-        else
-        {
-            writeln("Ex! store_subject:", ev);
-        }
+        cbor2individual(&indv, ss_as_cbor);
+        store_individual(indv, prepareEvents);
     }
 
     public int[ string ] get_key2slot()
@@ -631,13 +590,49 @@ class ThreadContext : Context
         return individual;
     }
 
-    string put_individual(string uri, Individual individual, Ticket ticket)
+    public void store_individual(Individual indv, bool prepareEvents = true)
     {
-        return null;
+        string ss_as_cbor = individual2cbor(&indv);
+        EVENT  ev         = EVENT.NONE;
+
+        Tid    tid_subject_manager = getTid(THREAD.subject_manager);
+
+        if (tid_subject_manager != Tid.init)
+        {
+            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+            receive((EVENT _ev, Tid from)
+                    {
+                        if (from == tids[ THREAD.subject_manager ])
+                            ev = _ev;
+                    });
+        }
+
+        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
+        {
+            Tid tid_search_manager = getTid(THREAD.xapian_indexer);
+
+            if (tid_search_manager != Tid.init)
+            {
+                send(tid_search_manager, CMD.STORE, ss_as_cbor);
+
+                if (prepareEvents == true)
+                    bus_event(indv, ss_as_cbor, ev, this);
+            }
+        }
+        else
+        {
+            writeln("Ex! store_subject:", ev);
+        }
     }
 
-    string post_individual(Individual individual, Ticket ticket)
+    ResultCode put_individual(string uri, Individual individual, string ticket)
     {
-        return null;
+        store_individual(individual);
+        return ResultCode.OK;
+    }
+
+    ResultCode post_individual(Individual individual, string ticket)
+    {
+        return ResultCode.Not_Implemented;
     }
 }

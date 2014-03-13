@@ -35,6 +35,18 @@ enum THREAD : string
     interthread_signals        = "interthread_signals"
 }
 
+enum ResultCode
+{
+    OK                    = 200,
+    Created               = 201,
+    Bad_Request           = 400,
+    Forbidden             = 403,
+    Not_Found             = 404,
+    Internal_Server_Error = 500,
+    Not_Implemented       = 501,
+    Service_Unavailable   = 503
+}
+
 static THREAD[ 8 ] THREAD_LIST =
 [
     THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context,
@@ -122,7 +134,7 @@ interface Context
     public Individual get_individual(string uri, Ticket *ticket, byte level = 0);
     public Individual get_individual(string uri, string sticket, byte level = 0);
 
-    public string put_individual(string uri, Individual individual, Ticket ticket);
-    public string post_individual(Individual individual, Ticket ticket);
+    public ResultCode put_individual(string uri, Individual individual, string ticket);
+    public ResultCode post_individual(Individual individual, string ticket);
 }
 
