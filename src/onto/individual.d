@@ -53,6 +53,16 @@ struct Individual
         return Resource.init;
     }
 
+    immutable Resource getFirstResource(string predicate)
+    {
+        immutable Resources rss = resources.get(predicate, (immutable Resources).init);
+
+        if (rss.length > 0)
+            return rss[ 0 ];
+
+        return Resource.init;
+    }
+
     Resources getResources(string predicate)
     {
         Resources rss;

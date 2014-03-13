@@ -459,6 +459,10 @@ class ThreadContext : Context
         immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'", sys_ticket);
         foreach (user; candidate_users)
         {
+            string user_id = user.getFirstResource(veda_schema__owner).uri;
+            if (user_id is null)
+                continue;
+
             iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
             if (pass.length > 0 && pass[ 0 ].data == password)
             {
@@ -468,9 +472,11 @@ class ThreadContext : Context
                 UUID new_id = randomUUID();
                 new_ticket.subject = new_id.toString();
 
-                new_ticket.addPredicate(ticket__accessor, user.uri);
+                new_ticket.addPredicate(ticket__accessor, user_id);
                 new_ticket.addPredicate(ticket__when, getNowAsString());
                 new_ticket.addPredicate(ticket__duration, "40000");
+
+                writeln("@authenticate, ticket__accessor=", user_id);
 
                 // store ticket
                 string ss_as_cbor = subject2cbor(new_ticket);

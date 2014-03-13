@@ -99,11 +99,11 @@ class Authorization : LmdbStorage
             }
             subject_groups ~= ticket.user_uri;
 
-//            writeln("------------------------");
-//            writeln("@authorize:uri=", uri);
-//            writeln("@authorize:user_uri=", ticket.user_uri);
-//            writeln("@authorize:subject_groups=", subject_groups);
-//            writeln("@authorize:object_groups=", object_groups);
+            //writeln("------------------------");
+            //writeln("@authorize:uri=", uri);
+            //writeln("@authorize:user_uri=", ticket.user_uri);
+            //writeln("@authorize:subject_groups=", subject_groups);
+            //writeln("@authorize:object_groups=", object_groups);
 
             foreach (subject_group; subject_groups)
             {
@@ -118,7 +118,7 @@ class Authorization : LmdbStorage
                             // 3. поиск подходящего acl
                             string acl_key = object_group ~ "+" ~ subject_group;
                             //writeln("@authorize:acl_key=", acl_key);
-            
+
                             key.mv_size = acl_key.length;
                             key.mv_data = cast(char *)acl_key;
 
