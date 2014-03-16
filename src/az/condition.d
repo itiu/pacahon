@@ -21,6 +21,10 @@ private
     import search.vql;
 
     import az.orgstructure_tree;
+
+    // JS VM Higgs
+    import runtime.vm;
+    import options;
 }
 
 enum RightType
@@ -52,6 +56,9 @@ struct Mandat
 public void condition_thread(string props_file_name)
 {
     Context context = new ThreadContext(null, "condition_thread");
+
+    // Create VM instance
+    auto vm = new VM(!opts.noruntime, !opts.nostdlib);
 
     Set!Mandat mandats;
     OrgStructureTree ost;
