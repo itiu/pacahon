@@ -2,8 +2,8 @@ module az.condition;
 
 private
 {
-    import std.json, std.stdio, std.string, std.array, std.datetime, std.concurrency;
-
+    import std.json, std.stdio, std.string, std.array, std.datetime, std.concurrency, std.conv;
+    import core.thread;
     import onto.sgraph;
 
     import util.container;
@@ -24,7 +24,10 @@ private
 
     // JS VM Higgs
     import runtime.vm;
+    import runtime.object;
     import options;
+    import jit.jit;
+    import runtime.layout;
 }
 
 enum RightType
@@ -46,19 +49,15 @@ static this()
 
 struct Mandat
 {
-    string id;
-    string whom;
-    string right;
-    TTA    expression;
+    string  id;
+    string  whom;
+    string  right;
+    EntryFn expression;
 }
-
 
 public void condition_thread(string props_file_name)
 {
     Context context = new ThreadContext(null, "condition_thread");
-
-    // Create VM instance
-    auto vm = new VM(!opts.noruntime, !opts.nostdlib);
 
     Set!Mandat mandats;
     OrgStructureTree ost;
@@ -87,18 +86,42 @@ public void condition_thread(string props_file_name)
         {
             try
             {
+                VM js_vm = context.get_JS_VM();
+
                 receive((EVENT type, string msg)
                         {
-//          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
-                            if (msg !is null && msg.length > 3)
+          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
+                            if (msg !is null && msg.length > 3 && js_vm !is null)
                             {
-                                Subject doc = cbor2subject(msg);
-
-                                foreach (mandat; mandats)
+//                                Subject doc = cbor2subject(msg);
+                                refptr strObj;
+                                // TODO! возможна утечка памяти через runtime.string.getString
+                                strObj = runtime.string.getString(js_vm, to!wstring(msg));
+                                if (strObj !is null)
                                 {
-                                    string token;
-                                    Set!string whom;
-                                    eval(mandat.expression, "", doc, token, whom);
+                                    auto propName = "doc_as_cbor"w;
+                                    auto propVal = ValuePair(strObj, Type.STRING);
+
+                                    runtime.object.setProp(js_vm, js_vm.globalObj, propName, propVal);
+
+                                    foreach (mandat; mandats)
+                                    {
+                                        if (mandat.expression !is null)
+                                        {
+                                            try
+                                            {
+                                                ValuePair res;
+                                                res = js_vm.exec(mandat.expression);
+                                            }
+                                            catch (Exception ex)
+                                            {
+                                                writeln("EX!condition.receive ", ex.msg);
+                                            }
+                                        }
+                                    }
+
+                                    propVal = ValuePair();
+                                    str_visit_gc(js_vm, strObj);
                                 }
                             }
                         });
@@ -116,10 +139,13 @@ public void condition_thread(string props_file_name)
     writeln("TERMINATED: condition_thread");
 }
 
-
-
 public void load(Context context, VQL vql, ref Set!Mandat mandats)
 {
+    VM js_vm = context.get_JS_VM();
+
+    if (js_vm is null)
+        return;
+
     log.trace_log_and_console("start load mandats");
 
     Subjects res = new Subjects();
@@ -154,10 +180,9 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
                 el = condition_json.object.get("condition", nil);
                 if (el != nil)
                 {
-                    mandat.expression = parse_expr(el.str);
-                    //writeln ("\nmandat.id=", mandat.id);
-                    //writeln ("str=", el.str);
-                    //writeln ("TTA=", mandat.expression);
+                    mandat.expression = js_vm.parseAndCompileString(el.str);
+                    writeln("\nmandat.id=", mandat.id);
+                    writeln("str=", el.str);
                 }
 
                 mandats ~= mandat;
@@ -171,128 +196,9 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
         }
     }
 
+
     log.trace_log_and_console("end load mandats, count=%d ", res.length);
 }
 
 
 
-public bool eval(TTA tta, string p_op, Subject doc, out string token, ref Set!string whom, int level = 0)
-{
-    if (tta.op == "==" || tta.op == "!=")
-    {
-        string A;
-        eval(tta.L, tta.op, doc, A, whom, level + 1);
-        string B;
-        eval(tta.R, tta.op, doc, B, whom, level + 1);
-//			writeln ("\ndoc=", doc);
-//			writeln ("fields=", fields);
-//			writeln (A, " == ", B);
-
-        string ff = A;
-
-        if (B == "$user")
-        {
-            if (p_op == "||")
-            {
-                whom ~= A;
-            }
-            else
-            {
-                whom.empty();
-                whom ~= A;
-            }
-            return true;
-//				B = userId;
-        }
-        else
-        {
-            //writeln ("ff=", ff);
-            //writeln ("fields.get (ff).items=", doc.getObjects(ff));
-
-            // для всех значений поля ff
-            foreach (field_i; doc.getObjects(ff))
-            {
-                string field = field_i.literal;
-
-                //writeln ("field ", field, " ", tta.op, " ", B, " ", tta.op == "==" && field == B, " ", tta.op == "!=" && field != B);
-                if (tta.op == "==" && field == B)
-                    return true;
-
-                if (tta.op == "!=" && field != B)
-                    return true;
-            }
-        }
-
-        return false;
-    }
-    else if (tta.op == "&&")
-    {
-        bool A = false, B = false;
-
-        if (tta.R !is null)
-            A = eval(tta.R, tta.op, doc, token, whom, level + 1);
-
-        if (tta.L !is null)
-            B = eval(tta.L, tta.op, doc, token, whom, level + 1);
-
-        return A && B;
-    }
-    else if (tta.op == "||")
-    {
-        bool A = false, B = false;
-
-        if (tta.R !is null)
-            A = eval(tta.R, tta.op, doc, token, whom, level + 1);
-
-        if (A == true)
-            return true;
-
-        if (tta.L !is null)
-            B = eval(tta.L, tta.op, doc, token, whom, level + 1);
-
-        return A || B;
-    }
-    else if (tta.op == "true")
-    {
-        return true;
-    }
-    else
-    {
-        token = tta.op;
-    }
-    return false;
-}
-
-/*
-   private static string found_in_condition_templateIds_and_docFields(TTA tta, string p_op, ref HashSet!string templateIds, ref HashSet!string fields, int level = 0)
-   {
-                if(tta.op == "==" || tta.op == "!=")
-                {
-                        string A = found_in_condition_templateIds_and_docFields(tta.L, tta.op, templateIds, fields, level + 1);
-                        string B = found_in_condition_templateIds_and_docFields(tta.R, tta.op, templateIds, fields, level + 1);
-                        //writeln (A, " == ", B);
-                        if (A == class__identifier)
-                        {
-                                templateIds.add (B);
-                                fields.add (class__identifier);
-                        }
-                        else
-                                fields.add (A);
-
-                }
-                else if(tta.op == "&&" || tta.op == "||")
-                {
-                        if(tta.R !is null)
-                                found_in_condition_templateIds_and_docFields(tta.R, tta.op, templateIds, fields, level + 1);
-
-                        if(tta.L !is null)
-                                found_in_condition_templateIds_and_docFields(tta.L, tta.op, templateIds, fields, level + 1);
-                }
-                else
-                {
-                        return tta.op;
-                }
-
-                return "";
-   }
- */

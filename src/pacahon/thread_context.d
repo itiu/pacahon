@@ -29,6 +29,9 @@ private
     //	import search.vql;
     import storage.lmdb_storage;
     import az.acl;
+
+    // JS VM Higgs
+    import runtime.vm;
 }
 
 logger log;
@@ -52,7 +55,8 @@ class ThreadContext : Context
     // // // authorization
     private Authorization acl_indexes;
 
-    // //////////////////////////////
+    // JS VM Higgs //////////////////////////////
+    VM                vm;
 
     private OWL       owl;
     private JSONValue props;
@@ -114,6 +118,24 @@ class ThreadContext : Context
             owl = new OWL(this);
             owl.load();
         }
+    }
+
+    VM get_JS_VM()
+    {
+        if (vm is null)
+        {
+            try
+            {
+                vm = new VM(true, true);
+                vm.load("cbor.js");
+            }
+            catch (Exception ex)
+            {
+                writeln("EX!get_JS_VM ", ex.msg);
+            }
+        }
+
+        return vm;
     }
 
     bool authorize(string uri, Ticket *ticket, Access request_acess)
@@ -216,7 +238,7 @@ class ThreadContext : Context
 
         if (tid_interthread_signals !is Tid.init)
         {
-            send(tid_interthread_signals, CMD.GET, key, Type.Integer, myTid);
+            send(tid_interthread_signals, CMD.GET, key, DataType.Integer, myTid);
 
             long res;
 
@@ -237,7 +259,7 @@ class ThreadContext : Context
 
         if (tid_interthread_signals !is Tid.init)
         {
-            send(tid_interthread_signals, CMD.GET, key, Type.String, myTid);
+            send(tid_interthread_signals, CMD.GET, key, DataType.String, myTid);
 
             string res;
 

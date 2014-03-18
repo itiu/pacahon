@@ -17,16 +17,16 @@ public void interthread_signals_thread()
     while (true)
     {
         receive(
-                (CMD cmd, string key, Type type, Tid tid_sender)
+                (CMD cmd, string key, DataType type, Tid tid_sender)
                 {
-                    if (cmd == CMD.GET && type == Type.Integer)
+                    if (cmd == CMD.GET && type == DataType.Integer)
                     {
                         long res;
                         res = signals.get(key, 0);
                         //writeln ("@get signal ", key);
                         send(tid_sender, res);
                     }
-                    else if (cmd == CMD.GET && type == Type.String)
+                    else if (cmd == CMD.GET && type == DataType.String)
                     {
                         string res;
                         res = str_signals.get(key, "");

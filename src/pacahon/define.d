@@ -26,7 +26,7 @@ interface Outer
     void put(string data);
 }
 
-enum Type : ubyte
+enum DataType : ubyte
 {
     Uri      = 1,
     String   = 2,
