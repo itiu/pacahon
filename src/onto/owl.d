@@ -185,13 +185,13 @@ class OWL
         {
             if (lmg.isExsistsEdge(hh, rdf__type, owl__Class) || lmg.isExsistsEdge(hh, rdf__type, rdfs__Class))
             {
-                Class *in_class = class_2_idx.get(hh.idx, null);
+                Class *in_class = class_2_idx.get(hh.get_idx (), null);
                 if (in_class is null)
                 {
                     in_class     = new Class;
                     in_class.uri = hh.uri;
                     //in_class.properties   = new Property[ 0 ];
-                    class_2_idx[ hh.idx ] = in_class;
+                    class_2_idx[ hh.get_idx () ] = in_class;
                     Set!Resource label    = lmg.getTail(hh, rdfs__label);
                     in_class.label        = label.items;
                 }
@@ -205,12 +205,12 @@ class OWL
                                   rdf__Property) ||
                 lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
             {
-                Property *prop = property_2_idx.get(hh.idx, null);
+                Property *prop = property_2_idx.get(hh.get_idx (), null);
                 if (prop is null)
                 {
                     prop                     = new Property;
                     prop.uri                 = hh.uri;
-                    property_2_idx[ hh.idx ] = prop;
+                    property_2_idx[ hh.get_idx () ] = prop;
                     Set!Resource label       = lmg.getTail(hh, rdfs__label);
                     prop.label               = label.items;
                 }
@@ -230,12 +230,12 @@ class OWL
 //                            writeln("#unionOf=", uo);
                             if (uo.uri != owl__Thing)
                             {
-                                Class *in_class = class_2_idx.get(uo.idx, null);
+                                Class *in_class = class_2_idx.get(uo.get_idx (), null);
                                 if (in_class is null)
                                 {
                                     in_class              = new Class;
                                     in_class.uri          = uo.uri;
-                                    class_2_idx[ uo.idx ] = in_class;
+                                    class_2_idx[ uo.get_idx () ] = in_class;
                                 }
 
                                 in_class.properties ~= *prop;
@@ -246,13 +246,13 @@ class OWL
                     {
                         if (dc.uri != owl__Thing)
                         {
-                            Class *in_class = class_2_idx.get(dc.idx, null);
+                            Class *in_class = class_2_idx.get(dc.get_idx (), null);
                             if (in_class is null)
                             {
                                 in_class = new Class;
 
                                 in_class.uri          = dc.uri;
-                                class_2_idx[ dc.idx ] = in_class;
+                                class_2_idx[ dc.get_idx () ] = in_class;
                             }
 //                            in_class.properties.length += 1;
                             in_class.properties ~= *prop;
@@ -290,11 +290,11 @@ class OWL
             //writeln ("# subClassOf", subClassOf);
             if (level == 0)
             {
-                Class *icl = class_2_idx.get(subClassOf.idx, null);
+                Class *icl = class_2_idx.get(subClassOf.get_idx (), null);
                 if (icl !is null)
                     to_cl.subClassOf ~= *icl;
             }
-            add_inherit_properies(to_cl, subClassOf.idx, level + 1);
+            add_inherit_properies(to_cl, subClassOf.get_idx (), level + 1);
         }
 
         //writeln ("#3 add_inherit_properies");

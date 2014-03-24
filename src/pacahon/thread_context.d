@@ -127,7 +127,7 @@ class ThreadContext : Context
             try
             {
                 vm = new VM(true, true);
-                vm.load("cbor.js");
+                //vm.load("cbor.js");
             }
             catch (Exception ex)
             {
@@ -602,7 +602,7 @@ class ThreadContext : Context
                     {
                         ids ~= get_individual(ruri.uri, ticket, level);
                     }
-                    individual.individuals[ key ] = ids;
+                    individual.set_individuals (key, ids); 
                 }
 
                 level--;

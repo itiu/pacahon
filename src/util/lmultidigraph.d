@@ -52,7 +52,7 @@ class LabeledMultiDigraph
 
         HeadTail ht;
 
-        ht.head = head.idx;
+        ht.head = head.get_idx ();
         ht.tail = idx_tail;
 
         size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
@@ -65,10 +65,10 @@ class LabeledMultiDigraph
         Set!Resource res;
 
         size_t   idx_edge = idx_2_uri.get(edge_str, NONE);
-        auto     nb       = graph.neighboursOut(head.idx);
+        auto     nb       = graph.neighboursOut(head.get_idx ());
 
         HeadTail ht;
-        ht.head = head.idx;
+        ht.head = head.get_idx ();
 
         int idx;
         foreach (nn; nb)
@@ -128,7 +128,7 @@ class LabeledMultiDigraph
             }
             
             tail.lang = lang;
-            tail.idx  = elements.length;
+            tail.set_idx (elements.length);
             elements ~= tail;
             idx_tail = elements.length - 1;
             if (tail.type == ResourceType.Uri)
@@ -183,7 +183,7 @@ class LabeledMultiDigraph
             	if (rr.data.indexOf ('/') > 0)
             		rr.origin = ResourceOrigin.external;
             }                
-                rr.idx  = elements.length;
+                rr.set_idx(elements.length);
 
                 elements ~= rr;
                 idx_resource = elements.length - 1;
@@ -203,7 +203,7 @@ class LabeledMultiDigraph
 
         if (idx_rr == NONE)
         {
-            rr.idx = elements.length;
+            rr.set_idx (elements.length);
             elements ~= rr;
             idx_2_uri[ rr.uri ] = elements.length - 1;
         }
@@ -214,7 +214,7 @@ class LabeledMultiDigraph
     {
         Resource rr = Resource.init;
 
-        rr.idx = elements.length;
+        rr.set_idx (elements.length);
         elements ~= rr;
 
         return elements.length - 1;
@@ -232,7 +232,7 @@ class LabeledMultiDigraph
 
         rr.data = rr_str;
         rr.type = type;
-        rr.idx  = idx_rr;
+        rr.set_idx (idx_rr);
         if (rr.type == ResourceType.Uri)
             idx_2_uri[ rr.uri ] = idx_rr;
     }

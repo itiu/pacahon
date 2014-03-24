@@ -21,7 +21,7 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
-    Individuals[ string ]  individuals;
+    private Individuals[ string ]  individuals;
 
     immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals)
     {
@@ -61,6 +61,16 @@ struct Individual
             return rss[ 0 ];
 
         return Resource.init;
+    }
+
+    void set_individuals (string key, Individuals _individuals)
+    {
+    	individuals[ key ] = _individuals;
+    }
+
+    Individuals[ string ] get_individuals ()
+    {
+    	return individuals;
     }
 
     Resources getResources(string predicate)
