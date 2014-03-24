@@ -29,6 +29,8 @@ private
     //	import search.vql;
     import storage.lmdb_storage;
     import az.acl;
+    
+    import bind.v8d_header;
 }
 
 logger log;
@@ -52,7 +54,7 @@ class ThreadContext : Context
     // // // authorization
     private Authorization acl_indexes;
 
-//    VM                vm;
+    ScriptVM               script_vm;
 
     private OWL       owl;
     private JSONValue props;
@@ -115,25 +117,24 @@ class ThreadContext : Context
             owl.load();
         }
     }
-/*
-    VM get_JS_VM()
+
+    ScriptVM get_ScriptVM()
     {
-        if (vm is null)
+        if (script_vm is null)
         {
             try
             {
-                vm = new VM(true, true);
-                //vm.load("cbor.js");
+                script_vm = new_ScriptVM();
             }
             catch (Exception ex)
             {
-                writeln("EX!get_JS_VM ", ex.msg);
+                writeln("EX!get_ScriptVM ", ex.msg);
             }
         }
 
-        return vm;
+        return script_vm;
     }
-*/
+
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
         return acl_indexes.authorize(uri, ticket, request_acess);

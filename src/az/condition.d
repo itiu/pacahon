@@ -21,6 +21,8 @@ private
     import search.vql;
 
     import az.orgstructure_tree;
+    
+    import bind.v8d_header;
 }
 
 enum RightType
@@ -122,10 +124,10 @@ public void condition_thread(string props_file_name)
 
 public void load(Context context, VQL vql, ref Set!Mandat mandats)
 {
-   // VM js_vm = context.get_JS_VM();
+   ScriptVM script_vm = context.get_ScriptVM();
 
-    //if (js_vm is null)
-   //     return;
+   if (script_vm is null)
+        return;
 
     log.trace_log_and_console("start load mandats");
 
