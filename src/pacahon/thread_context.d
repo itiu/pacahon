@@ -29,9 +29,6 @@ private
     //	import search.vql;
     import storage.lmdb_storage;
     import az.acl;
-
-    // JS VM Higgs
-    import runtime.vm;
 }
 
 logger log;
@@ -55,8 +52,7 @@ class ThreadContext : Context
     // // // authorization
     private Authorization acl_indexes;
 
-    // JS VM Higgs //////////////////////////////
-    VM                vm;
+//    VM                vm;
 
     private OWL       owl;
     private JSONValue props;
@@ -119,7 +115,7 @@ class ThreadContext : Context
             owl.load();
         }
     }
-
+/*
     VM get_JS_VM()
     {
         if (vm is null)
@@ -137,7 +133,7 @@ class ThreadContext : Context
 
         return vm;
     }
-
+*/
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
         return acl_indexes.authorize(uri, ticket, request_acess);

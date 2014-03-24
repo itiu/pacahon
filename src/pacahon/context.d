@@ -9,9 +9,6 @@ private import onto.individual;
 private import onto.sgraph;
 private import pacahon.define;
 
-// JS VM Higgs
-import runtime.vm;
-
 enum CMD : byte
 {
     STORE     = 1,
@@ -81,7 +78,7 @@ struct Ticket
 
 interface Context
 {
-    VM get_JS_VM();
+//    VM get_JS_VM();
 
     immutable(Class)[ string ] get_owl_classes();
     immutable(Individual)[ string ] get_onto_as_map_individuals();

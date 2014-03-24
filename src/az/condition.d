@@ -21,13 +21,6 @@ private
     import search.vql;
 
     import az.orgstructure_tree;
-
-    // JS VM Higgs
-    import runtime.vm;
-    import runtime.object;
-    import options;
-    import jit.jit;
-    import runtime.layout;
 }
 
 enum RightType
@@ -52,7 +45,7 @@ struct Mandat
     string  id;
     string  whom;
     string  right;
-    EntryFn expression;
+ string expression;
 }
 
 public void condition_thread(string props_file_name)
@@ -86,32 +79,23 @@ public void condition_thread(string props_file_name)
         {
             try
             {
-                VM js_vm = context.get_JS_VM();
+                //VM js_vm = context.get_JS_VM();
 
                 receive((EVENT type, string msg)
                         {
           writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
-                            if (msg !is null && msg.length > 3 && js_vm !is null)
+                            if (msg !is null && msg.length > 3)
                             {
 //                                Subject doc = cbor2subject(msg);
-                                refptr strObj;
-                                // TODO! возможна утечка памяти через runtime.string.getString
-                                strObj = runtime.string.getString(js_vm, to!wstring(msg));
-                                if (strObj !is null)
+//                                if (strObj !is null)
                                 {
-                                    auto propName = "doc_as_cbor"w;
-                                    auto propVal = ValuePair(strObj, Type.STRING);
-
-                                    runtime.object.setProp(js_vm, js_vm.globalObj, propName, propVal);
-
                                     foreach (mandat; mandats)
                                     {
                                         if (mandat.expression !is null)
                                         {
                                             try
                                             {
-                                                ValuePair res;
-                                                res = js_vm.exec(mandat.expression);
+//                                                res = js_vm.exec(mandat.expression);
                                             }
                                             catch (Exception ex)
                                             {
@@ -119,9 +103,6 @@ public void condition_thread(string props_file_name)
                                             }
                                         }
                                     }
-
-                                    propVal = ValuePair();
-                                    str_visit_gc(js_vm, strObj);
                                 }
                             }
                         });
@@ -141,10 +122,10 @@ public void condition_thread(string props_file_name)
 
 public void load(Context context, VQL vql, ref Set!Mandat mandats)
 {
-    VM js_vm = context.get_JS_VM();
+   // VM js_vm = context.get_JS_VM();
 
-    if (js_vm is null)
-        return;
+    //if (js_vm is null)
+   //     return;
 
     log.trace_log_and_console("start load mandats");
 
@@ -180,7 +161,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
                 el = condition_json.object.get("condition", nil);
                 if (el != nil)
                 {
-                    mandat.expression = js_vm.parseAndCompileString(el.str);
+                    //mandat.expression = js_vm.parseAndCompileString(el.str);
                     writeln("\nmandat.id=", mandat.id);
                     writeln("str=", el.str);
                 }
