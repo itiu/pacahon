@@ -61,7 +61,7 @@ void file_reader_thread(string props_file_name)
             }
         }
 
-        core.thread.Thread.sleep(dur!("seconds")(20));
+        core.thread.Thread.sleep(dur!("seconds")(10));
     }
 }
 

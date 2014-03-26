@@ -11,6 +11,7 @@ private
     import util.logger;
     import util.cbor;
     import util.cbor8sgraph;
+    import util.cbor8individual;
 
     import pacahon.know_predicates;
     import pacahon.context;
@@ -21,7 +22,7 @@ private
     import search.vql;
 
     import az.orgstructure_tree;
-    
+
     import bind.v8d_header;
 }
 
@@ -44,11 +45,14 @@ static this()
 
 struct Mandat
 {
-    string  id;
-    string  whom;
-    string  right;
- string expression;
+    string id;
+    string whom;
+    string right;
+    string condition;
+    Script script;
 }
+
+int count;
 
 public void condition_thread(string props_file_name)
 {
@@ -81,31 +85,37 @@ public void condition_thread(string props_file_name)
         {
             try
             {
-                //VM js_vm = context.get_JS_VM();
+                ScriptVM script_vm = context.get_ScriptVM();
 
                 receive((EVENT type, string msg)
                         {
-          writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
-                            if (msg !is null && msg.length > 3)
+                            //writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
+                            if (msg !is null && msg.length > 3 && script_vm !is null)
                             {
-//                                Subject doc = cbor2subject(msg);
-//                                if (strObj !is null)
+                                //cbor2individual (&g_individual, msg);
+                                g_individual.data = cast(char *)msg;
+                                g_individual.length = cast(int)msg.length;
+
+                                foreach (mandat; mandats)
                                 {
-                                    foreach (mandat; mandats)
+                                    if (mandat.script !is null)
                                     {
-                                        if (mandat.expression !is null)
+                                        try
                                         {
-                                            try
-                                            {
-//                                                res = js_vm.exec(mandat.expression);
-                                            }
-                                            catch (Exception ex)
-                                            {
-                                                writeln("EX!condition.receive ", ex.msg);
-                                            }
+                                            //writeln ("exec script : ", mandat.condition);
+                                            count++;
+                                            script_vm.run(mandat.script);
+                                        }
+                                        catch (Exception ex)
+                                        {
+                                            writeln("EX!condition.receive ", ex.msg);
                                         }
                                     }
                                 }
+
+                                writeln("count:", count);
+
+                                //clear_script_data_cache ();
                             }
                         });
             }
@@ -124,9 +134,9 @@ public void condition_thread(string props_file_name)
 
 public void load(Context context, VQL vql, ref Set!Mandat mandats)
 {
-   ScriptVM script_vm = context.get_ScriptVM();
+    ScriptVM script_vm = context.get_ScriptVM();
 
-   if (script_vm is null)
+    if (script_vm is null)
         return;
 
     log.trace_log_and_console("start load mandats");
@@ -163,13 +173,13 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
                 el = condition_json.object.get("condition", nil);
                 if (el != nil)
                 {
-                    //mandat.expression = js_vm.parseAndCompileString(el.str);
+                    mandat.condition = el.str;
+                    mandat.script    = script_vm.compile(cast(char *)mandat.condition);
                     writeln("\nmandat.id=", mandat.id);
                     writeln("str=", el.str);
                 }
 
                 mandats ~= mandat;
-
 //					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
             }
         }
@@ -179,9 +189,5 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
         }
     }
 
-
     log.trace_log_and_console("end load mandats, count=%d ", res.length);
 }
-
-
-
