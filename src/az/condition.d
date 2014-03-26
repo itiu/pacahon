@@ -57,6 +57,7 @@ int count;
 public void condition_thread(string props_file_name)
 {
     Context context = new ThreadContext(null, "condition_thread");
+    g_context = context;
 
     Set!Mandat mandats;
     OrgStructureTree ost;
@@ -113,7 +114,7 @@ public void condition_thread(string props_file_name)
                                     }
                                 }
 
-                                writeln("count:", count);
+//                                writeln("count:", count);
 
                                 //clear_script_data_cache ();
                             }

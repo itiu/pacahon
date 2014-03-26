@@ -594,7 +594,7 @@ class ThreadContext : Context
             {
                 foreach (key, values; individual.resources)
                 {
-                    Individuals ids;
+                    Individuals ids = Individuals.init;
                     foreach (ruri; values)
                     {
                         ids ~= get_individual(ruri.uri, ticket, level);
