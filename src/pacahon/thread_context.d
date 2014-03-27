@@ -137,6 +137,7 @@ class ThreadContext : Context
     
     string execute_script (string str_js)
     {
+    	get_ScriptVM();
     	try
     	{
     		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js));
