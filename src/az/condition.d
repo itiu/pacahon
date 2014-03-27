@@ -152,16 +152,6 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     int       count = 0;
     JSONValue nil;
 
-    auto oFiles = dirEntries("./script", "*.{js}", SpanMode.depth);
-    
-    foreach (o; oFiles)
-    {
-     	auto str_js = cast(ubyte[]) read(o.name);
-     	auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js));
-     	if (str_js_script !is null)
-     		script_vm.run(str_js_script);    	
-    }
-    
     foreach (ss; res.data)
     {
         try
@@ -186,7 +176,7 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
                 if (el != nil)
                 {
                     mandat.condition = el.str;
-                    mandat.script    = script_vm.compile(cast(char *)(mandat.condition));
+                    mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
                     writeln("\nmandat.id=", mandat.id);
                     writeln("str=", el.str);
                 }

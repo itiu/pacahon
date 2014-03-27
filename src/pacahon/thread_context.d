@@ -2,7 +2,7 @@ module pacahon.thread_context;
 
 private
 {
-    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid;
+    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file;
 
     import io.mq_client;
     import util.container;
@@ -118,13 +118,27 @@ class ThreadContext : Context
         }
     }
 
+    private void reload_scripts ()
+    {
+                auto oFiles = dirEntries("./script", "*.{js}", SpanMode.depth);
+    
+                foreach (o; oFiles)
+                {
+                	auto str_js = cast(ubyte[]) read(o.name);
+                	auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+                	if (str_js_script !is null)
+                		script_vm.run(str_js_script);    	
+                }    	
+    }
+
     ScriptVM get_ScriptVM()
     {
         if (script_vm is null)
         {
             try
             {
-                script_vm = new_ScriptVM();
+                script_vm = new_ScriptVM();     
+                g_context = this;
             }
             catch (Exception ex)
             {
@@ -138,9 +152,12 @@ class ThreadContext : Context
     string execute_script (string str_js)
     {
     	get_ScriptVM();
+
+    	reload_scripts ();
+    	    	
     	try
     	{
-    		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js));
+    		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
     		if (str_js_script !is null)
     			script_vm.run(str_js_script); 
     		else
