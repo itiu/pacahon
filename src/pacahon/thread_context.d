@@ -134,6 +134,23 @@ class ThreadContext : Context
 
         return script_vm;
     }
+    
+    string execute_script (string str_js)
+    {
+    	try
+    	{
+    		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js));
+    		if (str_js_script !is null)
+    			script_vm.run(str_js_script); 
+    		else
+    			writeln ("Script is invalid");   	    		
+    	}
+    	catch (Exception ex)
+    	{
+                 writeln("EX!executeScript ", ex.msg);   		
+    	}
+    	return "";
+    }    
 
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {

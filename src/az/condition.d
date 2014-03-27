@@ -158,7 +158,8 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     {
      	auto str_js = cast(ubyte[]) read(o.name);
      	auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js));
-     	script_vm.run(str_js_script);    	
+     	if (str_js_script !is null)
+     		script_vm.run(str_js_script);    	
     }
     
     foreach (ss; res.data)

@@ -81,7 +81,9 @@ struct Ticket
 interface Context
 {
     ScriptVM get_ScriptVM();
-
+    string execute_script (string str);
+    
+    ///////////////////////
     immutable(Class)[ string ] get_owl_classes();
     immutable(Individual)[ string ] get_onto_as_map_individuals();
     Class *get_class(string ur);
