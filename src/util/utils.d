@@ -104,7 +104,7 @@ public JSONValue read_props(string file_name)
       
 //    	dmd >= 2.065
       
-    	JSONValue listeners = JSONValue ([2]);
+    	JSONValue listeners = JSONValue ();
 
         JSONValue transport = JSONValue(["point" : JSONValue("tcp://*:5559")]);
         transport.object["transport"] = JSONValue("zmq");
