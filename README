@@ -9,7 +9,7 @@ Pacahon:
 Runtime библиотека: 
     phobos.
 Транспортный уровень: 
-    zeromq/nanomsg/rabbitmq.
+    zeromq/rabbitmq.
 Хранилище и поиск: 
     lmdb + xapian.
 
@@ -21,7 +21,8 @@ NB: Описание сборки / установки приведено для
 2.1. Требуемое ПО:
 
 - Клиент системы контроля версий GIT.
-- Digital mars D2 compiler dmd 2.064.2 ( http://dlang.org )
+- Digital mars D2 compiler dmd 2.065 ( http://dlang.org )
+- DUB package manager 0.9.21 ( https://github.com/rejectedsoftware/dub )
 
 используемые библиотеки, (статические библиотеки находятся в ./lib64):
 
@@ -54,21 +55,4 @@ linux:
 
     git clone git@github.com:itiu/pacahon.git
     cd pacahon
-    ./build-dmd64.sh
-
-После компиляции в каталоге появится исполняемый файл Pacahon-XXXXXXXX
-
-2.3. Запуск
-
-Если отсутствует конфигурационный файл pacahon-properties.json, то при первом запуске pacahon создаст 
-требуемый конфигурационный файл по умолчанию.
-
-3 Загрузка базовой онтологии
-
-3.1 Обновить базовую онтологию можно поместив ее в папку ./core-onto.
-Файлы онтологий должны быть в формате turtle и иметь расширение *.ttl
-
-
-4. ДОКУМЕНТАЦИЯ:
-
-обзор комманд и формата сообщений: doc/message-and-command-format.odt 
+    dub
