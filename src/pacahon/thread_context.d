@@ -123,7 +123,7 @@ class PThreadContext : Context
 
     private void reload_scripts()
     {
-        auto oFiles = dirEntries("./script", "*.{js}", SpanMode.depth);
+        auto oFiles = dirEntries("./public/js/server", "*.{js}", SpanMode.depth);
 
         foreach (o; oFiles)
         {
@@ -132,6 +132,16 @@ class PThreadContext : Context
             if (str_js_script !is null)
                 script_vm.run(str_js_script);
         }
+        
+        oFiles = dirEntries("./public/js/common", "*.{js}", SpanMode.depth);
+
+        foreach (o; oFiles)
+        {
+            auto str_js        = cast(ubyte[]) read(o.name);
+            auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+            if (str_js_script !is null)
+                script_vm.run(str_js_script);
+        }        
     }
 
     ScriptVM get_ScriptVM()
