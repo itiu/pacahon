@@ -127,6 +127,7 @@ class PThreadContext : Context
 
         foreach (o; oFiles)
         {
+        	writeln ("load script:", o);
             auto str_js        = cast(ubyte[]) read(o.name);
             auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
             if (str_js_script !is null)
@@ -137,6 +138,7 @@ class PThreadContext : Context
 
         foreach (o; oFiles)
         {
+        	writeln ("load script:", o);
             auto str_js        = cast(ubyte[]) read(o.name);
             auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
             if (str_js_script !is null)
@@ -161,6 +163,8 @@ class PThreadContext : Context
 
                 g_script_out.data           = cast(char *)g_str_script_out;
                 g_script_out.allocated_size = cast(int)g_str_script_out.length;
+                
+                reload_scripts();
             }
             catch (Exception ex)
             {
