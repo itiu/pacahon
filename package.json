@@ -4,11 +4,7 @@
 	"description": "veda storage",
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
-	"dependencies": {"zeromq":"~master", "dgraph": "~master"},
+	"dependencies": {"zeromq":"~master", "dgraph": "~master", "pacahon_third_party": ">=1.0.0"},
 	"license": "LGPL v3",
-	"buildOptions": ["releaseMode", "optimize", "inline"],
-	"sourceFiles":["lib64/libanl.a", "lib64/liblmdb.a", "lib64/libxapiand.a", "lib64/libxapian-main.a", 
-			"lib64/libxapian-backend.a", "lib64/libzmq.a", "lib64/libv8d.a", "lib64/libv8_base.a", "lib64/libicui18n.a",
-			 "lib64/libicuuc.a", "lib64/libicudata.a", "lib64/libv8_nosnapshot.a",
-			"lib64/libstdc++.a", "lib64/libuuid.a", "lib64/librabbitmq.a"]
+	"buildOptions": ["releaseMode", "optimize", "inline"]
 }
