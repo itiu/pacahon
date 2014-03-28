@@ -22,7 +22,7 @@ void zmq_thread(string props_file_name, int pos_in_listener_section)
 {
     writeln("SPAWN: zmq listener");
 
-    Context context = new ThreadContext(props_file_name, "zmq");
+    Context context = new PThreadContext(props_file_name, "zmq");
 
     string[ string ] params;
     JSONValue[] _listeners;

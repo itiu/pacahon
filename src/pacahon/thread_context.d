@@ -45,7 +45,7 @@ Tid    dummy_tid;
 string g_str_script_result;
 string g_str_script_out;
 
-class ThreadContext : Context
+class PThreadContext : Context
 {
     /// deprecated vvv
     private Ticket *[ string ] user_of_ticket;

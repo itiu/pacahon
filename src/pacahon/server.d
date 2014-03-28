@@ -574,12 +574,12 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 
 class ServerThread : core.thread.Thread
 {
-    ThreadContext resource;
+    PThreadContext resource;
 
     this(void delegate() _dd, string props_file_path, string context_name)
     {
         super(_dd);
-        resource = new ThreadContext(props_file_path, context_name);
+        resource = new PThreadContext(props_file_path, context_name);
 
 //		resource.sw.start();
     }

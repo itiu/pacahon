@@ -33,7 +33,7 @@ void file_reader_thread(string props_file_name)
 
     ubyte[] out_data;
 
-    Context context = new ThreadContext(props_file_name, "file_reader");
+    Context context = new PThreadContext(props_file_name, "file_reader");
 
     SysTime[ string ] prev_state_of_files;
 

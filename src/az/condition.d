@@ -57,7 +57,7 @@ int count;
 
 public void condition_thread(string props_file_name)
 {
-    Context context = new ThreadContext(null, "condition_thread");
+    Context context = new PThreadContext(null, "condition_thread");
     g_context = context;
 
     Set!Mandat mandats;
