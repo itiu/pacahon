@@ -103,7 +103,7 @@ public JSONValue read_props(string file_name)
     {    	
       
 //    	dmd >= 2.065
-/*      
+      
     	JSONValue listeners = JSONValue ([2]);
 
         JSONValue transport = JSONValue(["point" : JSONValue("tcp://*:5559")]);
