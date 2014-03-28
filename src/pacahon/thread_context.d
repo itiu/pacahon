@@ -29,7 +29,7 @@ private
     //	import search.vql;
     import storage.lmdb_storage;
     import az.acl;
-    
+
     import bind.v8d_header;
 }
 
@@ -40,7 +40,10 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-Tid dummy_tid;
+Tid    dummy_tid;
+
+string g_str_script_result;
+string g_str_script_out;
 
 class ThreadContext : Context
 {
@@ -54,18 +57,18 @@ class ThreadContext : Context
     // // // authorization
     private Authorization acl_indexes;
 
-    ScriptVM               script_vm;
+    ScriptVM              script_vm;
 
-    private OWL       owl;
-    private JSONValue props;
+    private OWL           owl;
+    private JSONValue     props;
 
-    private int       _count_command;
-    private int       _count_message;
-    private string    name;
+    private int           _count_command;
+    private int           _count_message;
+    private string        name;
 
-    private           Tid[ string ] tids;
+    private               Tid[ string ] tids;
 
-    private string    old_msg_key2slot;
+    private string        old_msg_key2slot;
     private int[ string ] old_key2slot;
 
     private                string[ string ] prefix_map;
@@ -118,17 +121,17 @@ class ThreadContext : Context
         }
     }
 
-    private void reload_scripts ()
+    private void reload_scripts()
     {
-                auto oFiles = dirEntries("./script", "*.{js}", SpanMode.depth);
-    
-                foreach (o; oFiles)
-                {
-                	auto str_js = cast(ubyte[]) read(o.name);
-                	auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-                	if (str_js_script !is null)
-                		script_vm.run(str_js_script);    	
-                }    	
+        auto oFiles = dirEntries("./script", "*.{js}", SpanMode.depth);
+
+        foreach (o; oFiles)
+        {
+            auto str_js        = cast(ubyte[]) read(o.name);
+            auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+            if (str_js_script !is null)
+                script_vm.run(str_js_script);
+        }
     }
 
     ScriptVM get_ScriptVM()
@@ -137,8 +140,17 @@ class ThreadContext : Context
         {
             try
             {
-                script_vm = new_ScriptVM();     
+                script_vm = new_ScriptVM();
                 g_context = this;
+
+                string g_str_script_result = new char[ 1024 * 64 ];
+                string g_str_script_out    = new char[ 1024 * 64 ];
+
+                g_script_result.data           = cast(char *)g_str_script_result;
+                g_script_result.allocated_size = cast(int)g_str_script_result.length;
+
+                g_script_out.data           = cast(char *)g_str_script_out;
+                g_script_out.allocated_size = cast(int)g_str_script_out.length;
             }
             catch (Exception ex)
             {
@@ -148,27 +160,34 @@ class ThreadContext : Context
 
         return script_vm;
     }
-    
-    string execute_script (string str_js)
-    {
-    	get_ScriptVM();
 
-    	reload_scripts ();
-    	    	
-    	try
-    	{
-    		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-    		if (str_js_script !is null)
-    			script_vm.run(str_js_script); 
-    		else
-    			writeln ("Script is invalid");   	    		
-    	}
-    	catch (Exception ex)
-    	{
-                 writeln("EX!executeScript ", ex.msg);   		
-    	}
-    	return "";
-    }    
+    string[ 2 ] execute_script(string str_js)
+    {
+        string[ 2 ] res;
+        get_ScriptVM();
+
+        reload_scripts();
+
+        try
+        {
+            auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+            if (str_js_script !is null)
+                script_vm.run(str_js_script, &g_script_result);
+            else
+                writeln("Script is invalid");
+
+            res[ 0 ] = cast(string)g_script_result.data[ 0..g_script_result.length ];
+            res[ 1 ] = "NONE";
+        }
+        catch (Exception ex)
+        {
+            writeln("EX!executeScript ", ex.msg);
+            res[ 0 ] = ex.msg;
+            res[ 1 ] = "NONE";
+        }
+
+        return res;
+    }
 
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
@@ -634,7 +653,7 @@ class ThreadContext : Context
                     {
                         ids ~= get_individual(ruri.uri, ticket, level);
                     }
-                    individual.set_individuals (key, ids); 
+                    individual.set_individuals(key, ids);
                 }
 
                 level--;

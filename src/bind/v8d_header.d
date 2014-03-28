@@ -11,8 +11,11 @@ import pacahon.context;
 string[ string ] g_prop;
 Context g_context;
 
-_Buff g_individual;
-_Buff tmp_individual;
+_Buff   g_individual;
+_Buff   tmp_individual;
+
+_Buff   g_script_result;
+_Buff   g_script_out;
 
 //Individual[int] individual_2_idx;
 //int[string] idx_2_uri;
@@ -27,11 +30,12 @@ _Buff tmp_individual;
 
 extern (C++)
 {
-	struct _Buff
-	{
-		char *data;
-		int  length;
-	}
+struct _Buff
+{
+    char *data;
+    int  length;
+    int  allocated_size;
+}
 }
 
 extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
@@ -57,13 +61,13 @@ extern (C++)_Buff * read_individual(const char *_uri, int _uri_length)
     if (uri != "$document")
     {
 //          individual_2_idx[idx] = Individual.init;
-    	if (g_context !is null)
-    	{
-    		string icb = g_context.get_subject_as_cbor(uri);
-    		tmp_individual.data = cast(char*)icb;
-    		tmp_individual.length = cast(int)icb.length;
-    		return &tmp_individual;
-    	}
+        if (g_context !is null)
+        {
+            string icb = g_context.get_subject_as_cbor(uri);
+            tmp_individual.data   = cast(char *)icb;
+            tmp_individual.length = cast(int)icb.length;
+            return &tmp_individual;
+        }
         return null;
     }
     else
@@ -78,18 +82,18 @@ extern (C++)_Buff * read_individual(const char *_uri, int _uri_length)
 
 extern (C++)
 {
-	interface WrappedContext
-	{
-	}
+interface WrappedContext
+{
+}
 
-	interface WrappedScript
-	{
-	}
+interface WrappedScript
+{
+}
 
-	bool InitializeICU();
-	WrappedContext new_WrappedContext();
-	WrappedScript new_WrappedScript(WrappedContext _context, char *src);
-	void run_WrappedScript(WrappedContext _context, WrappedScript ws);
+bool InitializeICU();
+WrappedContext new_WrappedContext();
+WrappedScript new_WrappedScript(WrappedContext _context, char *src);
+void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
 }
 
 alias new_WrappedContext new_ScriptVM;
