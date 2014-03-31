@@ -47,9 +47,10 @@ extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
 }
 
 
-extern (C++)_Buff * read_individual(const char *_uri, int _uri_length)
+extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length)
 {
     string uri = cast(string)_uri[ 0.._uri_length ];
+    string ticket = cast(string)_ticket[ 0.._ticket_length ];
 
 /*
     int idx = idx_2_uri.get (uri, -1);
