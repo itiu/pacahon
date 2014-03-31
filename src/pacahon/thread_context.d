@@ -123,27 +123,27 @@ class PThreadContext : Context
 
     private void reload_scripts()
     {
-        auto oFiles = dirEntries("./public/js/server", "*.{js}", SpanMode.depth);
+        Script[] scripts;
+        writeln("-");
 
-        foreach (o; oFiles)
+        foreach (path; [ "./public/js/server", "./public/js/common" ])
         {
-        	writeln ("load script:", o);
-            auto str_js        = cast(ubyte[]) read(o.name);
-            auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-            if (str_js_script !is null)
-                script_vm.run(str_js_script);
+            auto oFiles = dirEntries(path, "*.{js}", SpanMode.depth);
+
+            foreach (o; oFiles)
+            {
+                writeln(" load script:", o);
+                auto str_js        = cast(ubyte[]) read(o.name);
+                auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+                if (str_js_script !is null)
+                    scripts ~= str_js_script;
+            }
         }
-        
-        oFiles = dirEntries("./public/js/common", "*.{js}", SpanMode.depth);
 
-        foreach (o; oFiles)
+        foreach (script; scripts)
         {
-        	writeln ("load script:", o);
-            auto str_js        = cast(ubyte[]) read(o.name);
-            auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-            if (str_js_script !is null)
-                script_vm.run(str_js_script);
-        }        
+            script_vm.run(script);
+        }
     }
 
     ScriptVM get_ScriptVM()
@@ -163,7 +163,7 @@ class PThreadContext : Context
 
                 g_script_out.data           = cast(char *)g_str_script_out;
                 g_script_out.allocated_size = cast(int)g_str_script_out.length;
-                
+
                 reload_scripts();
             }
             catch (Exception ex)
@@ -354,7 +354,7 @@ class PThreadContext : Context
         Individual indv;
 
         cbor2individual(&indv, ss_as_cbor);
-        store_individual(indv, prepareEvents);
+        store_individual(null, &indv, ss_as_cbor, prepareEvents);
     }
 
     public int[ string ] get_key2slot()
@@ -677,12 +677,27 @@ class PThreadContext : Context
         return individual;
     }
 
-    public void store_individual(Individual indv, bool prepareEvents = true)
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
-        string ss_as_cbor = individual2cbor(&indv);
-        EVENT  ev         = EVENT.NONE;
+        if (indv is null && ss_as_cbor is null)
+            return ResultCode.No_Content;
 
-        Tid    tid_subject_manager = getTid(THREAD.subject_manager);
+        if (ss_as_cbor is null)
+            ss_as_cbor = individual2cbor(indv);
+
+        if (indv is null && ss_as_cbor !is null)
+        {
+            Individual tmp_indv;
+            indv = &tmp_indv;
+            cbor2individual(indv, ss_as_cbor);
+        }
+
+        if (indv is null && ss_as_cbor is null)
+            return ResultCode.No_Content;
+
+        EVENT ev = EVENT.NONE;
+
+        Tid   tid_subject_manager = getTid(THREAD.subject_manager);
 
         if (tid_subject_manager != Tid.init)
         {
@@ -705,21 +720,23 @@ class PThreadContext : Context
                 if (prepareEvents == true)
                     bus_event(indv, ss_as_cbor, ev, this);
             }
+            return ResultCode.OK;
         }
         else
         {
             writeln("Ex! store_subject:", ev);
+            return ResultCode.Internal_Server_Error;
         }
     }
 
     ResultCode put_individual(string uri, Individual individual, string ticket)
     {
-        store_individual(individual);
-        return ResultCode.OK;
+        individual.uri = uri;
+        return store_individual(ticket, &individual, null);
     }
 
     ResultCode post_individual(Individual individual, string ticket)
     {
-        return ResultCode.Not_Implemented;
+        return store_individual(ticket, &individual, null);
     }
 }
