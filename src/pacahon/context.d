@@ -41,6 +41,7 @@ enum ResultCode
 {
     OK                    = 200,
     Created               = 201,
+    No_Content            = 204,
     Bad_Request           = 400,
     Forbidden             = 403,
     Not_Found             = 404,
@@ -134,6 +135,7 @@ interface Context
     bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket, byte level = 0);
 
