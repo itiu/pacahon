@@ -4,7 +4,7 @@
 	"description": "veda storage",
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
-	"dependencies": {"zeromq":"~master", "dgraph": "~master", "pacahon_third_party": ">=1.0.0"},
+	"dependencies": {"zeromq":"~master", "dgraph": "~master", "pacahon_third_party": ">=1.0.1"},
 	"license": "LGPL v3",
 	"buildOptions": ["releaseMode", "optimize", "inline"],
         "sourceFiles":["lib64/libv8d.a", "lib64/libxapiand.a"]
