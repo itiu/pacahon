@@ -4,7 +4,7 @@ private
 {
     import std.json, std.stdio, std.string, std.array, std.datetime, std.concurrency, std.conv, std.file;
     import core.thread;
-    
+
     import onto.sgraph;
 
     import util.container;
@@ -58,6 +58,7 @@ int count;
 public void condition_thread(string props_file_name)
 {
     Context context = new PThreadContext(null, "condition_thread");
+
     g_context = context;
 
     Set!Mandat mandats;
@@ -156,34 +157,52 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
     {
         try
         {
-            string    condition_text = ss.getFirstLiteral(veda_schema__script);
+            string condition_text = ss.getFirstLiteral(veda_schema__script);
+            if (condition_text.length <= 0)
+                continue;
+
             //writeln("condition_text:", condition_text);
-            JSONValue condition_json = parseJSON(condition_text);
-            Mandat    mandat         = void;
 
-            if (condition_json.type == JSON_TYPE.OBJECT)
+            Mandat mandat = void;
+            mandat.id = ss.subject;
+
+            if (condition_text[ 0 ] == '{')
             {
-                mandat.id = ss.subject;
-                JSONValue el = condition_json.object.get("whom", nil);
-                if (el != nil)
-                    mandat.whom = el.str;
+                JSONValue condition_json = parseJSON(condition_text);
 
-                el = condition_json.object.get("right", nil);
-                if (el != nil)
-                    mandat.right = el.str;
-
-                el = condition_json.object.get("condition", nil);
-                if (el != nil)
+                if (condition_json.type == JSON_TYPE.OBJECT)
                 {
-                    mandat.condition = el.str;
-                    mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-                    writeln("\nmandat.id=", mandat.id);
-                    writeln("str=", el.str);
+                    JSONValue el = condition_json.object.get("whom", nil);
+                    if (el != nil)
+                        mandat.whom = el.str;
+
+                    el = condition_json.object.get("right", nil);
+                    if (el != nil)
+                        mandat.right = el.str;
+
+                    el = condition_json.object.get("condition", nil);
+                    if (el != nil)
+                    {
+                        mandat.condition = el.str;
+                        mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+                        writeln("\nmandat.id=", mandat.id);
+                        writeln("str=", mandat.condition);
+
+                        mandats ~= mandat;
+                    }
                 }
+            }
+            else
+            {
+                mandat.condition = condition_text;
+                mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+                writeln("\nmandat.id=", mandat.id);
+                writeln("str=", mandat.condition);
 
                 mandats ~= mandat;
-//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
             }
+
+//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
         }
         catch (Exception ex)
         {
