@@ -658,20 +658,18 @@ class PThreadContext : Context
         {
             cbor2individual(&individual, individual_as_cbor);
 
-            while (level > 0)
+            if (level > 0)
             {
                 foreach (key, values; individual.resources)
                 {
                     Individuals ids = Individuals.init;
                     foreach (ruri; values)
                     {
-                        ids ~= get_individual(ruri.uri, ticket, level);
+                        ids ~= get_individual(ruri.uri, ticket, cast(byte)(level - 1));
                     }
                     individual.set_individuals(key, ids);
                 }
-
-                level--;
-            }
+           }
         }
 
         return individual;

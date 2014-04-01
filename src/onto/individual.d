@@ -21,7 +21,7 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
-    private Individuals[ string ]  individuals;
+    Individuals[ string ]  individuals;
 
     immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals)
     {
