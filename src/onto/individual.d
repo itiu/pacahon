@@ -21,9 +21,9 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
-    Individuals[ string ]  individuals;
+    Individual[ string ]  individuals;
 
-    immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individuals[ string ]) _individuals)
+    immutable this(string _uri, immutable(Resources[ string ]) _resources, immutable(Individual[ string ]) _individuals)
     {
         uri         = _uri;
         resources   = _resources;
@@ -36,7 +36,7 @@ struct Individual
         immutable Resources[ string ]    tmp1 = assumeUnique(resources);
 
         individuals.rehash();
-        immutable Individuals[ string ]    tmp2 = assumeUnique(individuals);
+        immutable Individual[ string ]    tmp2 = assumeUnique(individuals);
 
         immutable(Individual) result = immutable Individual(uri, tmp1, tmp2);
         return result;
@@ -63,14 +63,14 @@ struct Individual
         return Resource.init;
     }
 
-    void set_individuals (string key, Individuals _individuals)
+    void set_individuals(string key, Individual _individual)
     {
-    	individuals[ key ] = _individuals;
+        individuals[ key ] = _individual;
     }
 
-    Individuals[ string ] get_individuals ()
+    Individual[ string ] get_individuals()
     {
-    	return individuals;
+        return individuals;
     }
 
     Resources getResources(string predicate)

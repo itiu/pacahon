@@ -645,12 +645,18 @@ class PThreadContext : Context
     {
         Ticket *ticket = get_ticket(sticket);
 
-        return get_individual(uri, ticket, level);
+        Individual[ string ] individuals;
+
+        Individual individual = get_individual(uri, ticket, individuals, level);
+
+        individual.individuals = individuals;
+
+        return individual;
     }
 
-    Individual get_individual(string uri, Ticket *ticket, byte level = 0)
+    Individual get_individual(string uri, Ticket *ticket, ref Individual[ string ]  _individuals, byte level = 0)
     {
-        Individual individual = Individual();
+        Individual individual = Individual.init;
 
         string     individual_as_cbor = get_subject_as_cbor(uri);
 
@@ -662,14 +668,17 @@ class PThreadContext : Context
             {
                 foreach (key, values; individual.resources)
                 {
-                    Individuals ids = Individuals.init;
                     foreach (ruri; values)
                     {
-                        ids ~= get_individual(ruri.uri, ticket, cast(byte)(level - 1));
+                        if (_individuals.get(ruri.uri, Individual.init) == Individual.init)
+                        {
+                            auto idv = get_individual(ruri.uri, ticket, _individuals, cast(byte)(level - 1));
+                            if (idv != Individual.init)
+                                _individuals[ key ] = idv;
+                        }
                     }
-                    individual.set_individuals(key, ids);
                 }
-           }
+            }
         }
 
         return individual;

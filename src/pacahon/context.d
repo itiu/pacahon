@@ -139,7 +139,7 @@ interface Context
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket, byte level = 0);
 
-    public Individual get_individual(string uri, Ticket *ticket, byte level = 0);
+    public Individual get_individual(string uri, Ticket *ticket, ref Individual[ string ]  _individuals, byte level = 0);
     public Individual get_individual(string uri, string sticket, byte level = 0);
 
     public ResultCode put_individual(string uri, Individual individual, string ticket);
