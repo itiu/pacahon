@@ -321,7 +321,7 @@ void die_on_amqp_error(amqp_rpc_reply_t x, string context)
         break;
 
     case amqp_response_type_enum.AMQP_RESPONSE_LIBRARY_EXCEPTION:
-        writeln (context, amqp_error_string(x.library_error));
+        writeln(context, amqp_error_string(x.library_error));
         break;
 
     default:
