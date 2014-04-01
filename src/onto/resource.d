@@ -24,10 +24,10 @@ iResources                  _empty_iResources = iResources.init;
 
 struct Resource
 {
-    private size_t         idx;
+    private size_t idx;
     ResourceType   type   = ResourceType.Uri;
     ResourceOrigin origin = ResourceOrigin.local;
-    
+
     string         data;
     LANG           lang = LANG.NONE;
 
@@ -58,15 +58,15 @@ struct Resource
         type = ResourceType.Uri;
         data = uri;
     }
-    
-    public size_t get_idx ()
+
+    public size_t get_idx()
     {
-    	return idx;	
+        return idx;
     }
-    
-    public void set_idx (size_t _idx)
+
+    public void set_idx(size_t _idx)
     {
-    	idx = _idx;	
+        idx = _idx;
     }
 }
 
