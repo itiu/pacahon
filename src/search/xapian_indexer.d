@@ -290,11 +290,11 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
                         if (counter - last_counter_after_timed_commit > 0)
                         {
-                            printf("counter: %d, timer: commit index..", counter);
+                            printf("counter: %d, timer: commit index..\n", counter);
                             if (key2slot.length - last_size_key2slot > 0)
                             {
                                 store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
-                                printf("..store__key2slot..");
+                                printf("..store__key2slot..\n");
                                 last_size_key2slot = key2slot.length;
                             }
 
