@@ -36,10 +36,12 @@ void file_reader_thread(string props_file_name)
     Context context = new PThreadContext(props_file_name, "file_reader");
 
     SysTime[ string ] prev_state_of_files;
+    string path = "./ontology";
 
     while (true)
     {
-        auto oFiles = dirEntries("./ontology", "*.{ttl}", SpanMode.depth);
+        bool[ string ] files_to_load;
+        auto oFiles = dirEntries(path, "*.{ttl}", SpanMode.depth);
 
         foreach (o; oFiles)
         {
@@ -49,17 +51,43 @@ void file_reader_thread(string props_file_name)
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
                 {
                     //writeln("file is modifed [", o.name, "]");
-                    prepare_file(o.name, context);
                     prev_state_of_files[ o.name ] = o.timeLastModified;
+                    files_to_load[ o.name ]       = true;
                 }
             }
             else
             {
                 prev_state_of_files[ o.name ] = o.timeLastModified;
                 //writeln("new file [", o.name, "]");
-                prepare_file(o.name, context);
+                files_to_load[ o.name ] = true;
             }
         }
+
+        if (exists(path ~ "/.load_sequence") == false)
+        {
+            foreach (fn; files_to_load.keys)
+            {
+//              writeln ("@@ fn:", fn);
+                prepare_file(fn, context);
+            }
+        }
+        else
+        {
+            auto     load_sequence = cast(char[]) read(path ~ "/.load_sequence");
+            string[] els           = cast(string[])load_sequence.split('\n');
+            foreach (el; els)
+            {
+                auto fn = el.strip();
+                if (fn.length > 4)
+                {
+                    if (files_to_load.get(path ~ "/" ~ fn, false) == true)
+                    {
+                        prepare_file(path ~ "/" ~ fn, context);
+                    }
+                }
+            }
+        }
+
 
         core.thread.Thread.sleep(dur!("seconds")(10));
     }
