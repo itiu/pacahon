@@ -176,6 +176,8 @@ void acl_manager()
                         Individual ind;
                         cbor2individual(&ind, msg);
 
+                        //writeln ("ACL: ", ind);
+
                         Resources rdfType = ind.resources[ rdf__type ];
 
                         if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
@@ -223,7 +225,7 @@ void acl_manager()
 
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
-                            writeln("ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                            writeln("++ ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -256,7 +258,7 @@ void acl_manager()
                                 }
 
                                 storage.put(rs.uri, outbuff.toString());
-                                writeln("MemberShip: ", rs.uri, " : ", outbuff.toString());
+                                writeln("++ MemberShip: ", rs.uri, " : ", outbuff.toString());
                             }
                         }
                     }
