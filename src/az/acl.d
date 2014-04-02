@@ -41,9 +41,9 @@ class Authorization : LmdbStorage
 
     bool isExistMemberShip(Individual *membership)
     {
-    	if (membership is null)
-    		return true;
-    	
+        if (membership is null)
+            return true;
+
         bool[ string ] add_memberOf;
 
         Resources resources = membership.getResources(veda_schema__resource);
@@ -74,23 +74,80 @@ class Authorization : LmdbStorage
                     }
                 }
             }
+            else
+                return false;
         }
 
         if (need_found_count == 0)
         {
-        	writeln ("MemberShip already exist:", *membership);
+            writeln("MemberShip already exist:", *membership);
             return true;
-        }    
+        }
         else
             return false;
     }
 
-    bool isExistPermissionStatement(Individual *permission_statement)
+    bool isExistPermissionStatement(Individual *prst)
     {
-        return false;
+        //writeln ("@  isExistPermissionStatement uri=", prst.uri);
+
+        byte  count_new_bits    = 0;
+        byte  count_passed_bits = 0;
+        ubyte access;
+
+        void check_access_bit(Resource canXXX, ubyte true_bit_pos, ubyte false_bit_pos)
+        {
+            if (canXXX !is Resource.init)
+            {
+                if (canXXX.data == "true")
+                {
+                    count_new_bits++;
+                    if (access & true_bit_pos)
+                        count_passed_bits++;
+                }
+                else
+                {
+                    count_new_bits++;
+                    if (access & false_bit_pos)
+                        count_passed_bits++;
+                }
+            }
+        }
+
+
+        Resource permissionObject  = prst.getFirstResource(veda_schema__permissionObject);
+        Resource permissionSubject = prst.getFirstResource(veda_schema__permissionSubject);
+
+        string   str = find(permissionObject.uri ~ "+" ~ permissionSubject.uri);
+
+        if (str !is null && str.length > 0)
+        {
+            access = cast(ubyte)str[ 0 ];
+
+            check_access_bit(prst.getFirstResource(veda_schema__canCreate), Access.can_create, Access.cant_create);
+            check_access_bit(prst.getFirstResource(veda_schema__canDelete), Access.can_delete, Access.cant_delete);
+            check_access_bit(prst.getFirstResource(veda_schema__canRead), Access.can_read, Access.cant_read);
+            check_access_bit(prst.getFirstResource(veda_schema__canUpdate), Access.can_update, Access.cant_update);
+        }
+        else
+        {
+            //writeln ("@ NOT FOUND-> ", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+            return false;
+        }
+
+        if (count_passed_bits < count_new_bits)
+        {
+            //writeln ("@ PermissionStatement not exist, count_passed_bits = ", count_passed_bits, ", count_new_bits=", count_new_bits);
+            return false;
+        }
+        else
+        {
+            writeln("@ PermissionStatement already exist:", *prst);
+            return true;
+        }
     }
 
-    bool authorize(string uri, Ticket *ticket, Access request_acess)
+    bool authorize(string uri, Ticket *ticket, Access request_access)
     {
         if (ticket is null)
             return true;
@@ -179,7 +236,7 @@ class Authorization : LmdbStorage
                             if (rc == 0)
                             {
                                 str = cast(string)(data.mv_data[ 0..data.mv_size ]);
-                                if ((str[ 0 ] && request_acess) == true)
+                                if (str !is null && str.length > 0 && (str[ 0 ] && request_access) == true)
                                 {
                                     isAccessAllow = true;
                                     break;
@@ -237,6 +294,13 @@ void acl_manager()
                             Resource permissionSubject = ind.getFirstResource(veda_schema__permissionSubject);
 
                             ubyte access;
+
+                            // найдем предыдущие права для данной пары
+                            string str = storage.find(permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                            if (str !is null && str.length > 0)
+                            {
+                                access = cast(ubyte)str[ 0 ];
+                            }
 
                             Resource canCreate = ind.getFirstResource(veda_schema__canCreate);
                             if (canCreate !is Resource.init)
@@ -313,6 +377,11 @@ void acl_manager()
                             }
                         }
                     }
+                },
+                (CMD cmd, Tid tid_response_reciever)
+                {
+                    if (cmd == CMD.NOP)
+                        send(tid_response_reciever, true);
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
