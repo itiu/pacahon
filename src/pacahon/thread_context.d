@@ -686,6 +686,9 @@ class PThreadContext : Context
 
     public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
+    	// TODO | при сохранении документа типа veda-schema:PermissionStatement или veda-schema:Membership,
+    	// 		| проверить в индексе ACL модуля наличие подобных данных
+    	
         if (indv is null && ss_as_cbor is null)
             return ResultCode.No_Content;
 
@@ -701,6 +704,19 @@ class PThreadContext : Context
 
         if (indv is null && ss_as_cbor is null)
             return ResultCode.No_Content;
+
+        Resources rdfType = indv.resources[rdf__type];
+        
+        if (rdfType.anyExist(veda_schema__Membership) == true)
+        {
+        	if (this.acl_indexes.isExistMemberShip (indv) == true)
+        		return ResultCode.Unprocessable_Entity;
+        }
+        else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
+        {
+        	if (this.acl_indexes.isExistPermissionStatement (indv) == true)
+        		return ResultCode.Unprocessable_Entity;
+        }
 
         EVENT ev = EVENT.NONE;
 
@@ -725,7 +741,7 @@ class PThreadContext : Context
                 send(tid_search_manager, CMD.STORE, ss_as_cbor);
 
                 if (prepareEvents == true)
-                    bus_event(indv, ss_as_cbor, ev, this);
+                    bus_event_after(indv, ss_as_cbor, ev, this);
             }
             return ResultCode.OK;
         }
