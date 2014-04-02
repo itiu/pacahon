@@ -39,6 +39,57 @@ class Authorization : LmdbStorage
         super(_path);
     }
 
+    bool isExistMemberShip(Individual *membership)
+    {
+    	if (membership is null)
+    		return true;
+    	
+        bool[ string ] add_memberOf;
+
+        Resources resources = membership.getResources(veda_schema__resource);
+        Resources memberOf  = membership.getResources(veda_schema__memberOf);
+
+        foreach (mb; memberOf)
+            add_memberOf[ mb.uri ] = true;
+
+        int need_found_count = cast(int)add_memberOf.length;
+
+        if (resources.length > 0)
+        {
+            string groups_str = find(resources[ 0 ].uri);
+            if (groups_str !is null)
+            {
+                string[] groups = groups_str.split(";");
+
+                foreach (group; groups)
+                {
+                    if (group.length > 0)
+                    {
+                        if (add_memberOf.get(group, false) == true)
+                        {
+                            need_found_count--;
+                            if (need_found_count <= 0)
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (need_found_count == 0)
+        {
+        	writeln ("MemberShip already exist:", *membership);
+            return true;
+        }    
+        else
+            return false;
+    }
+
+    bool isExistPermissionStatement(Individual *permission_statement)
+    {
+        return false;
+    }
+
     bool authorize(string uri, Ticket *ticket, Access request_acess)
     {
         if (ticket is null)
@@ -225,7 +276,7 @@ void acl_manager()
 
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
-                            writeln("++ ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                            writeln("[index] ++ ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -258,7 +309,7 @@ void acl_manager()
                                 }
 
                                 storage.put(rs.uri, outbuff.toString());
-                                writeln("++ MemberShip: ", rs.uri, " : ", outbuff.toString());
+                                writeln("[index] ++ MemberShip: ", rs.uri, " : ", outbuff.toString());
                             }
                         }
                     }
