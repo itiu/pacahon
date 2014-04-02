@@ -140,11 +140,16 @@ interface Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
     public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
-    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0);
-    public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket, byte level = 0);
+    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
+    public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);
 
-    public Individual get_individual(string uri, Ticket *ticket, ref Individual[ string ]  _individuals, byte level = 0);
-    public Individual get_individual(string uri, string sticket, byte level = 0);
+    public string[] get_individuals_ids_via_query(string query_str, string sticket);
+    public string[] get_individuals_ids_via_query(string query_str, Ticket * ticket);
+    
+    public Individual get_individual(string uri, Ticket *ticket);
+    public Individual get_individual(string uri, string sticket);
+    public Individual[] get_individuals(string[] uris, string sticket);
+
 
     public ResultCode put_individual(string uri, Individual individual, string ticket);
     public ResultCode post_individual(Individual individual, string ticket);

@@ -67,13 +67,10 @@ class VQL
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
                    ref immutable(Individual)[] individuals)
     {
-//        StopWatch sw;
-//        sw.start();
-
         int                       res_count;
 
-        void delegate(string msg) dg;
-        void collect_subject(string msg)
+        void delegate(string uri, string msg) dg;
+        void collect_subject(string uri, string msg)
         {
             Individual individual = Individual();
 
@@ -82,13 +79,25 @@ class VQL
             individuals ~= individual.idup;
         }
         dg = &collect_subject;
-//        writeln ("@2 found_sections[ FILTER ]=", found_sections[ FILTER ]);
 
         res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
 
-//        sw.stop();
-//        long t = cast(long)sw.peek().usecs;
-//        writeln("execute:", t, " µs");
+        return res_count;
+    }
+
+    public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
+                   ref string[] ids)
+    {
+        int                       res_count;
+
+        void delegate(string uri, string msg) dg;
+        void collect_subject(string uri, string msg)
+        {
+            ids ~= uri;
+        }
+        dg = &collect_subject;
+
+        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
 
         return res_count;
     }
@@ -130,8 +139,8 @@ class VQL
 
         if (type_source == XAPIAN)
         {
-            void delegate(string msg) dg;
-            void collect_subject(string msg)
+            void delegate(string uri, string msg) dg;
+            void collect_subject(string _uri, string msg)
             {
                 //writeln ("lmg=", cast(void*)lmg);
                 string     uri = add_cbor_to_lmultidigraph(lmg, msg);
@@ -211,8 +220,8 @@ class VQL
         }
         else if (type_source == XAPIAN)
         {
-            void delegate(string msg) dg;
-            void collect_subject(string msg)
+            void delegate(string uri, string msg) dg;
+            void collect_subject(string uri, string msg)
             {
                 res.addSubject(cbor2subject(msg));
             }

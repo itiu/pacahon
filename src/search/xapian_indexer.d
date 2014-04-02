@@ -252,8 +252,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
                             XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
 
-                            void delegate(string msg) dg;
-                            void collect_subject(string msg)
+                            void delegate(string uri, string msg) dg;
+                            void collect_subject(string uri, string msg)
                             {
                                 send(tid_sender, CMD.PUT, msg);
                             }

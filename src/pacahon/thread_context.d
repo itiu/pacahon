@@ -561,7 +561,7 @@ class PThreadContext : Context
             int    duration = 0;
             send(tid_ticket_manager, CMD.FIND, ticket_id, thisTid);
 
-            receive((string ticket_str, Tid from)
+            receive((string uri, string ticket_str, Tid from)
                     {
                         if (ticket_str !is null && ticket_str.length > 128)
                         {
@@ -572,7 +572,9 @@ class PThreadContext : Context
 
 //				writeln ("Ticket=",ticket);
                         }
-                    });
+                    },
+                    (Variant v) { writeln("get_ticket::Received some other type. :", v); }
+                    );
         }
         else
         {
@@ -623,14 +625,32 @@ class PThreadContext : Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
-    immutable(Individual)[] get_individuals_via_query(string query_str, string sticket, byte level = 0)
+    string[] get_individuals_ids_via_query(string query_str, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
-        return get_individuals_via_query(query_str, ticket, level);
+        return get_individuals_ids_via_query(query_str, ticket);
     }
 
-    immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket, byte level = 0)
+    string[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
+    {
+        string[] res;
+        if (query_str.indexOf(' ') <= 0)
+            query_str = "'*' == '" ~ query_str ~ "'";
+
+        //writeln (query_str);
+        vql.get(ticket, query_str, null, null, 10, 10000, res);
+        return res;
+    }
+
+    immutable(Individual)[] get_individuals_via_query(string query_str, string sticket)
+    {
+        Ticket *ticket = get_ticket(sticket);
+
+        return get_individuals_via_query(query_str, ticket);
+    }
+
+    immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket)
     {
         immutable(Individual)[] res;
         if (query_str.indexOf(' ') <= 0)
@@ -641,45 +661,34 @@ class PThreadContext : Context
         return res;
     }
 
-    Individual get_individual(string uri, string sticket, byte level = 0)
+    Individual get_individual(string uri, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
-        Individual[ string ] individuals;
-
-        Individual individual = get_individual(uri, ticket, individuals, level);
-
-        individual.individuals = individuals;
+        Individual individual = get_individual(uri, ticket);
 
         return individual;
     }
 
-    Individual get_individual(string uri, Ticket *ticket, ref Individual[ string ]  _individuals, byte level = 0)
+    Individual[] get_individuals(string[] uris, string sticket)
+    {
+    	Individual[] res = Individual[].init;
+        Ticket *ticket = get_ticket(sticket);
+        
+        foreach (uri ; uris)
+        	res ~= get_individual(uri, ticket);
+
+        return res;
+    }
+
+    Individual get_individual(string uri, Ticket *ticket)
     {
         Individual individual = Individual.init;
 
         string     individual_as_cbor = get_subject_as_cbor(uri);
 
         if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-        {
             cbor2individual(&individual, individual_as_cbor);
-
-            if (level > 0)
-            {
-                foreach (key, values; individual.resources)
-                {
-                    foreach (ruri; values)
-                    {
-                        if (_individuals.get(ruri.uri, Individual.init) == Individual.init)
-                        {
-                            auto idv = get_individual(ruri.uri, ticket, _individuals, cast(byte)(level - 1));
-                            if (idv != Individual.init)
-                                _individuals[ key ] = idv;
-                        }
-                    }
-                }
-            }
-        }
 
         return individual;
     }

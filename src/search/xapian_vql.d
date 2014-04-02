@@ -342,7 +342,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
+                                                 ref string[ string ] fields, void delegate(string uri, string cbor_subject) add_out_element,
                                                  Context context)
 {
     int read_count = 0;
@@ -382,7 +382,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
                 if (msg !is null)
                 {
-                    add_out_element(msg);
+                    add_out_element(subject_id, msg);
                     read_count++;
                 }
             }
@@ -406,7 +406,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string cbor_subject) add_out_element,
+                                                 ref string[ string ] fields, void delegate(string uri, string cbor_subject) add_out_element,
                                                  Tid tid_subject_manager,
                                                  Tid tid_acl_manager)
 {
@@ -464,7 +464,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         // тут же получение из авторизации и формирование части ответа
         for (int i = 0; i < read_count * 2; i++)
         {
-            receive((string msg, Tid from)
+            receive((string uri, string msg, Tid from)
                     {
                         if (from == tid_subject_manager)
                         {
@@ -480,7 +480,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
                                 if (sss !is null)
                                 {
                                     // добавим в исходящий поток
-                                    add_out_element(msg);
+                                    add_out_element(sss.subject, msg);
 
                                     hash_of_subjects[ sss.subject ] = 1;
 
@@ -514,13 +514,13 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
         for (int i = 0; i < count_inner; i++)
         {
-            receive((string msg, Tid from)
+            receive((string uri, string msg, Tid from)
                     {
                         if (msg.length > 16)
                         {
                             //writeln (msg);
                             // отправить в исходящий поток
-                            add_out_element(msg);
+                            add_out_element(uri, msg);
                         }
                     });
         }

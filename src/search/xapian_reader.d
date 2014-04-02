@@ -23,9 +23,10 @@ byte err;
 interface SearchReader
 {
     public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
-                   void delegate(string cbor_subject) add_out_element);
+                   void delegate(string uri, string cbor_subject) add_out_element);
 }
 
+/*
 class XapianSynchronizedReader : SearchReader
 {
     private Context context;
@@ -36,7 +37,7 @@ class XapianSynchronizedReader : SearchReader
     }
 
     public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
-                   void delegate(string cbor_subject) add_out_element)
+                   void delegate(string uri, string cbor_subject) add_out_element)
     {
         if (str_query is null)
             return 0;
@@ -65,7 +66,7 @@ class XapianSynchronizedReader : SearchReader
                             if (tid_subject_manager != Tid.init)
                             {
                                 // writeln("msg:", msg);
-                                add_out_element(msg);
+                                add_out_element(uri, msg);
                                 read_count++;
                             }
                         }
@@ -76,6 +77,7 @@ class XapianSynchronizedReader : SearchReader
         return read_count;
     }
 }
+*/    
 
 class XapianReader : SearchReader
 {
@@ -122,7 +124,7 @@ class XapianReader : SearchReader
 
 
     public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
-                   void delegate(string cbor_subject) add_out_element)
+                   void delegate(string uri, string cbor_subject) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
         check_for_reload();

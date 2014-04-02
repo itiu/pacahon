@@ -58,12 +58,12 @@ public void individuals_manager(string db_path)
                         {
                             string res = storage.find(msg);
                             //writeln ("msg=", msg, ", $res = ", res);
-                            send(tid_response_reciever, res, thisTid);
+                            send(tid_response_reciever, msg, res, thisTid);
                         }
                         else
                         {
                             //writeln("%3 ", msg);
-                            send(tid_response_reciever, "", thisTid);
+                            send(tid_response_reciever, msg, "", thisTid);
                         }
                     }
                     catch (Exception ex)
