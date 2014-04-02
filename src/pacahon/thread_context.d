@@ -706,16 +706,21 @@ class PThreadContext : Context
             return ResultCode.No_Content;
 
         Resources rdfType = indv.resources[rdf__type];
-        
+
+        // before storing the data, expected availability acl_manager.
+        Tid tid_acl = getTid(THREAD.acl_manager);
+        send(tid_acl, CMD.NOP, thisTid);
+        receive((bool res) {});
+                    
         if (rdfType.anyExist(veda_schema__Membership) == true)
         {
         	if (this.acl_indexes.isExistMemberShip (indv) == true)
-        		return ResultCode.Unprocessable_Entity;
+        		return ResultCode.Duplicate_Key;
         }
         else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
         {
         	if (this.acl_indexes.isExistPermissionStatement (indv) == true)
-        		return ResultCode.Unprocessable_Entity;
+        		return ResultCode.Duplicate_Key;
         }
 
         EVENT ev = EVENT.NONE;
