@@ -8,7 +8,8 @@ enum ResourceType : ubyte
     String   = 2,
     Integer  = 4,
     Datetime = 8,
-    Float    = 16
+    Float    = 16,
+    Boolean	 = 32
 }
 
 enum ResourceOrigin : ubyte
