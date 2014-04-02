@@ -20,7 +20,8 @@ enum CMD : byte
     EXAMINE   = 4,
     AUTHORIZE = 8,
     COMMIT    = 16,
-    END_DATA  = 32
+    END_DATA  = 32,
+    NOP		  = 34	
 }
 
 enum THREAD : string
@@ -48,7 +49,9 @@ enum ResultCode
     Unprocessable_Entity  = 422, 
     Internal_Server_Error = 500,
     Not_Implemented       = 501,
-    Service_Unavailable   = 503
+    Service_Unavailable   = 503,
+    Disk_Full			  = 1021,
+    Duplicate_Key 		  = 1022
 }
 
 static THREAD[ 8 ] THREAD_LIST =
