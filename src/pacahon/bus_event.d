@@ -23,7 +23,7 @@ static this()
 
 int count;
 
-void bus_event(Individual *individual, string subject_as_cbor, EVENT type, Context context)
+void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type, Context context)
 {
     //writeln ("@bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
