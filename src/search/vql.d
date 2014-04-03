@@ -87,7 +87,7 @@ class VQL
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
-                   ref string[] ids)
+                   ref immutable (string)[] ids)
     {
         int                       res_count;
 

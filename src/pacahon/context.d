@@ -143,8 +143,8 @@ interface Context
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);
 
-    public string[] get_individuals_ids_via_query(string query_str, string sticket);
-    public string[] get_individuals_ids_via_query(string query_str, Ticket * ticket);
+    public immutable (string)[] get_individuals_ids_via_query(string query_str, string sticket);
+    public immutable (string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket);
     
     public Individual get_individual(string uri, Ticket *ticket);
     public Individual get_individual(string uri, string sticket);

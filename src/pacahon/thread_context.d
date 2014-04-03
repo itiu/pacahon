@@ -625,21 +625,21 @@ class PThreadContext : Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
-    string[] get_individuals_ids_via_query(string query_str, string sticket)
+    immutable (string)[] get_individuals_ids_via_query(string query_str, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
         return get_individuals_ids_via_query(query_str, ticket);
     }
 
-    string[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
+    immutable (string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
     {
-        string[] res;
+        immutable (string)[] res;
         if (query_str.indexOf(' ') <= 0)
             query_str = "'*' == '" ~ query_str ~ "'";
 
         //writeln (query_str);
-        vql.get(ticket, query_str, null, null, 10, 10000, res);
+        vql.get(ticket, query_str, null, null, 10, 100000, res);
         return res;
     }
 
