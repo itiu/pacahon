@@ -23,7 +23,7 @@ byte err;
 interface SearchReader
 {
     public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
-                   void delegate(string uri, string cbor_subject) add_out_element);
+                   void delegate(string uri) add_out_element);
 }
 
 /*
@@ -124,7 +124,7 @@ class XapianReader : SearchReader
 
 
     public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
-                   void delegate(string uri, string cbor_subject) add_out_element)
+                   void delegate(string uri) add_out_element)
     {
         //writeln ("SEARCH FROM XAPIAN");
         check_for_reload();

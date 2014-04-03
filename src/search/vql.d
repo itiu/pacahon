@@ -69,12 +69,13 @@ class VQL
     {
         int                       res_count;
 
-        void delegate(string uri, string msg) dg;
-        void collect_subject(string uri, string msg)
+        void delegate(string uri) dg;
+        void collect_subject(string uri)
         {
             Individual individual = Individual();
 
-            cbor2individual(&individual, msg);
+            string data = context.get_subject_as_cbor(uri);
+            cbor2individual(&individual, data);
 
             individuals ~= individual.idup;
         }
@@ -90,8 +91,8 @@ class VQL
     {
         int                       res_count;
 
-        void delegate(string uri, string msg) dg;
-        void collect_subject(string uri, string msg)
+        void delegate(string uri) dg;
+        void collect_subject(string uri)
         {
             ids ~= uri;
         }
@@ -139,15 +140,16 @@ class VQL
 
         if (type_source == XAPIAN)
         {
-            void delegate(string uri, string msg) dg;
-            void collect_subject(string _uri, string msg)
+            void delegate(string uri) dg;
+            void collect_subject(string _uri)
             {
                 //writeln ("lmg=", cast(void*)lmg);
-                string     uri = add_cbor_to_lmultidigraph(lmg, msg);
+                string data = context.get_subject_as_cbor(_uri);
+                string     uri = add_cbor_to_lmultidigraph(lmg, data);
 
                 Individual individual = Individual();
 
-                cbor2individual(&individual, msg);
+                cbor2individual(&individual, data);
 
                 individuals[ uri ] = individual.idup;
             }
@@ -220,10 +222,11 @@ class VQL
         }
         else if (type_source == XAPIAN)
         {
-            void delegate(string uri, string msg) dg;
-            void collect_subject(string uri, string msg)
+            void delegate(string uri) dg;
+            void collect_subject(string uri)
             {
-                res.addSubject(cbor2subject(msg));
+            	string data = context.get_subject_as_cbor(uri);
+                res.addSubject(cbor2subject(data));
             }
             dg = &collect_subject;
 

@@ -342,7 +342,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string uri, string cbor_subject) add_out_element,
+                                                 ref string[ string ] fields, void delegate(string uri) add_out_element,
                                                  Context context)
 {
     int read_count = 0;
@@ -378,13 +378,13 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 //              writeln ("@subject_id:", subject_id);
             if (context.authorize(subject_id, ticket, Access.can_read))
             {
-                string msg = context.get_subject_as_cbor(subject_id);
+//                string msg = context.get_subject_as_cbor(subject_id);
 
-                if (msg !is null)
-                {
-                    add_out_element(subject_id, msg);
+//                if (msg !is null)
+//                {
+                    add_out_element(subject_id/*, msg*/);
                     read_count++;
-                }
+//                }
             }
 
             it.next(&err);
@@ -402,11 +402,11 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 //    writeln ("@ read_count=", read_count);
     return read_count;
 }
-
+/*
 public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string uri, string cbor_subject) add_out_element,
+                                                 ref string[ string ] fields, void delegate(string uri) add_out_element,
                                                  Tid tid_subject_manager,
                                                  Tid tid_acl_manager)
 {
@@ -529,7 +529,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 //    writeln ("@ read_count=", read_count);
     return read_count;
 }
-
+*/
 string get_query_description(XapianQuery query)
 {
     if (query !is null)

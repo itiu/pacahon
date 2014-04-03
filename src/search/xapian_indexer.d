@@ -233,7 +233,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
     while (true)
     {
-        receive((CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
+        receive(
+        		/*(CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
                 {
                     //writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
                     //writeln ("@xapian_indexer:key2slot=", key2slot);
@@ -252,8 +253,8 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
                             XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
 
-                            void delegate(string uri, string msg) dg;
-                            void collect_subject(string uri, string msg)
+                            void delegate(string uri) dg;
+                            void collect_subject(string uri)
                             {
                                 send(tid_sender, CMD.PUT, msg);
                             }
@@ -280,7 +281,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
 
                         send(tid_sender, CMD.END_DATA);
                     }
-                },
+                }, */
                 (CMD cmd, string msg)
                 {
                     //writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);
@@ -530,7 +531,7 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                             destroy_Document(doc);
                         }
                     }
-                });
+                }, (Variant v) { writeln("xapian_indexer::Received some other type."); });
     }
 }
 
