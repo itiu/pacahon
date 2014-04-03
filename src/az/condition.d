@@ -79,9 +79,9 @@ public void condition_thread(string props_file_name)
     try
     {
         // SEND ready
-        receive((Tid tid_response_reciever)
+        receive((Tid tid_response_receiver)
                 {
-                    send(tid_response_reciever, true);
+                    send(tid_response_receiver, true);
                 });
 
         while (true)
@@ -120,11 +120,11 @@ public void condition_thread(string props_file_name)
 
                                 //clear_script_data_cache ();
                             }
-                        });
+                        }, (Variant v) { writeln("condition::Received some other type.", v); });
             }
             catch (Exception ex)
             {
-                writeln("EX! condition: recieve");
+                writeln("EX! condition: receive");
             }
         }
     }

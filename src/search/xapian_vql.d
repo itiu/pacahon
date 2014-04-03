@@ -347,8 +347,8 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 {
     int read_count = 0;
 
-    //StopWatch sw;
-    //sw.start();
+    StopWatch sw;
+    sw.start();
 
     writeln("@query=", get_query_description(query));
 
@@ -390,9 +390,9 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
             it.next(&err);
         }
 
-        //sw.stop();
-        //long t = cast(long) sw.peek().usecs;
-        //writeln("1 execute:", t, " µs");
+        sw.stop();
+        long t = cast(long) sw.peek().usecs;
+        writeln("total time execute query:", t, " µs");
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);

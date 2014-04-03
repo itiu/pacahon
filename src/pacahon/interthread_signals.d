@@ -51,7 +51,7 @@ public void interthread_signals_thread()
                         str_signals[ key ] = value;
                         writeln("@set signal ", key, "=", value);
                     }
-                }
+                }, (Variant v) { writeln("interthread_signals::Received some other type.", v); }
                 );
     }
 }

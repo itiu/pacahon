@@ -62,7 +62,7 @@ void statistic_data_accumulator()
                     {
                         send(tid_sender, cast(immutable)stat.dup);
                     }
-                });
+                }, (Variant v) { writeln("load_info::Received some other type.", v); });
     }
 }
 

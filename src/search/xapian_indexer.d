@@ -67,7 +67,7 @@ public void xapian_thread_context()
                             send(tid_sender, last_update_time);
                         }
                     }
-                });
+                }, (Variant v) { writeln("xapian_indexer::Received some other type.", v); });
     }
 }
 

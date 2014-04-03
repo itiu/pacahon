@@ -70,7 +70,7 @@ public void individuals_manager(string db_path)
                     {
                         writeln("individuals_manager:EX!", ex.msg);
                     }
-                });
+                }, (Variant v) { writeln("storage_thread::Received some other type.", v); });
     }
 }
 
