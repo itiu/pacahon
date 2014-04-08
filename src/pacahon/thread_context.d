@@ -625,16 +625,16 @@ class PThreadContext : Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
-    immutable (string)[] get_individuals_ids_via_query(string query_str, string sticket)
+    immutable(string)[] get_individuals_ids_via_query(string query_str, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
         return get_individuals_ids_via_query(query_str, ticket);
     }
 
-    immutable (string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
+    immutable(string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
     {
-        immutable (string)[] res;
+        immutable(string)[] res;
         if (query_str.indexOf(' ') <= 0)
             query_str = "'*' == '" ~ query_str ~ "'";
 
@@ -663,7 +663,7 @@ class PThreadContext : Context
 
     Individual get_individual(string uri, string sticket)
     {
-        Ticket *ticket = get_ticket(sticket);
+        Ticket     *ticket = get_ticket(sticket);
 
         Individual individual = get_individual(uri, ticket);
 
@@ -672,11 +672,11 @@ class PThreadContext : Context
 
     Individual[] get_individuals(string[] uris, string sticket)
     {
-    	Individual[] res = Individual[].init;
-        Ticket *ticket = get_ticket(sticket);
-        
-        foreach (uri ; uris)
-        	res ~= get_individual(uri, ticket);
+        Individual[] res     = Individual[].init;
+        Ticket       *ticket = get_ticket(sticket);
+
+        foreach (uri; uris)
+            res ~= get_individual(uri, ticket);
 
         return res;
     }
@@ -685,97 +685,130 @@ class PThreadContext : Context
     {
         Individual individual = Individual.init;
 
-        if (acl_indexes.authorize (uri, ticket, Access.can_read) == true)
-        {	        
-        	string     individual_as_cbor = get_subject_as_cbor(uri);
+        if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+        {
+            string individual_as_cbor = get_subject_as_cbor(uri);
 
-        	if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-        		cbor2individual(&individual, individual_as_cbor);
+            if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                cbor2individual(&individual, individual_as_cbor);
         }
         return individual;
     }
 
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool expect_completion, bool prepareEvents =
+                                           true)
     {
-    	// TODO | при сохранении документа типа veda-schema:PermissionStatement или veda-schema:Membership,
-    	// 		| проверить в индексе ACL модуля наличие подобных данных
-    	
-        if (indv is null && ss_as_cbor is null)
-            return ResultCode.No_Content;
+        // TODO | при сохранении документа типа veda-schema:PermissionStatement или veda-schema:Membership,
+        //      | проверить в индексе ACL модуля наличие подобных данных
 
-        if (ss_as_cbor is null)
-            ss_as_cbor = individual2cbor(indv);
+        Tid tid_subject_manager;
+        Tid tid_acl;
+        Tid tid_condition;
 
-        if (indv is null && ss_as_cbor !is null)
+        try
         {
-            Individual tmp_indv;
-            indv = &tmp_indv;
-            cbor2individual(indv, ss_as_cbor);
-        }
+            if (indv is null && ss_as_cbor is null)
+                return ResultCode.No_Content;
 
-        if (indv is null && ss_as_cbor is null)
-            return ResultCode.No_Content;
+            if (ss_as_cbor is null)
+                ss_as_cbor = individual2cbor(indv);
 
-        Resources rdfType = indv.resources[rdf__type];
-
-        // before storing the data, expected availability acl_manager.
-        Tid tid_acl = getTid(THREAD.acl_manager);
-        send(tid_acl, CMD.NOP, thisTid);
-        receive((bool res) {});
-                    
-        if (rdfType.anyExist(veda_schema__Membership) == true)
-        {
-        	if (this.acl_indexes.isExistMemberShip (indv) == true)
-        		return ResultCode.Duplicate_Key;
-        }
-        else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
-        {
-        	if (this.acl_indexes.isExistPermissionStatement (indv) == true)
-        		return ResultCode.Duplicate_Key;
-        }
-
-        EVENT ev = EVENT.NONE;
-
-        Tid   tid_subject_manager = getTid(THREAD.subject_manager);
-
-        if (tid_subject_manager != Tid.init)
-        {
-            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-            receive((EVENT _ev, Tid from)
-                    {
-                        if (from == tids[ THREAD.subject_manager ])
-                            ev = _ev;
-                    });
-        }
-
-        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
-        {
-            Tid tid_search_manager = getTid(THREAD.xapian_indexer);
-
-            if (tid_search_manager != Tid.init)
+            if (indv is null && ss_as_cbor !is null)
             {
-                send(tid_search_manager, CMD.STORE, ss_as_cbor);
-
-                if (prepareEvents == true)
-                    bus_event_after(indv, ss_as_cbor, ev, this);
+                Individual tmp_indv;
+                indv = &tmp_indv;
+                cbor2individual(indv, ss_as_cbor);
             }
-            return ResultCode.OK;
+
+            if (indv is null && ss_as_cbor is null)
+                return ResultCode.No_Content;
+
+            Resources rdfType = indv.resources[ rdf__type ];
+
+            // before storing the data, expected availability acl_manager.
+            tid_acl = getTid(THREAD.acl_manager);
+            send(tid_acl, CMD.NOP, thisTid);
+            receive((bool res) {});
+
+            if (rdfType.anyExist(veda_schema__Membership) == true)
+            {
+                if (this.acl_indexes.isExistMemberShip(indv) == true)
+                    return ResultCode.Duplicate_Key;
+            }
+            else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
+            {
+                if (this.acl_indexes.isExistPermissionStatement(indv) == true)
+                    return ResultCode.Duplicate_Key;
+            }
+
+            EVENT ev = EVENT.NONE;
+
+            tid_subject_manager = getTid(THREAD.subject_manager);
+
+            if (tid_subject_manager != Tid.init)
+            {
+                send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+                receive((EVENT _ev, Tid from)
+                        {
+                            if (from == tids[ THREAD.subject_manager ])
+                                ev = _ev;
+                        });
+            }
+
+            if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
+            {
+                Tid tid_search_manager = getTid(THREAD.xapian_indexer);
+
+                if (tid_search_manager != Tid.init)
+                {
+                    send(tid_search_manager, CMD.STORE, ss_as_cbor);
+
+                    if (prepareEvents == true)
+                        bus_event_after(indv, ss_as_cbor, ev, this);
+                }
+                return ResultCode.OK;
+            }
+            else
+            {
+                writeln("Ex! store_subject:", ev);
+                return ResultCode.Internal_Server_Error;
+            }
         }
-        else
+        finally
         {
-            writeln("Ex! store_subject:", ev);
-            return ResultCode.Internal_Server_Error;
+            if (expect_completion == true)
+            {
+                tid_condition = this.getTid(THREAD.condition);
+                writeln("WAIT READY CONDITION STORAGE");
+                send(tid_condition, CMD.NOP, thisTid);
+                receive((bool res) {});
+                writeln("OK");
+                if (tid_subject_manager != Tid.init)
+                {
+                    writeln("WAIT READY SUBJECT STORAGE");
+                    send(tid_subject_manager, CMD.NOP, "", thisTid);
+                    receive((bool) { });
+                    writeln("OK");
+                }
+                if (tid_acl != Tid.init)
+                {
+                    writeln("WAIT READY ACL STORAGE");
+                    send(tid_acl, CMD.NOP, thisTid);
+                    receive((bool res) {});
+                    writeln("OK");
+                }
+            }
         }
     }
 
-    ResultCode put_individual(string uri, Individual individual, string ticket)
+    ResultCode put_individual(string ticket, string uri, Individual individual, bool expect_completion)
     {
         individual.uri = uri;
-        return store_individual(ticket, &individual, null);
+        return store_individual(ticket, &individual, null, expect_completion);
     }
 
-    ResultCode post_individual(Individual individual, string ticket)
+    ResultCode post_individual(string ticket, Individual individual, bool expect_completion)
     {
-        return store_individual(ticket, &individual, null);
+        return store_individual(ticket, &individual, null, expect_completion);
     }
 }

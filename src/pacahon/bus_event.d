@@ -27,23 +27,6 @@ void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type,
 {
     //writeln ("@bus_event B subject_as_cbor=[", subject_as_cbor, "]");
 
-    Tid tid_condition = context.getTid(THREAD.condition);
-
-    if (tid_condition != Tid.init)
-    {
-//		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
-        try
-        {
-//			 core.thread.Thread.sleep(dur!("seconds")(10));
-            // отправляем информацию об изменении индивидуала в модуль авторизации
-            send(tid_condition, type, subject_as_cbor);
-        }
-        catch (Exception ex)
-        {
-            writeln("EX!bus_event:", ex.msg);
-        }
-    }
-
     Resources rdfType = individual.resources[ rdf__type ];
 
     //writeln (rdfType);
@@ -70,6 +53,21 @@ void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type,
         }
     }
 
+    Tid tid_condition = context.getTid(THREAD.condition);
+    if (tid_condition != Tid.init)
+    {
+//		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
+        try
+        {
+//			 core.thread.Thread.sleep(dur!("seconds")(10));
+            // отправляем информацию об изменении индивидуала в модуль авторизации
+            send(tid_condition, type, subject_as_cbor);
+        }
+        catch (Exception ex)
+        {
+            writeln("EX!bus_event:", ex.msg);
+        }
+    }
     //writeln ("#bus_event E");
 }
 

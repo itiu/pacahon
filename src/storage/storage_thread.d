@@ -34,7 +34,7 @@ public void individuals_manager(string db_path)
     receive((Tid tid_response_reciever)
             {
                 send(tid_response_reciever, true);
-            });
+            });     
 
     while (true)
     {
@@ -42,7 +42,11 @@ public void individuals_manager(string db_path)
                 {
                     try
                     {
-                        if (cmd == CMD.STORE)
+                    	if (cmd == CMD.NOP)
+                    	{
+                                send(tid_response_reciever, true);
+                    	}
+                        else if (cmd == CMD.STORE)
                         {
                             try
                             {

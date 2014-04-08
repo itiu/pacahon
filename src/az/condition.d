@@ -90,7 +90,14 @@ public void condition_thread(string props_file_name)
             {
                 ScriptVM script_vm = context.get_ScriptVM();
 
-                receive((EVENT type, string msg)
+                receive((CMD cmd, Tid to)
+                        {
+                            if (cmd == CMD.NOP)
+                                send(to, true);
+                            else
+                                send(to, false);
+                        },
+                        (EVENT type, string msg)
                         {
                             //writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
                             if (msg !is null && msg.length > 3 && script_vm !is null)

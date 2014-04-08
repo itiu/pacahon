@@ -21,7 +21,7 @@ enum CMD : byte
     AUTHORIZE = 8,
     COMMIT    = 16,
     END_DATA  = 32,
-    NOP		  = 34	
+    NOP       = 64
 }
 
 enum THREAD : string
@@ -46,12 +46,12 @@ enum ResultCode
     Bad_Request           = 400,
     Forbidden             = 403,
     Not_Found             = 404,
-    Unprocessable_Entity  = 422, 
+    Unprocessable_Entity  = 422,
     Internal_Server_Error = 500,
     Not_Implemented       = 501,
     Service_Unavailable   = 503,
-    Disk_Full			  = 1021,
-    Duplicate_Key 		  = 1022
+    Disk_Full             = 1021,
+    Duplicate_Key         = 1022
 }
 
 static THREAD[ 8 ] THREAD_LIST =
@@ -139,19 +139,20 @@ interface Context
     bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool expect_completion, bool prepareEvents =
+                                           true);
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);
 
-    public immutable (string)[] get_individuals_ids_via_query(string query_str, string sticket);
-    public immutable (string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket);
-    
+    public immutable(string)[]     get_individuals_ids_via_query(string query_str, string sticket);
+    public immutable(string)[]     get_individuals_ids_via_query(string query_str, Ticket * ticket);
+
     public Individual get_individual(string uri, Ticket *ticket);
     public Individual get_individual(string uri, string sticket);
     public Individual[] get_individuals(string[] uris, string sticket);
 
 
-    public ResultCode put_individual(string uri, Individual individual, string ticket);
-    public ResultCode post_individual(Individual individual, string ticket);
+    public ResultCode put_individual(string ticket, string uri, Individual individual, bool expect_completion);
+    public ResultCode post_individual(string ticket, Individual individual, bool expect_completion);
 }
 
