@@ -282,6 +282,13 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
                         send(tid_sender, CMD.END_DATA);
                     }
                 }, */
+                (CMD cmd, Tid tid_response_reciever)
+                {
+                    if (cmd == CMD.NOP)
+                        send(tid_response_reciever, true);
+                    else    
+                        send(tid_response_reciever, false);
+                },
                 (CMD cmd, string msg)
                 {
                     //writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);

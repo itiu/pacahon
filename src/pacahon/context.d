@@ -9,7 +9,7 @@ private import onto.individual;
 private import onto.sgraph;
 private import pacahon.define;
 
-import bind.v8d_header;
+private import bind.v8d_header;
 
 enum CMD : byte
 {
@@ -30,7 +30,7 @@ enum THREAD : string
     subject_manager            = "subject_manager",
     acl_manager                = "acl_manager",
     xapian_thread_context      = "xapian_thread_context",
-    xapian_indexer             = "xapian_indexer",
+    fulltext_indexer           = "fulltext_indexer",
     statistic_data_accumulator = "statistic_data_accumulator",
     condition                  = "condition",
     xapian_indexer_commiter    = "xapian_indexer_commiter",
@@ -54,10 +54,10 @@ enum ResultCode
     Duplicate_Key         = 1022
 }
 
-static THREAD[ 8 ] THREAD_LIST =
+static THREAD[ 8 ] REGISTRED_THREAD_LIST =
 [
     THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context,
-    THREAD.xapian_indexer, THREAD.statistic_data_accumulator, THREAD.condition, THREAD.interthread_signals
+    THREAD.fulltext_indexer, THREAD.statistic_data_accumulator, THREAD.condition, THREAD.interthread_signals
 ];
 
 struct Ticket
@@ -139,8 +139,7 @@ interface Context
     bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool expect_completion, bool prepareEvents =
-                                           true);
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);
 
@@ -152,7 +151,9 @@ interface Context
     public Individual[] get_individuals(string[] uris, string sticket);
 
 
-    public ResultCode put_individual(string ticket, string uri, Individual individual, bool expect_completion);
-    public ResultCode post_individual(string ticket, Individual individual, bool expect_completion);
+    public ResultCode put_individual(string ticket, string uri, Individual individual);
+    public ResultCode post_individual(string ticket, Individual individual);
+
+    public void wait_thread (THREAD thread_id);
 }
 

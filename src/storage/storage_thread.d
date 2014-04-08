@@ -38,15 +38,19 @@ public void individuals_manager(string db_path)
 
     while (true)
     {
-        receive((CMD cmd, string msg, Tid tid_response_reciever)
+        receive(
+                (CMD cmd, Tid tid_response_reciever)
+                {
+                    if (cmd == CMD.NOP)
+                        send(tid_response_reciever, true);
+                    else    
+                        send(tid_response_reciever, false);
+                },
+                (CMD cmd, string msg, Tid tid_response_reciever)
                 {
                     try
                     {
-                    	if (cmd == CMD.NOP)
-                    	{
-                                send(tid_response_reciever, true);
-                    	}
-                        else if (cmd == CMD.STORE)
+                        if (cmd == CMD.STORE)
                         {
                             try
                             {

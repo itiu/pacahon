@@ -82,7 +82,7 @@ class PThreadContext : Context
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
 
-        foreach (tid_name; THREAD_LIST)
+        foreach (tid_name; REGISTRED_THREAD_LIST)
         {
             tids[ tid_name ] = locate(tid_name);
         }
@@ -692,18 +692,11 @@ class PThreadContext : Context
         return individual;
     }
 
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool expect_completion, bool prepareEvents =
-                                           true)
+    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
-        // TODO | при сохранении документа типа veda-schema:PermissionStatement или veda-schema:Membership,
-        //      | проверить в индексе ACL модуля наличие подобных данных
-
         Tid tid_subject_manager;
         Tid tid_acl;
-        Tid tid_condition;
 
-        try
-        {
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
 
@@ -754,7 +747,7 @@ class PThreadContext : Context
 
             if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
             {
-                Tid tid_search_manager = getTid(THREAD.xapian_indexer);
+                Tid tid_search_manager = getTid(THREAD.fulltext_indexer);
 
                 if (tid_search_manager != Tid.init)
                 {
@@ -770,42 +763,29 @@ class PThreadContext : Context
                 writeln("Ex! store_subject:", ev);
                 return ResultCode.Internal_Server_Error;
             }
-        }
-        finally
-        {
-            if (expect_completion == true)
-            {
-                tid_condition = this.getTid(THREAD.condition);
-//                writeln("WAIT READY CONDITION STORAGE");
-                send(tid_condition, CMD.NOP, thisTid);
-                receive((bool res) {});
-//                writeln("OK");
-                if (tid_subject_manager != Tid.init)
-                {
-//                    writeln("WAIT READY SUBJECT STORAGE");
-                    send(tid_subject_manager, CMD.NOP, "", thisTid);
-                    receive((bool) { });
-//                    writeln("OK");
-                }
-                if (tid_acl != Tid.init)
-                {
-//                    writeln("WAIT READY ACL STORAGE");
-                    send(tid_acl, CMD.NOP, thisTid);
-                    receive((bool res) {});
-//                    writeln("OK");
-                }
-            }
-        }
     }
 
-    ResultCode put_individual(string ticket, string uri, Individual individual, bool expect_completion)
+    ResultCode put_individual(string ticket, string uri, Individual individual)
     {
         individual.uri = uri;
-        return store_individual(ticket, &individual, null, expect_completion);
+        return store_individual(ticket, &individual, null);
     }
 
-    ResultCode post_individual(string ticket, Individual individual, bool expect_completion)
+    ResultCode post_individual(string ticket, Individual individual)
     {
-        return store_individual(ticket, &individual, null, expect_completion);
+        return store_individual(ticket, &individual, null);
+    }
+    
+    public void wait_thread(THREAD thread_id)
+    {
+        Tid tid = this.getTid(THREAD.condition);
+                
+        if (tid != Tid.init)
+        {
+                writeln("WAIT READY THREAD ", thread_id);
+                send(tid, CMD.NOP, thisTid);
+                receive((bool res) {});
+                writeln("OK");
+        }	
     }
 }

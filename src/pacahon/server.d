@@ -112,11 +112,11 @@ void init_core()
         tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
         wait_starting_thread(THREAD.xapian_thread_context, tids);
 
-        tids[ THREAD.xapian_indexer ] =
+        tids[ THREAD.fulltext_indexer ] =
             spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
-        wait_starting_thread(THREAD.xapian_indexer, tids);
+        wait_starting_thread(THREAD.fulltext_indexer, tids);
 
-        tids[ THREAD.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ THREAD.xapian_indexer ]);
+        tids[ THREAD.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ THREAD.fulltext_indexer ]);
         wait_starting_thread(THREAD.xapian_indexer_commiter, tids);
 
         tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);

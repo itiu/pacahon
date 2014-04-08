@@ -383,6 +383,8 @@ void acl_manager()
                 {
                     if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
+                    else    
+                        send(tid_response_reciever, false);
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
