@@ -685,11 +685,13 @@ class PThreadContext : Context
     {
         Individual individual = Individual.init;
 
-        string     individual_as_cbor = get_subject_as_cbor(uri);
+        if (acl_indexes.authorize (uri, ticket, Access.can_read) == true)
+        {	        
+        	string     individual_as_cbor = get_subject_as_cbor(uri);
 
-        if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-            cbor2individual(&individual, individual_as_cbor);
-
+        	if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+        		cbor2individual(&individual, individual_as_cbor);
+        }
         return individual;
     }
 
