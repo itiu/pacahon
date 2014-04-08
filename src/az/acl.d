@@ -13,6 +13,7 @@ private
     import util.utils;
     import util.cbor;
     import util.cbor8individual;
+    import util.logger;
 
     import pacahon.context;
     import pacahon.define;
@@ -31,6 +32,13 @@ private
                 permissionObject + permissionSubject
 *********************************************************************/
 byte err;
+
+logger log;
+
+static this()
+{
+    log = new logger("pacahon", "log", "acl");
+}
 
 class Authorization : LmdbStorage
 {
@@ -80,7 +88,7 @@ class Authorization : LmdbStorage
 
         if (need_found_count == 0)
         {
-            writeln("MemberShip already exist:", *membership);
+            //writeln("MemberShip already exist:", *membership);
             return true;
         }
         else
@@ -142,7 +150,7 @@ class Authorization : LmdbStorage
         }
         else
         {
-            writeln("@ PermissionStatement already exist:", *prst);
+            //writeln("@ PermissionStatement already exist:", *prst);
             return true;
         }
     }
@@ -258,13 +266,6 @@ class Authorization : LmdbStorage
     }
 }
 
-logger log;
-
-static this()
-{
-    log = new logger("pacahon", "log", "server");
-}
-
 void acl_manager()
 {
 //    writeln("SPAWN: acl manager");
@@ -340,7 +341,7 @@ void acl_manager()
 
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
-                            writeln("[index] ++ ACL:", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                            log.trace_log_and_console("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -372,8 +373,8 @@ void acl_manager()
                                     outbuff.write(';');
                                 }
 
-                                storage.put(rs.uri, outbuff.toString());
-                                writeln("[index] ++ MemberShip: ", rs.uri, " : ", outbuff.toString());
+                               storage.put(rs.uri, outbuff.toString());
+                               log.trace_log_and_console("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
                             }
                         }
                     }

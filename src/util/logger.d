@@ -191,7 +191,7 @@ public class LoggerQueue
 
         auto writer = appender!string();
 
-        formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d]\n%s\n", year, month, day, hour, minute, second, usecs, str_io);
+        formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%06d]\n%s\n", year, month, day, hour, minute, second, usecs, str_io);
 
         fwrite(cast(char *)writer.data, 1, writer.data.length, ff);
 
@@ -227,9 +227,9 @@ public class LoggerQueue
         auto writer = appender!string();
 
         if (src.length > 0)
-            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] [%s] ", year, month, day, hour, minute, second, usecs, src);
+            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%06d] [%s] ", year, month, day, hour, minute, second, usecs, src);
         else
-            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%03d] ", year, month, day, hour, minute, second, usecs);
+            formattedWrite(writer, "[%04d-%02d-%02d %02d:%02d:%02d.%06d] ", year, month, day, hour, minute, second, usecs);
 
         writer.put(arg);
         writer.put(cast(char)0);

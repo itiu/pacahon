@@ -11,6 +11,14 @@ import pacahon.context;
 import pacahon.define;
 import onto.sgraph;
 import storage.lmdb_storage;
+import util.logger;
+
+logger log;
+
+static this()
+{
+    log = new logger("pacahon", "log", "xapian");
+}
 
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
@@ -392,7 +400,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
         sw.stop();
         long t = cast(long) sw.peek().usecs;
-        writeln("total time execute query:", t, " µs");
+        //log.trace_log_and_console("total time execute query: %s µs", text(t));
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);

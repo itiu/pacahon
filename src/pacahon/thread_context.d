@@ -4,6 +4,9 @@ private
 {
     import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file;
 
+    import bind.xapian_d_header;
+    import bind.v8d_header;
+
     import io.mq_client;
     import util.container;
     import util.json_ld_parser;
@@ -12,9 +15,6 @@ private
     import util.cbor;
     import util.cbor8sgraph;
     import util.cbor8individual;
-
-//    import storage.tickets;
-    import bind.xapian_d_header;
 
     import pacahon.know_predicates;
     import pacahon.define;
@@ -26,11 +26,8 @@ private
     import onto.individual;
     import onto.sgraph;
     import onto.resource;
-    //	import search.vql;
     import storage.lmdb_storage;
     import az.acl;
-
-    import bind.v8d_header;
 }
 
 logger log;
@@ -497,7 +494,7 @@ class PThreadContext : Context
 
     Ticket authenticate(string login, string password)
     {
-        writeln("@authenticate, login=", login, ", password=", password);
+//        writeln("@authenticate, login=", login, ", password=", password);
 
         Ticket                  ticket;
         Ticket                  *sys_ticket;
@@ -522,7 +519,7 @@ class PThreadContext : Context
                 new_ticket.addPredicate(ticket__when, getNowAsString());
                 new_ticket.addPredicate(ticket__duration, "40000");
 
-                writeln("@authenticate, ticket__accessor=", user_id);
+//                writeln("@authenticate, ticket__accessor=", user_id);
 
                 // store ticket
                 string ss_as_cbor = subject2cbor(new_ticket);
@@ -779,23 +776,23 @@ class PThreadContext : Context
             if (expect_completion == true)
             {
                 tid_condition = this.getTid(THREAD.condition);
-                writeln("WAIT READY CONDITION STORAGE");
+//                writeln("WAIT READY CONDITION STORAGE");
                 send(tid_condition, CMD.NOP, thisTid);
                 receive((bool res) {});
-                writeln("OK");
+//                writeln("OK");
                 if (tid_subject_manager != Tid.init)
                 {
-                    writeln("WAIT READY SUBJECT STORAGE");
+//                    writeln("WAIT READY SUBJECT STORAGE");
                     send(tid_subject_manager, CMD.NOP, "", thisTid);
                     receive((bool) { });
-                    writeln("OK");
+//                    writeln("OK");
                 }
                 if (tid_acl != Tid.init)
                 {
-                    writeln("WAIT READY ACL STORAGE");
+//                    writeln("WAIT READY ACL STORAGE");
                     send(tid_acl, CMD.NOP, thisTid);
                     receive((bool res) {});
-                    writeln("OK");
+//                    writeln("OK");
                 }
             }
         }
