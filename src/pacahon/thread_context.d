@@ -345,19 +345,19 @@ class PThreadContext : Context
 
         if (res == Tid.init)
         {
-        	// tid not found, attempt restore
-        	Tid tmp_tid = locate (text(tid_id)); 
+            // tid not found, attempt restore
+            Tid tmp_tid = locate(text(tid_id));
 
-        	if (tmp_tid == Tid.init)
-        	{ 
-        		writeln("!!! NOT FOUND TID=", text(tid_id), "\n", name_2_tids, ", locate=1 ", );
-        		throw new Exception("!!! NOT FOUND TID=" ~ text(tid_id));
+            if (tmp_tid == Tid.init)
+            {
+                writeln("!!! NOT FOUND TID=", text(tid_id), "\n", name_2_tids, ", locate=1 ", );
+                throw new Exception("!!! NOT FOUND TID=" ~ text(tid_id));
             }
-        	else
-        	{
-        		name_2_tids[tid_id] = tmp_tid;
-        		return tmp_tid;
-        	}
+            else
+            {
+                name_2_tids[ tid_id ] = tmp_tid;
+                return tmp_tid;
+            }
             //assert(false);
         }
         return res;
@@ -722,17 +722,19 @@ class PThreadContext : Context
 
         Resources rdfType = indv.resources[ rdf__type ];
 
-        // before storing the data, expected availability acl_manager.
-    	//writeln ("@ put_individual:", indv.uri);
-        wait_thread(P_MODULE.acl_manager);
+        //writeln ("@ put_individual:", indv.uri);
 
         if (rdfType.anyExist(veda_schema__Membership) == true)
         {
+            // before storing the data, expected availability acl_manager.
+            wait_thread(P_MODULE.acl_manager);
             if (this.acl_indexes.isExistMemberShip(indv) == true)
                 return ResultCode.Duplicate_Key;
         }
         else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
         {
+            // before storing the data, expected availability acl_manager.
+            wait_thread(P_MODULE.acl_manager);
             if (this.acl_indexes.isExistPermissionStatement(indv) == true)
                 return ResultCode.Duplicate_Key;
         }
@@ -760,8 +762,8 @@ class PThreadContext : Context
 
             if (prepareEvents == true)
             {
-            	bus_event_after(indv, ss_as_cbor, ev, this);
-            }	
+                bus_event_after(indv, ss_as_cbor, ev, this);
+            }
 
             return ResultCode.OK;
         }
@@ -789,10 +791,10 @@ class PThreadContext : Context
 
         if (tid != Tid.init)
         {
-            writeln("WAIT READY THREAD ", thread_id);
+//            writeln("WAIT READY THREAD ", thread_id);
             send(tid, CMD.NOP, thisTid);
             receive((bool res) {});
-            writeln("OK");
+//            writeln("OK");
         }
     }
 }
