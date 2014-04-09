@@ -339,14 +339,25 @@ class PThreadContext : Context
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    public Tid getTid(P_MODULE tid_name)
+    public Tid getTid(P_MODULE tid_id)
     {
-        Tid res = name_2_tids.get(tid_name, Tid.init);
+        Tid res = name_2_tids.get(tid_id, Tid.init);
 
         if (res == Tid.init)
         {
-            writeln("!!! NOT FOUND TID=", text(tid_name));
-            throw new Exception("!!! NOT FOUND TID=" ~ text(tid_name));
+        	// tid not found, attempt restore
+        	Tid tmp_tid = locate (text(tid_id)); 
+
+        	if (tmp_tid == Tid.init)
+        	{ 
+        		writeln("!!! NOT FOUND TID=", text(tid_id), "\n", name_2_tids, ", locate=1 ", );
+        		throw new Exception("!!! NOT FOUND TID=" ~ text(tid_id));
+            }
+        	else
+        	{
+        		name_2_tids[tid_id] = tmp_tid;
+        		return tmp_tid;
+        	}
             //assert(false);
         }
         return res;
@@ -712,9 +723,8 @@ class PThreadContext : Context
         Resources rdfType = indv.resources[ rdf__type ];
 
         // before storing the data, expected availability acl_manager.
-        tid_acl = getTid(P_MODULE.acl_manager);
-        send(tid_acl, CMD.NOP, thisTid);
-        receive((bool res) {});
+    	//writeln ("@ put_individual:", indv.uri);
+        wait_thread(P_MODULE.acl_manager);
 
         if (rdfType.anyExist(veda_schema__Membership) == true)
         {
@@ -746,12 +756,13 @@ class PThreadContext : Context
             Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
 
             if (tid_search_manager != Tid.init)
-            {
                 send(tid_search_manager, CMD.STORE, ss_as_cbor);
 
-                if (prepareEvents == true)
-                    bus_event_after(indv, ss_as_cbor, ev, this);
-            }
+            if (prepareEvents == true)
+            {
+            	bus_event_after(indv, ss_as_cbor, ev, this);
+            }	
+
             return ResultCode.OK;
         }
         else
@@ -774,7 +785,7 @@ class PThreadContext : Context
 
     public void wait_thread(P_MODULE thread_id)
     {
-        Tid tid = this.getTid(P_MODULE.condition);
+        Tid tid = this.getTid(thread_id);
 
         if (tid != Tid.init)
         {

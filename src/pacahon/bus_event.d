@@ -25,7 +25,7 @@ int count;
 
 void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type, Context context)
 {
-    //writeln ("@bus_event B subject_as_cbor=[", subject_as_cbor, "]");
+    //writeln ("@bus_event B subject_as_cbor=[", individual.uri, "]");
 
     Resources rdfType = individual.resources[ rdf__type ];
 
@@ -60,7 +60,6 @@ void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type,
         try
         {
 //			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
-            // отправляем информацию об изменении индивидуала в модуль авторизации
             send(tid_condition, type, subject_as_cbor);
         }
         catch (Exception ex)

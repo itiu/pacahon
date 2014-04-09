@@ -56,7 +56,7 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
 //      writeln ("@Q ticket=", ticket);
 //      writeln ("@Q cbor=", cbor);
 
-        return g_context.store_individual(ticket, null, cbor, false);
+        return g_context.store_individual(ticket, null, cbor);
     }
     return ResultCode.Service_Unavailable;
 }
