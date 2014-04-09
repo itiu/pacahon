@@ -46,9 +46,7 @@ class PThreadContext : Context
 {
     /// deprecated vvv
     private Ticket *[ string ] user_of_ticket;
-    private          string[ string ] cache__subject_creator;
-    private bool     use_caching_of_documents = false;
-    private Subjects _ba2pacahon_records;
+    private bool use_caching_of_documents = false;
     /// deprecated ^^^
 
     // // // authorization
@@ -59,15 +57,12 @@ class PThreadContext : Context
     private OWL           owl;
     private JSONValue     props;
 
-    private int           _count_command;
-    private int           _count_message;
     private string        name;
 
     private string        old_msg_key2slot;
     private int[ string ] old_key2slot;
 
     private                string[ string ] prefix_map;
-    private Subjects       _event_filters;
 
     private LmdbStorage    inividuals_storage;
     private search.vql.VQL _vql;
@@ -83,14 +78,9 @@ class PThreadContext : Context
         writeln("CREATE NEW CONTEXT:", context_name);
 
         foreach (id; P_MODULE.min .. P_MODULE.max)
-        {
             name_2_tids[ id ] = locate(text(id));
-        }
 
-        writeln("@ name_2_tids=", name_2_tids);
-
-        _event_filters      = new Subjects();
-        _ba2pacahon_records = new Subjects();
+//        writeln("@ name_2_tids=", name_2_tids);
 
         if (property_file_path !is null)
         {
@@ -421,172 +411,9 @@ class PThreadContext : Context
         return prefix_map;
     }
 
-    @property Subjects ba2pacahon_records()
-    {
-        return _ba2pacahon_records;
-    }
-
-    @property Subjects event_filters()
-    {
-        return _event_filters;
-    }
-
     @property search.vql.VQL vql()
     {
         return _vql;
-    }
-
-    @property int count_command()
-    {
-        return _count_command;
-    }
-    @property int count_message()
-    {
-        return _count_message;
-    }
-    @property void count_command(int n)
-    {
-        _count_command = n;
-    }
-    @property void count_message(int n)
-    {
-        _count_message = n;
-    }
-
-    bool send_on_authorization(string bson_subject)
-    {
-        send(getTid(P_MODULE.acl_manager), CMD.AUTHORIZE, bson_subject, thisTid);
-        return true;
-    }
-
-/////////////////////////////////////////////////////////
-    int get_subject_creator_size()
-    {
-        return cast(int)cache__subject_creator.length;
-    }
-
-    string get_subject_creator(string pp)
-    {
-        return cache__subject_creator.get(pp, null);
-    }
-
-    void set_subject_creator(string key, string value)
-    {
-        cache__subject_creator[ key ] = value;
-    }
-/*
-    bool authorize(Ticket *ticket, Subject doc)
-    {
-        return false;        //mandat_manager.ca;
-    }
- */
-    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
-
-    bool is_ticket_valid(string ticket_id)
-    {
-//        writeln("@is_ticket_valid, ", ticket_id);
-        Ticket *ticket = get_ticket(ticket_id);
-
-        if (ticket is null)
-        {
-            return false;
-        }
-
-        SysTime now = Clock.currTime();
-        if (now.stdTime < ticket.end_time)
-            return true;
-
-        return false;
-    }
-
-    Ticket authenticate(string login, string password)
-    {
-//        writeln("@authenticate, login=", login, ", password=", password);
-
-        Ticket                  ticket;
-        Ticket                  *sys_ticket;
-
-        immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'", sys_ticket);
-        foreach (user; candidate_users)
-        {
-            string user_id = user.getFirstResource(veda_schema__owner).uri;
-            if (user_id is null)
-                continue;
-
-            iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
-            if (pass.length > 0 && pass[ 0 ].data == password)
-            {
-                Subject new_ticket = new Subject;
-                new_ticket.addPredicate(rdf__type, ticket__Ticket);
-
-                UUID new_id = randomUUID();
-                new_ticket.subject = new_id.toString();
-
-                new_ticket.addPredicate(ticket__accessor, user_id);
-                new_ticket.addPredicate(ticket__when, getNowAsString());
-                new_ticket.addPredicate(ticket__duration, "40000");
-
-//                writeln("@authenticate, ticket__accessor=", user_id);
-
-                // store ticket
-                string ss_as_cbor = subject2cbor(new_ticket);
-
-                Tid    tid_ticket_manager = getTid(P_MODULE.ticket_manager);
-
-                if (tid_ticket_manager != Tid.init)
-                {
-                    send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
-                    receive((EVENT ev, Tid from)
-                            {
-                                if (from == getTid(P_MODULE.ticket_manager))
-                                {
-//                            res = msg;
-                                    //writeln("context.store_subject:msg=", msg);
-                                    subject2Ticket(new_ticket, &ticket);
-                                    user_of_ticket[ ticket.id ] = &ticket;
-                                }
-                            });
-                }
-
-                return ticket;
-            }
-        }
-
-        return Ticket.init;
-    }
-
-    Ticket *get_ticket(string ticket_id)
-    {
-        Ticket *tt = user_of_ticket.get(ticket_id, null);
-
-        if (tt is null)
-        {
-            string when     = null;
-            int    duration = 0;
-            send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
-
-            receive((string uri, string ticket_str, Tid from)
-                    {
-                        if (ticket_str !is null && ticket_str.length > 128)
-                        {
-                            tt = new Ticket;
-                            Subject ticket = cbor2subject(ticket_str);
-                            subject2Ticket(ticket, tt);
-                            user_of_ticket[ tt.id ] = tt;
-
-//				writeln ("Ticket=",ticket);
-                        }
-                    },
-                    (Variant v) { writeln("get_ticket::Received some other type. :", v); }
-                    );
-        }
-        else
-        {
-            if (trace_msg[ 17 ] == 1)
-                log.trace("тикет нашли в кеше, %s", ticket_id);
-        }
-
-        return tt;
     }
 
     private void subject2Ticket(Subject ticket, Ticket *tt)
@@ -627,45 +454,216 @@ class PThreadContext : Context
         }
     }
 
+    private void stat(CMD command_type, ref StopWatch sw, string func = __FUNCTION__)
+    {
+        int t = cast(int)sw.peek().msecs;
+
+        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
+
+//        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
+        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
+        if (t > 1)
+            writeln(func[ (func.lastIndexOf(".") + 1)..$ ], ": t=", t, " msec");
+    }
+
+
+    // *************************************************** external api *********************************** //
+
+    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+
+    public bool is_ticket_valid(string ticket_id)
+    {
+        StopWatch sw; sw.start;
+
+        try
+        {
+//        writeln("@is_ticket_valid, ", ticket_id);
+            Ticket *ticket = get_ticket(ticket_id);
+
+            if (ticket is null)
+            {
+                return false;
+            }
+
+            SysTime now = Clock.currTime();
+            if (now.stdTime < ticket.end_time)
+                return true;
+
+            return false;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
+    }
+
+    public Ticket authenticate(string login, string password)
+    {
+        StopWatch sw; sw.start;
+
+        try
+        {
+//        writeln("@authenticate, login=", login, ", password=", password);
+
+            Ticket                  ticket;
+            Ticket                  *sys_ticket;
+
+            immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'",
+                                                                                sys_ticket);
+            foreach (user; candidate_users)
+            {
+                string user_id = user.getFirstResource(veda_schema__owner).uri;
+                if (user_id is null)
+                    continue;
+
+                iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
+                if (pass.length > 0 && pass[ 0 ].data == password)
+                {
+                    Subject new_ticket = new Subject;
+                    new_ticket.addPredicate(rdf__type, ticket__Ticket);
+
+                    UUID new_id = randomUUID();
+                    new_ticket.subject = new_id.toString();
+
+                    new_ticket.addPredicate(ticket__accessor, user_id);
+                    new_ticket.addPredicate(ticket__when, getNowAsString());
+                    new_ticket.addPredicate(ticket__duration, "40000");
+
+//                writeln("@authenticate, ticket__accessor=", user_id);
+
+                    // store ticket
+                    string ss_as_cbor = subject2cbor(new_ticket);
+
+                    Tid    tid_ticket_manager = getTid(P_MODULE.ticket_manager);
+
+                    if (tid_ticket_manager != Tid.init)
+                    {
+                        send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
+                        receive((EVENT ev, Tid from)
+                                {
+                                    if (from == getTid(P_MODULE.ticket_manager))
+                                    {
+//                            res = msg;
+                                        //writeln("context.store_subject:msg=", msg);
+                                        subject2Ticket(new_ticket, &ticket);
+                                        user_of_ticket[ ticket.id ] = &ticket;
+                                    }
+                                });
+                    }
+
+                    return ticket;
+                }
+            }
+
+            return Ticket.init;
+        }
+        finally
+        {
+            stat(CMD.PUT, sw);
+        }
+    }
+
+    public Ticket *get_ticket(string ticket_id)
+    {
+        StopWatch sw; sw.start;
+
+        try
+        {
+            Ticket *tt = user_of_ticket.get(ticket_id, null);
+
+            if (tt is null)
+            {
+                string when     = null;
+                int    duration = 0;
+                send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
+
+                receive((string uri, string ticket_str, Tid from)
+                        {
+                            if (ticket_str !is null && ticket_str.length > 128)
+                            {
+                                tt = new Ticket;
+                                Subject ticket = cbor2subject(ticket_str);
+                                subject2Ticket(ticket, tt);
+                                user_of_ticket[ tt.id ] = tt;
+
+//				writeln ("Ticket=",ticket);
+                            }
+                        },
+                        (Variant v) { writeln("get_ticket::Received some other type. :", v); }
+                        );
+            }
+            else
+            {
+                if (trace_msg[ 17 ] == 1)
+                    log.trace("тикет нашли в кеше, %s", ticket_id);
+            }
+
+            return tt;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
+    }
+
+
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
-    immutable(string)[] get_individuals_ids_via_query(string query_str, string sticket)
+    public immutable(string)[] get_individuals_ids_via_query(string query_str, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
         return get_individuals_ids_via_query(query_str, ticket);
     }
 
-    immutable(string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
+    public immutable(string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
     {
-        immutable(string)[] res;
-        if (query_str.indexOf(' ') <= 0)
-            query_str = "'*' == '" ~ query_str ~ "'";
+        StopWatch sw; sw.start;
 
-        //writeln (query_str);
-        vql.get(ticket, query_str, null, null, 10, 100000, res);
-        return res;
+        try
+        {
+            immutable(string)[] res;
+            if (query_str.indexOf(' ') <= 0)
+                query_str = "'*' == '" ~ query_str ~ "'";
+
+            //writeln (query_str);
+            vql.get(ticket, query_str, null, null, 10, 100000, res);
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
     }
 
-    immutable(Individual)[] get_individuals_via_query(string query_str, string sticket)
+    public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket)
     {
         Ticket *ticket = get_ticket(sticket);
 
         return get_individuals_via_query(query_str, ticket);
     }
 
-    immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket)
+    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket)
     {
-        immutable(Individual)[] res;
-        if (query_str.indexOf(' ') <= 0)
-            query_str = "'*' == '" ~ query_str ~ "'";
+        StopWatch sw; sw.start;
 
-        //writeln (query_str);
-        vql.get(ticket, query_str, null, null, 10, 10000, res);
-        return res;
+        try
+        {
+            immutable(Individual)[] res;
+            if (query_str.indexOf(' ') <= 0)
+                query_str = "'*' == '" ~ query_str ~ "'";
+
+            //writeln (query_str);
+            vql.get(ticket, query_str, null, null, 10, 10000, res);
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
     }
 
-    Individual get_individual(string uri, string sticket)
+    public Individual get_individual(string uri, string sticket)
     {
         Ticket     *ticket = get_ticket(sticket);
 
@@ -674,127 +672,174 @@ class PThreadContext : Context
         return individual;
     }
 
-    Individual[] get_individuals(string[] uris, string sticket)
+    public Individual[] get_individuals(string[] uris, string sticket)
     {
-        Individual[] res     = Individual[].init;
-        Ticket       *ticket = get_ticket(sticket);
+        StopWatch sw; sw.start;
 
-        foreach (uri; uris)
-            res ~= get_individual(uri, ticket);
+        try
+        {
+            Individual[] res     = Individual[].init;
+            Ticket       *ticket = get_ticket(sticket);
 
-        return res;
+            foreach (uri; uris)
+            {
+                if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+                {
+                    Individual individual         = Individual.init;
+                    string     individual_as_cbor = get_subject_as_cbor(uri);
+
+                    if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                        cbor2individual(&individual, individual_as_cbor);
+
+                    res ~= individual;
+                }
+            }
+
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
     }
 
-    Individual get_individual(string uri, Ticket *ticket)
+    public Individual get_individual(string uri, Ticket *ticket)
     {
-        Individual individual = Individual.init;
+        StopWatch sw; sw.start;
 
-        if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+        try
         {
-            string individual_as_cbor = get_subject_as_cbor(uri);
+            Individual individual = Individual.init;
 
-            if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-                cbor2individual(&individual, individual_as_cbor);
+            if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+            {
+                string individual_as_cbor = get_subject_as_cbor(uri);
+
+                if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                    cbor2individual(&individual, individual_as_cbor);
+            }
+            return individual;
         }
-        return individual;
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
     }
 
     public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
-        Tid tid_subject_manager;
-        Tid tid_acl;
+        StopWatch sw; sw.start;
 
-        if (indv is null && ss_as_cbor is null)
-            return ResultCode.No_Content;
-
-        if (ss_as_cbor is null)
-            ss_as_cbor = individual2cbor(indv);
-
-        if (indv is null && ss_as_cbor !is null)
+        try
         {
-            Individual tmp_indv;
-            indv = &tmp_indv;
-            cbor2individual(indv, ss_as_cbor);
-        }
+            Tid tid_subject_manager;
+            Tid tid_acl;
 
-        if (indv is null && ss_as_cbor is null)
-            return ResultCode.No_Content;
+            if (indv is null && ss_as_cbor is null)
+                return ResultCode.No_Content;
 
-        Resources rdfType = indv.resources[ rdf__type ];
+            if (ss_as_cbor is null)
+                ss_as_cbor = individual2cbor(indv);
 
-        //writeln ("@ put_individual:", indv.uri);
-
-        if (rdfType.anyExist(veda_schema__Membership) == true)
-        {
-            // before storing the data, expected availability acl_manager.
-            wait_thread(P_MODULE.acl_manager);
-            if (this.acl_indexes.isExistMemberShip(indv) == true)
-                return ResultCode.Duplicate_Key;
-        }
-        else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
-        {
-            // before storing the data, expected availability acl_manager.
-            wait_thread(P_MODULE.acl_manager);
-            if (this.acl_indexes.isExistPermissionStatement(indv) == true)
-                return ResultCode.Duplicate_Key;
-        }
-
-        EVENT ev = EVENT.NONE;
-
-        tid_subject_manager = getTid(P_MODULE.subject_manager);
-
-        if (tid_subject_manager != Tid.init)
-        {
-            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-            receive((EVENT _ev, Tid from)
-                    {
-                        if (from == getTid(P_MODULE.subject_manager))
-                            ev = _ev;
-                    });
-        }
-
-        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
-        {
-            Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
-
-            if (tid_search_manager != Tid.init)
-                send(tid_search_manager, CMD.STORE, ss_as_cbor);
-
-            if (prepareEvents == true)
+            if (indv is null && ss_as_cbor !is null)
             {
-                bus_event_after(indv, ss_as_cbor, ev, this);
+                Individual tmp_indv;
+                indv = &tmp_indv;
+                cbor2individual(indv, ss_as_cbor);
             }
 
-            return ResultCode.OK;
+            if (indv is null && ss_as_cbor is null)
+                return ResultCode.No_Content;
+
+            Resources rdfType = indv.resources[ rdf__type ];
+
+            //writeln ("@ put_individual:", indv.uri);
+
+            if (rdfType.anyExist(veda_schema__Membership) == true)
+            {
+                // before storing the data, expected availability acl_manager.
+                wait_thread(P_MODULE.acl_manager);
+                if (this.acl_indexes.isExistMemberShip(indv) == true)
+                    return ResultCode.Duplicate_Key;
+            }
+            else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
+            {
+                // before storing the data, expected availability acl_manager.
+                wait_thread(P_MODULE.acl_manager);
+                if (this.acl_indexes.isExistPermissionStatement(indv) == true)
+                    return ResultCode.Duplicate_Key;
+            }
+
+            EVENT ev = EVENT.NONE;
+
+            tid_subject_manager = getTid(P_MODULE.subject_manager);
+
+            if (tid_subject_manager != Tid.init)
+            {
+                send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+                receive((EVENT _ev, Tid from)
+                        {
+                            if (from == getTid(P_MODULE.subject_manager))
+                                ev = _ev;
+                        });
+            }
+
+            if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
+            {
+                Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
+
+                if (tid_search_manager != Tid.init)
+                    send(tid_search_manager, CMD.STORE, ss_as_cbor);
+
+                if (prepareEvents == true)
+                {
+                    bus_event_after(indv, ss_as_cbor, ev, this);
+                }
+
+                return ResultCode.OK;
+            }
+            else
+            {
+                writeln("Ex! store_subject:", ev);
+                return ResultCode.Internal_Server_Error;
+            }
         }
-        else
+        finally
         {
-            writeln("Ex! store_subject:", ev);
-            return ResultCode.Internal_Server_Error;
+            stat(CMD.PUT, sw);
         }
     }
 
-    ResultCode put_individual(string ticket, string uri, Individual individual)
+    public ResultCode put_individual(string ticket, string uri, Individual individual)
     {
         individual.uri = uri;
         return store_individual(ticket, &individual, null);
     }
 
-    ResultCode post_individual(string ticket, Individual individual)
+    public ResultCode post_individual(string ticket, Individual individual)
     {
         return store_individual(ticket, &individual, null);
     }
 
     public void wait_thread(P_MODULE thread_id)
     {
-        Tid tid = this.getTid(thread_id);
+        StopWatch sw; sw.start;
 
-        if (tid != Tid.init)
+        try
         {
+            Tid tid = this.getTid(thread_id);
+
+            if (tid != Tid.init)
+            {
 //            writeln("WAIT READY THREAD ", thread_id);
-            send(tid, CMD.NOP, thisTid);
-            receive((bool res) {});
+                send(tid, CMD.NOP, thisTid);
+                receive((bool res) {});
 //            writeln("OK");
+            }
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
         }
     }
 }

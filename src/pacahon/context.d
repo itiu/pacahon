@@ -80,34 +80,18 @@ struct Ticket
 
 interface Context
 {
-    ScriptVM get_ScriptVM();
-    string[ 2 ] execute_script(string str);
+    string get_name();
 
-    ///////////////////////
-    immutable(Class)[ string ] get_owl_classes();
-    immutable(Individual)[ string ] get_onto_as_map_individuals();
-    Class *get_class(string ur);
+    ScriptVM get_ScriptVM();
+
     Property *get_property(string ur);
 
-    public string get_name();
-    public JSONValue get_props();
+    JSONValue get_props();
 
     Tid getTid(P_MODULE tid_name);
 
-    @property Subjects ba2pacahon_records();
-    @property Subjects event_filters();
     @property search.vql.VQL vql();
 
-    int get_subject_creator_size();
-    string get_subject_creator(string pp);
-    void set_subject_creator(string key, string value);
-
-    @property int count_command();
-    @property int count_message();
-    @property void count_command(int n);
-    @property void count_message(int n);
-
-    bool send_on_authorization(string msg);
     bool authorize(string uri, Ticket *ticket, Access request_acess);
 
     ref string[ string ] get_prefix_map();
@@ -115,23 +99,31 @@ interface Context
     Subject get_subject(string uid);
     string get_subject_as_cbor(string uid);
 
-    public int[ string ] get_key2slot();
-    public long get_last_update_time();
+    int[ string ] get_key2slot();
+    long get_last_update_time();
 
-    public void store_subject(Subject ss, bool prepareEvents = true);
+    void store_subject(Subject ss, bool prepareEvents = true);
 
-    ///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
-    public void push_signal(string key, long value);
-    public void push_signal(string key, string value);
-    public long look_integer_signal(string key);
-    public string look_string_signal(string key);
+    /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////
+    void push_signal(string key, long value);
+    void push_signal(string key, string value);
+    long look_integer_signal(string key);
+    string look_string_signal(string key);
+
+    // *************************************************** external api *********************************** //
+
+    public string[ 2 ] execute_script(string str);
+
+    public immutable(Class)[ string ] get_owl_classes();
+    public immutable(Individual)[ string ] get_onto_as_map_individuals();
+    public Class *get_class(string ur);
 
     //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
-    Ticket authenticate(string login, string password);
-    Ticket *get_ticket(string ticket_id);
-    bool is_ticket_valid(string ticket_id);
+    public Ticket authenticate(string login, string password);
+    public Ticket *get_ticket(string ticket_id);
+    public bool is_ticket_valid(string ticket_id);
 
-    ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+    ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
     public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);

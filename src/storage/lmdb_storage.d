@@ -87,20 +87,20 @@ class LmdbStorage
         }
     }
 
-    public EVENT update_or_create(string cbor)
+    public void update_or_create(string cbor, void delegate(EVENT ev) event)
     {
         // TODO не оптимально!
         Individual ind;
 
         cbor2individual(&ind, cbor);
-        return update_or_create(ind.uri, cbor);
+        update_or_create(ind.uri, cbor, event);
     }
 
-    public EVENT update_or_create(Individual *ind)
+    public void update_or_create(Individual *ind, void delegate(EVENT ev) event)
     {
         string content = individual2cbor(ind);
 
-        return update_or_create(ind.uri, content);
+        update_or_create(ind.uri, content, event);
     }
 
     public void put(string _key, string value)
@@ -137,8 +137,11 @@ class LmdbStorage
         mdb_dbi_close(env, dbi);
     }
 
-    public EVENT update_or_create(string uri, string content)
+    public void update_or_create(string uri, string content, void delegate(EVENT ev) event)
     {
+//                                      StopWatch sw; sw.start;
+
+
         int     rc;
         MDB_dbi dbi;
         MDB_txn *txn;
@@ -170,14 +173,24 @@ class LmdbStorage
 
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
+        {
+            mdb_txn_abort(txn);
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
+
+        event(ev);
 
         rc = mdb_txn_commit(txn);
         if (rc != 0)
+        {
+            mdb_txn_abort(txn);
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
+//                                sw.stop;
+//                               long t = sw.peek.usecs;
+//                                writeln ("@1 store : t=", t);
 
         mdb_dbi_close(env, dbi);
-        return ev;
     }
 
     public Subject find_subject(string uri)

@@ -2,7 +2,7 @@ module storage.storage_thread;
 
 private
 {
-    import std.stdio, std.concurrency, std.file;
+    import std.stdio, std.concurrency, std.file, std.datetime;
 
     import bind.lmdb_header;
 
@@ -34,7 +34,9 @@ public void individuals_manager(string db_path)
     receive((Tid tid_response_reciever)
             {
                 send(tid_response_reciever, true);
-            });     
+            });
+
+    void delegate(EVENT ev) dg;
 
     while (true)
     {
@@ -43,7 +45,7 @@ public void individuals_manager(string db_path)
                 {
                     if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
-                    else    
+                    else
                         send(tid_response_reciever, false);
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
@@ -54,8 +56,13 @@ public void individuals_manager(string db_path)
                         {
                             try
                             {
-                                EVENT ev = storage.update_or_create(msg);
-                                send(tid_response_reciever, ev, thisTid);
+                                void send_event(EVENT ev)
+                                {
+                                    send(tid_response_reciever, ev, thisTid);
+                                }
+                                dg = &send_event;
+
+                                storage.update_or_create(msg, dg);
                             }
                             catch (Exception ex)
                             {

@@ -255,12 +255,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
         context = server_thread.resource;
     }
 
-    byte msg_format = format.UNKNOWN;
-
-    if (trace_msg[ 1 ] == 1)
-    {
-        log.trace("get message, count:[%d], message_size:[%d]", context.count_command, message_size);
-    }
+    byte      msg_format = format.UNKNOWN;
 
     Subject[] subjects;
 
@@ -495,8 +490,8 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 
                 if (trace_msg[ 68 ] == 1)
                 {
-                    log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(),
-                              command.subject, sender.getFirstLiteral(), context.count_command, t);
+                    //                   log.trace("command [%s][%s] %s, count: %d, total time: %d [µs]", command_name.getFirstLiteral(),
+                    //                             command.subject, sender.getFirstLiteral(), context.count_command, t);
                     if (t > 60_000_000)
                         log.trace("command [%s][%s] %s, time > 1 min", command_name.getFirstLiteral(), command.subject,
                                   sender.getFirstLiteral());
@@ -557,20 +552,6 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
     sw.stop();
     int t = cast(int)sw.peek().usecs;
     send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
-
-    if (trace_msg[ 69 ] == 1)
-        log.trace("messages count: %d, total time: %d [µs]", context.count_message, t);
-
-//	context.sw.reset();
-//	context.sw.start();
-    /*
-       if ((server_thread.stat.count_message % 10_000) == 0)
-       {
-       writeln ("start GC");
-       GC.collect();
-       GC.minimize();
-       }
-     */
 
     return;
 }
