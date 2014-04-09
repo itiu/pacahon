@@ -189,7 +189,7 @@ private void prepare_file(string file_name, Context context)
                 }
             }
 
-            Tid tid_search_manager = context.getTid(THREAD.fulltext_indexer);
+            Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
             //put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)

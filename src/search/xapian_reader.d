@@ -27,8 +27,8 @@ interface SearchReader
 }
 
 /*
-class XapianSynchronizedReader : SearchReader
-{
+   class XapianSynchronizedReader : SearchReader
+   {
     private Context context;
 
     this(Context _context)
@@ -42,10 +42,10 @@ class XapianSynchronizedReader : SearchReader
         if (str_query is null)
             return 0;
 
-//      writeln ("@ XapianSynchronizedReader.get #1");
-        Tid tid_subject_manager = context.getTid(THREAD.subject_manager);
+   //      writeln ("@ XapianSynchronizedReader.get #1");
+        Tid tid_subject_manager = context.getTid(P_MODULE.subject_manager);
 
-        send(context.getTid(THREAD.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
+        send(context.getTid(P_MODULE.xapian_indexer), CMD.FIND, str_query, fields, sort, count_authorize, thisTid);
 
         bool next_recieve = true;
         int  read_count;
@@ -73,11 +73,11 @@ class XapianSynchronizedReader : SearchReader
                     });
         }
 
-//      writeln ("@ XapianSynchronizedReader.get #end");
+   //      writeln ("@ XapianSynchronizedReader.get #end");
         return read_count;
     }
-}
-*/    
+   }
+ */
 
 class XapianReader : SearchReader
 {

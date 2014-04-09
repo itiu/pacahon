@@ -46,20 +46,20 @@ void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type,
 
     if (rdfType.anyExist(veda_schema__PermissionStatement) == true || rdfType.anyExist(veda_schema__Membership) == true)
     {
-        Tid tid_acl = context.getTid(THREAD.acl_manager);
+        Tid tid_acl = context.getTid(P_MODULE.acl_manager);
         if (tid_acl != Tid.init)
         {
             send(tid_acl, CMD.STORE, type, subject_as_cbor);
         }
     }
 
-    Tid tid_condition = context.getTid(THREAD.condition);
+    Tid tid_condition = context.getTid(P_MODULE.condition);
     if (tid_condition != Tid.init)
     {
-//		writeln ("#bus_event #1, conditin_name=", thread.condition, ", tid_condition=", tid_condition);
+//		writeln ("#bus_event #1, conditin_name=", P_MODULE.condition, ", tid_condition=", tid_condition);
         try
         {
-//			 core.thread.Thread.sleep(dur!("seconds")(10));
+//			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
             // отправляем информацию об изменении индивидуала в модуль авторизации
             send(tid_condition, type, subject_as_cbor);
         }

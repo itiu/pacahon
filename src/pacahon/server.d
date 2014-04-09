@@ -68,14 +68,17 @@ version (executable)
     }
 }
 
-void wait_starting_thread(THREAD tid_idx, ref Tid[ string ] tids)
+void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
 {
     Tid tid = tids[ tid_idx ];
+
+    if (tid == Tid.init)
+        throw new Exception("wait_starting_thread: Tid=" ~ text(tid_idx) ~ " not found", __FILE__, __LINE__);
 
     send(tid, thisTid);
     receive((bool isReady)
             {
-                log.trace_log_and_console("STARTED THREAD: %s", tid_idx);
+                log.trace_log_and_console("STARTED THREAD: %s", text(tid_idx));
             });
 }
 
@@ -98,46 +101,46 @@ void init_core()
         log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
                                   pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
 
-        Tid[ string ] tids;
+        Tid[ P_MODULE ] tids;
 
-        tids[ THREAD.subject_manager ] = spawn(&individuals_manager, individuals_db_path);
-        wait_starting_thread(THREAD.subject_manager, tids);
+        tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread);
+        wait_starting_thread(P_MODULE.interthread_signals, tids);
 
-        tids[ THREAD.ticket_manager ] = spawn(&individuals_manager, tickets_db_path);
-        wait_starting_thread(THREAD.ticket_manager, tids);
+        tids[ P_MODULE.subject_manager ] = spawn(&individuals_manager, individuals_db_path);
+        wait_starting_thread(P_MODULE.subject_manager, tids);
 
-        tids[ THREAD.acl_manager ] = spawn(&acl_manager);
-        wait_starting_thread(THREAD.acl_manager, tids);
+        tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, tickets_db_path);
+        wait_starting_thread(P_MODULE.ticket_manager, tids);
 
-        tids[ THREAD.xapian_thread_context ] = spawn(&xapian_thread_context);
-        wait_starting_thread(THREAD.xapian_thread_context, tids);
+        tids[ P_MODULE.acl_manager ] = spawn(&acl_manager);
+        wait_starting_thread(P_MODULE.acl_manager, tids);
 
-        tids[ THREAD.fulltext_indexer ] =
-            spawn(&xapian_indexer, tids[ THREAD.subject_manager ], tids[ THREAD.acl_manager ], tids[ THREAD.xapian_thread_context ]);
-        wait_starting_thread(THREAD.fulltext_indexer, tids);
+        tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context);
+        wait_starting_thread(P_MODULE.xapian_thread_context, tids);
 
-        tids[ THREAD.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ THREAD.fulltext_indexer ]);
-        wait_starting_thread(THREAD.xapian_indexer_commiter, tids);
+        tids[ P_MODULE.fulltext_indexer ] =
+            spawn(&xapian_indexer, tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ], tids[ P_MODULE.xapian_thread_context ]);
+        wait_starting_thread(P_MODULE.fulltext_indexer, tids);
 
-        tids[ THREAD.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
-        wait_starting_thread(THREAD.statistic_data_accumulator, tids);
+        tids[ P_MODULE.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ P_MODULE.fulltext_indexer ]);
+        wait_starting_thread(P_MODULE.xapian_indexer_commiter, tids);
 
-        tids[ THREAD.print_statistic ] = spawn(&print_statistic, tids[ THREAD.statistic_data_accumulator ]);
-        wait_starting_thread(THREAD.print_statistic, tids);
+        tids[ P_MODULE.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
+        wait_starting_thread(P_MODULE.statistic_data_accumulator, tids);
 
-        tids[ THREAD.interthread_signals ] = spawn(&interthread_signals_thread);
-        wait_starting_thread(THREAD.interthread_signals, tids);
+        tids[ P_MODULE.print_statistic ] = spawn(&print_statistic, tids[ P_MODULE.statistic_data_accumulator ]);
+        wait_starting_thread(P_MODULE.print_statistic, tids);
 
         foreach (key, value; tids)
-            register(key, value);
+            register(text(key), value);
 
-        tids[ THREAD.condition ] = spawn(&condition_thread, props_file_path);
-        wait_starting_thread(THREAD.condition, tids);
+        tids[ P_MODULE.condition ] = spawn(&condition_thread, props_file_path);
+        wait_starting_thread(P_MODULE.condition, tids);
 
-        register(THREAD.condition, tids[ THREAD.condition ]);
+        register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
 
         //writeln("registred spawned tids:", tids);
-        Tid tid_condition = locate(THREAD.condition);
+        Tid tid_condition = locate(text(P_MODULE.condition));
 //        writeln ("tid_condition=", tid_condition);
 
 
@@ -486,7 +489,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
                 }
 
                 Predicate command_name = command.getPredicate(msg__command);
-                send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.COUNT_COMMAND, 1);
+                send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
                 sw_c.stop();
                 long t = cast(long)sw_c.peek().usecs;
 
@@ -549,11 +552,11 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
             io_msg.trace_io(false, cast(byte *)out_data, out_data.length);
     }
 
-    send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.COUNT_MESSAGE, 1);
+    send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
 
     sw.stop();
     int t = cast(int)sw.peek().usecs;
-    send(context.tid_statistic_data_accumulator, CMD.PUT, CNAME.WORKED_TIME, t);
+    send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
 
     if (trace_msg[ 69 ] == 1)
         log.trace("messages count: %d, total time: %d [µs]", context.count_message, t);

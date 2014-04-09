@@ -24,18 +24,19 @@ enum CMD : byte
     NOP       = 64
 }
 
-enum THREAD : string
+enum P_MODULE : byte
 {
-    ticket_manager             = "ticket_manager",
-    subject_manager            = "subject_manager",
-    acl_manager                = "acl_manager",
-    xapian_thread_context      = "xapian_thread_context",
-    fulltext_indexer           = "fulltext_indexer",
-    statistic_data_accumulator = "statistic_data_accumulator",
-    condition                  = "condition",
-    xapian_indexer_commiter    = "xapian_indexer_commiter",
-    print_statistic            = "print_statistic",
-    interthread_signals        = "interthread_signals"
+    ticket_manager             = 0,
+    subject_manager            = 1,
+    acl_manager                = 2,
+    xapian_thread_context      = 3,
+    fulltext_indexer           = 4,
+    statistic_data_accumulator = 5,
+    condition                  = 6,
+    xapian_indexer_commiter    = 7,
+    print_statistic            = 8,
+    interthread_signals        = 9,
+    nop                        = 10
 }
 
 enum ResultCode
@@ -53,12 +54,6 @@ enum ResultCode
     Disk_Full             = 1021,
     Duplicate_Key         = 1022
 }
-
-static THREAD[ 8 ] REGISTRED_THREAD_LIST =
-[
-    THREAD.ticket_manager, THREAD.subject_manager, THREAD.acl_manager, THREAD.xapian_thread_context,
-    THREAD.fulltext_indexer, THREAD.statistic_data_accumulator, THREAD.condition, THREAD.interthread_signals
-];
 
 struct Ticket
 {
@@ -97,9 +92,7 @@ interface Context
     public string get_name();
     public JSONValue get_props();
 
-    @property Tid tid_statistic_data_accumulator();
-    @property Tid tid_ticket_manager();
-    Tid getTid(THREAD tid_name);
+    Tid getTid(P_MODULE tid_name);
 
     @property Subjects ba2pacahon_records();
     @property Subjects event_filters();
@@ -154,6 +147,6 @@ interface Context
     public ResultCode put_individual(string ticket, string uri, Individual individual);
     public ResultCode post_individual(string ticket, Individual individual);
 
-    public void wait_thread (THREAD thread_id);
+    public void wait_thread(P_MODULE thread_id);
 }
 

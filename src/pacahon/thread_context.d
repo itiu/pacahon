@@ -63,8 +63,6 @@ class PThreadContext : Context
     private int           _count_message;
     private string        name;
 
-    private               Tid[ string ] tids;
-
     private string        old_msg_key2slot;
     private int[ string ] old_key2slot;
 
@@ -74,6 +72,8 @@ class PThreadContext : Context
     private LmdbStorage    inividuals_storage;
     private search.vql.VQL _vql;
 
+    private                Tid[ P_MODULE ] name_2_tids;
+
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
@@ -82,10 +82,12 @@ class PThreadContext : Context
         name = context_name;
         writeln("CREATE NEW CONTEXT:", context_name);
 
-        foreach (tid_name; REGISTRED_THREAD_LIST)
+        foreach (id; P_MODULE.min .. P_MODULE.max)
         {
-            tids[ tid_name ] = locate(tid_name);
+            name_2_tids[ id ] = locate(text(id));
         }
+
+        writeln("@ name_2_tids=", name_2_tids);
 
         _event_filters      = new Subjects();
         _ba2pacahon_records = new Subjects();
@@ -275,7 +277,7 @@ class PThreadContext : Context
 
     public void push_signal(string key, long value)
     {
-        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
 
         if (tid_interthread_signals != Tid.init)
         {
@@ -285,7 +287,7 @@ class PThreadContext : Context
 
     public void push_signal(string key, string value)
     {
-        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
 
         if (tid_interthread_signals != Tid.init)
         {
@@ -296,7 +298,7 @@ class PThreadContext : Context
     public long look_integer_signal(string key)
     {
         Tid myTid                   = thisTid;
-        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
 
         if (tid_interthread_signals !is Tid.init)
         {
@@ -317,7 +319,7 @@ class PThreadContext : Context
     public string look_string_signal(string key)
     {
         Tid myTid                   = thisTid;
-        Tid tid_interthread_signals = getTid(THREAD.interthread_signals);
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
 
         if (tid_interthread_signals !is Tid.init)
         {
@@ -337,11 +339,16 @@ class PThreadContext : Context
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    public Tid getTid(THREAD tid_name)
+    public Tid getTid(P_MODULE tid_name)
     {
-        Tid res = tids.get(tid_name, Tid.init);
+        Tid res = name_2_tids.get(tid_name, Tid.init);
 
-        assert(res != Tid.init);
+        if (res == Tid.init)
+        {
+            writeln("!!! NOT FOUND TID=", text(tid_name));
+            throw new Exception("!!! NOT FOUND TID=" ~ text(tid_name));
+            //assert(false);
+        }
         return res;
     }
 
@@ -357,8 +364,7 @@ class PThreadContext : Context
     public int[ string ] get_key2slot()
     {
         int[ string ] key2slot;
-        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.KEY2SLOT, thisTid);
-//        string msg = receiveOnly!(string)();
+        send(getTid(P_MODULE.xapian_thread_context), CMD.GET, CNAME.KEY2SLOT, thisTid);
         receive((string msg)
                 {
                     if (msg != old_msg_key2slot)
@@ -380,7 +386,7 @@ class PThreadContext : Context
     {
         long lut;
 
-        send(tids[ THREAD.xapian_thread_context ], CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
+        send(getTid(P_MODULE.xapian_thread_context), CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
         receive((long tm)
                 {
                     lut = tm;
@@ -402,16 +408,6 @@ class PThreadContext : Context
     ref string[ string ] get_prefix_map()
     {
         return prefix_map;
-    }
-
-    @property Tid tid_statistic_data_accumulator()
-    {
-        return tids[ THREAD.statistic_data_accumulator ];
-    }
-
-    @property Tid tid_ticket_manager()
-    {
-        return tids[ THREAD.ticket_manager ];
     }
 
     @property Subjects ba2pacahon_records()
@@ -448,7 +444,7 @@ class PThreadContext : Context
 
     bool send_on_authorization(string bson_subject)
     {
-        send(tids[ THREAD.acl_manager ], CMD.AUTHORIZE, bson_subject, thisTid);
+        send(getTid(P_MODULE.acl_manager), CMD.AUTHORIZE, bson_subject, thisTid);
         return true;
     }
 
@@ -524,14 +520,14 @@ class PThreadContext : Context
                 // store ticket
                 string ss_as_cbor = subject2cbor(new_ticket);
 
-                Tid    tid_ticket_manager = getTid(THREAD.ticket_manager);
+                Tid    tid_ticket_manager = getTid(P_MODULE.ticket_manager);
 
                 if (tid_ticket_manager != Tid.init)
                 {
                     send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
                     receive((EVENT ev, Tid from)
                             {
-                                if (from == tids[ THREAD.ticket_manager ])
+                                if (from == getTid(P_MODULE.ticket_manager))
                                 {
 //                            res = msg;
                                     //writeln("context.store_subject:msg=", msg);
@@ -556,7 +552,7 @@ class PThreadContext : Context
         {
             string when     = null;
             int    duration = 0;
-            send(tid_ticket_manager, CMD.FIND, ticket_id, thisTid);
+            send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
 
             receive((string uri, string ticket_str, Tid from)
                     {
@@ -697,72 +693,72 @@ class PThreadContext : Context
         Tid tid_subject_manager;
         Tid tid_acl;
 
-            if (indv is null && ss_as_cbor is null)
-                return ResultCode.No_Content;
+        if (indv is null && ss_as_cbor is null)
+            return ResultCode.No_Content;
 
-            if (ss_as_cbor is null)
-                ss_as_cbor = individual2cbor(indv);
+        if (ss_as_cbor is null)
+            ss_as_cbor = individual2cbor(indv);
 
-            if (indv is null && ss_as_cbor !is null)
+        if (indv is null && ss_as_cbor !is null)
+        {
+            Individual tmp_indv;
+            indv = &tmp_indv;
+            cbor2individual(indv, ss_as_cbor);
+        }
+
+        if (indv is null && ss_as_cbor is null)
+            return ResultCode.No_Content;
+
+        Resources rdfType = indv.resources[ rdf__type ];
+
+        // before storing the data, expected availability acl_manager.
+        tid_acl = getTid(P_MODULE.acl_manager);
+        send(tid_acl, CMD.NOP, thisTid);
+        receive((bool res) {});
+
+        if (rdfType.anyExist(veda_schema__Membership) == true)
+        {
+            if (this.acl_indexes.isExistMemberShip(indv) == true)
+                return ResultCode.Duplicate_Key;
+        }
+        else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
+        {
+            if (this.acl_indexes.isExistPermissionStatement(indv) == true)
+                return ResultCode.Duplicate_Key;
+        }
+
+        EVENT ev = EVENT.NONE;
+
+        tid_subject_manager = getTid(P_MODULE.subject_manager);
+
+        if (tid_subject_manager != Tid.init)
+        {
+            send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+            receive((EVENT _ev, Tid from)
+                    {
+                        if (from == getTid(P_MODULE.subject_manager))
+                            ev = _ev;
+                    });
+        }
+
+        if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
+        {
+            Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
+
+            if (tid_search_manager != Tid.init)
             {
-                Individual tmp_indv;
-                indv = &tmp_indv;
-                cbor2individual(indv, ss_as_cbor);
+                send(tid_search_manager, CMD.STORE, ss_as_cbor);
+
+                if (prepareEvents == true)
+                    bus_event_after(indv, ss_as_cbor, ev, this);
             }
-
-            if (indv is null && ss_as_cbor is null)
-                return ResultCode.No_Content;
-
-            Resources rdfType = indv.resources[ rdf__type ];
-
-            // before storing the data, expected availability acl_manager.
-            tid_acl = getTid(THREAD.acl_manager);
-            send(tid_acl, CMD.NOP, thisTid);
-            receive((bool res) {});
-
-            if (rdfType.anyExist(veda_schema__Membership) == true)
-            {
-                if (this.acl_indexes.isExistMemberShip(indv) == true)
-                    return ResultCode.Duplicate_Key;
-            }
-            else if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
-            {
-                if (this.acl_indexes.isExistPermissionStatement(indv) == true)
-                    return ResultCode.Duplicate_Key;
-            }
-
-            EVENT ev = EVENT.NONE;
-
-            tid_subject_manager = getTid(THREAD.subject_manager);
-
-            if (tid_subject_manager != Tid.init)
-            {
-                send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
-                receive((EVENT _ev, Tid from)
-                        {
-                            if (from == tids[ THREAD.subject_manager ])
-                                ev = _ev;
-                        });
-            }
-
-            if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
-            {
-                Tid tid_search_manager = getTid(THREAD.fulltext_indexer);
-
-                if (tid_search_manager != Tid.init)
-                {
-                    send(tid_search_manager, CMD.STORE, ss_as_cbor);
-
-                    if (prepareEvents == true)
-                        bus_event_after(indv, ss_as_cbor, ev, this);
-                }
-                return ResultCode.OK;
-            }
-            else
-            {
-                writeln("Ex! store_subject:", ev);
-                return ResultCode.Internal_Server_Error;
-            }
+            return ResultCode.OK;
+        }
+        else
+        {
+            writeln("Ex! store_subject:", ev);
+            return ResultCode.Internal_Server_Error;
+        }
     }
 
     ResultCode put_individual(string ticket, string uri, Individual individual)
@@ -775,17 +771,17 @@ class PThreadContext : Context
     {
         return store_individual(ticket, &individual, null);
     }
-    
-    public void wait_thread(THREAD thread_id)
+
+    public void wait_thread(P_MODULE thread_id)
     {
-        Tid tid = this.getTid(THREAD.condition);
-                
+        Tid tid = this.getTid(P_MODULE.condition);
+
         if (tid != Tid.init)
         {
-                writeln("WAIT READY THREAD ", thread_id);
-                send(tid, CMD.NOP, thisTid);
-                receive((bool res) {});
-                writeln("OK");
-        }	
+            writeln("WAIT READY THREAD ", thread_id);
+            send(tid, CMD.NOP, thisTid);
+            receive((bool res) {});
+            writeln("OK");
+        }
     }
 }
