@@ -131,21 +131,6 @@ private void printTid(string tag)
     writefln("%s: %s, address: %s", tag, thisTid, &thisTid);
 }
 
-void xapian_indexer_commiter(Tid tid)
-{
-    // SEND ready
-    receive((Tid tid_response_reciever)
-            {
-                send(tid_response_reciever, true);
-            });
-
-    while (true)
-    {
-        core.thread.Thread.sleep(dur!("seconds")(10));
-        send(tid, CMD.COMMIT, "");
-    }
-}
-
 
 void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {

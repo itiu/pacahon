@@ -39,6 +39,13 @@ public void individuals_manager(string db_path)
     while (true)
     {
         receive(
+                (CMD cmd)
+                {
+                    if (cmd == CMD.COMMIT)
+                    {
+                        storage.flush(1);
+                    }
+                },
                 (CMD cmd, Tid tid_response_reciever)
                 {
                     if (cmd == CMD.NOP)

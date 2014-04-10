@@ -353,9 +353,10 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
                                                  ref string[ string ] fields, void delegate(string uri) add_out_element,
                                                  Context context)
 {
-    int read_count = 0;
+    int       read_count = 0;
 
     StopWatch sw;
+
     sw.start();
 
     writeln("@query=", get_query_description(query));
@@ -390,8 +391,8 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
 //                if (msg !is null)
 //                {
-                    add_out_element(subject_id/*, msg*/);
-                    read_count++;
+                add_out_element(subject_id /*, msg*/);
+                read_count++;
 //                }
             }
 
@@ -399,7 +400,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         }
 
         sw.stop();
-        long t = cast(long) sw.peek().usecs;
+        long t = cast(long)sw.peek().usecs;
         //log.trace_log_and_console("total time execute query: %s µs", text(t));
 
         destroy_MSetIterator(it);
@@ -411,13 +412,13 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     return read_count;
 }
 /*
-public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
+   public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
                                                  ref string[ string ] fields, void delegate(string uri) add_out_element,
                                                  Tid tid_subject_manager,
                                                  Tid tid_acl_manager)
-{
+   {
     int read_count = 0;
 
     //StopWatch sw;
@@ -482,7 +483,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
                         {
                             if (msg.length > 16)
                             {
-//                                    writeln ("!!!", msg);
+   //                                    writeln ("!!!", msg);
                                 Subject sss = cbor2subject(msg, LINKS);
 
                                 if (sss !is null)
@@ -534,10 +535,10 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         }
     }
 
-//    writeln ("@ read_count=", read_count);
+   //    writeln ("@ read_count=", read_count);
     return read_count;
-}
-*/
+   }
+ */
 string get_query_description(XapianQuery query)
 {
     if (query !is null)

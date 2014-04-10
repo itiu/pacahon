@@ -74,7 +74,8 @@ class VQL
         {
             Individual individual = Individual();
 
-            string data = context.get_subject_as_cbor(uri);
+            string     data = context.get_subject_as_cbor(uri);
+
             cbor2individual(&individual, data);
 
             individuals ~= individual.idup;
@@ -144,8 +145,8 @@ class VQL
             void collect_subject(string _uri)
             {
                 //writeln ("lmg=", cast(void*)lmg);
-                string data = context.get_subject_as_cbor(_uri);
-                string     uri = add_cbor_to_lmultidigraph(lmg, data);
+                string     data = context.get_subject_as_cbor(_uri);
+                string     uri  = add_cbor_to_lmultidigraph(lmg, data);
 
                 Individual individual = Individual();
 
@@ -225,7 +226,8 @@ class VQL
             void delegate(string uri) dg;
             void collect_subject(string uri)
             {
-            	string data = context.get_subject_as_cbor(uri);
+                string data = context.get_subject_as_cbor(uri);
+
                 res.addSubject(cbor2subject(data));
             }
             dg = &collect_subject;

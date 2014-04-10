@@ -162,6 +162,17 @@ class LmdbStorage
         mdb_dbi_close(env, dbi);
     }
 
+    public void flush(int force)
+    {
+//      writeln ("@FLUSH");
+        int rc = mdb_env_sync(env, force);
+
+        if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+        }
+    }
+
     public EVENT update_or_create(string uri, string content)
     {
 //                                      StopWatch sw; sw.start;

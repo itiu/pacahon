@@ -68,6 +68,25 @@ version (executable)
     }
 }
 
+void commiter(Tid tid, Tid tid_subject_manager, Tid tid_acl_manager)
+{
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
+
+    while (true)
+    {
+        core.thread.Thread.sleep(dur!("seconds")(10));
+        send(tid, CMD.COMMIT, "");
+        core.thread.Thread.sleep(dur!("seconds")(1));
+        send(tid_subject_manager, CMD.COMMIT);
+        core.thread.Thread.sleep(dur!("seconds")(1));
+        send(tid_acl_manager, CMD.COMMIT);
+    }
+}
+
 void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
 {
     Tid tid = tids[ tid_idx ];
@@ -122,8 +141,8 @@ void init_core()
             spawn(&xapian_indexer, tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ], tids[ P_MODULE.xapian_thread_context ]);
         wait_starting_thread(P_MODULE.fulltext_indexer, tids);
 
-        tids[ P_MODULE.xapian_indexer_commiter ] = spawn(&xapian_indexer_commiter, tids[ P_MODULE.fulltext_indexer ]);
-        wait_starting_thread(P_MODULE.xapian_indexer_commiter, tids);
+        tids[ P_MODULE.commiter ] = spawn(&commiter, tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ]);
+        wait_starting_thread(P_MODULE.commiter, tids);
 
         tids[ P_MODULE.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
         wait_starting_thread(P_MODULE.statistic_data_accumulator, tids);

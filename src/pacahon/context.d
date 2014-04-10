@@ -33,7 +33,7 @@ enum P_MODULE : byte
     fulltext_indexer           = 4,
     statistic_data_accumulator = 5,
     condition                  = 6,
-    xapian_indexer_commiter    = 7,
+    commiter                   = 7,
     print_statistic            = 8,
     interthread_signals        = 9,
     nop                        = 10
