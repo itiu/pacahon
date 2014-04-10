@@ -141,31 +141,12 @@ void xapian_indexer_commiter(Tid tid)
 
     while (true)
     {
-        core.thread.Thread.sleep(dur!("seconds")(20));
+        core.thread.Thread.sleep(dur!("seconds")(10));
         send(tid, CMD.COMMIT, "");
     }
 }
 
-//		foreach (key, value; key2slot)
-//		{
-//			string field = translate (key, transTable1);
-/*
-                        string[] fff = split (field, ".");
-                        if (fff.length == 2)
-                        {
-                                if (fff[1] == "decimal" || fff[1] == "dateTime")
-                                {
-                                        string str = field ~ "_range:";
 
-                                XapianNumberValueRangeProcessor vrp_num = new_NumberValueRangeProcessor (value, cast (const char *)str, str.length, true);
-                                xapian_qp.add_valuerangeprocessor(vrp_num);
-                                }
-                        }
- */
-//			string prefix = "X" ~ text (value) ~ "X";
-//			writeln (field, " -> ", prefix);
-//			xapian_qp.add_prefix (cast(char*)field, field.length, cast(char*)prefix, prefix.length);
-//		}
 void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
 //    writeln("SPAWN: Xapian Indexer");
@@ -234,59 +215,59 @@ void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_a
     while (true)
     {
         receive(
-        		/*(CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
-                {
-                    //writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
-                    //writeln ("@xapian_indexer:key2slot=", key2slot);
-                    if (cmd == CMD.FIND)
+                /*(CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
+                   {
+                   //writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
+                   //writeln ("@xapian_indexer:key2slot=", key2slot);
+                   if (cmd == CMD.FIND)
+                   {
+                   auto fields = get_fields(str_fields);
+
+                   XapianQuery query;
+                   TTA tta = parse_expr(str_query);
+                   transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+
+                   if (query !is null)
+                   {
+                    int count = 0;
+                    xapian_enquire = indexer_db.new_Enquire(&err);
+
+                    XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
+
+                    void delegate(string uri) dg;
+                    void collect_subject(string uri)
                     {
-                        auto fields = get_fields(str_fields);
-
-                        XapianQuery query;
-                        TTA tta = parse_expr(str_query);
-                        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
-
-                        if (query !is null)
-                        {
-                            int count = 0;
-                            xapian_enquire = indexer_db.new_Enquire(&err);
-
-                            XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
-
-                            void delegate(string uri) dg;
-                            void collect_subject(string uri)
-                            {
-                                send(tid_sender, CMD.PUT, msg);
-                            }
-                            dg = &collect_subject;
-
-                            int state = -1;
-                            while (state == -1)
-                            {
-                                state =
-                                    exec_xapian_query_and_queue_authorize(null, query, sorter, xapian_enquire, count_authorize, fields, dg,
-                                                                          tid_subject_manager,
-                                                                          tid_acl_manager);
-                                if (state == -1)
-                                {
-                                    writeln("@2 ERR state=", state);
-                                    xapian_enquire = indexer_db.new_Enquire(&err);
-                                }
-                            }
-
-                            destroy_Enquire(xapian_enquire);
-                            destroy_Query(query);
-                            destroy_MultiValueKeyMaker(sorter);
-                        }
-
-                        send(tid_sender, CMD.END_DATA);
+                        send(tid_sender, CMD.PUT, msg);
                     }
-                }, */
+                    dg = &collect_subject;
+
+                    int state = -1;
+                    while (state == -1)
+                    {
+                        state =
+                            exec_xapian_query_and_queue_authorize(null, query, sorter, xapian_enquire, count_authorize, fields, dg,
+                                                                  tid_subject_manager,
+                                                                  tid_acl_manager);
+                        if (state == -1)
+                        {
+                            writeln("@2 ERR state=", state);
+                            xapian_enquire = indexer_db.new_Enquire(&err);
+                        }
+                    }
+
+                    destroy_Enquire(xapian_enquire);
+                    destroy_Query(query);
+                    destroy_MultiValueKeyMaker(sorter);
+                   }
+
+                   send(tid_sender, CMD.END_DATA);
+                   }
+                   }, */
                 (CMD cmd, Tid tid_response_reciever)
                 {
                     if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
-                    else    
+                    else
                         send(tid_response_reciever, false);
                 },
                 (CMD cmd, string msg)
