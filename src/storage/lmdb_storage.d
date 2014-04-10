@@ -23,7 +23,7 @@ logger log;
 
 static this()
 {
-    log = new logger("pacahon", "log", "server");
+    log = new logger("pacahon", "log", "lmdb");
 }
 
 class LmdbStorage
@@ -52,55 +52,59 @@ class LmdbStorage
         {
         }
 
+        open_db();
+    }
+
+    private void open_db()
+    {
         int rc;
-        int rrc;
-        rrc = mdb_env_create(&env);
-        if (rrc != 0)
-            writeln("LmdbStorage:ERR! mdb_env_create:", fromStringz(mdb_strerror(rrc)));
+
+        rc = mdb_env_create(&env);
+        if (rc != 0)
+            log.trace_log_and_console("%(%) ERR#1:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
         else
         {
-            // rrc = mdb_env_set_mapsize(env, 10485760 * 512);
-            // if (rrc != 0)
-            //     writeln("ERR! mdb_env_set_mapsize:", fromStringz(mdb_strerror(rrc)));
-            // else
+            rc = mdb_env_open(env, cast(char *)path, MDB_NOMETASYNC | MDB_NOSYNC, std.conv.octal !664);
+            if (rc != 0)
+                log.trace_log_and_console("%(%) ERR#2:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
+        }
+    }
+
+    private void growth_db(MDB_env *env)
+    {
+        int         rc;
+        MDB_envinfo stat;
+
+        rc = mdb_env_info(env, &stat);
+        if (rc == 0)
+        {
+            size_t map_size = stat.me_mapsize;
+            log.trace_log_and_console("prev MAP_SIZE=" ~ text(map_size) ~ ", new MAP_SIZE=" ~ text(map_size + 10_048_576));
+            if (map_size < 10_048_576)
             {
-//              foreach (i ; 1..10)
-///             {
-                rrc = mdb_env_open(env, cast(char *)path, 0, std.conv.octal !664);
-                //               if (rrc == 0)
-                //                  break;
-
-//                core.thread.Thread.sleep(dur!("seconds")(1));
-
-                if (rrc != 0)
-                    writeln("LmdbStorage(", path, "):ERR! mdb_env_open:", fromStringz(mdb_strerror(rrc)), " (", rrc, ")");
-//                    }
-
-/*                MDB_txn *txn_r;
-                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-                if (rc == MDB_BAD_RSLOT)
+                rc = mdb_env_set_mapsize(env, map_size + 10_048_576);
+                if (rc != 0)
                 {
-                    writeln("LmdbStorage:find #0, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+                    log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 }
-                mdb_txn_abort(txn_r);*/
             }
         }
     }
 
-    public void update_or_create(string cbor, void delegate(EVENT ev) event)
+    public EVENT update_or_create(string cbor)
     {
         // TODO не оптимально!
         Individual ind;
 
         cbor2individual(&ind, cbor);
-        update_or_create(ind.uri, cbor, event);
+        return update_or_create(ind.uri, cbor);
     }
 
-    public void update_or_create(Individual *ind, void delegate(EVENT ev) event)
+    public EVENT update_or_create(Individual *ind)
     {
         string content = individual2cbor(ind);
 
-        update_or_create(ind.uri, content, event);
+        return update_or_create(ind.uri, content);
     }
 
     public void put(string _key, string value)
@@ -111,10 +115,16 @@ class LmdbStorage
 
         rc = mdb_txn_begin(env, null, 0, &txn);
         if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
 
         MDB_val key;
 
@@ -128,19 +138,33 @@ class LmdbStorage
 
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
 
         rc = mdb_txn_commit(txn);
         if (rc != 0)
+        {
+            if (rc == MDB_MAP_FULL)
+            {
+                growth_db(env);
+
+                // retry
+                put(_key, value);
+                return;
+            }
+
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
 
         mdb_dbi_close(env, dbi);
     }
 
-    public void update_or_create(string uri, string content, void delegate(EVENT ev) event)
+    public EVENT update_or_create(string uri, string content)
     {
 //                                      StopWatch sw; sw.start;
-
 
         int     rc;
         MDB_dbi dbi;
@@ -148,10 +172,16 @@ class LmdbStorage
 
         rc = mdb_txn_begin(env, null, 0, &txn);
         if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
 
         EVENT   ev = EVENT.NONE;
         MDB_val key;
@@ -174,23 +204,37 @@ class LmdbStorage
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
         {
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn);
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
 
-        event(ev);
-
         rc = mdb_txn_commit(txn);
         if (rc != 0)
         {
-            mdb_txn_abort(txn);
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            if (rc == MDB_MAP_FULL)
+            {
+                growth_db(env);
+
+                // retry
+                put(uri, content);
+                return ev;
+            }
+
+            if (rc != 0)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                mdb_txn_abort(txn);
+                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            }
         }
 //                                sw.stop;
 //                               long t = sw.peek.usecs;
 //                                writeln ("@1 store : t=", t);
 
         mdb_dbi_close(env, dbi);
+
+        return ev;
     }
 
     public Subject find_subject(string uri)
@@ -223,19 +267,36 @@ class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
         if (rc != 0)
-            writeln("LmdbStorage:find #2, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+        {
+            if (rc == MDB_MAP_RESIZED)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                mdb_env_close(env);
+                open_db();
+
+                return find(uri);
+            }
+
+            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            mdb_txn_abort(txn_r);
+            return null;
+        }
+
 
         try
         {
             rc = mdb_dbi_open(txn_r, null, 0, &dbi);
             if (rc != 0)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            }
 
             MDB_val key;
             key.mv_size = uri.length;

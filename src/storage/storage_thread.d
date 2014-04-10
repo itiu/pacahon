@@ -36,8 +36,6 @@ public void individuals_manager(string db_path)
                 send(tid_response_reciever, true);
             });
 
-    void delegate(EVENT ev) dg;
-
     while (true)
     {
         receive(
@@ -56,13 +54,8 @@ public void individuals_manager(string db_path)
                         {
                             try
                             {
-                                void send_event(EVENT ev)
-                                {
-                                    send(tid_response_reciever, ev, thisTid);
-                                }
-                                dg = &send_event;
-
-                                storage.update_or_create(msg, dg);
+                                EVENT ev = storage.update_or_create(msg);
+                                send(tid_response_reciever, ev, thisTid);
                             }
                             catch (Exception ex)
                             {
