@@ -278,7 +278,15 @@ void acl_manager()
             });
     while (true)
     {
-        receive((CMD cmd, EVENT type, string msg)
+        receive(
+                (CMD cmd)
+                {
+                    if (cmd == CMD.COMMIT)
+                    {
+                        storage.flush(1);
+                    }
+                },        	
+        		(CMD cmd, EVENT type, string msg)
                 {
                     if (cmd == CMD.STORE)
                     {
