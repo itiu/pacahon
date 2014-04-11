@@ -10,6 +10,7 @@ private
 
     import pacahon.know_predicates;
     import pacahon.context;
+    import pacahon.interthread_signals;
     import search.vql;
     import util.utils;
     import util.container;
@@ -103,32 +104,9 @@ class OWL
     Property *[ size_t ] property_2_idx;
     immutable(Class)[ string ] owl_classes;
 
-    private long last_time_signal       = 0;
-    private long last_time_check_signal = 0;
-
-    bool check_for_reload()
-    {
-        long now = Clock.currStdTime() / 10000;
-
-        if (now - last_time_check_signal > 10000 || now - last_time_check_signal < 0)
-        {
-            last_time_check_signal = now;
-
-            long now_time_signal = context.look_integer_signal("onto");
-            if (now_time_signal - last_time_signal > 10000 || now_time_signal - last_time_signal < 0)
-            {
-                last_time_signal = now_time_signal;
-                writeln("RELOAD ONTO");
-                load();
-                return true;
-            }
-        }
-        return false;
-    }
-
-
     public this(Context _context)
     {
+        //interthread_signal_id = "onto";
         context = _context;
         lmg     = new LabeledMultiDigraph();
     }

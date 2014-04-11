@@ -24,8 +24,8 @@ struct Individual
 
     immutable this(string _uri, immutable(Resources[ string ]) _resources)
     {
-        uri         = _uri;
-        resources   = _resources;
+        uri       = _uri;
+        resources = _resources;
     }
 
     immutable(Individual) idup()

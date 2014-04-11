@@ -23,48 +23,50 @@ static this()
 
 int count;
 
-void bus_event_after(Individual *individual, string subject_as_cbor, EVENT type, Context context)
+void bus_event_after(Individual *individual, Resource[ string ] rdfType, string subject_as_cbor, EVENT ev_type, Context context)
 {
     //writeln ("@bus_event B subject_as_cbor=[", individual.uri, "]");
-
-    Resources rdfType = individual.resources[ rdf__type ];
-
     //writeln (rdfType);
 
-    if (rdfType.anyExist(owl_tags) == true)
+    if (ev_type == EVENT.CREATE || ev_type == EVENT.UPDATE)
     {
-        try
+        Tid tid_condition = context.getTid(P_MODULE.condition);
+
+        if (rdfType.anyExist(owl_tags) == true)
         {
-            // изменения в онтологии, послать в interthread сигнал о необходимости перезагрузки онтологии
+            // изменения в онтологии, послать в interthread сигнал о необходимости перезагрузки (context) онтологии
             context.push_signal("onto", Clock.currStdTime() / 10000);
         }
-        catch (Exception ex)
-        {
-            writeln("EX!bus_event:", ex.msg);
-        }
-    }
 
-    if (rdfType.anyExist(veda_schema__PermissionStatement) == true || rdfType.anyExist(veda_schema__Membership) == true)
-    {
-        Tid tid_acl = context.getTid(P_MODULE.acl_manager);
-        if (tid_acl != Tid.init)
+        if (rdfType.anyExist(veda_schema__Mandate))
         {
-            send(tid_acl, CMD.STORE, type, subject_as_cbor);
+            // изменения в veda-schema:Mandate, послать модуль Condition сигнал о перезагузке скрипта
+            send(tid_condition, CMD.RELOAD, subject_as_cbor, thisTid);
+            receive((bool){});
         }
-    }
 
-    Tid tid_condition = context.getTid(P_MODULE.condition);
-    if (tid_condition != Tid.init)
-    {
+        if (rdfType.anyExist(veda_schema__PermissionStatement) == true || rdfType.anyExist(veda_schema__Membership) == true)
+        {
+            Tid tid_acl = context.getTid(P_MODULE.acl_manager);
+            if (tid_acl != Tid.init)
+            {
+                send(tid_acl, CMD.STORE, ev_type, subject_as_cbor);
+            }
+        }
+
+
+        if (tid_condition != Tid.init)
+        {
 //		writeln ("#bus_event #1, conditin_name=", P_MODULE.condition, ", tid_condition=", tid_condition);
-        try
-        {
+            try
+            {
 //			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
-            send(tid_condition, type, subject_as_cbor);
-        }
-        catch (Exception ex)
-        {
-            writeln("EX!bus_event:", ex.msg);
+                send(tid_condition, ev_type, subject_as_cbor);
+            }
+            catch (Exception ex)
+            {
+                writeln("EX!bus_event:", ex.msg);
+            }
         }
     }
     //writeln ("#bus_event E");

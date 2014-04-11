@@ -31,7 +31,7 @@ private
    индекс:
                 permissionObject + permissionSubject
 *********************************************************************/
-byte err;
+byte   err;
 
 logger log;
 
@@ -285,8 +285,8 @@ void acl_manager()
                     {
                         storage.flush(1);
                     }
-                },        	
-        		(CMD cmd, EVENT type, string msg)
+                },
+                (CMD cmd, EVENT type, string msg)
                 {
                     if (cmd == CMD.STORE)
                     {
@@ -349,7 +349,7 @@ void acl_manager()
 
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
-                            log.trace_log_and_console("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
+                            log.trace("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -381,8 +381,8 @@ void acl_manager()
                                     outbuff.write(';');
                                 }
 
-                               storage.put(rs.uri, outbuff.toString());
-                               log.trace_log_and_console("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
+                                storage.put(rs.uri, outbuff.toString());
+                                log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
                             }
                         }
                     }
@@ -391,7 +391,7 @@ void acl_manager()
                 {
                     if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
-                    else    
+                    else
                         send(tid_response_reciever, false);
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)

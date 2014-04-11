@@ -211,7 +211,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            owl.check_for_reload();
+            check_for_reload("owl", &owl.load);
             return owl.owl_classes;
         }
         else
@@ -234,7 +234,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            owl.check_for_reload();
+            check_for_reload("owl", &owl.load);
             return owl.getClass(uri);
         }
         else
@@ -245,7 +245,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            owl.check_for_reload();
+            check_for_reload("owl", &owl.load);
             return owl.getProperty(uri);
         }
         else
@@ -256,7 +256,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            owl.check_for_reload();
+            check_for_reload("owl", &owl.load);
             return owl.individuals;
         }
         else
@@ -267,64 +267,36 @@ class PThreadContext : Context
 
     public void push_signal(string key, long value)
     {
-        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
-
-        if (tid_interthread_signals != Tid.init)
+        try
         {
-            send(tid_interthread_signals, CMD.PUT, key, value);
+            Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
+
+            if (tid_interthread_signals != Tid.init)
+            {
+                send(tid_interthread_signals, CMD.PUT, key, value);
+            }
+        }
+        catch (Exception ex)
+        {
+            writeln(__FUNCTION__ ~ "", ex.msg);
         }
     }
 
     public void push_signal(string key, string value)
     {
-        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
-
-        if (tid_interthread_signals != Tid.init)
+        try
         {
-            send(tid_interthread_signals, CMD.PUT, key, value);
+            Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
+
+            if (tid_interthread_signals != Tid.init)
+            {
+                send(tid_interthread_signals, CMD.PUT, key, value);
+            }
         }
-    }
-
-    public long look_integer_signal(string key)
-    {
-        Tid myTid                   = thisTid;
-        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
-
-        if (tid_interthread_signals !is Tid.init)
+        catch (Exception ex)
         {
-            send(tid_interthread_signals, CMD.GET, key, DataType.Integer, myTid);
-
-            long res;
-
-            receive((long msg)
-                    {
-                        res = msg;
-                    });
-
-            return res;
+            writeln(__FUNCTION__ ~ "", ex.msg);
         }
-        return 0;
-    }
-
-    public string look_string_signal(string key)
-    {
-        Tid myTid                   = thisTid;
-        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
-
-        if (tid_interthread_signals !is Tid.init)
-        {
-            send(tid_interthread_signals, CMD.GET, key, DataType.String, myTid);
-
-            string res;
-
-            receive((string msg)
-                    {
-                        res = msg;
-                    });
-
-            return res;
-        }
-        return null;
     }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -464,6 +436,88 @@ class PThreadContext : Context
         send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
         if (t > 1)
             writeln(func[ (func.lastIndexOf(".") + 1)..$ ], ": t=", t, " msec");
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////
+    struct Signal
+    {
+        long last_time       = 0;
+        long last_time_check = 0;
+    }
+
+    Signal *[ string ] signals;
+
+    bool check_for_reload(string interthread_signal_id, void delegate() load)
+    {
+        long   now     = Clock.currStdTime() / 10000;
+        Signal *signal = signals.get(interthread_signal_id, null);
+
+        if (signal == null)
+        {
+            signal                           = new Signal;
+            signals[ interthread_signal_id ] = signal;
+        }
+        //writeln ("@:", __LINE__, " signal.last_time_check=", signal.last_time_check);
+
+        if (now - signal.last_time_check > 10000 || now - signal.last_time_check < 0)
+        {
+            //writeln ("@:", __LINE__, " signal.last_time=", signal.last_time);
+            signal.last_time_check = now;
+
+            long now_time_signal = look_integer_signal(interthread_signal_id);
+            //writeln ("@:", __LINE__, " now_time_signal=", now_time_signal);
+            if (now_time_signal - signal.last_time > 10000 || now_time_signal - signal.last_time <= 0)
+            {
+                signal.last_time = now_time_signal;
+                writeln("RELOAD for ", interthread_signal_id);
+                load();
+
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public long look_integer_signal(string key)
+    {
+        Tid myTid                   = thisTid;
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
+
+        if (tid_interthread_signals !is Tid.init)
+        {
+            send(tid_interthread_signals, CMD.GET, key, DataType.Integer, myTid);
+
+            long res;
+
+            receive((long msg)
+                    {
+                        res = msg;
+                    });
+
+            return res;
+        }
+        return 0;
+    }
+
+    public string look_string_signal(string key)
+    {
+        Tid myTid                   = thisTid;
+        Tid tid_interthread_signals = getTid(P_MODULE.interthread_signals);
+
+        if (tid_interthread_signals !is Tid.init)
+        {
+            send(tid_interthread_signals, CMD.GET, key, DataType.String, myTid);
+
+            string res;
+
+            receive((string msg)
+                    {
+                        res = msg;
+                    });
+
+            return res;
+        }
+        return null;
     }
 
 
@@ -751,8 +805,8 @@ class PThreadContext : Context
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
 
-            Resources rdfType = indv.resources[ rdf__type ];
-
+            Resource[ string ] rdfType;
+            setHashResources(indv.resources[ rdf__type ], rdfType);
             //writeln ("@ put_individual:", indv.uri);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
@@ -793,7 +847,7 @@ class PThreadContext : Context
 
                 if (prepareEvents == true)
                 {
-                    bus_event_after(indv, ss_as_cbor, ev, this);
+                    bus_event_after(indv, rdfType, ss_as_cbor, ev, this);
                 }
 
                 return ResultCode.OK;

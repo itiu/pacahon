@@ -1,6 +1,6 @@
 module pacahon.interthread_signals;
 
-import std.concurrency, std.stdio;
+import std.concurrency, std.stdio, std.datetime;
 import pacahon.context;
 import pacahon.define;
 

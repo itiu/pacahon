@@ -53,28 +53,24 @@ struct Mandat
     Script script;
 }
 
-int count;
+int     count;
+Context context;
+Mandat[ string ] mandats;
+VQL     vql;
 
 public void condition_thread(string props_file_name)
 {
-    Context context = new PThreadContext(null, "condition_thread");
-
+    context   = new PThreadContext(null, "condition_thread");
     g_context = context;
 
-    Set!Mandat mandats;
     OrgStructureTree ost;
-    VQL              vql;
 
 //	ost = new OrgStructureTree(context);
 //	ost.load();
     vql = new VQL(context);
-    load(context, vql, mandats);
-
-    string key2slot_str;
-    long   last_update_time;
+    load();
 
 //    writeln("SPAWN: condition_thread");
-    last_update_time = Clock.currTime().stdTime();
 
     try
     {
@@ -90,7 +86,18 @@ public void condition_thread(string props_file_name)
             {
                 ScriptVM script_vm = context.get_ScriptVM();
 
-                receive((CMD cmd, Tid to)
+                receive(
+                        (CMD cmd, string arg, Tid to)
+                        {
+                            if (cmd == CMD.RELOAD)
+                            {
+                                Subject ss = cbor2subject(arg);
+                                prepare_condition(ss, script_vm);
+                                send(to, true);
+                            }
+                            send(to, false);
+                        },
+                        (CMD cmd, Tid to)
                         {
                             if (cmd == CMD.NOP)
                                 send(to, true);
@@ -106,7 +113,7 @@ public void condition_thread(string props_file_name)
                                 g_individual.data = cast(char *)msg;
                                 g_individual.length = cast(int)msg.length;
 
-                                foreach (mandat; mandats)
+                                foreach (mandat; mandats.values)
                                 {
                                     if (mandat.script !is null)
                                     {
@@ -142,8 +149,9 @@ public void condition_thread(string props_file_name)
     writeln("TERMINATED: condition_thread");
 }
 
-public void load(Context context, VQL vql, ref Set!Mandat mandats)
+public void load()
 {
+    //writeln ("@1");
     ScriptVM script_vm = context.get_ScriptVM();
 
     if (script_vm is null)
@@ -157,65 +165,76 @@ public void load(Context context, VQL vql, ref Set!Mandat mandats)
             filter { 'rdf:type' == 'veda-schema:Mandate'}",
             res);
 
-    int       count = 0;
-    JSONValue nil;
+    int count = 0;
 
     foreach (ss; res.data)
     {
-        try
-        {
-            string condition_text = ss.getFirstLiteral(veda_schema__script);
-            if (condition_text.length <= 0)
-                continue;
-
-            //writeln("condition_text:", condition_text);
-
-            Mandat mandat = void;
-            mandat.id = ss.subject;
-
-            if (condition_text[ 0 ] == '{')
-            {
-                JSONValue condition_json = parseJSON(condition_text);
-
-                if (condition_json.type == JSON_TYPE.OBJECT)
-                {
-                    JSONValue el = condition_json.object.get("whom", nil);
-                    if (el != nil)
-                        mandat.whom = el.str;
-
-                    el = condition_json.object.get("right", nil);
-                    if (el != nil)
-                        mandat.right = el.str;
-
-                    el = condition_json.object.get("condition", nil);
-                    if (el != nil)
-                    {
-                        mandat.condition = el.str;
-                        mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-                        writeln("\nmandat.id=", mandat.id);
-                        writeln("str=", mandat.condition);
-
-                        mandats ~= mandat;
-                    }
-                }
-            }
-            else
-            {
-                mandat.condition = condition_text;
-                mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-                writeln("\nmandat.id=", mandat.id);
-                writeln("str=", mandat.condition);
-
-                mandats ~= mandat;
-            }
-
-//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
-        }
-        catch (Exception ex)
-        {
-            writeln("error:load mandat :", ex.msg);
-        }
+        prepare_condition(ss, script_vm);
     }
 
+    //writeln ("@2");
     log.trace_log_and_console("end load mandats, count=%d ", res.length);
+}
+
+private void prepare_condition(Subject ss, ScriptVM script_vm)
+{
+    writeln("@prepare_condition uri=", ss.subject);
+    JSONValue nil;
+    try
+    {
+        string condition_text = ss.getFirstLiteral(veda_schema__script);
+        if (condition_text.length <= 0)
+            return;
+
+        //writeln("condition_text:", condition_text);
+
+        Mandat mandat = void;
+        mandat.id = ss.subject;
+
+        if (condition_text[ 0 ] == '{')
+        {
+            JSONValue condition_json = parseJSON(condition_text);
+
+            if (condition_json.type == JSON_TYPE.OBJECT)
+            {
+                JSONValue el = condition_json.object.get("whom", nil);
+                if (el != nil)
+                    mandat.whom = el.str;
+
+                el = condition_json.object.get("right", nil);
+                if (el != nil)
+                    mandat.right = el.str;
+
+                el = condition_json.object.get("condition", nil);
+                if (el != nil)
+                {
+                    mandat.condition = el.str;
+                    mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+                    writeln("\nmandat.id=", mandat.id);
+                    writeln("str=", mandat.condition);
+
+                    mandats[ ss.subject ] = mandat;
+                }
+            }
+        }
+        else
+        {
+            mandat.condition = condition_text;
+            mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+            writeln("\nmandat.id=", mandat.id);
+            writeln("str=", mandat.condition);
+
+            mandats[ ss.subject ] = mandat;
+        }
+
+//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
+    }
+    catch (Exception ex)
+    {
+        writeln("error:load mandat :", ex.msg);
+    }
+    finally
+    {
+        //writeln ("@4");
+    }
 }

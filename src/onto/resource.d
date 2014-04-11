@@ -9,7 +9,7 @@ enum ResourceType : ubyte
     Integer  = 4,
     Datetime = 8,
     Float    = 16,
-    Boolean	 = 32
+    Boolean  = 32
 }
 
 enum ResourceOrigin : ubyte
@@ -22,6 +22,31 @@ alias Resource[]            Resources;
 alias immutable(Resource)[] iResources;
 Resources                   _empty_Resources  = Resources.init;
 iResources                  _empty_iResources = iResources.init;
+
+public void setHashResources(Resources rss, ref Resource[ string ] hrss)
+{
+    foreach (rs; rss)
+        hrss[ rs.data ] = rs;
+}
+
+public bool anyExist(ref Resource[ string ] hrss, string object)
+{
+    if ((object in hrss) !is null)
+        return true;
+    else
+        return false;
+}
+
+public bool anyExist(ref Resource[ string ] hrss, string[] objects)
+{
+    foreach (object; objects)
+    {
+        if ((object in hrss) !is null)
+            return true;
+    }
+    return false;
+}
+
 
 struct Resource
 {

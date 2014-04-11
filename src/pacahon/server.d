@@ -141,7 +141,8 @@ void init_core()
             spawn(&xapian_indexer, tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ], tids[ P_MODULE.xapian_thread_context ]);
         wait_starting_thread(P_MODULE.fulltext_indexer, tids);
 
-        tids[ P_MODULE.commiter ] = spawn(&commiter, tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ]);
+        tids[ P_MODULE.commiter ] =
+            spawn(&commiter, tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ]);
         wait_starting_thread(P_MODULE.commiter, tids);
 
         tids[ P_MODULE.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);

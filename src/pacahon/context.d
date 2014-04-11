@@ -21,7 +21,8 @@ enum CMD : byte
     AUTHORIZE = 8,
     COMMIT    = 16,
     END_DATA  = 32,
-    NOP       = 64
+    NOP       = 64,
+    RELOAD    = 65
 }
 
 enum P_MODULE : byte
