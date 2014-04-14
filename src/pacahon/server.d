@@ -252,14 +252,14 @@ void init_core()
                 }
             }
         }
-        
+/*        
      Thread[] threads = Thread.getAll();
      foreach (thread; threads)
      {
      	writeln ("THREAD: ", thread.name (), ", is Running:",  thread.isRunning()); 
      	send (thread.getid (), "");    	
      } 
-        
+*/        
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);
