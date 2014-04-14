@@ -21,8 +21,11 @@ import search.xapian_vql;
 
 byte err;
 
-public void xapian_thread_context()
+public void xapian_thread_context(P_MODULE name)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);
+		
     string key2slot_str;
     long   last_update_time;
 
@@ -132,8 +135,10 @@ private void printTid(string tag)
 }
 
 
-void xapian_indexer(Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
+void xapian_indexer(P_MODULE name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);	
 //    writeln("SPAWN: Xapian Indexer");
 
     try

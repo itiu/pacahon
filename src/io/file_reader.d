@@ -17,9 +17,12 @@ import pacahon.server;
 import pacahon.define;
 import pacahon.know_predicates;
 
-void file_reader_thread(string props_file_name)
+void file_reader_thread(P_MODULE name, string props_file_name)
 {
-    writeln("SPAWN: file reader");
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);	
+		
+    //writeln("SPAWN: file reader");
 
     try
     {

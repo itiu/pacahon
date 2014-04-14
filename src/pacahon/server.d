@@ -68,8 +68,10 @@ version (executable)
     }
 }
 
-void commiter(Tid tid, Tid tid_subject_manager, Tid tid_acl_manager)
+void commiter(P_MODULE name, Tid tid, Tid tid_subject_manager, Tid tid_acl_manager)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);		
     // SEND ready
     receive((Tid tid_response_reciever)
             {
@@ -122,39 +124,39 @@ void init_core()
 
         Tid[ P_MODULE ] tids;
 
-        tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread);
+        tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, P_MODULE.interthread_signals);
         wait_starting_thread(P_MODULE.interthread_signals, tids);
 
-        tids[ P_MODULE.subject_manager ] = spawn(&individuals_manager, individuals_db_path);
+        tids[ P_MODULE.subject_manager ] = spawn(&individuals_manager, P_MODULE.subject_manager, individuals_db_path);
         wait_starting_thread(P_MODULE.subject_manager, tids);
 
-        tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, tickets_db_path);
+        tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, P_MODULE.ticket_manager, tickets_db_path);
         wait_starting_thread(P_MODULE.ticket_manager, tids);
 
-        tids[ P_MODULE.acl_manager ] = spawn(&acl_manager);
+        tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, P_MODULE.acl_manager);
         wait_starting_thread(P_MODULE.acl_manager, tids);
 
-        tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context);
+        tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context, P_MODULE.xapian_thread_context);
         wait_starting_thread(P_MODULE.xapian_thread_context, tids);
 
         tids[ P_MODULE.fulltext_indexer ] =
-            spawn(&xapian_indexer, tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ], tids[ P_MODULE.xapian_thread_context ]);
+            spawn(&xapian_indexer, P_MODULE.fulltext_indexer, tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ], tids[ P_MODULE.xapian_thread_context ]);
         wait_starting_thread(P_MODULE.fulltext_indexer, tids);
 
         tids[ P_MODULE.commiter ] =
-            spawn(&commiter, tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ]);
+            spawn(&commiter, P_MODULE.commiter, tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ]);
         wait_starting_thread(P_MODULE.commiter, tids);
 
-        tids[ P_MODULE.statistic_data_accumulator ] = spawn(&statistic_data_accumulator);
+        tids[ P_MODULE.statistic_data_accumulator ] = spawn(&statistic_data_accumulator, P_MODULE.statistic_data_accumulator);
         wait_starting_thread(P_MODULE.statistic_data_accumulator, tids);
 
-        tids[ P_MODULE.print_statistic ] = spawn(&print_statistic, tids[ P_MODULE.statistic_data_accumulator ]);
+        tids[ P_MODULE.print_statistic ] = spawn(&print_statistic, P_MODULE.print_statistic, tids[ P_MODULE.statistic_data_accumulator ]);
         wait_starting_thread(P_MODULE.print_statistic, tids);
 
         foreach (key, value; tids)
             register(text(key), value);
 
-        tids[ P_MODULE.condition ] = spawn(&condition_thread, props_file_path);
+        tids[ P_MODULE.condition ] = spawn(&condition_thread, P_MODULE.condition, props_file_path);
         wait_starting_thread(P_MODULE.condition, tids);
 
         register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
@@ -191,7 +193,7 @@ void init_core()
 
                 if (params.get("transport", "") == "file_reader")
                 {
-                    spawn(&io.file_reader.file_reader_thread, "pacahon-properties.json");
+                    spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, "pacahon-properties.json");
                 }
                 else if (params.get("transport", "") == "zmq")
                 {
@@ -204,7 +206,7 @@ void init_core()
                     {
                         try
                         {
-                            spawn(&io.zmq_listener.zmq_thread, "pacahon-properties.json", listener_section_count);
+                            spawn(&io.zmq_listener.zmq_thread, text(P_MODULE.zmq_listener), "pacahon-properties.json", listener_section_count);
                             log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
 
 //								zmq_connection = new zmq_point_to_poin_client();
@@ -250,6 +252,14 @@ void init_core()
                 }
             }
         }
+        
+     Thread[] threads = Thread.getAll();
+     foreach (thread; threads)
+     {
+     	writeln ("THREAD: ", thread.name (), ", is Running:",  thread.isRunning()); 
+     	send (thread.getid (), "");    	
+     } 
+        
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);

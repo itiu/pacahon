@@ -37,7 +37,9 @@ enum P_MODULE : byte
     commiter                   = 7,
     print_statistic            = 8,
     interthread_signals        = 9,
-    nop                        = 10
+    file_reader				   = 10,
+    zmq_listener			   = 11, 		
+    nop                        = 99
 }
 
 enum ResultCode

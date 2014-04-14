@@ -101,9 +101,6 @@ public JSONValue read_props(string file_name)
     }
     else
     {    	
-      
-//    	dmd >= 2.065
-      
         JSONValue transport = JSONValue(["point" : JSONValue("tcp://*:5559")]);
         transport.object["transport"] = JSONValue("zmq");
         
@@ -114,38 +111,7 @@ public JSONValue read_props(string file_name)
 
         string buff = toJSON(&res);
 
-        std.file.write(file_name, buff);
-    
-		// dmd >= 2.064
-/*
-        res.type = JSON_TYPE.OBJECT;
-
-        JSONValue listeners;
-        listeners.type = JSON_TYPE.ARRAY;
-
-        JSONValue transport;
-        transport.type = JSON_TYPE.OBJECT;        
-        JSONValue point;
-        point.str                   = "tcp://*:5559";
-        transport.object[ "point" ] = point;
-        JSONValue tt;
-        tt.str                          = "zmq";
-        transport.object[ "transport" ] = tt;
-        listeners.array ~= transport;
-        
-        JSONValue transport1;
-        transport1.type = JSON_TYPE.OBJECT;        
-        JSONValue tt1;
-        tt1.str                          = "file_reader";
-        transport1.object[ "transport" ] = tt1;
-        listeners.array ~= transport1;
-
-        res.object[ "listeners" ] = listeners;
-
-        string buff = toJSON(&res);
-
-        std.file.write(file_name, buff);
-*/      
+        std.file.write(file_name, buff);      
     }
 
     return res;

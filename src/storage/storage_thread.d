@@ -2,7 +2,7 @@ module storage.storage_thread;
 
 private
 {
-    import std.stdio, std.concurrency, std.file, std.datetime;
+    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime;
 
     import bind.lmdb_header;
 
@@ -25,8 +25,10 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-public void individuals_manager(string db_path)
+public void individuals_manager(P_MODULE name, string db_path)
 {
+	Thread tr = Thread.getThis();
+	tr.name = text (name);
 //    writeln("SPAWN: Subject manager");
     LmdbStorage storage = new LmdbStorage(db_path);
 

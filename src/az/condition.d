@@ -58,8 +58,11 @@ Context context;
 Mandat[ string ] mandats;
 VQL     vql;
 
-public void condition_thread(string props_file_name)
+public void condition_thread(P_MODULE name, string props_file_name)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);	
+		
     context   = new PThreadContext(null, "condition_thread");
     g_context = context;
 

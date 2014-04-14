@@ -36,8 +36,11 @@ static this()
     log = new logger("server-statistics", "log", "");
 }
 
-void statistic_data_accumulator()
+void statistic_data_accumulator(P_MODULE name)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);		
+	
     long[] stat = new long[ 3 ];
 //    writeln("SPAWN: statistic_data_accumulator");
 
@@ -66,8 +69,10 @@ void statistic_data_accumulator()
     }
 }
 
-void print_statistic(Tid _statistic_data_accumulator)
+void print_statistic(P_MODULE name, Tid _statistic_data_accumulator)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);		
 //    writeln("SPAWN: print_statistic");
 
     long sleep_time = 1;

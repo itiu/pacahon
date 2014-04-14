@@ -1,11 +1,14 @@
 module pacahon.interthread_signals;
 
-import std.concurrency, std.stdio, std.datetime;
+import core.thread, std.conv, std.concurrency, std.stdio, std.datetime;
 import pacahon.context;
 import pacahon.define;
 
-public void interthread_signals_thread()
+public void interthread_signals_thread(P_MODULE name)
 {
+	core.thread.Thread tr = core.thread.Thread.getThis();
+	tr.name = std.conv.text (name);
+		
     long[ string ] signals;
     string[ string ] str_signals;
 

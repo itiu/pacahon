@@ -2,7 +2,7 @@ module az.acl;
 
 private
 {
-    import std.stdio, std.concurrency, std.file, std.datetime, std.array, std.outbuffer;
+    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.array, std.outbuffer;
 
     import onto.individual;
     import onto.resource;
@@ -266,8 +266,10 @@ class Authorization : LmdbStorage
     }
 }
 
-void acl_manager()
+void acl_manager(P_MODULE name)
 {
+	Thread tr = Thread.getThis();
+	tr.name = text (name);
 //    writeln("SPAWN: acl manager");
     LmdbStorage storage = new LmdbStorage(acl_indexes_db_path);
 
