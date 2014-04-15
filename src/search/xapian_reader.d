@@ -11,6 +11,7 @@ import util.cbor8sgraph;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
+import pacahon.log_msg;
 
 //import storage.subject;
 import search.vel;
@@ -126,7 +127,10 @@ class XapianReader : SearchReader
             if (now_time_signal - last_time_signal > 10000 || now_time_signal - last_time_signal < 0)
             {
                 last_time_signal = now_time_signal;
-                writeln("REOPEN");
+
+                if (trace_msg[ 320 ] == 1)
+                	log.trace ("REOPEN search db");
+                
                 close_db();
                 open_db();
                 return true;

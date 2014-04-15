@@ -287,7 +287,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
 
     Subject[] subjects;
 
-    if (trace_msg[ 0 ] == 1)
+    if (trace_msg[ 1 ] == 1)
         io_msg.trace_io(true, msg, message_size);
     /*
        {

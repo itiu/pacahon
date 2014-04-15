@@ -470,7 +470,10 @@ class PThreadContext : Context
             if (now_time_signal - signal.last_time > 10000 || now_time_signal - signal.last_time <= 0)
             {
                 signal.last_time = now_time_signal;
-                writeln("RELOAD for ", interthread_signal_id);
+                
+                if (trace_msg[ 400 ] == 1)
+                	log.trace("RELOAD for %s", interthread_signal_id);
+                
                 load();
 
                 return true;
@@ -855,7 +858,7 @@ class PThreadContext : Context
             }
             else
             {
-                writeln("Ex! store_subject:", ev);
+                log.trace("Ex! store_subject:%s", ev);
                 return ResultCode.Internal_Server_Error;
             }
         }
@@ -909,8 +912,7 @@ class PThreadContext : Context
             if (tid != Tid.init)
                 send(tid, CMD.SET_TRACE, idx, state);
         }
-        if (idx > 0 && idx < trace_msg.length) 
-        	trace_msg[idx] = state;
+       	pacahon.log_msg.set_trace(idx, state);
         writeln("******************");    	
     }
 }

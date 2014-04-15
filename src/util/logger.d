@@ -18,7 +18,7 @@ private
 
 void logger_process()
 {
-    writeln("SPAWN: Logger");
+    //writeln("SPAWN: Logger");
     LoggerQueue llq = null;
 
     while (true)

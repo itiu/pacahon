@@ -410,7 +410,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         {
         	sw.stop();
         	long t = cast(long)sw.peek().usecs;
-        	log.trace_log_and_console("total time execute query: %s µs", text(t));
+        	log.trace("total time execute query: %s µs", text(t));
         }	
 
         destroy_MSetIterator(it);
