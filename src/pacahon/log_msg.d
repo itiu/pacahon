@@ -2,6 +2,8 @@ module pacahon.log_msg;
 
 private import util.logger;
 
+byte trace_msg[ 1100 ];
+
 // last id = 71
 
 int m_get_message[]      = [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 61, 62 ];
@@ -53,4 +55,10 @@ void unset_all_messages()
 void unset_message(int idx)
 {
     trace_msg[ idx ] = 0;
+}
+
+
+void set_trace(int idx, bool state)
+{
+    trace_msg[ idx ] = state;
 }

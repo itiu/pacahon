@@ -36,11 +36,10 @@ static this()
     log = new logger("server-statistics", "log", "");
 }
 
-void statistic_data_accumulator(P_MODULE name)
+void statistic_data_accumulator(string thread_name)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);		
-	
+    core.thread.Thread.getThis().name = thread_name;
+
     long[] stat = new long[ 3 ];
 //    writeln("SPAWN: statistic_data_accumulator");
 
@@ -48,7 +47,7 @@ void statistic_data_accumulator(P_MODULE name)
     receive((Tid tid_response_reciever)
             {
                 send(tid_response_reciever, true);
-            });    
+            });
     while (true)
     {
         receive(
@@ -65,15 +64,13 @@ void statistic_data_accumulator(P_MODULE name)
                     {
                         send(tid_sender, cast(immutable)stat.dup);
                     }
-                }, (Variant v) { writeln("load_info::Received some other type.", v); });
+                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }
 
-void print_statistic(P_MODULE name, Tid _statistic_data_accumulator)
+void print_statistic(string thread_name, Tid _statistic_data_accumulator)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);		
-//    writeln("SPAWN: print_statistic");
+    core.thread.Thread.getThis().name = thread_name;
 
     long sleep_time = 1;
 //    Thread.sleep(dur!("seconds")(sleep_time));
@@ -160,5 +157,5 @@ void print_statistic(P_MODULE name, Tid _statistic_data_accumulator)
         Thread.sleep(dur!("seconds")(sleep_time));
     }
 
-    writeln("exit form thread print_statistic");
+    writeln("exit form thread ", thread_name);
 }

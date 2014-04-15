@@ -4,11 +4,10 @@ import core.thread, std.conv, std.concurrency, std.stdio, std.datetime;
 import pacahon.context;
 import pacahon.define;
 
-public void interthread_signals_thread(P_MODULE name)
+public void interthread_signals_thread(string thread_name)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);
-		
+    core.thread.Thread.getThis().name = thread_name;
+
     long[ string ] signals;
     string[ string ] str_signals;
 
@@ -54,7 +53,7 @@ public void interthread_signals_thread(P_MODULE name)
                         str_signals[ key ] = value;
                         writeln("@set signal ", key, "=", value);
                     }
-                }, (Variant v) { writeln("interthread_signals::Received some other type.", v); }
+                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); }
                 );
     }
 }

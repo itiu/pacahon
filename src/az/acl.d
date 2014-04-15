@@ -18,6 +18,7 @@ private
     import pacahon.context;
     import pacahon.define;
     import pacahon.know_predicates;
+    import pacahon.log_msg;
     import storage.lmdb_storage;
 }
 
@@ -266,10 +267,9 @@ class Authorization : LmdbStorage
     }
 }
 
-void acl_manager(P_MODULE name)
+void acl_manager(string thread_name)
 {
-	Thread tr = Thread.getThis();
-	tr.name = text (name);
+    core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: acl manager");
     LmdbStorage storage = new LmdbStorage(acl_indexes_db_path);
 
@@ -410,6 +410,12 @@ void acl_manager(P_MODULE name)
                     {
                         send(tid_response_reciever, "?");
                     }
-                }, (Variant v) { writeln("acl::Received some other type.", v); });
+                },
+                (CMD cmd, int arg, bool arg2)
+                {
+                    if (cmd == CMD.SET_TRACE)
+                        set_trace(arg, arg2);
+                },
+                (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }

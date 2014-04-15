@@ -21,6 +21,7 @@ enum CMD : byte
     AUTHORIZE = 8,
     COMMIT    = 16,
     END_DATA  = 32,
+    SET_TRACE = 33,
     NOP       = 64,
     RELOAD    = 65
 }
@@ -37,8 +38,8 @@ enum P_MODULE : byte
     commiter                   = 7,
     print_statistic            = 8,
     interthread_signals        = 9,
-    file_reader				   = 10,
-    zmq_listener			   = 11, 		
+    file_reader                = 10,
+    zmq_listener               = 11,
     nop                        = 99
 }
 
@@ -143,5 +144,7 @@ interface Context
     public ResultCode post_individual(string ticket, Individual individual);
 
     public void wait_thread(P_MODULE thread_id);
+    
+    public void set_trace (int idx, bool state);
 }
 

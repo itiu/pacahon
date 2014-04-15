@@ -2,7 +2,7 @@ module pacahon.thread_context;
 
 private
 {
-    import std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file;
+    import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file;
 
     import bind.xapian_d_header;
     import bind.v8d_header;
@@ -21,6 +21,7 @@ private
     import pacahon.context;
     import pacahon.bus_event;
     import pacahon.interthread_signals;
+    import pacahon.log_msg;
 
     import onto.owl;
     import onto.individual;
@@ -895,5 +896,19 @@ class PThreadContext : Context
         {
             stat(CMD.GET, sw);
         }
+    }
+    
+    public void set_trace (int idx, bool state)
+    {
+        writeln("******************");
+        Thread[] threads = Thread.getAll();
+        foreach (thread; threads)
+        {
+            //writeln ("THREAD: ", thread.name (), ", is Running:",  thread.isRunning());
+            Tid tid = locate(thread.name());
+            if (tid != Tid.init)
+                send(tid, CMD.SET_TRACE, idx, state);
+        }
+        writeln("******************");    	
     }
 }

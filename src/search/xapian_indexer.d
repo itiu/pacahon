@@ -16,15 +16,15 @@ import onto.sgraph;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
+import pacahon.log_msg;
 import search.vel;
 import search.xapian_vql;
 
 byte err;
 
-public void xapian_thread_context(P_MODULE name)
+public void xapian_thread_context(string thread_name)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);
+	core.thread.Thread.getThis().name = thread_name;
 		
     string key2slot_str;
     long   last_update_time;
@@ -70,7 +70,7 @@ public void xapian_thread_context(P_MODULE name)
                             send(tid_sender, last_update_time);
                         }
                     }
-                }, (Variant v) { writeln("xapian_indexer::Received some other type.", v); });
+                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }
 
@@ -135,10 +135,9 @@ private void printTid(string tag)
 }
 
 
-void xapian_indexer(P_MODULE name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
+void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);	
+	core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: Xapian Indexer");
 
     try
@@ -509,7 +508,13 @@ void xapian_indexer(P_MODULE name, Tid tid_subject_manager, Tid tid_acl_manager,
                             destroy_Document(doc);
                         }
                     }
-                }, (Variant v) { writeln("xapian_indexer::Received some other type."); });
+                },
+                (CMD cmd, int arg, bool arg2)
+                {
+                	if (cmd == CMD.SET_TRACE)
+                		set_trace (arg, arg2);
+                },                
+                (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }
 

@@ -18,6 +18,7 @@ private
     import pacahon.context;
     import pacahon.define;
     import pacahon.thread_context;
+    import pacahon.log_msg;
 
     import search.vel;
     import search.vql;
@@ -58,12 +59,11 @@ Context context;
 Mandat[ string ] mandats;
 VQL     vql;
 
-public void condition_thread(P_MODULE name, string props_file_name)
+public void condition_thread(string thread_name, string props_file_name)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = std.conv.text (name);	
-		
-    context   = new PThreadContext(null, "condition_thread");
+    core.thread.Thread.getThis().name = thread_name;
+
+    context   = new PThreadContext(null, thread_name);
     g_context = context;
 
     OrgStructureTree ost;
@@ -137,19 +137,25 @@ public void condition_thread(P_MODULE name, string props_file_name)
 
                                 //clear_script_data_cache ();
                             }
-                        }, (Variant v) { writeln("condition::Received some other type.", v); });
+                        },
+                        (CMD cmd, int arg, bool arg2)
+                        {
+                            if (cmd == CMD.SET_TRACE)
+                                set_trace(arg, arg2);
+                        },
+                        (Variant v) { writeln(thread_name, "::Received some other type.", v); });
             }
             catch (Exception ex)
             {
-                writeln("EX! condition: receive");
+                writeln(thread_name, "EX!: receive");
             }
         }
     }
     catch (Exception ex)
     {
-        writeln("EX! condition: main loop");
+        writeln(thread_name, "EX!: main loop");
     }
-    writeln("TERMINATED: condition_thread");
+    writeln("TERMINATED: ", thread_name);
 }
 
 public void load()

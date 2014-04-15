@@ -42,8 +42,6 @@ void logger_process()
     }
 }
 
-
-
 public class logger
 {
     private string log_name = "app";
@@ -101,9 +99,6 @@ public class logger
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-           shared byte trace_msg[ 1100 ];
 
 alias long _time;
 

@@ -13,6 +13,7 @@ private
 
     import pacahon.context;
     import pacahon.define;
+    import pacahon.log_msg;
     import search.vel;
     import storage.lmdb_storage;
     import onto.sgraph;
@@ -25,10 +26,9 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-public void individuals_manager(P_MODULE name, string db_path)
+public void individuals_manager(string thread_name, string db_path)
 {
-	Thread tr = Thread.getThis();
-	tr.name = text (name);
+	core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: Subject manager");
     LmdbStorage storage = new LmdbStorage(db_path);
 
@@ -85,9 +85,15 @@ public void individuals_manager(P_MODULE name, string db_path)
                     }
                     catch (Exception ex)
                     {
-                        writeln("individuals_manager:EX!", ex.msg);
+                        writeln(thread_name, ":EX!", ex.msg);
                     }
-                }, (Variant v) { writeln("storage_thread::Received some other type.", v); });
+                },
+                                (CMD cmd, int arg, bool arg2)
+                {
+                	if (cmd == CMD.SET_TRACE)
+                		set_trace (arg, arg2);
+                },
+                (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }
 
