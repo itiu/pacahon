@@ -351,7 +351,8 @@ void acl_manager(string thread_name)
 
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
-                            log.trace("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
+                            if (trace_msg[ 100 ] == 1)
+                            	log.trace("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -384,7 +385,9 @@ void acl_manager(string thread_name)
                                 }
 
                                 storage.put(rs.uri, outbuff.toString());
-                                log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
+
+                                if (trace_msg[ 101 ] == 1)
+                                	log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
                             }
                         }
                     }
