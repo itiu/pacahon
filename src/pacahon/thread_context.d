@@ -35,7 +35,7 @@ logger log;
 
 static this()
 {
-    log = new logger("pacahon", "log", "server");
+    log = new logger("pacahon", "log", "context");
 }
 
 Tid    dummy_tid;
@@ -909,6 +909,8 @@ class PThreadContext : Context
             if (tid != Tid.init)
                 send(tid, CMD.SET_TRACE, idx, state);
         }
+        if (idx > 0 && idx < trace_msg.length) 
+        	trace_msg[idx] = state;
         writeln("******************");    	
     }
 }

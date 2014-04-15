@@ -11,11 +11,24 @@ import util.cbor8sgraph;
 import pacahon.define;
 import pacahon.know_predicates;
 import pacahon.context;
+
 //import storage.subject;
 import search.vel;
 import search.xapian_vql;
 
 import onto.sgraph;
+
+//////// logger ///////////////////////////////////////////
+import util.logger;
+logger _log;
+logger log ()
+{
+	if (_log is null)
+		_log = new logger("pacahon", "log", "search");
+	return _log;		
+}
+//////// ////// ///////////////////////////////////////////
+
 
 byte err;
 

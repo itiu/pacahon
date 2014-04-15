@@ -8,6 +8,7 @@ import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
 import util.cbor8sgraph;
+import util.logger;
 
 import onto.resource;
 import onto.lang;
@@ -19,6 +20,17 @@ import pacahon.context;
 import pacahon.log_msg;
 import search.vel;
 import search.xapian_vql;
+
+//////// logger ///////////////////////////////////////////
+import util.logger;
+logger _log;
+logger log ()
+{
+	if (_log is null)
+		_log = new logger("pacahon", "log", "search");
+	return _log;		
+}
+//////// ////// ///////////////////////////////////////////
 
 byte err;
 

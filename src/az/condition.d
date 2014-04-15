@@ -42,7 +42,7 @@ logger log;
 
 static this()
 {
-    log = new logger("pacahon", "log", "MandatManager");
+    log = new logger("pacahon", "log", "condition");
 }
 
 struct Mandat
@@ -122,13 +122,15 @@ public void condition_thread(string thread_name, string props_file_name)
                                     {
                                         try
                                         {
-                                            //writeln ("exec script : ", mandat.condition);
+                                        	if (trace_msg [300] == 1)
+                                            	log.trace ("exec script : %s ", mandat.condition);
+                                            	
                                             count++;
                                             script_vm.run(mandat.script);
                                         }
                                         catch (Exception ex)
                                         {
-                                            writeln("EX!condition.receive ", ex.msg);
+                                            log.trace_log_and_console("EX!condition.receive : %s", ex.msg);
                                         }
                                     }
                                 }
@@ -143,7 +145,7 @@ public void condition_thread(string thread_name, string props_file_name)
                             if (cmd == CMD.SET_TRACE)
                                 set_trace(arg, arg2);
                         },
-                        (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+                        (Variant v) { log.trace_log_and_console(thread_name ~ "::Received some other type." ~ text (v)); });
             }
             catch (Exception ex)
             {
@@ -166,7 +168,8 @@ public void load()
     if (script_vm is null)
         return;
 
-    log.trace_log_and_console("start load mandats");
+   	if (trace_msg [301] == 1)
+   		log.trace("start load mandats");
 
     Subjects res = new Subjects();
     vql.get(null,
@@ -182,12 +185,15 @@ public void load()
     }
 
     //writeln ("@2");
-    log.trace_log_and_console("end load mandats, count=%d ", res.length);
+   	if (trace_msg [300] == 1)
+   		log.trace("end load mandats, count=%d ", res.length);
 }
 
 private void prepare_condition(Subject ss, ScriptVM script_vm)
 {
-    writeln("@prepare_condition uri=", ss.subject);
+   	if (trace_msg [310] == 1)	
+   		log.trace("prepare_condition uri=%s", ss.subject);
+    
     JSONValue nil;
     try
     {
@@ -219,8 +225,9 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
                 {
                     mandat.condition = el.str;
                     mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-                    writeln("\nmandat.id=", mandat.id);
-                    writeln("str=", mandat.condition);
+
+                    if (trace_msg [310] == 1)	
+                    	log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.condition);
 
                     mandats[ ss.subject ] = mandat;
                 }
@@ -230,8 +237,8 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
         {
             mandat.condition = condition_text;
             mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-            writeln("\nmandat.id=", mandat.id);
-            writeln("str=", mandat.condition);
+            if (trace_msg [310] == 1)	
+            	log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.condition);
 
             mandats[ ss.subject ] = mandat;
         }
@@ -240,7 +247,7 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
     }
     catch (Exception ex)
     {
-        writeln("error:load mandat :", ex.msg);
+        log.trace_log_and_console("error:load mandat :%s", ex.msg);
     }
     finally
     {

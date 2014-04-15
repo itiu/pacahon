@@ -1,7 +1,6 @@
 module search.xapian_vql;
 
 import std.string, std.concurrency, std.stdio, std.datetime, std.conv;
-
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
@@ -9,16 +8,20 @@ import util.cbor8sgraph;
 import search.vel;
 import pacahon.context;
 import pacahon.define;
+import pacahon.log_msg;
 import onto.sgraph;
 import storage.lmdb_storage;
+
+//////// logger ///////////////////////////////////////////
 import util.logger;
-
-logger log;
-
-static this()
+logger _log;
+logger log ()
 {
-    log = new logger("pacahon", "log", "xapian");
+	if (_log is null)
+		_log = new logger("pacahon", "log", "search");
+	return _log;		
 }
+//////// ////// ///////////////////////////////////////////
 
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
@@ -357,9 +360,11 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     StopWatch sw;
 
-    sw.start();
-
-    writeln("@query=", get_query_description(query));
+    if (trace_msg [200] == 1)
+    {
+    	log.trace("@query=" ~ get_query_description(query));
+        sw.start();
+    }
 
     byte err;
 
@@ -372,7 +377,8 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     if (err < 0)
         return err;
 
-    writeln("@found =", matches.get_matches_estimated(&err), ", @matches =", matches.size(&err));
+    if (trace_msg [200] == 1)
+    	log.trace("@found =%d, @matches =%d", matches.get_matches_estimated(&err), matches.size(&err));
 
     if (matches !is null)
     {
@@ -399,9 +405,13 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
             it.next(&err);
         }
 
-        sw.stop();
-        long t = cast(long)sw.peek().usecs;
-        //log.trace_log_and_console("total time execute query: %s µs", text(t));
+
+        if (trace_msg [200] == 1)
+        {
+        	sw.stop();
+        	long t = cast(long)sw.peek().usecs;
+        	log.trace_log_and_console("total time execute query: %s µs", text(t));
+        }	
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);
