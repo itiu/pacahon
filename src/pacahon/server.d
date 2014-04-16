@@ -98,7 +98,8 @@ void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     send(tid, thisTid);
     receive((bool isReady)
             {
-                log.trace_log_and_console("STARTED THREAD: %s", text(tid_idx));
+            	if (trace_msg[ 50 ] == 1)
+            		log.trace("STARTED THREAD: %s", text(tid_idx));
             });
 }
 

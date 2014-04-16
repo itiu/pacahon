@@ -280,11 +280,13 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                         if (counter - last_counter_after_timed_commit > 0)
                         {
-                            printf("counter: %d, timer: commit index..\n", counter);
+                        	if (trace_msg[ 210 ] == 1)
+                        		log.trace ("counter: %d, timer: commit index..", counter);
                             if (key2slot.length - last_size_key2slot > 0)
                             {
                                 store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
-                                printf("..store__key2slot..\n");
+                                if (trace_msg[ 210 ] == 1)
+                                	log.trace("store__key2slot");
                                 last_size_key2slot = key2slot.length;
                             }
 
@@ -503,18 +505,19 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                             if (counter % 100 == 0)
                             {
-                                writeln("prepare msg counter:", counter, " ,slot size=", key2slot.length);
+                            	if (trace_msg[ 211 ] == 1)
+                            		log.trace("prepare msg counter:%d,slot size=%d", counter, key2slot.length);
                             }
 
                             if (counter % 5000 == 0)
                             {
-                                printf("commit index..");
+                            	if (trace_msg[ 212 ] == 1)
+                            		log.trace ("commit index..");
 
                                 if (key2slot.length > 0)
                                     store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
 
                                 indexer_db.commit(&err);
-                                printf("ok\n");
                             }
 
                             destroy_Document(doc);

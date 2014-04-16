@@ -429,14 +429,15 @@ class PThreadContext : Context
 
     private void stat(CMD command_type, ref StopWatch sw, string func = __FUNCTION__)
     {
-        int t = cast(int)sw.peek().msecs;
+    	sw.stop ();
+        int t = cast(int)sw.peek().usecs;
 
         send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
 
 //        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
         send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
-        if (t > 1)
-            writeln(func[ (func.lastIndexOf(".") + 1)..$ ], ": t=", t, " msec");
+        if (trace_msg[ 555 ] == 1)
+            log.trace(func[ (func.lastIndexOf(".") + 1)..$ ] ~ ": t=%d µs", t);
     }
 
     //////////////////////////////////////////////////////////////////////////////////
@@ -903,16 +904,13 @@ class PThreadContext : Context
     
     public void set_trace (int idx, bool state)
     {
-        writeln("******************");
         Thread[] threads = Thread.getAll();
         foreach (thread; threads)
         {
-            //writeln ("THREAD: ", thread.name (), ", is Running:",  thread.isRunning());
             Tid tid = locate(thread.name());
             if (tid != Tid.init)
                 send(tid, CMD.SET_TRACE, idx, state);
         }
        	pacahon.log_msg.set_trace(idx, state);
-        writeln("******************");    	
     }
 }

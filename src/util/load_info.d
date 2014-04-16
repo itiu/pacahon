@@ -23,6 +23,7 @@ private string set_bar_color_1 = "\x1B[41m";
 private string set_bar_color_2 = "\x1B[43m";
 private string set_bar_color_3 = "\x1B[45m";
 private string set_bar_color_4 = "\x1B[46m";
+private string set_bar_color_5 = "\x1B[40m";
 
 private string set_text_color_green       = "\x1B[32m";
 private string set_text_color_blue        = "\x1B[34m";
@@ -141,6 +142,11 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
             {
                 p100          = 20000;
                 set_bar_color = set_bar_color_4;
+            }
+            else if (cps >= 20000)
+            {
+                p100          = 30000;
+                set_bar_color = set_bar_color_5;
             }
 
             int d_cps_count = cast(int)((cast(float)writer.data.length / cast(float)p100) * cps + 1);
