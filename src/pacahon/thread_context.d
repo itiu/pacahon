@@ -765,7 +765,6 @@ class PThreadContext : Context
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                     cbor2individual(&individual, individual_as_cbor);
-                writeln ("@@1 individual_as_cbor=", individual_as_cbor, " uri=", uri);
             }
             return individual;
         }
