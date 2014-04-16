@@ -118,8 +118,8 @@ void init_core()
 
     try
     {
-        log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
-                                  pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
+//        log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
+//                                  pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
 
         Tid[ P_MODULE ] tids;
 
