@@ -567,8 +567,8 @@ class PThreadContext : Context
             Ticket                  ticket;
             Ticket                  *sys_ticket;
 
-            immutable(Individual)[] candidate_users = get_individuals_via_query("'" ~ veda_schema__login ~ "' == '" ~ login ~ "'",
-                                                                                sys_ticket);
+            immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket, 
+            	"'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
             foreach (user; candidate_users)
             {
                 string user_id = user.getFirstResource(veda_schema__owner).uri;
@@ -643,6 +643,7 @@ class PThreadContext : Context
                                 tt = new Ticket;
                                 Subject ticket = cbor2subject(ticket_str);
                                 subject2Ticket(ticket, tt);
+                                tt.result = ResultCode.OK;                                
                                 user_of_ticket[ tt.id ] = tt;
 
 //				writeln ("Ticket=",ticket);
@@ -653,10 +654,22 @@ class PThreadContext : Context
             }
             else
             {
+            	
                 if (trace_msg[ 17 ] == 1)
-                    log.trace("тикет нашли в кеше, %s", ticket_id);
+                    log.trace("тикет нашли в кеше, id=%s", ticket_id);
+            	
+            	SysTime now = Clock.currTime();
+            	if (now.stdTime >= tt.end_time)
+            	{
+            		if (trace_msg[ 17 ] == 1)
+            			log.trace("тикет просрочен, id=%s", ticket_id);
+            		tt = new Ticket;
+            		tt.result = ResultCode.Ticket_expired;
+	
+            		return tt;            		
+            	}	            	
+            	tt.result = ResultCode.OK;
             }
-
             return tt;
         }
         finally
@@ -668,14 +681,7 @@ class PThreadContext : Context
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
 
-    public immutable(string)[] get_individuals_ids_via_query(string query_str, string sticket)
-    {
-        Ticket *ticket = get_ticket(sticket);
-
-        return get_individuals_ids_via_query(query_str, ticket);
-    }
-
-    public immutable(string)[] get_individuals_ids_via_query(string query_str, Ticket * ticket)
+    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str)
     {
         StopWatch sw; sw.start;
 
@@ -695,14 +701,7 @@ class PThreadContext : Context
         }
     }
 
-    public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket)
-    {
-        Ticket *ticket = get_ticket(sticket);
-
-        return get_individuals_via_query(query_str, ticket);
-    }
-
-    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket)
+    public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str)
     {
         StopWatch sw; sw.start;
 
@@ -722,23 +721,13 @@ class PThreadContext : Context
         }
     }
 
-    public Individual get_individual(string uri, string sticket)
-    {
-        Ticket     *ticket = get_ticket(sticket);
-
-        Individual individual = get_individual(uri, ticket);
-
-        return individual;
-    }
-
-    public Individual[] get_individuals(string[] uris, string sticket)
+    public Individual[] get_individuals(Ticket * ticket, string[] uris)
     {
         StopWatch sw; sw.start;
 
         try
         {
             Individual[] res     = Individual[].init;
-            Ticket       *ticket = get_ticket(sticket);
 
             foreach (uri; uris)
             {
@@ -762,7 +751,7 @@ class PThreadContext : Context
         }
     }
 
-    public Individual get_individual(string uri, Ticket *ticket)
+    public Individual get_individual(Ticket *ticket, string uri)
     {
         StopWatch sw; sw.start;
 
@@ -776,6 +765,7 @@ class PThreadContext : Context
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                     cbor2individual(&individual, individual_as_cbor);
+                writeln ("@@1 individual_as_cbor=", individual_as_cbor, " uri=", uri);
             }
             return individual;
         }
@@ -785,7 +775,7 @@ class PThreadContext : Context
         }
     }
 
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
         StopWatch sw; sw.start;
 
@@ -869,13 +859,13 @@ class PThreadContext : Context
         }
     }
 
-    public ResultCode put_individual(string ticket, string uri, Individual individual)
+    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual)
     {
         individual.uri = uri;
         return store_individual(ticket, &individual, null);
     }
 
-    public ResultCode post_individual(string ticket, Individual individual)
+    public ResultCode post_individual(Ticket *ticket, Individual individual)
     {
         return store_individual(ticket, &individual, null);
     }

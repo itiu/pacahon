@@ -45,6 +45,7 @@ enum P_MODULE : byte
 
 enum ResultCode
 {
+	Ticket_expired		  = 32,	 
     OK                    = 200,
     Created               = 201,
     No_Content            = 204,
@@ -63,7 +64,7 @@ struct Ticket
 {
     string id;
     string user_uri;
-
+    ResultCode result;
 //    string[] parentUnitIds = new string[ 0 ];
 
     long end_time;
@@ -128,23 +129,16 @@ interface Context
     public bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
-    public ResultCode store_individual(string ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
-    public immutable(Individual)[] get_individuals_via_query(string query_str, Ticket * ticket);
-    public immutable(Individual)[] get_individuals_via_query(string query_str, string sticket);
+    public immutable(Individual)[] get_individuals_via_query(Ticket *ticket, string query_str);
+    public immutable(string)[]     get_individuals_ids_via_query(Ticket *ticket, string query_str);
+    public Individual get_individual(Ticket *ticket, string uri);
+    public Individual[] get_individuals(Ticket *ticket, string[] uris);
 
-    public immutable(string)[]     get_individuals_ids_via_query(string query_str, string sticket);
-    public immutable(string)[]     get_individuals_ids_via_query(string query_str, Ticket * ticket);
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
+    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
+    public ResultCode post_individual(Ticket *ticket, Individual individual);
 
-    public Individual get_individual(string uri, Ticket *ticket);
-    public Individual get_individual(string uri, string sticket);
-    public Individual[] get_individuals(string[] uris, string sticket);
-
-
-    public ResultCode put_individual(string ticket, string uri, Individual individual);
-    public ResultCode post_individual(string ticket, Individual individual);
-
-    public void wait_thread(P_MODULE thread_id);
-    
+    public void wait_thread(P_MODULE thread_id);    
     public void set_trace (int idx, bool state);
 }
 

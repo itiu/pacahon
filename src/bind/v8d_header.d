@@ -51,11 +51,11 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
     if (g_context !is null)
     {
         string cbor   = cast(string)_cbor[ 0.._cbor_length ].dup;
-        string ticket = cast(string)_ticket[ 0.._ticket_length ].dup;
+        string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
 
 //      writeln ("@Q ticket=", ticket);
 //      writeln ("@Q cbor=", cbor);
-
+		Ticket* ticket = g_context.get_ticket(ticket_id); 
         return g_context.store_individual(ticket, null, cbor);
     }
     return ResultCode.Service_Unavailable;
