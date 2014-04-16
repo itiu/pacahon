@@ -12,6 +12,8 @@ Runtime библиотека:
     zeromq/rabbitmq.
 Хранилище и поиск: 
     lmdb + xapian.
+Скрипты:
+    JS V8
 
 
 2. УСТАНОВКА
@@ -26,24 +28,35 @@ NB: Описание сборки / установки приведено для
 
 используемые библиотеки, (статические библиотеки находятся в ./lib64):
 
-zeromq v3.2.3 ( http://www.zeromq.com )
-- libzmq.a
-- libczmq.a:
-
-xapian 1.2.16 ( http://xapian.org )
-- libxapian-backend.a 
-- libxapian.a 
+JS V8 D2 binding:
+- libv8d.a
 
 xapian D2 binding:
-- libxapiand.a ( https://github.com/itiu/xapian-d/archive/7a70747692427c183c9ef49dcd72a690b71848ca.zip )
-- libstdc++.a
+- libxapiand.a
 
-lmdb 0.9.10 ( http://symas.com/mdb, https://gitorious.org/mdb/mdb/archive/f39bceb800dd1b1b4b05cfb45a3ddde94a273fff.tar.gz )
-- liblmdb.a
+остальные статические библиотеки находятся в проекте http://github.com/itiu/pacahon_third_part;
+V8:
+libicudata.a
+libicui18n.a
+libicuuc.a
+libv8_base.a
+libv8_nosnapshot.a
 
-rabbitmq-c 0.4.0 ( http://github.com/alanxz/rabbitmq-c ) 
-- librabbitmq.a
+XAPIAN:
+libxapian-backend.a
+libxapian-main.a
 
+MQ:
+librabbitmq.a
+libstdc++.a
+libzmq.a 
+
+LMDB:
+liblmdb.a
+
+OTHER:
+libanl.a
+libuuid.a
 
 2.2. Процедура сборки / установки:
 
