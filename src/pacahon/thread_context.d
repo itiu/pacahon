@@ -45,6 +45,8 @@ string g_str_script_out;
 
 class PThreadContext : Context
 {
+	bool[P_MODULE] is_traced_module;
+	
     /// deprecated vvv
     private Ticket *[ string ] user_of_ticket;
     private bool use_caching_of_documents = false;
@@ -81,6 +83,12 @@ class PThreadContext : Context
         foreach (id; P_MODULE.min .. P_MODULE.max)
             name_2_tids[ id ] = locate(text(id));
 
+        is_traced_module[P_MODULE.ticket_manager] = true;
+        is_traced_module[P_MODULE.subject_manager] = true;
+        is_traced_module[P_MODULE.acl_manager] = true;
+        is_traced_module[P_MODULE.fulltext_indexer] = true;
+        is_traced_module[P_MODULE.condition] = true;        
+        
 //        writeln("@ name_2_tids=", name_2_tids);
 
         if (property_file_path !is null)
@@ -893,6 +901,13 @@ class PThreadContext : Context
     
     public void set_trace (int idx, bool state)
     {
+    	foreach (mid ; is_traced_module.keys)
+    	{
+    		Tid tid = getTid (mid);
+            if (tid != Tid.init)
+                send(tid, CMD.SET_TRACE, idx, state);    		
+    	}
+    	/*
         Thread[] threads = Thread.getAll();
         foreach (thread; threads)
         {
@@ -900,6 +915,7 @@ class PThreadContext : Context
             if (tid != Tid.init)
                 send(tid, CMD.SET_TRACE, idx, state);
         }
+    	*/
        	pacahon.log_msg.set_trace(idx, state);
     }
 }
