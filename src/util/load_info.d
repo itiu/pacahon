@@ -76,7 +76,8 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
     long sleep_time = 1;
 //    Thread.sleep(dur!("seconds")(sleep_time));
 
-    long prev_count       = 0;
+    long prev_read_count  = 0;
+    long prev_write_count = 0;
     long prev_worked_time = 0;
 
     // SEND ready
@@ -91,16 +92,19 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
         send(_statistic_data_accumulator, CMD.GET, thisTid);
         const_long_array stat = receiveOnly!(const_long_array);
 
-        long             msg_count   = stat[ CNAME.COUNT_MESSAGE ];
-        long             cmd_count   = stat[ CNAME.COUNT_COMMAND ];
-        long             worked_time = stat[ CNAME.WORKED_TIME ];
+        long read_count  = stat[ CNAME.COUNT_GET ];
+        long write_count = stat[ CNAME.COUNT_PUT ];
+        long worked_time = stat[ CNAME.WORKED_TIME ];
 
-        long             delta_count = msg_count - prev_count;
-        prev_count = msg_count;
+        long delta_count_read = read_count - prev_read_count;
+        long delta_count_write = write_count - prev_write_count;
+        
+        prev_read_count = read_count;
+        prev_write_count = write_count;
 
         float p100 = 3000;
 
-        if (delta_count > 0)
+        if (delta_count_read > 0 || delta_count_write)
         {
             long delta_worked_time = worked_time - prev_worked_time;
             prev_worked_time = worked_time;
@@ -111,13 +115,13 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
 
             float cps = 0.1f;
             float wt  = cast(float)delta_worked_time;
-            float dc  = cast(float)delta_count;
+            float dc  = cast(float)(delta_count_read + delta_count_write);
             if (wt > 0)
                 cps = (dc / wt) * 1000 * 1000;
 
             auto writer = appender!string();
-            formattedWrite(writer, "%s | msg/cmd :%5d/%5d | cps/thr:%9.1f | work time:%7d µs | processed: %5d | t.w.t. : %7d ms",
-                           now, msg_count, cmd_count, cps, delta_worked_time, delta_count, worked_time / 1000);
+            formattedWrite(writer, "%s | r/w :%7d/%5d | cps/thr:%9.1f | work time:%7d µs | processed r/w: %7d/%5d | t.w.t. : %7d ms",
+                           now, read_count, write_count, cps, delta_worked_time, delta_count_read, delta_count_write, worked_time / 1000);
 
             log.trace("cps:%6.1f", cps);
 

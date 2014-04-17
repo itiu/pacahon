@@ -513,7 +513,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
                 }
 
                 Predicate command_name = command.getPredicate(msg__command);
-                send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
+                //send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
                 sw_c.stop();
                 long t = cast(long)sw_c.peek().usecs;
 
@@ -576,7 +576,7 @@ void get_message(byte *msg, int message_size, mq_client from_client, ref ubyte[]
             io_msg.trace_io(false, cast(byte *)out_data, out_data.length);
     }
 
-    send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
+    //send(context.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
 
     sw.stop();
     int t = cast(int)sw.peek().usecs;

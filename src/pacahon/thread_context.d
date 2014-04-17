@@ -442,10 +442,15 @@ class PThreadContext : Context
     	sw.stop ();
         int t = cast(int)sw.peek().usecs;
 
-        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
+       	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
 
 //        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
-        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_MESSAGE, 1);
+
+        if (command_type == CMD.GET)
+        	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_GET, 1);
+        else	
+        	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_PUT, 1);        	
+        	
         if (trace_msg[ 555 ] == 1)
             log.trace(func[ (func.lastIndexOf(".") + 1)..$ ] ~ ": t=%d µs", t);
     }

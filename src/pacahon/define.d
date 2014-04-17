@@ -5,8 +5,8 @@ import std.concurrency;
 
 enum CNAME : byte
 {
-    COUNT_MESSAGE    = 0,
-    COUNT_COMMAND    = 1,
+    COUNT_PUT    	 = 0,
+    COUNT_GET    	 = 1,
     WORKED_TIME      = 2,
     LAST_UPDATE_TIME = 3,
     KEY2SLOT         = 4
