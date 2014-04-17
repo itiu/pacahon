@@ -78,7 +78,9 @@ class PThreadContext : Context
         acl_indexes        = new Authorization(acl_indexes_db_path);
 
         name = context_name;
-        writeln("CREATE NEW CONTEXT:", context_name);
+        
+        if (trace_msg[ 21 ] == 1)
+        	log.trace("CREATE NEW CONTEXT:", context_name);
 
         foreach (id; P_MODULE.min .. P_MODULE.max)
             name_2_tids[ id ] = locate(text(id));
