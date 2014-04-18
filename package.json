@@ -1,7 +1,7 @@
 {
 	"name": "pacahon",
 	"targetType": "library",
-	"description": "veda storage",
+	"description": "Veda backend",
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
 	"dependencies": {"zeromq":"~master", "dgraph": "~master", "pacahon_third_party": ">=1.0.1"},
