@@ -68,6 +68,7 @@ class PThreadContext : Context
     private                string[ string ] prefix_map;
 
     private LmdbStorage    inividuals_storage;
+    private LmdbStorage    tickets_storage;
     private search.vql.VQL _vql;
 
     private                Tid[ P_MODULE ] name_2_tids;
@@ -75,6 +76,7 @@ class PThreadContext : Context
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
+        tickets_storage = new LmdbStorage(tickets_db_path);
         acl_indexes        = new Authorization(acl_indexes_db_path);
 
         name = context_name;
@@ -649,10 +651,14 @@ class PThreadContext : Context
             {
                 string when     = null;
                 int    duration = 0;
+                
+                string ticket_str = tickets_storage.find (ticket_id);
+/*                
                 send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
 
                 receive((string uri, string ticket_str, Tid from)
                         {
+*/                
                             if (ticket_str !is null && ticket_str.length > 128)
                             {
                                 tt = new Ticket;
@@ -663,9 +669,9 @@ class PThreadContext : Context
 
 //				writeln ("Ticket=",ticket);
                             }
-                        },
-                        (Variant v) { writeln("get_ticket::Received some other type. :", v); }
-                        );
+//                        },
+//                        (Variant v) { writeln("get_ticket::Received some other type. :", v); }
+//                        );
             }
             else
             {
@@ -838,7 +844,7 @@ class PThreadContext : Context
             tid_subject_manager = getTid(P_MODULE.subject_manager);
 
             if (tid_subject_manager != Tid.init)
-            {
+            {            	
                 send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
                 receive((EVENT _ev, Tid from)
                         {
