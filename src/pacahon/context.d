@@ -45,6 +45,7 @@ enum P_MODULE : byte
 
 enum ResultCode
 {
+	zero				  = 0,
     OK                    = 200,
     Created               = 201,
     No_Content            = 204,

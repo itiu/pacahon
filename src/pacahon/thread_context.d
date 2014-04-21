@@ -602,7 +602,8 @@ class PThreadContext : Context
 
         try
         {
-//        writeln("@authenticate, login=", login, ", password=", password);
+            if (trace_msg[ 18 ] == 1)        	
+            	log.trace ("authenticate, login=[%s] password=[%s]", login, password);
 
             Ticket          ticket;
             ticket.result = ResultCode.Authentication_Failed;
@@ -629,7 +630,8 @@ class PThreadContext : Context
                     new_ticket.addPredicate(ticket__when, getNowAsString());
                     new_ticket.addPredicate(ticket__duration, "40000");
 
-//                writeln("@authenticate, ticket__accessor=", user_id);
+                    if (trace_msg[ 18 ] == 1)        	
+                    	log.trace ("authenticate, ticket__accessor=%d", user_id);
 
                     // store ticket
                     string ss_as_cbor = subject2cbor(new_ticket);
@@ -655,8 +657,11 @@ class PThreadContext : Context
                     return ticket;
                 }
             }
+            
+           	log.trace ("fail authenticate, login=[%s] password=[%s]", login, password);
 
-            return Ticket.init;
+            ticket.result = ResultCode.Authentication_Failed;
+            return ticket;
         }
         finally
         {
@@ -678,12 +683,6 @@ class PThreadContext : Context
                 int    duration = 0;
 
                 string ticket_str = tickets_storage.find(ticket_id);
-/*
-                send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
-
-                receive((string uri, string ticket_str, Tid from)
-                        {
- */
                 if (ticket_str !is null && ticket_str.length > 128)
                 {
                     tt = new Ticket;
@@ -691,12 +690,7 @@ class PThreadContext : Context
                     subject2Ticket(ticket, tt);
                     tt.result               = ResultCode.OK;
                     user_of_ticket[ tt.id ] = tt;
-
-//				writeln ("Ticket=",ticket);
                 }
-//                        },
-//                        (Variant v) { writeln("get_ticket::Received some other type. :", v); }
-//                        );
             }
             else
             {
@@ -710,10 +704,8 @@ class PThreadContext : Context
                         log.trace("тикет просрочен, id=%s", ticket_id);
                     tt        = new Ticket;
                     tt.result = ResultCode.Ticket_expired;
-
                     return tt;
                 }
-                tt.result = ResultCode.OK;
             }
             return tt;
         }
