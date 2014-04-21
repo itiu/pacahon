@@ -15,11 +15,11 @@ import storage.lmdb_storage;
 //////// logger ///////////////////////////////////////////
 import util.logger;
 logger _log;
-logger log ()
+logger log()
 {
-	if (_log is null)
-		_log = new logger("pacahon", "log", "search");
-	return _log;		
+    if (_log is null)
+        _log = new logger("pacahon", "log", "search");
+    return _log;
 }
 //////// ////// ///////////////////////////////////////////
 
@@ -360,9 +360,9 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     StopWatch sw;
 
-    if (trace_msg [200] == 1)
+    if (trace_msg[ 200 ] == 1)
     {
-    	log.trace("@query=" ~ get_query_description(query));
+        log.trace("@query=" ~ get_query_description(query));
         sw.start();
     }
 
@@ -377,8 +377,8 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     if (err < 0)
         return err;
 
-    if (trace_msg [200] == 1)
-    	log.trace("@found =%d, @matches =%d", matches.get_matches_estimated(&err), matches.size(&err));
+    if (trace_msg[ 200 ] == 1)
+        log.trace("@found =%d, @matches =%d", matches.get_matches_estimated(&err), matches.size(&err));
 
     if (matches !is null)
     {
@@ -390,7 +390,11 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
             uint   *data_len;
             it.get_document_data(&data_str, &data_len, &err);
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
-//              writeln ("@subject_id:", subject_id);
+
+
+            if (trace_msg[ 201 ] == 1)
+                log.trace("@subject_id:%s", subject_id);
+
             if (context.authorize(subject_id, ticket, Access.can_read))
             {
 //                string msg = context.get_subject_as_cbor(subject_id);
@@ -406,12 +410,12 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         }
 
 
-        if (trace_msg [200] == 1)
+        if (trace_msg[ 200 ] == 1)
         {
-        	sw.stop();
-        	long t = cast(long)sw.peek().usecs;
-        	log.trace("total time execute query: %s µs", text(t));
-        }	
+            sw.stop();
+            long t = cast(long)sw.peek().usecs;
+            log.trace("authorized:%d, total time execute query: %s µs", read_count, text(t));
+        }
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);

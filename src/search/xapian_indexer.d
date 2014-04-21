@@ -24,11 +24,11 @@ import search.xapian_vql;
 //////// logger ///////////////////////////////////////////
 import util.logger;
 logger _log;
-logger log ()
+logger log()
 {
-	if (_log is null)
-		_log = new logger("pacahon", "log", "search");
-	return _log;		
+    if (_log is null)
+        _log = new logger("pacahon", "log", "search");
+    return _log;
 }
 //////// ////// ///////////////////////////////////////////
 
@@ -36,8 +36,8 @@ byte err;
 
 public void xapian_thread_context(string thread_name)
 {
-	core.thread.Thread.getThis().name = thread_name;
-		
+    core.thread.Thread.getThis().name = thread_name;
+
     string key2slot_str;
     long   last_update_time;
 
@@ -149,7 +149,7 @@ private void printTid(string tag)
 
 void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
-	core.thread.Thread.getThis().name = thread_name;
+    core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: Xapian Indexer");
 
     try
@@ -266,6 +266,19 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                    }, */
                 (CMD cmd, Tid tid_response_reciever)
                 {
+                    // если ожидают окончания операции для indexer, то вероятнее всего собираются сразу-же читать из поиска
+                    // следовательно нужно сделать коммит
+                    if (key2slot.length - last_size_key2slot > 0)
+                    {
+                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                        if (trace_msg[ 210 ] == 1)
+                            log.trace("store__key2slot");
+                        last_size_key2slot = key2slot.length;
+                    }
+
+                    indexer_db.commit(&err);
+
+
                     if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
                     else
@@ -280,13 +293,13 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                         if (counter - last_counter_after_timed_commit > 0)
                         {
-                        	if (trace_msg[ 210 ] == 1)
-                        		log.trace ("counter: %d, timer: commit index..", counter);
+                            if (trace_msg[ 210 ] == 1)
+                                log.trace("counter: %d, timer: commit index..", counter);
                             if (key2slot.length - last_size_key2slot > 0)
                             {
                                 store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
                                 if (trace_msg[ 210 ] == 1)
-                                	log.trace("store__key2slot");
+                                    log.trace("store__key2slot");
                                 last_size_key2slot = key2slot.length;
                             }
 
@@ -313,6 +326,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                             XapianDocument doc = new_Document(&err);
                             indexer.set_document(doc, &err);
+
+                            if (trace_msg[ 220 ] == 1)
+                                log.trace("index document:[%s]", ss.subject);
 
                             foreach (pp; ss.getPredicates())
                             {
@@ -352,7 +368,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                         string data = escaping_or_uuid2search(oo.literal);
 
-//                          writeln ("index as literal:[", data, "], lang=", oo.lang);
+                                        if (trace_msg[ 220 ] == 1)
+                                            log.trace("index as literal:[%s], lang=%s, prefix=%s", data, oo.lang, prefix);
+
                                         indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                                         doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
@@ -370,8 +388,11 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                             prefix = "X" ~ text(slot_L1) ~ "X";
 
                                             string data = to_lower_and_replace_delimeters(oo.literal);
-//                                writeln ("index as resource:[", data, "]");
+
+                                            if (trace_msg[ 220 ] == 1)
+                                                log.trace("index as resource:[%s], prefix=%s", data, prefix);
                                             indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+
                                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
                                             all_text.write(data);
@@ -388,6 +409,10 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_ru.ptr, p_text_ru.length, prefix.ptr, prefix.length, &err);
+
+                                        if (trace_msg[ 220 ] == 1)
+                                            log.trace("index as ru text:[%s]", p_text_ru);
+
                                         doc.add_value(slot_L1, p_text_ru.ptr, p_text_ru.length, &err);
                                         //writeln ("slot:", slot_L1, ", value:", p_text_ru);
                                     }
@@ -398,6 +423,10 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_en.ptr, p_text_en.length, prefix.ptr, prefix.length, &err);
+
+                                        if (trace_msg[ 220 ] == 1)
+                                            log.trace("index as en text:[%s]", p_text_en);
+
                                         doc.add_value(slot_L1, p_text_en.ptr, p_text_en.length, &err);
                                         //writeln ("slot:", slot_L1, ", value:", p_text_en);
                                     }
@@ -423,6 +452,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
                                             indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
 
+                                            if (trace_msg[ 220 ] == 1)
+                                                log.trace("index as (ru or none) xsd:string [%s]", oo.literal);
+
                                             all_text.write(oo.literal);
                                             all_text.write('|');
 
@@ -433,7 +465,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     sp = true;
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == LANG.EN))
+                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && oo.lang == LANG.EN)
                                         {
                                             if (sp == true)
                                             {
@@ -445,6 +477,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
                                             indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
+
+                                            if (trace_msg[ 220 ] == 1)
+                                                log.trace("index as (en) xsd:string [%s]", oo.literal);
 
                                             all_text.write(oo.literal);
                                             all_text.write('|');
@@ -496,6 +531,8 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                             string data = all_text.toString;
                             //writeln("@index = ", data);
                             indexer.index_text(data.ptr, data.length, &err);
+                            if (trace_msg[ 221 ] == 1)
+                                log.trace("index all text [%s]", data);
 
                             string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);
                             doc.add_boolean_term(uuid.ptr, uuid.length, &err);
@@ -505,14 +542,14 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                             if (counter % 100 == 0)
                             {
-                            	if (trace_msg[ 211 ] == 1)
-                            		log.trace("prepare msg counter:%d,slot size=%d", counter, key2slot.length);
+                                if (trace_msg[ 211 ] == 1)
+                                    log.trace("prepare msg counter:%d,slot size=%d", counter, key2slot.length);
                             }
 
                             if (counter % 5000 == 0)
                             {
-                            	if (trace_msg[ 212 ] == 1)
-                            		log.trace ("commit index..");
+                                if (trace_msg[ 212 ] == 1)
+                                    log.trace("commit index..");
 
                                 if (key2slot.length > 0)
                                     store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
@@ -526,9 +563,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                 },
                 (CMD cmd, int arg, bool arg2)
                 {
-                	if (cmd == CMD.SET_TRACE)
-                		set_trace (arg, arg2);
-                },                
+                    if (cmd == CMD.SET_TRACE)
+                        set_trace(arg, arg2);
+                },
                 (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
 }

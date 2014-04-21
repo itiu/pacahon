@@ -2,7 +2,8 @@ module pacahon.thread_context;
 
 private
 {
-    import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file;
+    import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid,
+           std.file;
 
     import bind.xapian_d_header;
     import bind.v8d_header;
@@ -45,8 +46,8 @@ string g_str_script_out;
 
 class PThreadContext : Context
 {
-	bool[P_MODULE] is_traced_module;
-	
+    bool[ P_MODULE ] is_traced_module;
+
     /// deprecated vvv
     private Ticket *[ string ] user_of_ticket;
     private bool use_caching_of_documents = false;
@@ -72,27 +73,28 @@ class PThreadContext : Context
     private search.vql.VQL _vql;
 
     private                Tid[ P_MODULE ] name_2_tids;
+    private long           local_last_update_time;
 
     this(string property_file_path, string context_name)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path);
-        tickets_storage = new LmdbStorage(tickets_db_path);
+        tickets_storage    = new LmdbStorage(tickets_db_path);
         acl_indexes        = new Authorization(acl_indexes_db_path);
 
         name = context_name;
-        
+
         if (trace_msg[ 21 ] == 1)
-        	log.trace("CREATE NEW CONTEXT:", context_name);
+            log.trace("CREATE NEW CONTEXT:", context_name);
 
         foreach (id; P_MODULE.min .. P_MODULE.max)
             name_2_tids[ id ] = locate(text(id));
 
-        is_traced_module[P_MODULE.ticket_manager] = true;
-        is_traced_module[P_MODULE.subject_manager] = true;
-        is_traced_module[P_MODULE.acl_manager] = true;
-        is_traced_module[P_MODULE.fulltext_indexer] = true;
-        is_traced_module[P_MODULE.condition] = true;        
-        
+        is_traced_module[ P_MODULE.ticket_manager ]   = true;
+        is_traced_module[ P_MODULE.subject_manager ]  = true;
+        is_traced_module[ P_MODULE.acl_manager ]      = true;
+        is_traced_module[ P_MODULE.fulltext_indexer ] = true;
+        is_traced_module[ P_MODULE.condition ]        = true;
+
 //        writeln("@ name_2_tids=", name_2_tids);
 
         if (property_file_path !is null)
@@ -121,6 +123,18 @@ class PThreadContext : Context
             owl = new OWL(this);
             owl.load();
         }
+    }
+
+    public long get_last_update_time()
+    {
+        long lut;
+
+        send(getTid(P_MODULE.xapian_thread_context), CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
+        receive((long tm)
+                {
+                    lut = tm;
+                });
+        return lut;
     }
 
     private void reload_scripts()
@@ -368,19 +382,6 @@ class PThreadContext : Context
         return key2slot;
     }
 
-    public long get_last_update_time()
-    {
-        long lut;
-
-        send(getTid(P_MODULE.xapian_thread_context), CMD.GET, CNAME.LAST_UPDATE_TIME, thisTid);
-        receive((long tm)
-                {
-                    lut = tm;
-                });
-//        long tm = receiveOnly!(long)();
-        return lut;
-    }
-
     public Subject get_subject(string uri)
     {
         return inividuals_storage.find_subject(uri);
@@ -441,18 +442,18 @@ class PThreadContext : Context
 
     private void stat(CMD command_type, ref StopWatch sw, string func = __FUNCTION__)
     {
-    	sw.stop ();
+        sw.stop();
         int t = cast(int)sw.peek().usecs;
 
-       	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
+        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.WORKED_TIME, t);
 
 //        send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_COMMAND, 1);
 
         if (command_type == CMD.GET)
-        	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_GET, 1);
-        else	
-        	send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_PUT, 1);        	
-        	
+            send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_GET, 1);
+        else
+            send(this.getTid(P_MODULE.statistic_data_accumulator), CMD.PUT, CNAME.COUNT_PUT, 1);
+
         if (trace_msg[ 555 ] == 1)
             log.trace(func[ (func.lastIndexOf(".") + 1)..$ ] ~ ": t=%d µs", t);
     }
@@ -460,15 +461,14 @@ class PThreadContext : Context
     //////////////////////////////////////////////////////////////////////////////////
     struct Signal
     {
-        long last_time       = 0;
-        long last_time_check = 0;
+        long last_time_update = 0;
+        long last_time_check  = 0;
     }
 
     Signal *[ string ] signals;
 
-    bool check_for_reload(string interthread_signal_id, void delegate() load)
+    public void set_local_signal_for_reload(string interthread_signal_id)
     {
-        long   now     = Clock.currStdTime() / 10000;
         Signal *signal = signals.get(interthread_signal_id, null);
 
         if (signal == null)
@@ -476,22 +476,45 @@ class PThreadContext : Context
             signal                           = new Signal;
             signals[ interthread_signal_id ] = signal;
         }
-        //writeln ("@:", __LINE__, " signal.last_time_check=", signal.last_time_check);
 
+        long now = Clock.currStdTime() / 10000;
+        signal.last_time_update = now;
+    }
+
+    public bool check_for_reload(string interthread_signal_id, void delegate() load)
+    {
+        Signal *signal = signals.get(interthread_signal_id, null);
+
+        if (signal == null)
+        {
+            signal                           = new Signal;
+            signals[ interthread_signal_id ] = signal;
+        }
+
+        long now = Clock.currStdTime() / 10000;
+        if (signal.last_time_update > signal.last_time_check)
+        {
+            signal.last_time_check = now;
+            if (trace_msg[ 19 ] == 1)
+                log.trace("RELOAD for %s, signal.last_time_update(%d) > signal.last_time_check(%d)", interthread_signal_id,
+                          signal.last_time_update, signal.last_time_check);
+
+            load();
+            return true;
+        }
+        else
         if (now - signal.last_time_check > 10000 || now - signal.last_time_check < 0)
         {
-            //writeln ("@:", __LINE__, " signal.last_time=", signal.last_time);
             signal.last_time_check = now;
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
-            //writeln ("@:", __LINE__, " now_time_signal=", now_time_signal);
-            if (now_time_signal - signal.last_time > 10000 || now_time_signal - signal.last_time <= 0)
+            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update <= 0)
             {
-                signal.last_time = now_time_signal;
-                
-                if (trace_msg[ 400 ] == 1)
-                	log.trace("RELOAD for %s", interthread_signal_id);
-                
+                signal.last_time_update = now_time_signal;
+
+                if (trace_msg[ 19 ] == 1)
+                    log.trace("RELOAD for %s", interthread_signal_id);
+
                 load();
 
                 return true;
@@ -584,8 +607,8 @@ class PThreadContext : Context
             Ticket                  ticket;
             Ticket                  *sys_ticket;
 
-            immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket, 
-            	"'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
+            immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket,
+                                                                                "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
             foreach (user; candidate_users)
             {
                 string user_id = user.getFirstResource(veda_schema__owner).uri;
@@ -622,6 +645,7 @@ class PThreadContext : Context
 //                            res = msg;
                                         //writeln("context.store_subject:msg=", msg);
                                         subject2Ticket(new_ticket, &ticket);
+                                        ticket.result = ResultCode.OK;
                                         user_of_ticket[ ticket.id ] = &ticket;
                                     }
                                 });
@@ -651,45 +675,44 @@ class PThreadContext : Context
             {
                 string when     = null;
                 int    duration = 0;
-                
-                string ticket_str = tickets_storage.find (ticket_id);
-/*                
+
+                string ticket_str = tickets_storage.find(ticket_id);
+/*
                 send(getTid(P_MODULE.ticket_manager), CMD.FIND, ticket_id, thisTid);
 
                 receive((string uri, string ticket_str, Tid from)
                         {
-*/                
-                            if (ticket_str !is null && ticket_str.length > 128)
-                            {
-                                tt = new Ticket;
-                                Subject ticket = cbor2subject(ticket_str);
-                                subject2Ticket(ticket, tt);
-                                tt.result = ResultCode.OK;                                
-                                user_of_ticket[ tt.id ] = tt;
+ */
+                if (ticket_str !is null && ticket_str.length > 128)
+                {
+                    tt = new Ticket;
+                    Subject ticket = cbor2subject(ticket_str);
+                    subject2Ticket(ticket, tt);
+                    tt.result               = ResultCode.OK;
+                    user_of_ticket[ tt.id ] = tt;
 
 //				writeln ("Ticket=",ticket);
-                            }
+                }
 //                        },
 //                        (Variant v) { writeln("get_ticket::Received some other type. :", v); }
 //                        );
             }
             else
             {
-            	
                 if (trace_msg[ 17 ] == 1)
                     log.trace("тикет нашли в кеше, id=%s", ticket_id);
-            	
-            	SysTime now = Clock.currTime();
-            	if (now.stdTime >= tt.end_time)
-            	{
-            		if (trace_msg[ 17 ] == 1)
-            			log.trace("тикет просрочен, id=%s", ticket_id);
-            		tt = new Ticket;
-            		tt.result = ResultCode.Ticket_expired;
-	
-            		return tt;            		
-            	}	            	
-            	tt.result = ResultCode.OK;
+
+                SysTime now = Clock.currTime();
+                if (now.stdTime >= tt.end_time)
+                {
+                    if (trace_msg[ 17 ] == 1)
+                        log.trace("тикет просрочен, id=%s", ticket_id);
+                    tt        = new Ticket;
+                    tt.result = ResultCode.Ticket_expired;
+
+                    return tt;
+                }
+                tt.result = ResultCode.OK;
             }
             return tt;
         }
@@ -709,10 +732,9 @@ class PThreadContext : Context
         try
         {
             immutable(string)[] res;
-            if (query_str.indexOf(' ') <= 0)
+            if (query_str.indexOf("==") <= 0)
                 query_str = "'*' == '" ~ query_str ~ "'";
 
-            //writeln (query_str);
             vql.get(ticket, query_str, null, null, 10, 100000, res);
             return res;
         }
@@ -729,10 +751,9 @@ class PThreadContext : Context
         try
         {
             immutable(Individual)[] res;
-            if (query_str.indexOf(' ') <= 0)
+            if (query_str.indexOf("==") <= 0)
                 query_str = "'*' == '" ~ query_str ~ "'";
 
-            //writeln (query_str);
             vql.get(ticket, query_str, null, null, 10, 10000, res);
             return res;
         }
@@ -742,13 +763,13 @@ class PThreadContext : Context
         }
     }
 
-    public Individual[] get_individuals(Ticket * ticket, string[] uris)
+    public Individual[] get_individuals(Ticket *ticket, string[] uris)
     {
         StopWatch sw; sw.start;
 
         try
         {
-            Individual[] res     = Individual[].init;
+            Individual[] res = Individual[].init;
 
             foreach (uri; uris)
             {
@@ -844,7 +865,7 @@ class PThreadContext : Context
             tid_subject_manager = getTid(P_MODULE.subject_manager);
 
             if (tid_subject_manager != Tid.init)
-            {            	
+            {
                 send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
                 receive((EVENT _ev, Tid from)
                         {
@@ -858,7 +879,10 @@ class PThreadContext : Context
                 Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
 
                 if (tid_search_manager != Tid.init)
+                {
+                    set_local_signal_for_reload("search");
                     send(tid_search_manager, CMD.STORE, ss_as_cbor);
+                }
 
                 if (prepareEvents == true)
                 {
@@ -911,24 +935,16 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
         }
     }
-    
-    public void set_trace (int idx, bool state)
+
+    public void set_trace(int idx, bool state)
     {
-    	foreach (mid ; is_traced_module.keys)
-    	{
-    		Tid tid = getTid (mid);
-            if (tid != Tid.init)
-                send(tid, CMD.SET_TRACE, idx, state);    		
-    	}
-    	/*
-        Thread[] threads = Thread.getAll();
-        foreach (thread; threads)
+        foreach (mid; is_traced_module.keys)
         {
-            Tid tid = locate(thread.name());
+            Tid tid = getTid(mid);
             if (tid != Tid.init)
                 send(tid, CMD.SET_TRACE, idx, state);
         }
-    	*/
-       	pacahon.log_msg.set_trace(idx, state);
+
+        pacahon.log_msg.set_trace(idx, state);
     }
 }

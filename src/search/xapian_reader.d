@@ -22,11 +22,11 @@ import onto.sgraph;
 //////// logger ///////////////////////////////////////////
 import util.logger;
 logger _log;
-logger log ()
+logger log()
 {
-	if (_log is null)
-		_log = new logger("pacahon", "log", "search");
-	return _log;		
+    if (_log is null)
+        _log = new logger("pacahon", "log", "search");
+    return _log;
 }
 //////// ////// ///////////////////////////////////////////
 
@@ -111,45 +111,25 @@ class XapianReader : SearchReader
 
     private string dummy;
     private double d_dummy;
-//    private static long refresh_db_timeout = 10000000 * 20;
-    private long   last_time_signal       = 0;
-    private long   last_time_check_signal = 0;
 
-    bool check_for_reload()
+    private void reopen_db()
     {
-        long now = Clock.currStdTime() / 10000;
-
-        if (now - last_time_check_signal > 10000 || now - last_time_check_signal < 0)
-        {
-            last_time_check_signal = now;
-
-            long now_time_signal = context.get_last_update_time();
-            if (now_time_signal - last_time_signal > 10000 || now_time_signal - last_time_signal < 0)
-            {
-                last_time_signal = now_time_signal;
-
-                if (trace_msg[ 320 ] == 1)
-                	log.trace ("REOPEN search db");
-                
-                close_db();
-                open_db();
-                return true;
-            }
-        }
-        return false;
+        close_db();
+        open_db();
     }
-
 
     public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
                    void delegate(string uri) add_out_element)
     {
-        //writeln ("SEARCH FROM XAPIAN");
-        check_for_reload();
+        context.check_for_reload("search", &reopen_db);
 
         int[ string ] key2slot = context.get_key2slot();
-        //writeln ("key2slot=", key2slot);
+        //writeln ("@key2slot=", key2slot);
 
-        auto        fields = get_fields(str_fields);
+        auto fields = get_fields(str_fields);
+
+        if (trace_msg[ 321 ] == 1)
+            log.trace("query [%s]", str_query);
 
         XapianQuery query;
         TTA         tta = parse_expr(str_query);
@@ -186,6 +166,10 @@ class XapianReader : SearchReader
 
             //writeln ("read count:", read_count, ", count:", count);
             return read_count;
+        }
+        else
+        {
+            log.trace("invalid query [%s]", str_query);
         }
 
         return 0;

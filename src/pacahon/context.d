@@ -45,7 +45,7 @@ enum P_MODULE : byte
 
 enum ResultCode
 {
-	Ticket_expired		  = 32,	 
+    Ticket_expired        = 32,
     OK                    = 200,
     Created               = 201,
     No_Content            = 204,
@@ -62,12 +62,12 @@ enum ResultCode
 
 struct Ticket
 {
-    string id;
-    string user_uri;
+    string     id;
+    string     user_uri;
     ResultCode result;
 //    string[] parentUnitIds = new string[ 0 ];
 
-    long end_time;
+    long       end_time;
 
     immutable this(string _id, string _user_uri, long _end_time)
     {
@@ -108,6 +108,7 @@ interface Context
     long get_last_update_time();
 
     void store_subject(Subject ss, bool prepareEvents = true);
+    public bool check_for_reload(string interthread_signal_id, void delegate() load);
 
     /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////
     void push_signal(string key, long value);
@@ -129,16 +130,16 @@ interface Context
     public bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
-    public immutable(Individual)[] get_individuals_via_query(Ticket *ticket, string query_str);
-    public immutable(string)[]     get_individuals_ids_via_query(Ticket *ticket, string query_str);
+    public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str);
+    public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
     public Individual get_individual(Ticket *ticket, string uri);
-    public Individual[] get_individuals(Ticket *ticket, string[] uris);
+    public Individual[]            get_individuals(Ticket *ticket, string[] uris);
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
     public ResultCode post_individual(Ticket *ticket, Individual individual);
 
-    public void wait_thread(P_MODULE thread_id);    
-    public void set_trace (int idx, bool state);
+    public void wait_thread(P_MODULE thread_id);
+    public void set_trace(int idx, bool state);
 }
 

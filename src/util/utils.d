@@ -459,10 +459,7 @@ string escaping_or_uuid2search(string in_text)
 
 void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
 {
-    int  count_s = 0;
-
     bool need_prepare = false;
-    bool is_uuid      = false;
 
     int  idx = 0;
 
@@ -470,13 +467,8 @@ void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
     {
         if (ch == '-')
         {
-            count_s++;
-            if (count_s == 4 && in_text.length > 36 && in_text.length < 48)
-            {
-                is_uuid      = true;
                 need_prepare = true;
                 break;
-            }
         }
         if (ch == '"' || ch == '\n' || ch == '\\' || ch == '\t' || (ch == ':' && idx < 5))
         {
@@ -484,15 +476,6 @@ void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
 //			break;
         }
         idx++;
-    }
-
-    bool fix_uuid_2_doc = false;
-
-    // TODO: временная корректировка ссылок в org
-    if (is_uuid == true)
-    {
-        if (in_text[ 0 ] == 'z' && in_text[ 1 ] == 'd' && in_text[ 2 ] == 'b' && in_text[ 3 ] == ':' && ((in_text[ 4 ] == 'd' && in_text[ 5 ] == 'e' && in_text[ 6 ] == 'p') || (in_text[ 4 ] == 'o' && in_text[ 5 ] == 'r' && in_text[ 6 ] == 'g')))
-            fix_uuid_2_doc = true;
     }
 
     if (need_prepare)
@@ -521,24 +504,10 @@ void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
             }
             else
             {
-                if ((ch == '-' && is_uuid == true) || ch == ':')
+                if (ch == '-' || ch == ':')
                     outbuff.write('_');
                 else
-                {
-                    if (fix_uuid_2_doc)
-                    {
-                        if (i == 4)
-                            outbuff.write('d');
-                        else if (i == 5)
-                            outbuff.write('o');
-                        else if (i == 6)
-                            outbuff.write('c');
-                        else
-                            outbuff.write(ch);
-                    }
-                    else
-                        outbuff.write(ch);
-                }
+                    outbuff.write(ch);
             }
         }
     }
