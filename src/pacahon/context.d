@@ -45,7 +45,6 @@ enum P_MODULE : byte
 
 enum ResultCode
 {
-    Ticket_expired        = 32,
     OK                    = 200,
     Created               = 201,
     No_Content            = 204,
@@ -53,6 +52,9 @@ enum ResultCode
     Forbidden             = 403,
     Not_Found             = 404,
     Unprocessable_Entity  = 422,
+    Ticket_expired        = 471,
+    Not_Authorized        = 472,
+    Authentication_Failed = 473,
     Internal_Server_Error = 500,
     Not_Implemented       = 501,
     Service_Unavailable   = 503,

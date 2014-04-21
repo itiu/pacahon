@@ -604,8 +604,9 @@ class PThreadContext : Context
         {
 //        writeln("@authenticate, login=", login, ", password=", password);
 
-            Ticket                  ticket;
-            Ticket                  *sys_ticket;
+            Ticket          ticket;
+            ticket.result = ResultCode.Authentication_Failed;
+            Ticket          *sys_ticket;
 
             immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket,
                                                                                 "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
