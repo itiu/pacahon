@@ -128,7 +128,7 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
             formattedWrite(writer, "%s | r/w :%7d/%5d | cps/thr:%9.1f | work time:%7d µs | processed r/w: %7d/%5d | t.w.t. : %7d ms",
                            now, read_count, write_count, cps, delta_worked_time, delta_count_read, delta_count_write, worked_time / 1000);
 
-            log.trace("cps(r/w):%6.1f/%6.1f", cps_r, cps_w);
+            log.trace("cps(r/w):%8.1f/%8.1f", cps_r, cps_w);
 
             string set_bar_color;
 

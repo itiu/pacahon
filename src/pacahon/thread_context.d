@@ -690,7 +690,19 @@ class PThreadContext : Context
                     subject2Ticket(ticket, tt);
                     tt.result               = ResultCode.OK;
                     user_of_ticket[ tt.id ] = tt;
+
+                    if (trace_msg[ 17 ] == 1)
+                    	log.trace("тикет найден в базе, id=%s", ticket_id);
                 }
+                else
+                {
+                    tt = new Ticket;
+                    tt.result = ResultCode.Ticket_expired;
+                    
+                    if (trace_msg[ 17 ] == 1)
+                    	log.trace("тикет не найден в базе, id=%s", ticket_id);
+                }    
+                
             }
             else
             {
@@ -931,6 +943,7 @@ class PThreadContext : Context
 
     public void set_trace(int idx, bool state)
     {
+    	writeln ("set trace idx=", idx, ":", state);
         foreach (mid; is_traced_module.keys)
         {
             Tid tid = getTid(mid);
