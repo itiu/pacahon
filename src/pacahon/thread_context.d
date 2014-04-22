@@ -802,6 +802,14 @@ class PThreadContext : Context
     {
         StopWatch sw; sw.start;
 
+        if (trace_msg[ 25 ] == 1)
+        {
+        	if (ticket !is null)
+        		log.trace("get_individual, uri=%s, ticket=%s", uri, ticket.id);
+        	else	
+        		log.trace("get_individual, uri=%s, ticket=null", uri);
+        }	
+
         try
         {
             Individual individual = Individual.init;
@@ -812,6 +820,11 @@ class PThreadContext : Context
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                     cbor2individual(&individual, individual_as_cbor);
+            }
+            else
+            {
+            	if (trace_msg[ 25 ] == 1)
+            		log.trace("not authorized: get_individual, uri=%s, ticket=%s", uri, ticket.id);
             }
             return individual;
         }
