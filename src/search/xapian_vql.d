@@ -362,7 +362,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     if (trace_msg[ 200 ] == 1)
     {
-        log.trace("%X query=%s", cast(void*)query, get_query_description(query));
+        log.trace("[%X] query=%s", cast(void*)query, get_query_description(query));
         sw.start();
     }
 
@@ -378,7 +378,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         return err;
 
     if (trace_msg[ 200 ] == 1)
-        log.trace("%X found =%d, @matches =%d", cast(void*)query, matches.get_matches_estimated(&err), matches.size(&err));
+        log.trace("[%X] found =%d, @matches =%d", cast(void*)query, matches.get_matches_estimated(&err), matches.size(&err));
 
     if (matches !is null)
     {
@@ -397,13 +397,8 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
             if (context.authorize(subject_id, ticket, Access.can_read))
             {
-//                string msg = context.get_subject_as_cbor(subject_id);
-
-//                if (msg !is null)
-//                {
-                add_out_element(subject_id /*, msg*/);
+                add_out_element(subject_id);
                 read_count++;
-//                }
             }
 
             it.next(&err);
@@ -414,145 +409,17 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         {
             sw.stop();
             long t = cast(long)sw.peek().usecs;
-            log.trace("authorized:%d, total time execute query: %s µs", read_count, text(t));
+            log.trace("[%X] authorized:%d, total time execute query: %s µs", cast(void*)query, read_count, text(t));
         }
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);
     }
-
 
 //    writeln ("@ read_count=", read_count);
     return read_count;
 }
-/*
-   public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
-                                                 XapianEnquire xapian_enquire,
-                                                 int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string uri) add_out_element,
-                                                 Tid tid_subject_manager,
-                                                 Tid tid_acl_manager)
-   {
-    int read_count = 0;
 
-    //StopWatch sw;
-    //sw.start();
-
-    writeln("@query=", get_query_description(query));
-
-    byte err;
-
-    xapian_enquire.set_query(query, &err);
-    if (sorter !is null)
-        xapian_enquire.set_sort_by_key(sorter, true, &err);
-
-    //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
-    XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
-    if (err < 0)
-        return err;
-
-    writeln("@found =", matches.get_matches_estimated(&err), ", @matches =", matches.size(&err));
-
-    if (matches !is null)
-    {
-        XapianMSetIterator it = matches.iterator(&err);
-
-        while (it.is_next(&err) == true)
-        {
-            char   *data_str;
-            uint   *data_len;
-            it.get_document_data(&data_str, &data_len, &err);
-            string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
-            writeln("@subject_id:", subject_id);
-            if (tid_subject_manager != Tid.init)
-            {
-                send(tid_subject_manager, CMD.GET, subject_id, thisTid);
-                read_count++;
-            }
-
-            it.next(&err);
-        }
-
-        writeln("*1");
-        //sw.stop();
-        //long t = cast(long) sw.peek().usecs;
-        //writeln("1 execute:", t, " µs");
-
-        destroy_MSetIterator(it);
-        destroy_MSet(matches);
-
-        byte[ string ] hash_of_subjects;
-
-        // Фаза I, получим субьекты из хранилища и отправим их на авторизацию,
-        // тут же получение из авторизации и формирование части ответа
-        for (int i = 0; i < read_count * 2; i++)
-        {
-            receive((string uri, string msg, Tid from)
-                    {
-                        if (from == tid_subject_manager)
-                        {
-                            send(tid_acl_manager, CMD.AUTHORIZE, msg, thisTid);
-                        }
-                        else
-                        {
-                            if (msg.length > 16)
-                            {
-   //                                    writeln ("!!!", msg);
-                                Subject sss = cbor2subject(msg, LINKS);
-
-                                if (sss !is null)
-                                {
-                                    // добавим в исходящий поток
-                                    add_out_element(sss.subject, msg);
-
-                                    hash_of_subjects[ sss.subject ] = 1;
-
-                                    foreach (objz; sss)
-                                    {
-                                        foreach (id; objz)
-                                        {
-                                            if (hash_of_subjects.get(id.literal, -1) == -1)
-                                            {
-                                                hash_of_subjects[ id.literal ] = 2;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    });
-        }
-
-        // Фаза II, дочитать если нужно
-        int count_inner;
-        foreach (key; hash_of_subjects.keys)
-        {
-            byte vv = hash_of_subjects[ key ];
-            if (vv == 2)
-            {
-                send(tid_subject_manager, CMD.GET, key, thisTid);
-                count_inner++;
-            }
-        }
-
-        for (int i = 0; i < count_inner; i++)
-        {
-            receive((string uri, string msg, Tid from)
-                    {
-                        if (msg.length > 16)
-                        {
-                            //writeln (msg);
-                            // отправить в исходящий поток
-                            add_out_element(uri, msg);
-                        }
-                    });
-        }
-    }
-
-   //    writeln ("@ read_count=", read_count);
-    return read_count;
-   }
- */
 string get_query_description(XapianQuery query)
 {
     if (query !is null)
@@ -560,10 +427,12 @@ string get_query_description(XapianQuery query)
         char *descr_str;
         uint *descr_len;
         query.get_description(&descr_str, &descr_len, &err);
-        if (descr_len !is null)
+        if (descr_len !is null && descr_len > 0)
         {
             return cast(immutable)descr_str[ 0..(*descr_len) ];
         }
+        else
+        	return "no content";
     }
     return "NULL";
 }

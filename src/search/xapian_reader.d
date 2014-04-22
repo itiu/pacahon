@@ -133,7 +133,7 @@ class XapianReader : SearchReader
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("%X query [%s]", cast(void*)query, str_query);
+            log.trace("[%X] query [%s]", cast(void*)query, str_query);
 
         if (query !is null)
         {
