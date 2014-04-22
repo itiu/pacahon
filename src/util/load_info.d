@@ -114,16 +114,21 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
             now.length = 19;
 
             float cps = 0.1f;
+            float cps_w = 0.1f;
+            float cps_r = 0.1f;
             float wt  = cast(float)delta_worked_time;
-            float dc  = cast(float)(delta_count_read + delta_count_write);
             if (wt > 0)
-                cps = (dc / wt) * 1000 * 1000;
+            {
+                cps = ((cast(float)delta_count_write + cast(float)delta_count_read) / wt) * 1000 * 1000;
+                cps_w = (cast(float)delta_count_write / wt) * 1000 * 1000;
+                cps_r = (cast(float)delta_count_read / wt) * 1000 * 1000;
+            }    
 
             auto writer = appender!string();
             formattedWrite(writer, "%s | r/w :%7d/%5d | cps/thr:%9.1f | work time:%7d µs | processed r/w: %7d/%5d | t.w.t. : %7d ms",
                            now, read_count, write_count, cps, delta_worked_time, delta_count_read, delta_count_write, worked_time / 1000);
 
-            log.trace("cps:%6.1f", cps);
+            log.trace("cps(r/w):%6.1f/%6.1f", cps_r, cps_w);
 
             string set_bar_color;
 

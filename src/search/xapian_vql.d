@@ -427,7 +427,7 @@ string get_query_description(XapianQuery query)
         char *descr_str;
         uint *descr_len;
         query.get_description(&descr_str, &descr_len, &err);
-        if (descr_len !is null && descr_len > 0)
+        if (descr_len !is null && *descr_len > 0)
         {
             return cast(immutable)descr_str[ 0..(*descr_len) ];
         }
