@@ -631,7 +631,7 @@ class PThreadContext : Context
                     new_ticket.addPredicate(ticket__duration, "40000");
 
                     if (trace_msg[ 18 ] == 1)        	
-                    	log.trace ("authenticate, ticket__accessor=%d", user_id);
+                    	log.trace ("authenticate, ticket__accessor=%s", user_id);
 
                     // store ticket
                     string ss_as_cbor = subject2cbor(new_ticket);

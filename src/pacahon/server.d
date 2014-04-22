@@ -164,13 +164,8 @@ void init_core()
         wait_starting_thread(P_MODULE.condition, tids);
 
         register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
-
-        //writeln("registred spawned tids:", tids);
         Tid tid_condition = locate(text(P_MODULE.condition));
-//        writeln ("tid_condition=", tid_condition);
-
-
-
+        
         JSONValue props;
 
         try

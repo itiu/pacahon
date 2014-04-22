@@ -29,12 +29,12 @@ void logger_process()
         char cmd = msg[ 0 ];
 
         if (llq is null)
-            llq = new LoggerQueue(msg[ 1 ], msg[ 2 ], msg[ 3 ]);
+            llq = new LoggerQueue(msg[ 1 ], msg[ 2 ]);
 
         if (cmd == 'T')
-            llq.trace(msg[ 4 ]);
+            llq.trace(msg[ 4 ], msg[ 3 ]);
         else if (cmd == 'C')
-            llq.trace_log_and_console(msg[ 4 ]);
+            llq.trace_log_and_console(msg[ 4 ], msg[ 3 ]);
         else if (cmd == 'I')
             llq.trace_io(true, msg[ 4 ]);
         else if (cmd == 'O')
@@ -50,6 +50,20 @@ public class logger
     Tid            tid_logger;
     bool           isSpawn = false;
 
+    private void init_tid_logger ()
+    {
+        if (tid_logger == Tid.init)
+        {
+        	tid_logger = locate("logger");
+        	        	
+        	if (tid_logger == Tid.init)
+        	{
+        		tid_logger = spawn(&logger_process);
+        		register("logger", tid_logger);            
+        	}
+        }
+    }
+
     this(string _log_name, string _ext, string _src)
     {
         log_name = _log_name;
@@ -59,12 +73,7 @@ public class logger
 
     void trace(Char, A ...) (in Char[] fmt, A args)
     {
-        if (isSpawn == false)
-        {
-            tid_logger = spawn(&logger_process);
-            isSpawn    = true;
-        }
-
+    	init_tid_logger ();
         auto writer = appender!string();
         formattedWrite(writer, fmt, args);
         send(tid_logger, 'T', log_name, ext, src, writer.data);
@@ -72,12 +81,7 @@ public class logger
 
     void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
     {
-        if (isSpawn == false)
-        {
-            tid_logger = spawn(&logger_process);
-            isSpawn    = true;
-        }
-
+    	init_tid_logger ();
         auto writer = appender!string();
         formattedWrite(writer, fmt, args);
         send(tid_logger, 'C', log_name, ext, src, writer.data);
@@ -85,12 +89,7 @@ public class logger
 
     void trace_io(bool io, byte *data, ulong length)
     {
-        if (isSpawn == false)
-        {
-            tid_logger = spawn(&logger_process);
-            isSpawn    = true;
-        }
-
+    	init_tid_logger ();
         if (io == true)
             send(tid_logger, 'I', log_name, ext, src, cast(immutable)(cast(char *)data)[ 0..length ]);
         else
@@ -110,15 +109,13 @@ public class LoggerQueue
 
     private string trace_logfilename = "app";
     private string ext               = "log";
-    private string src               = "";
 
 
     private FILE *ff = null;
 
-    this(string log_name, string _ext, string _src)
+    this(string log_name, string _ext)
     {
         trace_logfilename = log_name;
-        src               = _src;
         ext               = _ext;
     }
 
@@ -199,7 +196,7 @@ public class LoggerQueue
         prev_time = day;
     }
 
-    string trace(string arg)
+    string trace(string arg, string src)
     {
         _time tt     = time(null);
         tm    *ptm   = localtime(&tt);
@@ -242,8 +239,8 @@ public class LoggerQueue
         return writer.data;
     }
 
-    void trace_log_and_console(string arg)
+    void trace_log_and_console(string arg, string src)
     {
-        write(trace(arg), "\n");
+        write(trace(arg, src), "\n");
     }
 }

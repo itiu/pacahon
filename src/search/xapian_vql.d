@@ -362,7 +362,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     if (trace_msg[ 200 ] == 1)
     {
-        log.trace("@query=" ~ get_query_description(query));
+        log.trace("%X query=%s", cast(void*)query, get_query_description(query));
         sw.start();
     }
 
@@ -378,7 +378,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         return err;
 
     if (trace_msg[ 200 ] == 1)
-        log.trace("@found =%d, @matches =%d", matches.get_matches_estimated(&err), matches.size(&err));
+        log.trace("%X found =%d, @matches =%d", cast(void*)query, matches.get_matches_estimated(&err), matches.size(&err));
 
     if (matches !is null)
     {
@@ -393,7 +393,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
 
             if (trace_msg[ 201 ] == 1)
-                log.trace("@subject_id:%s", subject_id);
+                log.trace("subject_id:%s", subject_id);
 
             if (context.authorize(subject_id, ticket, Access.can_read))
             {
