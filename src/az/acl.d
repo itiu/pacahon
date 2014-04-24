@@ -160,6 +160,9 @@ class Authorization : LmdbStorage
     {
         if (ticket is null)
             return true;
+        
+         if (trace_msg[ 111 ] == 1) 
+         	log.trace ("authorize %s", uri);    
 
         bool    isAccessAllow = false;
 
@@ -258,11 +261,16 @@ class Authorization : LmdbStorage
             }
         }catch (Exception ex)
         {
+        	writeln ("EX!,", ex.msg);
         }
         finally
         {
             mdb_txn_abort(txn_r);
+
+         if (trace_msg[ 111 ] == 1) 
+         	log.trace ("authorize %s, result=%s", uri, text(isAccessAllow));    
         }
+                
         return isAccessAllow;
     }
 }

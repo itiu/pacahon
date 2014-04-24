@@ -753,6 +753,14 @@ class PThreadContext : Context
     {
         StopWatch sw; sw.start;
 
+        if (trace_msg[ 26 ] == 1)
+        {
+        	if (ticket !is null)
+        		log.trace("get_individuals_via_query: start, query_str=%s, ticket=%s", query_str, ticket.id);
+        	else	
+        		log.trace("get_individuals_via_query: start, query_str=%s, ticket=null", query_str);
+        }	
+
         try
         {
             immutable(Individual)[] res;
@@ -765,6 +773,9 @@ class PThreadContext : Context
         finally
         {
             stat(CMD.GET, sw);
+
+            if (trace_msg[ 26 ] == 1)
+            	log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
     }
 
@@ -824,13 +835,15 @@ class PThreadContext : Context
             else
             {
             	if (trace_msg[ 25 ] == 1)
-            		log.trace("not authorized: get_individual, uri=%s, ticket=%s", uri, ticket.id);
+            		log.trace("get_individual, not authorized, uri=%s", uri);
             }
             return individual;
         }
         finally
         {
             stat(CMD.GET, sw);
+           	if (trace_msg[ 25 ] == 1)
+           		log.trace("get_individual: end, uri=%s", uri);
         }
     }
 
