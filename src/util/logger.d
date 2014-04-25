@@ -48,19 +48,18 @@ public class logger
     private string ext      = "log";
     private string src      = "";
     Tid            tid_logger;
-    bool           isSpawn = false;
 
-    private void init_tid_logger ()
+    private void init_tid_logger()
     {
         if (tid_logger == Tid.init)
         {
-        	tid_logger = locate("logger");
-        	        	
-        	if (tid_logger == Tid.init)
-        	{
-        		tid_logger = spawn(&logger_process);
-        		register("logger", tid_logger);            
-        	}
+            tid_logger = locate("logger");
+
+            if (tid_logger == Tid.init)
+            {
+                tid_logger = spawn(&logger_process);
+                register("logger", tid_logger);
+            }
         }
     }
 
@@ -73,7 +72,7 @@ public class logger
 
     void trace(Char, A ...) (in Char[] fmt, A args)
     {
-    	init_tid_logger ();
+        init_tid_logger();
         auto writer = appender!string();
         formattedWrite(writer, fmt, args);
         send(tid_logger, 'T', log_name, ext, src, writer.data);
@@ -81,7 +80,7 @@ public class logger
 
     void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
     {
-    	init_tid_logger ();
+        init_tid_logger();
         auto writer = appender!string();
         formattedWrite(writer, fmt, args);
         send(tid_logger, 'C', log_name, ext, src, writer.data);
@@ -89,7 +88,7 @@ public class logger
 
     void trace_io(bool io, byte *data, ulong length)
     {
-    	init_tid_logger ();
+        init_tid_logger();
         if (io == true)
             send(tid_logger, 'I', log_name, ext, src, cast(immutable)(cast(char *)data)[ 0..length ]);
         else

@@ -43,9 +43,9 @@ static this()
 
 class Authorization : LmdbStorage
 {
-    this(string _path)
+    this(string _path, DBMode mode)
     {
-        super(_path);
+        super(_path, mode);
     }
 
     bool isExistMemberShip(Individual *membership)
@@ -160,9 +160,9 @@ class Authorization : LmdbStorage
     {
         if (ticket is null)
             return true;
-        
-         if (trace_msg[ 111 ] == 1) 
-         	log.trace ("authorize %s", uri);    
+
+        if (trace_msg[ 111 ] == 1)
+            log.trace("authorize %s", uri);
 
         bool    isAccessAllow = false;
 
@@ -261,16 +261,16 @@ class Authorization : LmdbStorage
             }
         }catch (Exception ex)
         {
-        	writeln ("EX!,", ex.msg);
+            writeln("EX!,", ex.msg);
         }
         finally
         {
             mdb_txn_abort(txn_r);
 
-         if (trace_msg[ 111 ] == 1) 
-         	log.trace ("authorize %s, result=%s", uri, text(isAccessAllow));    
+            if (trace_msg[ 111 ] == 1)
+                log.trace("authorize %s, result=%s", uri, text(isAccessAllow));
         }
-                
+
         return isAccessAllow;
     }
 }
@@ -279,7 +279,7 @@ void acl_manager(string thread_name)
 {
     core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: acl manager");
-    LmdbStorage storage = new LmdbStorage(acl_indexes_db_path);
+    LmdbStorage storage = new LmdbStorage(acl_indexes_db_path, DBMode.RW);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -360,7 +360,7 @@ void acl_manager(string thread_name)
                             storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
                             if (trace_msg[ 100 ] == 1)
-                            	log.trace("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
+                                log.trace("[index] ++ ACL: %s+%s", permissionObject.uri, permissionSubject.uri);
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -395,7 +395,7 @@ void acl_manager(string thread_name)
                                 storage.put(rs.uri, outbuff.toString());
 
                                 if (trace_msg[ 101 ] == 1)
-                                	log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
+                                    log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
                             }
                         }
                     }

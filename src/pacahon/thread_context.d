@@ -77,9 +77,9 @@ class PThreadContext : Context
 
     this(string property_file_path, string context_name)
     {
-        inividuals_storage = new LmdbStorage(individuals_db_path);
-        tickets_storage    = new LmdbStorage(tickets_db_path);
-        acl_indexes        = new Authorization(acl_indexes_db_path);
+        inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R);
+        tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R);
+        acl_indexes        = new Authorization(acl_indexes_db_path, DBMode.R);
 
         name = context_name;
 
@@ -602,12 +602,12 @@ class PThreadContext : Context
 
         try
         {
-            if (trace_msg[ 18 ] == 1)        	
-            	log.trace ("authenticate, login=[%s] password=[%s]", login, password);
+            if (trace_msg[ 18 ] == 1)
+                log.trace("authenticate, login=[%s] password=[%s]", login, password);
 
-            Ticket          ticket;
+            Ticket                  ticket;
             ticket.result = ResultCode.Authentication_Failed;
-            Ticket          *sys_ticket;
+            Ticket                  *sys_ticket;
 
             immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket,
                                                                                 "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
@@ -630,8 +630,8 @@ class PThreadContext : Context
                     new_ticket.addPredicate(ticket__when, getNowAsString());
                     new_ticket.addPredicate(ticket__duration, "40000");
 
-                    if (trace_msg[ 18 ] == 1)        	
-                    	log.trace ("authenticate, ticket__accessor=%s", user_id);
+                    if (trace_msg[ 18 ] == 1)
+                        log.trace("authenticate, ticket__accessor=%s", user_id);
 
                     // store ticket
                     string ss_as_cbor = subject2cbor(new_ticket);
@@ -657,8 +657,8 @@ class PThreadContext : Context
                     return ticket;
                 }
             }
-            
-           	log.trace ("fail authenticate, login=[%s] password=[%s]", login, password);
+
+            log.trace("fail authenticate, login=[%s] password=[%s]", login, password);
 
             ticket.result = ResultCode.Authentication_Failed;
             return ticket;
@@ -692,17 +692,16 @@ class PThreadContext : Context
                     user_of_ticket[ tt.id ] = tt;
 
                     if (trace_msg[ 17 ] == 1)
-                    	log.trace("тикет найден в базе, id=%s", ticket_id);
+                        log.trace("тикет найден в базе, id=%s", ticket_id);
                 }
                 else
                 {
-                    tt = new Ticket;
+                    tt        = new Ticket;
                     tt.result = ResultCode.Ticket_expired;
-                    
+
                     if (trace_msg[ 17 ] == 1)
-                    	log.trace("тикет не найден в базе, id=%s", ticket_id);
-                }    
-                
+                        log.trace("тикет не найден в базе, id=%s", ticket_id);
+                }
             }
             else
             {
@@ -755,11 +754,11 @@ class PThreadContext : Context
 
         if (trace_msg[ 26 ] == 1)
         {
-        	if (ticket !is null)
-        		log.trace("get_individuals_via_query: start, query_str=%s, ticket=%s", query_str, ticket.id);
-        	else	
-        		log.trace("get_individuals_via_query: start, query_str=%s, ticket=null", query_str);
-        }	
+            if (ticket !is null)
+                log.trace("get_individuals_via_query: start, query_str=%s, ticket=%s", query_str, ticket.id);
+            else
+                log.trace("get_individuals_via_query: start, query_str=%s, ticket=null", query_str);
+        }
 
         try
         {
@@ -775,7 +774,7 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
 
             if (trace_msg[ 26 ] == 1)
-            	log.trace("get_individuals_via_query: end, query_str=%s", query_str);
+                log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
     }
 
@@ -815,11 +814,11 @@ class PThreadContext : Context
 
         if (trace_msg[ 25 ] == 1)
         {
-        	if (ticket !is null)
-        		log.trace("get_individual, uri=%s, ticket=%s", uri, ticket.id);
-        	else	
-        		log.trace("get_individual, uri=%s, ticket=null", uri);
-        }	
+            if (ticket !is null)
+                log.trace("get_individual, uri=%s, ticket=%s", uri, ticket.id);
+            else
+                log.trace("get_individual, uri=%s, ticket=null", uri);
+        }
 
         try
         {
@@ -834,16 +833,16 @@ class PThreadContext : Context
             }
             else
             {
-            	if (trace_msg[ 25 ] == 1)
-            		log.trace("get_individual, not authorized, uri=%s", uri);
+                if (trace_msg[ 25 ] == 1)
+                    log.trace("get_individual, not authorized, uri=%s", uri);
             }
             return individual;
         }
         finally
         {
             stat(CMD.GET, sw);
-           	if (trace_msg[ 25 ] == 1)
-           		log.trace("get_individual: end, uri=%s", uri);
+            if (trace_msg[ 25 ] == 1)
+                log.trace("get_individual: end, uri=%s", uri);
         }
     }
 
@@ -969,7 +968,7 @@ class PThreadContext : Context
 
     public void set_trace(int idx, bool state)
     {
-    	writeln ("set trace idx=", idx, ":", state);
+        writeln("set trace idx=", idx, ":", state);
         foreach (mid; is_traced_module.keys)
         {
             Tid tid = getTid(mid);

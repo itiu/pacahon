@@ -2,7 +2,7 @@ module storage.lmdb_storage;
 
 private
 {
-    import std.stdio, std.file, std.datetime, std.conv;
+    import std.stdio, std.file, std.datetime, std.conv, std.digest.ripemd, std.bigint;
 
     import bind.lmdb_header;
 
@@ -26,15 +26,25 @@ static this()
     log = new logger("pacahon", "log", "lmdb");
 }
 
+enum DBMode
+{
+    R  = true,
+    RW = false
+}
+
 class LmdbStorage
 {
-    MDB_env *env;
+    MDB_env        *env;
+    private string summ_hash_this_db_id;
+    private BigInt summ_hash_this_db;
+    private DBMode mode;
+    private string path;
 
-    string  path;
-
-    this(string _path)
+    this(string _path, DBMode _mode)
     {
-        path = _path;
+        path                 = _path;
+        summ_hash_this_db_id = "summ_hash_this_db";
+        mode                 = _mode;
 
         try
         {
@@ -61,12 +71,23 @@ class LmdbStorage
 
         rc = mdb_env_create(&env);
         if (rc != 0)
-            log.trace_log_and_console("%(%) ERR#1:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console("%s(%s) ERR#1:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
         else
         {
             rc = mdb_env_open(env, cast(char *)path, MDB_NOMETASYNC | MDB_NOSYNC, std.conv.octal !664);
             if (rc != 0)
-                log.trace_log_and_console("%(%) ERR#2:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console("%s(%s) ERR#2:%s", __FUNCTION__, path, fromStringz(mdb_strerror(rc)));
+
+            if (rc == 0 && mode == DBMode.RW)
+            {
+                string hash_str = find(summ_hash_this_db_id);
+
+                if (hash_str is null || hash_str.length < 1)
+                    hash_str = "0";
+
+                summ_hash_this_db = BigInt("0x" ~ hash_str);
+                log.trace("%s summ_hash_this_db=%s", path, hash_str);
+            }
         }
     }
 
@@ -85,26 +106,26 @@ class LmdbStorage
                 rc = mdb_env_set_mapsize(env, map_size + 10_048_576);
                 if (rc != 0)
                 {
-                    log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                    log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 }
             }
         }
     }
 
-    public EVENT update_or_create(string cbor)
+    public EVENT update_or_create(string cbor, out string new_hash)
     {
         // TODO не оптимально!
         Individual ind;
 
         cbor2individual(&ind, cbor);
-        return update_or_create(ind.uri, cbor);
+        return update_or_create(ind.uri, cbor, new_hash);
     }
 
-    public EVENT update_or_create(Individual *ind)
+    public EVENT update_or_create(Individual *ind, out string new_hash)
     {
         string content = individual2cbor(ind);
 
-        return update_or_create(ind.uri, content);
+        return update_or_create(ind.uri, content, new_hash);
     }
 
     public void put(string _key, string value)
@@ -116,13 +137,13 @@ class LmdbStorage
         rc = mdb_txn_begin(env, null, 0, &txn);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
 
@@ -139,7 +160,7 @@ class LmdbStorage
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
 
@@ -155,7 +176,7 @@ class LmdbStorage
                 return;
             }
 
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
 
@@ -169,13 +190,23 @@ class LmdbStorage
 
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
         }
     }
 
-    public EVENT update_or_create(string uri, string content)
+
+    private string get_new_hash(string content)
+    {
+        ubyte[ 20 ] hash = ripemd160Of(content);
+        BigInt msg_hash = "0x" ~ toHexString(hash);
+        summ_hash_this_db += msg_hash;
+        return toHex(summ_hash_this_db);
+    }
+
+    private EVENT update_or_create(string uri, string content, out string new_hash)
     {
 //                                      StopWatch sw; sw.start;
+        new_hash = get_new_hash(content);
 
         int     rc;
         MDB_dbi dbi;
@@ -184,13 +215,13 @@ class LmdbStorage
         rc = mdb_txn_begin(env, null, 0, &txn);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
         }
 
@@ -215,9 +246,24 @@ class LmdbStorage
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn);
             throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+        }
+
+        if (summ_hash_this_db != BigInt.init)
+        {   // put current db summ hash
+            key.mv_data  = cast(char *)summ_hash_this_db_id;
+            key.mv_size  = summ_hash_this_db_id.length;
+            data.mv_data = cast(char *)new_hash;
+            data.mv_size = new_hash.length;
+            rc           = mdb_put(txn, dbi, &key, &data, 0);
+            if (rc != 0)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ "put summ_hash (%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                mdb_txn_abort(txn);
+                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            }
         }
 
         rc = mdb_txn_commit(txn);
@@ -234,7 +280,7 @@ class LmdbStorage
 
             if (rc != 0)
             {
-                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 mdb_txn_abort(txn);
                 throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
             }
@@ -278,7 +324,7 @@ class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console("warn:" ~ __FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
@@ -287,14 +333,14 @@ class LmdbStorage
         {
             if (rc == MDB_MAP_RESIZED)
             {
-                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 mdb_env_close(env);
                 open_db();
 
                 return find(uri);
             }
 
-            log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
             return null;
         }
@@ -305,7 +351,7 @@ class LmdbStorage
             rc = mdb_dbi_open(txn_r, null, 0, &dbi);
             if (rc != 0)
             {
-                log.trace_log_and_console(__FUNCTION__ ~ "(%) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
                 throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
             }
 

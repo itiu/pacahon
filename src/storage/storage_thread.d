@@ -2,7 +2,7 @@ module storage.storage_thread;
 
 private
 {
-    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime;
+    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.outbuffer;
 
     import bind.lmdb_header;
 
@@ -28,15 +28,16 @@ static this()
 
 public void individuals_manager(string thread_name, string db_path)
 {
-	core.thread.Thread.getThis().name = thread_name;
-//    writeln("SPAWN: Subject manager");
-    LmdbStorage storage = new LmdbStorage(db_path);
+    core.thread.Thread.getThis().name = thread_name;
+    LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW);
+    string      bin_log_name          = db_path ~ ".bin.log";
 
     // SEND ready
     receive((Tid tid_response_reciever)
             {
                 send(tid_response_reciever, true);
             });
+
 
     while (true)
     {
@@ -63,8 +64,17 @@ public void individuals_manager(string thread_name, string db_path)
                         {
                             try
                             {
-                                EVENT ev = storage.update_or_create(msg);
+                                string new_hash;
+                                EVENT ev = storage.update_or_create(msg, new_hash);
+
                                 send(tid_response_reciever, ev, thisTid);
+                                OutBuffer oub = new OutBuffer();
+                                oub.write('\n');
+                                oub.write(Clock.currTime().stdTime());
+                                oub.write(msg.length);
+                                oub.write(new_hash);
+                                oub.write(msg);
+                                append(bin_log_name, oub.toString);
                             }
                             catch (Exception ex)
                             {
@@ -88,10 +98,10 @@ public void individuals_manager(string thread_name, string db_path)
                         writeln(thread_name, ":EX!", ex.msg);
                     }
                 },
-                                (CMD cmd, int arg, bool arg2)
+                (CMD cmd, int arg, bool arg2)
                 {
-                	if (cmd == CMD.SET_TRACE)
-                		set_trace (arg, arg2);
+                    if (cmd == CMD.SET_TRACE)
+                        set_trace(arg, arg2);
                 },
                 (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
