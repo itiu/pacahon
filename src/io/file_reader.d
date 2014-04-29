@@ -157,7 +157,7 @@ private void prepare_file(string file_name, Context context)
             }
 
             if (for_load.length > 0)
-                writeln("Onto for load:", for_load);
+                writeln("Onto for load:", for_load.keys);
 
             foreach (ss; ss_list)
             {

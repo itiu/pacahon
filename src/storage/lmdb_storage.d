@@ -2,7 +2,7 @@ module storage.lmdb_storage;
 
 private
 {
-    import std.stdio, std.file, std.datetime, std.conv, std.digest.ripemd, std.bigint;
+    import std.stdio, std.file, std.datetime, std.conv, std.digest.ripemd, std.bigint, std.string;
 
     import bind.lmdb_header;
 
@@ -39,30 +39,37 @@ class LmdbStorage
     private BigInt summ_hash_this_db;
     private DBMode mode;
     private string path;
+    string         db_name;
 
     this(string _path, DBMode _mode)
     {
         path                 = _path;
+        db_name              = path[ lastIndexOf(path, '/')..$ ];
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
-
-        try
-        {
-            mkdir("data");
-        }
-        catch (Exception ex)
-        {
-        }
-
-        try
-        {
-            mkdir(path);
-        }
-        catch (Exception ex)
-        {
-        }
-
         open_db();
+    }
+
+    public void backup()
+    {
+        string uid = find(summ_hash_this_db_id);
+
+        if (uid is null)
+            uid = "0";
+
+        string backup_db_name = dbs_backup ~ "/" ~ db_name ~ "." ~ uid;
+
+        try
+        {
+            mkdir(backup_db_name);
+        }
+        catch (Exception ex)
+        {
+        }
+
+        int rc = mdb_env_copy(env, cast(char *)backup_db_name);
+        if (rc != 0)
+            log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, db_name, fromStringz(mdb_strerror(rc)));
     }
 
     private void open_db()
@@ -87,6 +94,8 @@ class LmdbStorage
 
                 summ_hash_this_db = BigInt("0x" ~ hash_str);
                 log.trace("%s summ_hash_this_db=%s", path, hash_str);
+
+                backup();
             }
         }
     }
