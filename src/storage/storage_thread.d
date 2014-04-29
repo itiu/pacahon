@@ -2,7 +2,7 @@ module storage.storage_thread;
 
 private
 {
-    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.outbuffer;
+    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.outbuffer, std.string;
 
     import bind.lmdb_header;
 
@@ -26,15 +26,22 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
+string get_new_binlog_name (string db_path)
+{
+	string now = Clock.currTime().toISOExtString();
+	now = now[0..indexOf(now,'.') + 4];  
+	
+    return db_path ~ "." ~ now;	
+}
+
 public void individuals_manager(string thread_name, string db_path)
 {
     core.thread.Thread.getThis().name = thread_name;
     LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW);
     int 		size_bin_log		  = 0;
     int 		max_size_bin_log	  = 10_000_000;	
-    long now = Clock.currTime().stdTime();
-    string      bin_log_name          = db_path ~ "." ~ text (now);
-
+    string bin_log_name = get_new_binlog_name (db_path);
+    
     // SEND ready
     receive((Tid tid_response_reciever)
             {
@@ -84,7 +91,7 @@ public void individuals_manager(string thread_name, string db_path)
                                 if (size_bin_log > max_size_bin_log)
                                 {
                                 	size_bin_log = 0;
-                                	bin_log_name = db_path ~ "." ~ text (now);
+                                	bin_log_name = get_new_binlog_name (db_path);
                                 }
                             }
                             catch (Exception ex)
