@@ -63,7 +63,7 @@ const string tickets_db_path     = "./data/lmdb-tickets";
 const string acl_indexes_db_path = "./data/acl-indexes";
 
 import std.file;
-static this()
+void create_folder_struct()
 {
     try
     {

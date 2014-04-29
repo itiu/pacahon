@@ -47,6 +47,8 @@ class LmdbStorage
         db_name              = path[ lastIndexOf(path, '/')..$ ];
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
+        
+        create_folder_struct();
         open_db();
     }
 
@@ -62,14 +64,15 @@ class LmdbStorage
         try
         {
             mkdir(backup_db_name);
+            
+            int rc = mdb_env_copy(env, cast(char *)backup_db_name);
+            if (rc != 0)
+            	log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, db_name, fromStringz(mdb_strerror(rc)));
+            
         }
         catch (Exception ex)
         {
         }
-
-        int rc = mdb_env_copy(env, cast(char *)backup_db_name);
-        if (rc != 0)
-            log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, db_name, fromStringz(mdb_strerror(rc)));
     }
 
     private void open_db()
