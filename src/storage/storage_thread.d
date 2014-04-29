@@ -30,7 +30,10 @@ public void individuals_manager(string thread_name, string db_path)
 {
     core.thread.Thread.getThis().name = thread_name;
     LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW);
-    string      bin_log_name          = db_path ~ ".bin.log";
+    int 		size_bin_log		  = 0;
+    int 		max_size_bin_log	  = 10_000_000;	
+    long now = Clock.currTime().stdTime();
+    string      bin_log_name          = db_path ~ "." ~ text (now);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -68,13 +71,21 @@ public void individuals_manager(string thread_name, string db_path)
                                 EVENT ev = storage.update_or_create(msg, new_hash);
 
                                 send(tid_response_reciever, ev, thisTid);
+                                long now = Clock.currTime().stdTime();
                                 OutBuffer oub = new OutBuffer();
                                 oub.write('\n');
-                                oub.write(Clock.currTime().stdTime());
+                                oub.write(now);
                                 oub.write(msg.length);
                                 oub.write(new_hash);
                                 oub.write(msg);
                                 append(bin_log_name, oub.toString);
+                                size_bin_log += msg.length + 30;
+                                
+                                if (size_bin_log > max_size_bin_log)
+                                {
+                                	size_bin_log = 0;
+                                	bin_log_name = db_path ~ "." ~ text (now);
+                                }
                             }
                             catch (Exception ex)
                             {
