@@ -67,7 +67,7 @@ class LmdbStorage
             
             int rc = mdb_env_copy(env, cast(char *)backup_db_name);
             if (rc != 0)
-            	log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, db_name, fromStringz(mdb_strerror(rc)));
+            	log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, backup_db_name, fromStringz(mdb_strerror(rc)));
             
         }
         catch (Exception ex)
@@ -97,8 +97,6 @@ class LmdbStorage
 
                 summ_hash_this_db = BigInt("0x" ~ hash_str);
                 log.trace("%s summ_hash_this_db=%s", path, hash_str);
-
-                backup();
             }
         }
     }

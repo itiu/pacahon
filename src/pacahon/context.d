@@ -22,8 +22,9 @@ enum CMD : byte
     COMMIT    = 16,
     END_DATA  = 32,
     SET_TRACE = 33,
-    NOP       = 64,
-    RELOAD    = 65
+    RELOAD    = 40,
+    BACKUP	  = 41,	
+    NOP       = 64
 }
 
 enum P_MODULE : byte
@@ -144,5 +145,7 @@ interface Context
 
     public void wait_thread(P_MODULE thread_id);
     public void set_trace(int idx, bool state);
+    
+    public void backup ();
 }
 

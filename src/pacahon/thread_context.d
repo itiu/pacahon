@@ -978,4 +978,11 @@ class PThreadContext : Context
 
         pacahon.log_msg.set_trace(idx, state);
     }
+    
+    public void backup ()
+    {
+    	Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
+    	send(tid_subject_manager, CMD.BACKUP);
+    }
+
 }

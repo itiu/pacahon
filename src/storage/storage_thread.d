@@ -54,7 +54,14 @@ public void individuals_manager(string thread_name, string db_path)
         receive(
                 (CMD cmd)
                 {
-                    if (cmd == CMD.COMMIT)
+                    if (cmd == CMD.BACKUP)
+                    {
+                        storage.flush(1);
+                        storage.backup();
+                       	size_bin_log = 0;
+                       	bin_log_name = get_new_binlog_name (db_path);                        
+                    }
+                    else if (cmd == CMD.COMMIT)
                     {
                         storage.flush(1);
                     }
