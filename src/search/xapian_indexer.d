@@ -264,6 +264,19 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                    send(tid_sender, CMD.END_DATA);
                    }
                    }, */
+                (CMD cmd, string msg, Tid tid_response_reciever)
+                {
+                    if (key2slot.length - last_size_key2slot > 0)
+                    {
+                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                        if (trace_msg[ 210 ] == 1)
+                            log.trace("store__key2slot #1");
+                        last_size_key2slot = key2slot.length;
+                    }
+                    indexer_db.commit(&err);
+                	
+                	 send(tid_response_reciever, msg);
+                },
                 (CMD cmd, Tid tid_response_reciever)
                 {
                     // если ожидают окончания операции для indexer, то вероятнее всего собираются сразу-же читать из поиска
@@ -272,10 +285,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                     {
                         store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
                         if (trace_msg[ 210 ] == 1)
-                            log.trace("store__key2slot");
+                            log.trace("store__key2slot #2");
                         last_size_key2slot = key2slot.length;
                     }
-
                     indexer_db.commit(&err);
 
 

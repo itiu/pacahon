@@ -981,9 +981,9 @@ class PThreadContext : Context
 
     public bool backup(int level = 0)
     {
-    	bool result = false;
-    	
-        Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
+        bool result = false;
+
+        Tid  tid_subject_manager = getTid(P_MODULE.subject_manager);
 
         send(tid_subject_manager, CMD.BACKUP, "", thisTid);
         string backup_id;
@@ -991,39 +991,47 @@ class PThreadContext : Context
 
         if (backup_id != "")
         {
-    	    result = true;
+            result = true;
 
             string res;
-            Tid tid_acl_manager = getTid(P_MODULE.acl_manager);
+            Tid    tid_acl_manager = getTid(P_MODULE.acl_manager);
             send(tid_acl_manager, CMD.BACKUP, backup_id, thisTid);
-            receive((string _res) {res = _res;});
+            receive((string _res) { res = _res; });
             if (res == "")
-            	result = false;
+                result = false;
             else
             {
-            Tid tid_ticket_manager = getTid(P_MODULE.ticket_manager);
-            send(tid_ticket_manager, CMD.BACKUP, backup_id, thisTid);
-            receive((string _res) {res = _res;});
-            if (res == "")
-            	result = false;
-            }	
+                Tid tid_ticket_manager = getTid(P_MODULE.ticket_manager);
+                send(tid_ticket_manager, CMD.BACKUP, backup_id, thisTid);
+                receive((string _res) { res = _res; });
+                if (res == "")
+                    result = false;
+                else
+                {
+                    Tid tid_fulltext_indexer = getTid(P_MODULE.fulltext_indexer);
+                    send(tid_fulltext_indexer, CMD.BACKUP, backup_id, thisTid);
+                    receive((string _res) { res = _res; });
+                    if (res == "")
+                        result = false;
+                }
+            }
         }
 
         if (result == false)
         {
-            if (level < 5)
+            if (level < 10)
             {
-            	log.trace_log_and_console("BACKUP FAIL, repeat(%d) %s", level, backup_id);
-            	
-            	core.thread.Thread.sleep(dur!("msecs")(500));            	
+                log.trace_log_and_console("BACKUP FAIL, repeat(%d) %s", level, backup_id);
+
+                core.thread.Thread.sleep(dur!("msecs")(500));
                 return backup(level + 1);
             }
             else
-            	log.trace_log_and_console("BACKUP FAIL, %s", backup_id);                
+                log.trace_log_and_console("BACKUP FAIL, %s", backup_id);
         }
         else
             log.trace_log_and_console("BACKUP Ok, %s", backup_id);
-        
+
         return result;
     }
 }
