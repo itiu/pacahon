@@ -122,9 +122,9 @@ public void condition_thread(string thread_name, string props_file_name)
                                     {
                                         try
                                         {
-                                        	if (trace_msg [300] == 1)
-                                            	log.trace ("exec script : %s ", mandat.condition);
-                                            	
+                                            if (trace_msg[ 300 ] == 1)
+                                                log.trace("exec script : %s ", mandat.condition);
+
                                             count++;
                                             script_vm.run(mandat.script);
                                         }
@@ -145,7 +145,7 @@ public void condition_thread(string thread_name, string props_file_name)
                             if (cmd == CMD.SET_TRACE)
                                 set_trace(arg, arg2);
                         },
-                        (Variant v) { log.trace_log_and_console(thread_name ~ "::Received some other type." ~ text (v)); });
+                        (Variant v) { log.trace_log_and_console(thread_name ~ "::Received some other type." ~ text(v)); });
             }
             catch (Exception ex)
             {
@@ -168,8 +168,8 @@ public void load()
     if (script_vm is null)
         return;
 
-   	if (trace_msg [301] == 1)
-   		log.trace("start load mandats");
+    if (trace_msg[ 301 ] == 1)
+        log.trace("start load mandats");
 
     Subjects res = new Subjects();
     vql.get(null,
@@ -185,15 +185,15 @@ public void load()
     }
 
     //writeln ("@2");
-   	if (trace_msg [300] == 1)
-   		log.trace("end load mandats, count=%d ", res.length);
+    if (trace_msg[ 300 ] == 1)
+        log.trace("end load mandats, count=%d ", res.length);
 }
 
 private void prepare_condition(Subject ss, ScriptVM script_vm)
 {
-   	if (trace_msg [310] == 1)	
-   		log.trace("prepare_condition uri=%s", ss.subject);
-    
+    if (trace_msg[ 310 ] == 1)
+        log.trace("prepare_condition uri=%s", ss.subject);
+
     JSONValue nil;
     try
     {
@@ -226,8 +226,8 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
                     mandat.condition = el.str;
                     mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
 
-                    if (trace_msg [310] == 1)	
-                    	log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.condition);
+                    if (trace_msg[ 310 ] == 1)
+                        log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.condition);
 
                     mandats[ ss.subject ] = mandat;
                 }
@@ -237,8 +237,8 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
         {
             mandat.condition = condition_text;
             mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
-            if (trace_msg [310] == 1)	
-            	log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.condition);
+            if (trace_msg[ 310 ] == 1)
+                log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.condition);
 
             mandats[ ss.subject ] = mandat;
         }

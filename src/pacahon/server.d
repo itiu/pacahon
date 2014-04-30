@@ -98,8 +98,8 @@ void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     send(tid, thisTid);
     receive((bool isReady)
             {
-            	if (trace_msg[ 50 ] == 1)
-            		log.trace("STARTED THREAD: %s", text(tid_idx));
+                if (trace_msg[ 50 ] == 1)
+                    log.trace("STARTED THREAD: %s", text(tid_idx));
             });
 }
 
@@ -133,7 +133,7 @@ void init_core()
         tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, text(P_MODULE.ticket_manager), tickets_db_path);
         wait_starting_thread(P_MODULE.ticket_manager, tids);
 
-        tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, text(P_MODULE.acl_manager));
+        tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, text(P_MODULE.acl_manager), acl_indexes_db_path);
         wait_starting_thread(P_MODULE.acl_manager, tids);
 
         tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context, text(P_MODULE.xapian_thread_context));
@@ -164,8 +164,8 @@ void init_core()
         wait_starting_thread(P_MODULE.condition, tids);
 
         register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
-        Tid tid_condition = locate(text(P_MODULE.condition));
-        
+        Tid       tid_condition = locate(text(P_MODULE.condition));
+
         JSONValue props;
 
         try
@@ -253,7 +253,6 @@ void init_core()
                 }
             }
         }
-
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);

@@ -275,11 +275,15 @@ class Authorization : LmdbStorage
     }
 }
 
-void acl_manager(string thread_name)
+void acl_manager(string thread_name, string db_path)
 {
+    int size_bin_log     = 0;
+    int max_size_bin_log = 10_000_000;
+
     core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: acl manager");
-    LmdbStorage storage = new LmdbStorage(acl_indexes_db_path, DBMode.RW);
+    LmdbStorage storage      = new LmdbStorage(acl_indexes_db_path, DBMode.RW);
+    string      bin_log_name = get_new_binlog_name(db_path);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -409,7 +413,35 @@ void acl_manager(string thread_name)
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
-                    if (cmd == CMD.AUTHORIZE)
+                    if (cmd == CMD.BACKUP)
+                    {
+                        try
+                        {
+                            string backup_id;
+                            if (msg.length > 0)
+                                backup_id = msg;
+
+                            if (backup_id is null)
+                                backup_id = "0";
+
+                            Result res = storage.backup(backup_id);
+                            if (res == Result.Ok)
+                            {
+                                size_bin_log = 0;
+                                bin_log_name = get_new_binlog_name(db_path);
+                            }
+                            else if (res == Result.Err)
+                            {
+                                backup_id = "";
+                            }
+                            send(tid_response_reciever, backup_id);
+                        }
+                        catch (Exception ex)
+                        {
+                            send(tid_response_reciever, "");
+                        }
+                    }
+                    else if (cmd == CMD.AUTHORIZE)
                     {
 //                            writeln ("is AUTHORIZE msg=[", msg, "]");
                         Individual ind;

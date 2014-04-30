@@ -32,47 +32,73 @@ enum DBMode
     RW = false
 }
 
+enum Result
+{
+    Ok,
+    Err,
+    Nothing
+}
+
 class LmdbStorage
 {
-    MDB_env        *env;
-    private string summ_hash_this_db_id;
-    private BigInt summ_hash_this_db;
-    private DBMode mode;
-    private string path;
-    string         db_name;
+    MDB_env             *env;
+    public const string summ_hash_this_db_id;
+    private BigInt      summ_hash_this_db;
+    private DBMode      mode;
+    private string      path;
+    string              db_name;
 
     this(string _path, DBMode _mode)
     {
         path                 = _path;
-        db_name              = path[ lastIndexOf(path, '/')..$ ];
+        db_name              = path[ (lastIndexOf(path, '/') + 1)..$ ];
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
-        
+
         create_folder_struct();
         open_db();
     }
 
-    public void backup()
+    public Result backup(string backup_id)
     {
-        string uid = find(summ_hash_this_db_id);
-
-        if (uid is null)
-            uid = "0";
-
-        string backup_db_name = dbs_backup ~ "/" ~ db_name ~ "." ~ uid;
+        string backup_path    = dbs_backup ~ "/" ~ backup_id;
+        string backup_db_name = dbs_backup ~ "/" ~ backup_id ~ "/" ~ db_name;
 
         try
         {
-            mkdir(backup_db_name);
-            
-            int rc = mdb_env_copy(env, cast(char *)backup_db_name);
-            if (rc != 0)
-            	log.trace_log_and_console("%s(%s) ERR:%s", __FUNCTION__, backup_db_name, fromStringz(mdb_strerror(rc)));
-            
+            mkdir(backup_path);
         }
         catch (Exception ex)
         {
         }
+
+        try
+        {
+            mkdir(backup_db_name);
+        }
+        catch (Exception ex)
+        {
+        }
+
+        try
+        {
+            remove(backup_db_name ~ "/" ~ "data.mdb");
+        }
+        catch (Exception ex)
+        {
+        }
+
+        flush(1);
+
+        int rc = mdb_env_copy(env, cast(char *)backup_db_name);
+
+        if (rc != 0)
+        {
+            log.trace_log_and_console("%s(%s) ERR:%s CODE:%d", __FUNCTION__, backup_db_name, fromStringz(mdb_strerror(rc)), rc);
+            return Result.Err;
+        }
+
+        return Result.Ok;
     }
 
     private void open_db()
@@ -383,6 +409,15 @@ class LmdbStorage
 
         return str;
     }
+}
+
+string get_new_binlog_name(string db_path)
+{
+    string now = Clock.currTime().toISOExtString();
+
+    now = now[ 0..indexOf(now, '.') + 4 ];
+
+    return db_path ~ "." ~ now;
 }
 
 

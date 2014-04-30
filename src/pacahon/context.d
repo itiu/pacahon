@@ -146,6 +146,6 @@ interface Context
     public void wait_thread(P_MODULE thread_id);
     public void set_trace(int idx, bool state);
     
-    public void backup ();
+    public bool backup (int level=0);
 }
 
