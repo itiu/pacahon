@@ -21,6 +21,17 @@ struct Individual
 {
     string uri;
     Resources[ string ]    resources;
+    private ResultCode rc;
+
+    ResultCode getStatus ()
+    {
+    	return rc;
+    }
+    
+    void setStatus (ResultCode _rc)
+    {
+    	rc = _rc;
+    }
 
     immutable this(string _uri, immutable(Resources[ string ]) _resources)
     {

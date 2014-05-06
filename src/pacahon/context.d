@@ -136,8 +136,8 @@ interface Context
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str);
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
-    public Individual get_individual(Ticket *ticket, string uri);
-    public Individual[]            get_individuals(Ticket *ticket, string[] uris);
+    public Individual 				 get_individual(Ticket *ticket, string uri);
+    public Individual[]             get_individuals(Ticket *ticket, string[] uris);
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);

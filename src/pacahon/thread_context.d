@@ -829,12 +829,19 @@ class PThreadContext : Context
                 string individual_as_cbor = get_subject_as_cbor(uri);
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                {
                     cbor2individual(&individual, individual_as_cbor);
+                    individual.setStatus (ResultCode.OK);
+                }
+                else
+                    individual.setStatus (ResultCode.Unprocessable_Entity);
+                    
             }
             else
             {
                 if (trace_msg[ 25 ] == 1)
                     log.trace("get_individual, not authorized, uri=%s", uri);
+                individual.setStatus (ResultCode.Not_Authorized);    
             }
             return individual;
         }
