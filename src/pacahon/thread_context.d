@@ -831,17 +831,16 @@ class PThreadContext : Context
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {
                     cbor2individual(&individual, individual_as_cbor);
-                    individual.setStatus (ResultCode.OK);
+                    individual.setStatus(ResultCode.OK);
                 }
                 else
-                    individual.setStatus (ResultCode.Unprocessable_Entity);
-                    
+                    individual.setStatus(ResultCode.Unprocessable_Entity);
             }
             else
             {
                 if (trace_msg[ 25 ] == 1)
                     log.trace("get_individual, not authorized, uri=%s", uri);
-                individual.setStatus (ResultCode.Not_Authorized);    
+                individual.setStatus(ResultCode.Not_Authorized);
             }
             return individual;
         }
@@ -1040,5 +1039,10 @@ class PThreadContext : Context
             log.trace_log_and_console("BACKUP Ok, %s", backup_id);
 
         return result;
+    }
+
+    public long count_individuals()
+    {
+        return inividuals_storage.count_entries();
     }
 }

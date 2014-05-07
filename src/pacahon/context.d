@@ -23,7 +23,7 @@ enum CMD : byte
     END_DATA  = 32,
     SET_TRACE = 33,
     RELOAD    = 40,
-    BACKUP	  = 41,	
+    BACKUP    = 41,
     NOP       = 64
 }
 
@@ -46,7 +46,7 @@ enum P_MODULE : byte
 
 enum ResultCode
 {
-	zero				  = 0,
+    zero                  = 0,
     OK                    = 200,
     Created               = 201,
     No_Content            = 204,
@@ -136,8 +136,8 @@ interface Context
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str);
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
-    public Individual 				 get_individual(Ticket *ticket, string uri);
-    public Individual[]             get_individuals(Ticket *ticket, string[] uris);
+    public Individual                            get_individual(Ticket *ticket, string uri);
+    public Individual[]            get_individuals(Ticket *ticket, string[] uris);
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
@@ -145,7 +145,8 @@ interface Context
 
     public void wait_thread(P_MODULE thread_id);
     public void set_trace(int idx, bool state);
-    
-    public bool backup (int level=0);
+
+    public bool backup(int level = 0);
+    public long count_individuals();
 }
 

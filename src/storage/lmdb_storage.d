@@ -350,6 +350,66 @@ class LmdbStorage
         return ind;
     }
 
+    public long count_entries()
+    {
+        long    count = -1;
+        int     rc;
+
+        MDB_txn *txn_r;
+
+        rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        MDB_dbi dbi;
+
+        rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        if (rc == MDB_BAD_RSLOT)
+        {
+            log.trace_log_and_console("warn:" ~ __FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            mdb_txn_abort(txn_r);
+            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        }
+
+        if (rc != 0)
+        {
+            if (rc == MDB_MAP_RESIZED)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                mdb_env_close(env);
+                open_db();
+
+                return count_entries();
+            }
+
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            mdb_txn_abort(txn_r);
+            return -1;
+        }
+
+
+        try
+        {
+            rc = mdb_dbi_open(txn_r, null, 0, &dbi);
+            if (rc != 0)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            }
+
+            MDB_stat stat;
+            rc = mdb_stat(txn_r, dbi, &stat);
+
+            if (rc == 0)
+            {
+                count = stat.ms_entries;
+            }
+        }catch (Exception ex)
+        {
+        }
+
+        mdb_txn_abort(txn_r);
+
+        return count;
+    }
+
     public string find(string uri)
     {
         string  str;
