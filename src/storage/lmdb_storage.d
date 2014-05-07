@@ -356,8 +356,6 @@ class LmdbStorage
         int     rc;
 
         MDB_txn *txn_r;
-
-        rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         MDB_dbi dbi;
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
