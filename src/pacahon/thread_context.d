@@ -1061,7 +1061,7 @@ class PThreadContext : Context
 
         if (tid_subject_manager != Tid.init)
         {
-            send(tid_subject_manager, CMD.FREEZE);
+            send(tid_subject_manager, CMD.FREEZE, thisTid);
             receive((bool _res) {});            
         }
     }
