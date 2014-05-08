@@ -53,10 +53,6 @@ public void individuals_manager(string thread_name, string db_path)
                     {
                         storage.flush(1);
                     }
-                    else if (cmd == CMD.FREEZE)
-                    {
-                        is_freeze = true;
-                    }
                     else if (cmd == CMD.UNFREEZE)
                     {
                         is_freeze = false;
@@ -64,7 +60,12 @@ public void individuals_manager(string thread_name, string db_path)
                 },
                 (CMD cmd, Tid tid_response_reciever)
                 {
-                    if (cmd == CMD.NOP)
+                    if (cmd == CMD.FREEZE)
+                    {
+                        is_freeze = true;
+                        send(tid_response_reciever, true);
+                    }
+                    else if (cmd == CMD.NOP)
                         send(tid_response_reciever, true);
                     else
                         send(tid_response_reciever, false);

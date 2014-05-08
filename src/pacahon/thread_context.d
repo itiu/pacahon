@@ -990,6 +990,9 @@ class PThreadContext : Context
 
     public bool backup(int level = 0)
     {
+    	if (level == 0)
+    		freeze ();
+    	   	
         bool result = false;
 
         Tid  tid_subject_manager = getTid(P_MODULE.subject_manager);
@@ -1041,6 +1044,9 @@ class PThreadContext : Context
         else
             log.trace_log_and_console("BACKUP Ok, %s", backup_id);
 
+    	if (level == 0)
+    		unfreeze ();
+
         return result;
     }
 
@@ -1056,6 +1062,7 @@ class PThreadContext : Context
         if (tid_subject_manager != Tid.init)
         {
             send(tid_subject_manager, CMD.FREEZE);
+            receive((bool _res) {});            
         }
     }
 
