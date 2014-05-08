@@ -24,6 +24,8 @@ enum CMD : byte
     SET_TRACE = 33,
     RELOAD    = 40,
     BACKUP    = 41,
+    FREEZE    = 42,
+    UNFREEZE  = 43,
     NOP       = 64
 }
 
@@ -57,6 +59,7 @@ enum ResultCode
     Ticket_expired        = 471,
     Not_Authorized        = 472,
     Authentication_Failed = 473,
+    Not_Ready             = 474,
     Internal_Server_Error = 500,
     Not_Implemented       = 501,
     Service_Unavailable   = 503,
@@ -148,5 +151,7 @@ interface Context
 
     public bool backup(int level = 0);
     public long count_individuals();
+    public void freeze();
+    public void unfreeze();
 }
 

@@ -42,6 +42,8 @@ public void individuals_manager(string thread_name, string db_path)
 
     string last_backup_id = "---";
 
+    bool   is_freeze = false;
+
     while (true)
     {
         receive(
@@ -50,6 +52,14 @@ public void individuals_manager(string thread_name, string db_path)
                     if (cmd == CMD.COMMIT)
                     {
                         storage.flush(1);
+                    }
+                    else if (cmd == CMD.FREEZE)
+                    {
+                        is_freeze = true;
+                    }
+                    else if (cmd == CMD.UNFREEZE)
+                    {
+                        is_freeze = false;
                     }
                 },
                 (CMD cmd, Tid tid_response_reciever)
@@ -101,31 +111,36 @@ public void individuals_manager(string thread_name, string db_path)
                         {
                             if (cmd == CMD.STORE)
                             {
-                                try
+                                if (is_freeze == true)
+                                    send(tid_response_reciever, EVENT.NOT_READY, thisTid);
+                                else
                                 {
-                                    string new_hash;
-                                    EVENT ev = storage.update_or_create(msg, new_hash);
-
-                                    send(tid_response_reciever, ev, thisTid);
-                                    long now = Clock.currTime().stdTime();
-                                    OutBuffer oub = new OutBuffer();
-                                    oub.write('\n');
-                                    oub.write(now);
-                                    oub.write(msg.length);
-                                    oub.write(new_hash);
-                                    oub.write(msg);
-                                    append(bin_log_name, oub.toString);
-                                    size_bin_log += msg.length + 30;
-
-                                    if (size_bin_log > max_size_bin_log)
+                                    try
                                     {
-                                        size_bin_log = 0;
-                                        bin_log_name = get_new_binlog_name(db_path);
+                                        string new_hash;
+                                        EVENT ev = storage.update_or_create(msg, new_hash);
+
+                                        send(tid_response_reciever, ev, thisTid);
+                                        long now = Clock.currTime().stdTime();
+                                        OutBuffer oub = new OutBuffer();
+                                        oub.write('\n');
+                                        oub.write(now);
+                                        oub.write(msg.length);
+                                        oub.write(new_hash);
+                                        oub.write(msg);
+                                        append(bin_log_name, oub.toString);
+                                        size_bin_log += msg.length + 30;
+
+                                        if (size_bin_log > max_size_bin_log)
+                                        {
+                                            size_bin_log = 0;
+                                            bin_log_name = get_new_binlog_name(db_path);
+                                        }
                                     }
-                                }
-                                catch (Exception ex)
-                                {
-                                    send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                    catch (Exception ex)
+                                    {
+                                        send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                    }
                                 }
                             }
                             else if (cmd == CMD.FIND)

@@ -878,7 +878,7 @@ class PThreadContext : Context
                 return ResultCode.No_Content;
 
             Resource[ string ] rdfType;
-            setHashResources(indv.resources[ rdf__type ], rdfType);
+            setMapResources(indv.resources[ rdf__type ], rdfType);
             //writeln ("@ put_individual:", indv.uri);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
@@ -909,6 +909,9 @@ class PThreadContext : Context
                                 ev = _ev;
                         });
             }
+
+            if (ev == EVENT.NOT_READY)
+                return ResultCode.Not_Ready;
 
             if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
             {
@@ -1044,5 +1047,25 @@ class PThreadContext : Context
     public long count_individuals()
     {
         return inividuals_storage.count_entries();
+    }
+
+    public void freeze()
+    {
+        Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
+
+        if (tid_subject_manager != Tid.init)
+        {
+            send(tid_subject_manager, CMD.FREEZE);
+        }
+    }
+
+    public void unfreeze()
+    {
+        Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
+
+        if (tid_subject_manager != Tid.init)
+        {
+            send(tid_subject_manager, CMD.UNFREEZE);
+        }
     }
 }

@@ -41,7 +41,8 @@ enum EVENT : byte
     UPDATE = 2,
     REMOVE = 3,
     NONE   = 4,
-    ERROR  = 5
+    ERROR  = 5,
+    NOT_READY = 6
 }
 
 enum Access : ubyte

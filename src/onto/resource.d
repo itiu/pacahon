@@ -23,7 +23,7 @@ alias immutable(Resource)[] iResources;
 Resources                   _empty_Resources  = Resources.init;
 iResources                  _empty_iResources = iResources.init;
 
-public void setHashResources(Resources rss, ref Resource[ string ] hrss)
+public void setMapResources(Resources rss, ref Resource[ string ] hrss)
 {
     foreach (rs; rss)
         hrss[ rs.data ] = rs;
