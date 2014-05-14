@@ -283,7 +283,8 @@ Subjects parse_JSON_LD(T) (T json, int maxDepth = -1) if (isInputRange!T)
             string val = parseString();
 //				writeln("case '\"' val=", val);
 
-            if (val !is null && val.length > 12 && val[ val.length - 12 ] == '^' && val[ val.length - 7 ] == ':' && val[ val.length - 6 ] == 's')
+            if (val !is null && val.length > 12 && val[ val.length - 12 ] == '^' && val[ val.length - 7 ] == ':' && val[ val.length - 6 ] ==
+                's')
             {
                 // очень вероятно что окончание строки содержит ^^xsd:string
                 val = val[ 0 .. val.length - 12 ];
@@ -356,7 +357,7 @@ public Subject[] parse_json_ld_string(char *msg, int message_size)
     //	StopWatch sw1;
     //	sw1.start();
 
-    char[]       buff = getString(msg, message_size);
+    char[]   buff = getString(msg, message_size);
 
     Subjects gcl = parse_JSON_LD(buff);
 
@@ -573,7 +574,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                 }
                 else
                 {
-//             	writeln ("oo.type == OBJECT_TYPE.LINK_SUBJECT");
+//              writeln ("oo.type == OBJECT_TYPE.LINK_SUBJECT");
                     outbuff.write('\n');
                     toJson_ld(oo.subject, outbuff, use_reif, level + 1);
                 }

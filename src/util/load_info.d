@@ -92,14 +92,14 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
         send(_statistic_data_accumulator, CMD.GET, thisTid);
         const_long_array stat = receiveOnly!(const_long_array);
 
-        long read_count  = stat[ CNAME.COUNT_GET ];
-        long write_count = stat[ CNAME.COUNT_PUT ];
-        long worked_time = stat[ CNAME.WORKED_TIME ];
+        long             read_count  = stat[ CNAME.COUNT_GET ];
+        long             write_count = stat[ CNAME.COUNT_PUT ];
+        long             worked_time = stat[ CNAME.WORKED_TIME ];
 
-        long delta_count_read = read_count - prev_read_count;
-        long delta_count_write = write_count - prev_write_count;
-        
-        prev_read_count = read_count;
+        long             delta_count_read  = read_count - prev_read_count;
+        long             delta_count_write = write_count - prev_write_count;
+
+        prev_read_count  = read_count;
         prev_write_count = write_count;
 
         float p100 = 3000;
@@ -113,16 +113,16 @@ void print_statistic(string thread_name, Tid _statistic_data_accumulator)
             now[ 10 ]  = ' ';
             now.length = 19;
 
-            float cps = 0.1f;
+            float cps   = 0.1f;
             float cps_w = 0.1f;
             float cps_r = 0.1f;
-            float wt  = cast(float)delta_worked_time;
+            float wt    = cast(float)delta_worked_time;
             if (wt > 0)
             {
-                cps = ((cast(float)delta_count_write + cast(float)delta_count_read) / wt) * 1000 * 1000;
+                cps   = ((cast(float)delta_count_write + cast(float)delta_count_read) / wt) * 1000 * 1000;
                 cps_w = (cast(float)delta_count_write / wt) * 1000 * 1000;
                 cps_r = (cast(float)delta_count_read / wt) * 1000 * 1000;
-            }    
+            }
 
             auto writer = appender!string();
             formattedWrite(writer, "%s | r/w :%7d/%5d | cps/thr:%9.1f | work time:%7d µs | processed r/w: %7d/%5d | t.w.t. : %7d ms",

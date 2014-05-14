@@ -15,7 +15,7 @@ private
     import std.concurrency;
     import std.ascii;
     import std.csv;
-    import std.typecons;    
+    import std.typecons;
     import std.outbuffer;
 
     import util.container;
@@ -23,9 +23,10 @@ private
     import pacahon.context;
 }
 
-public string serialize_key2slot (ref int[ string ] key2slot)
+public string serialize_key2slot(ref int[ string ] key2slot)
 {
     OutBuffer outbuff = new OutBuffer();
+
     foreach (key, value; key2slot)
     {
         outbuff.write('"');
@@ -35,21 +36,21 @@ public string serialize_key2slot (ref int[ string ] key2slot)
         outbuff.write(text(value));
         outbuff.write('\n');
     }
-    return outbuff.toString();	
+    return outbuff.toString();
 }
 
-public int[ string ] deserialize_key2slot (string data)
+public int[ string ] deserialize_key2slot(string data)
 {
     int[ string ] key2slot;
 
     int idx = 0;
     foreach (record; csvReader!(Tuple!(string, int))(data))
     {
-    	key2slot[ record[ 0 ] ] = record[ 1 ];
+        key2slot[ record[ 0 ] ] = record[ 1 ];
         idx++;
     }
-    
-    return key2slot;	
+
+    return key2slot;
 }
 
 string getNowAsString()
@@ -100,18 +101,18 @@ public JSONValue read_props(string file_name)
         res = parseJSON(buff);
     }
     else
-    {    	
-        JSONValue transport = JSONValue(["point" : JSONValue("tcp://*:5559")]);
-        transport.object["transport"] = JSONValue("zmq");
-        
-        JSONValue transport1 = JSONValue(["transport" : JSONValue("file_reader")]);
+    {
+        JSONValue transport = JSONValue([ "point" : JSONValue("tcp://*:5559") ]);
+        transport.object[ "transport" ] = JSONValue("zmq");
 
-    	JSONValue listeners = JSONValue ([transport, transport1]);
-        res = JSONValue (["listeners" : listeners]);
+        JSONValue transport1 = JSONValue([ "transport" : JSONValue("file_reader") ]);
+
+        JSONValue listeners = JSONValue([ transport, transport1 ]);
+        res = JSONValue([ "listeners" : listeners ]);
 
         string buff = toJSON(&res);
 
-        std.file.write(file_name, buff);      
+        std.file.write(file_name, buff);
     }
 
     return res;
@@ -180,7 +181,8 @@ void formattedWrite(Writer, Char, A) (Writer w, in Char[] fmt, A[] args)
     }
     else if (args.length == 9)
     {
-        std.format.formattedWrite(w, fmt, args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ], args[ 8 ]);
+        std.format.formattedWrite(w, fmt, args[ 0 ], args[ 1 ], args[ 2 ], args[ 3 ], args[ 4 ], args[ 5 ], args[ 6 ], args[ 7 ],
+                                  args[ 8 ]);
         return;
     }
     else if (args.length == 10)
@@ -432,20 +434,20 @@ string _tmp_correct_link(string link)
 
 string to_lower_and_replace_delimeters(string in_text)
 {
-	if (in_text is null || in_text.length == 0)
-		return in_text;
-		
-	char[] out_text = new char[in_text.length];
-	
-	for (int i = 0; i < in_text.length; i++)
-	{
-		char cc = in_text[i];
-		if (cc == ':' || cc == ' ' || cc == '-')
-			out_text[i] = '_';
-		else
-			out_text[i] = std.ascii.toLower (cc);
-	}	
-		
+    if (in_text is null || in_text.length == 0)
+        return in_text;
+
+    char[] out_text = new char[ in_text.length ];
+
+    for (int i = 0; i < in_text.length; i++)
+    {
+        char cc = in_text[ i ];
+        if (cc == ':' || cc == ' ' || cc == '-')
+            out_text[ i ] = '_';
+        else
+            out_text[ i ] = std.ascii.toLower(cc);
+    }
+
     return cast(immutable)out_text;
 }
 
@@ -467,8 +469,8 @@ void escaping_or_uuid2search(string in_text, ref OutBuffer outbuff)
     {
         if (ch == '-')
         {
-                need_prepare = true;
-                break;
+            need_prepare = true;
+            break;
         }
         if (ch == '"' || ch == '\n' || ch == '\\' || ch == '\t' || (ch == ':' && idx < 5))
         {
@@ -535,35 +537,39 @@ void print_2(ref Set!string *[ string ] res)
 // based on std.functional.memoize
 /*
          Copyright Andrei Alexandrescu 2008 - 2009.
-Distributed under the Boost Software License, Version 1.0.
+   Distributed under the Boost Software License, Version 1.0.
    (See accompanying file LICENSE_1_0.txt or copy at
          http://www.boost.org/LICENSE_1_0.txt)
-*/
+ */
 
-enum cacheize_use 
-{	
-	common_use,	
-	execute_and_update
+enum cacheize_use
+{
+    common_use,
+    execute_and_update
 }
 
 template cacheize(alias fun, uint maxSize = uint.max)
 {
     ReturnType!fun cacheize(ParameterTypeTuple!fun args, cacheize_use use = cacheize_use.common_use)
     {
-        static ReturnType!fun[Tuple!(typeof(args))] memo;        
-        auto t = tuple(args);
+        static ReturnType!fun[ Tuple!(typeof(args)) ] memo;
+        auto   t = tuple(args);
+
         if (use == cacheize_use.common_use)
         {
-        auto p = t in memo;
-        if (p) return *p;
-        	static if (maxSize != uint.max)
-        	{
-        		if (memo.length >= maxSize) memo = null;
+            auto p = t in memo;
+            if (p)
+                return *p;
+
+            static if (maxSize != uint.max)
+            {
+                if (memo.length >= maxSize)
+                    memo = null;
             }
         }
         auto r = fun(args);
         //writeln("Inserting result ", typeof(r).stringof, "(", r, ") for parameters ", t);
-        memo[t] = r;
+        memo[ t ] = r;
         return r;
     }
 }

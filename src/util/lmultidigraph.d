@@ -28,9 +28,9 @@ class LabeledMultiDigraph
         graph = new IndexedEdgeList!true;
     }
 
-    size_t getIdxOfResource (string uri)
+    size_t getIdxOfResource(string uri)
     {
-    	return idx_2_uri.get (uri, NONE);
+        return idx_2_uri.get(uri, NONE);
     }
 
     Set!Resource getHeads()
@@ -52,7 +52,7 @@ class LabeledMultiDigraph
 
         HeadTail ht;
 
-        ht.head = head.get_idx ();
+        ht.head = head.get_idx();
         ht.tail = idx_tail;
 
         size_t[] edge_idxs = ledges_2_head_tail.get(ht, size_t[].init);
@@ -65,10 +65,10 @@ class LabeledMultiDigraph
         Set!Resource res;
 
         size_t   idx_edge = idx_2_uri.get(edge_str, NONE);
-        auto     nb       = graph.neighboursOut(head.get_idx ());
+        auto     nb       = graph.neighboursOut(head.get_idx());
 
         HeadTail ht;
-        ht.head = head.get_idx ();
+        ht.head = head.get_idx();
 
         int idx;
         foreach (nn; nb)
@@ -123,18 +123,18 @@ class LabeledMultiDigraph
             tail.type = type;
             if (tail.type == ResourceType.Uri)
             {
-            	if (tail.data.indexOf ('/') > 0)
-            		tail.origin = ResourceOrigin.external;
+                if (tail.data.indexOf('/') > 0)
+                    tail.origin = ResourceOrigin.external;
             }
-            
+
             tail.lang = lang;
-            tail.set_idx (elements.length);
+            tail.set_idx(elements.length);
             elements ~= tail;
             idx_tail = elements.length - 1;
             if (tail.type == ResourceType.Uri)
                 idx_2_uri[ tail_str ] = idx_tail;
         }
-        
+
         //writeln ("@3 head=", elements[idx_head].uri);
         //writeln ("@3 edge=", elements[idx_edge].uri);
         //writeln ("@3 tail=", tail_str);
@@ -178,11 +178,11 @@ class LabeledMultiDigraph
                 Resource rr;
                 rr.data = rr_str;
                 rr.type = type;
-            if (rr.type == ResourceType.Uri)
-            {
-            	if (rr.data.indexOf ('/') > 0)
-            		rr.origin = ResourceOrigin.external;
-            }                
+                if (rr.type == ResourceType.Uri)
+                {
+                    if (rr.data.indexOf('/') > 0)
+                        rr.origin = ResourceOrigin.external;
+                }
                 rr.set_idx(elements.length);
 
                 elements ~= rr;
@@ -203,7 +203,7 @@ class LabeledMultiDigraph
 
         if (idx_rr == NONE)
         {
-            rr.set_idx (elements.length);
+            rr.set_idx(elements.length);
             elements ~= rr;
             idx_2_uri[ rr.uri ] = elements.length - 1;
         }
@@ -214,7 +214,7 @@ class LabeledMultiDigraph
     {
         Resource rr = Resource.init;
 
-        rr.set_idx (elements.length);
+        rr.set_idx(elements.length);
         elements ~= rr;
 
         return elements.length - 1;
@@ -232,7 +232,7 @@ class LabeledMultiDigraph
 
         rr.data = rr_str;
         rr.type = type;
-        rr.set_idx (idx_rr);
+        rr.set_idx(idx_rr);
         if (rr.type == ResourceType.Uri)
             idx_2_uri[ rr.uri ] = idx_rr;
     }

@@ -62,12 +62,12 @@ struct Set (T, uint INITSIZE = 64)
         assert(index < size);
         data[ index ] = data[ --size ];
     }
-    
-	@property T[] items()
-	{
-		return data[0..size];
-	}
-	
+
+    @property T[] items()
+    {
+        return data[ 0..size ];
+    }
+
     void empty()
     {
         size = 0;
