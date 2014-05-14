@@ -301,6 +301,48 @@ final class Subject
         }
     }
 
+    Objectz addPredicate(string predicate, string object, DataType type)
+    {
+        if (object is null)
+            return null;
+
+        Predicate pp;
+        for (int i = 0; i < _count_edges; i++)
+        {
+            if (edges[ i ].predicate == predicate)
+            {
+                pp = edges[ i ];
+                break;
+            }
+        }
+
+        if (pp !is null)
+        {
+            needReidex = true;
+            return pp.addLiteral(object, type);
+        }
+        else
+        {
+            if (edges.length == 0)
+                edges = new Predicate[ 16 ];
+
+            if (edges.length == _count_edges)
+                edges.length += 16;
+
+            edges[ _count_edges ]                      = new Predicate();
+            edges[ _count_edges ].predicate            = predicate;
+            edges[ _count_edges ].objects              = new Objectz[ 1 ];
+            edges[ _count_edges ].count_objects        = 1;
+            edges[ _count_edges ].objects[ 0 ]         = new Objectz();
+            edges[ _count_edges ].objects[ 0 ].literal = object;
+            edges[ _count_edges ].objects[ 0 ].type    = type;
+            _count_edges++;
+
+            needReidex = true;
+            return edges[ _count_edges - 1 ].objects[ 0 ];
+        }
+    }
+
     void addPredicate(string predicate, Subjects cluster)
     {
         if (cluster is null)

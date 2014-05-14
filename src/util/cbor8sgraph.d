@@ -10,9 +10,11 @@ struct Element
 {
     MajorType type;
     TAG       tag = TAG.NONE;
+    DataType  dest_type;
     union
     {
         string    str;
+        bool      bl;
         Predicate pp;
         Subject   subject;
     }
@@ -48,6 +50,10 @@ private void write_predicate(Predicate vv, ref OutBuffer ou)
         {
             write_header(MajorType.TAG, TAG.URI, ou);
             write_string(value.literal, ou);
+        }
+        else if (value.type == DataType.Bool)
+        {
+            write_bool(value.literal, ou);
         }
         else
         {
@@ -124,6 +130,13 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
                             }
                         }
                     }
+                    else if (val.type == MajorType.FLOAT_SIMPLE && val.dest_type == DataType.Bool)
+                    {
+                        if (val.bl == true)
+                            res1.addPredicate(key.str, "true", DataType.Bool);
+                        else
+                            res1.addPredicate(key.str, "false", DataType.Bool);
+                    }
                 }
             }
         }
@@ -140,6 +153,22 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
 
         pos = ep;
     }
+    else if (header.type == MajorType.FLOAT_SIMPLE)
+    {
+        if (header.len == TRUE)
+        {
+            el.bl        = true;
+            el.dest_type = DataType.Bool;
+        }
+        else if (header.len == FALSE)
+        {
+            el.bl        = false;
+            el.dest_type = DataType.Bool;
+        }
+        else
+        {
+        }
+    }
     else if (header.type == MajorType.ARRAY)
     {
 //	writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
@@ -149,7 +178,14 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
             Element arr_el;
             pos += read_element(src[ pos..$ ], &arr_el, fields, parent_subject);
 
-            if (arr_el.type == MajorType.TEXT_STRING)
+            if (arr_el.type == MajorType.FLOAT_SIMPLE && arr_el.dest_type == DataType.Bool)
+            {
+                if (arr_el.bl == true)
+                    vals.addLiteral("true", DataType.Bool);
+                else
+                    vals.addLiteral("false", DataType.Bool);
+            }
+            else if (arr_el.type == MajorType.TEXT_STRING)
             {
                 if (fields == ALL || (fields == LINKS && is_link_on_subject(arr_el.str) == true))
                 {

@@ -9,7 +9,7 @@ private
     import std.conv;
 
     import util.container;
- //   import util.utils;
+    //   import util.utils;
 }
 
 enum : byte
@@ -20,13 +20,14 @@ enum : byte
 }
 
 /** The CBOR-encoded boolean <code>false</code> value (encoded as "simple value": {@link #MT_SIMPLE}). */
-int FALSE = 0x14;
+ubyte FALSE = 0x14;
 /** The CBOR-encoded boolean <code>true</code> value (encoded as "simple value": {@link #MT_SIMPLE}). */
-int TRUE = 0x15;
+ubyte TRUE = 0x15;
 /** The CBOR-encoded <code>null</code> value (encoded as "simple value": {@link #MT_SIMPLE}). */
-int NULL = 0x16;
+ubyte NULL = 0x16;
 /** The CBOR-encoded "undefined" value (encoded as "simple value": {@link #MT_SIMPLE}). */
-int UNDEFINED = 0x17;
+byte  UNDEFINED = 0x17;
+
 /** Denotes a half-precision float (two-byte IEEE 754, see {@link #MT_FLOAT}). */
 int HALF_PRECISION_FLOAT = 0x19;
 /** Denotes a single-precision float (four-byte IEEE 754, see {@link #MT_FLOAT}). */
@@ -113,13 +114,13 @@ string toString(ElementHeader *el)
 
 ///////////////////////////////////////////////////////////////////////////
 
-public void write_header(MajorType type, ulong len, ref OutBuffer ou)
+public void write_header(MajorType type, ulong add_info, ref OutBuffer ou)
 {
-//    writeln ("@1 type=", type, ", len=", len);
     ubyte element_header;
-    ulong add_info;
 
-    add_info = len;
+//    ulong add_info;
+
+//    add_info = len;
 
     if (add_info < 24)
     {
@@ -168,6 +169,14 @@ public void write_string(string vv, ref OutBuffer ou)
     ou.write(vv);
 }
 
+public void write_bool(string vv, ref OutBuffer ou)
+{
+    if (vv == "true")
+        write_header(MajorType.FLOAT_SIMPLE, TRUE, ou);
+    else
+        write_header(MajorType.FLOAT_SIMPLE, FALSE, ou);
+}
+
 //public void write(T) (T[] arr, ref OutBuffer ou)
 //{
 //    write_header(MajorType.ARRAY, arr.length, ou);
@@ -179,21 +188,23 @@ public void write_string(string vv, ref OutBuffer ou)
 
 private short short_from_buff(ubyte[] buff, int pos)
 {
-    short res = cast(short) (buff[ pos + 0 ] + ((cast(short)buff[ pos + 1 ]) << 8));
+    short res = cast(short)(buff[ pos + 0 ] + ((cast(short)buff[ pos + 1 ]) << 8));
 
     return res;
 }
 
 private int int_from_buff(ubyte[] buff, int pos)
 {
-    int res = buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
+    int res =
+        buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
 
     return res;
 }
 
 private long long_from_buff(ubyte[] buff, int pos)
 {
-    long res = buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
+    long res =
+        buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
 
     return res;
 }

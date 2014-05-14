@@ -476,11 +476,15 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
                     {
                         pp.addLiteral(data, DataType.Datetime);
                     }
-                    if (type == "xsd:date")
+                    else if (type == "xsd:date")
                     {
                         pp.addLiteral(data, DataType.Date);
                     }
-                    if (type == "xsd:nonNegativeInteger" || type == "xsd:boolean")
+                    else if (type == "xsd:boolean")
+                    {
+                        pp.addLiteral(data, DataType.Bool);
+                    }
+                    else if (type == "xsd:nonNegativeInteger")
                     {
                         pp.addLiteral(data, DataType.Integer);
                     }
