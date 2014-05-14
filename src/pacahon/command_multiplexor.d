@@ -217,7 +217,7 @@ public Subject set_message_trace(Subject message, Predicate sender, Ticket *tick
 
     foreach (arg; args.getObjects())
     {
-        if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
+        if (arg.type == DataType.LinkSubject)
         {
             Subject   sarg = arg.subject;
 

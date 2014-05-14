@@ -24,16 +24,7 @@ private import util.container;
 
 private import onto.lang;
 private import pacahon.know_predicates;
-
-enum OBJECT_TYPE : byte
-{
-    TEXT_STRING        = 0,
-    LINK_SUBJECT       = 10,
-    LINK_CLUSTER       = 20,
-    URI                = 30,
-    UNSIGNED_INTEGER   = 31,
-    STANDARD_DATE_TIME = 32
-}
+private import pacahon.define;
 
 enum STRATEGY : byte
 {
@@ -260,7 +251,7 @@ final class Subject
         edges[ _count_edges ].count_objects        = 1;
         edges[ _count_edges ].objects[ 0 ]         = new Objectz();
         edges[ _count_edges ].objects[ 0 ].literal = object;
-        edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.URI;
+        edges[ _count_edges ].objects[ 0 ].type    = DataType.Uri;
         _count_edges++;
 
         needReidex = true;
@@ -343,7 +334,7 @@ final class Subject
             edges[ _count_edges ].count_objects        = 1;
             edges[ _count_edges ].objects[ 0 ]         = new Objectz();
             edges[ _count_edges ].objects[ 0 ].cluster = cluster;
-            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.LINK_CLUSTER;
+            edges[ _count_edges ].objects[ 0 ].type    = DataType.LinkCluster;
             _count_edges++;
         }
         needReidex = true;
@@ -381,7 +372,7 @@ final class Subject
             edges[ _count_edges ].count_objects        = 1;
             edges[ _count_edges ].objects[ 0 ]         = new Objectz();
             edges[ _count_edges ].objects[ 0 ].subject = subject;
-            edges[ _count_edges ].objects[ 0 ].type    = OBJECT_TYPE.LINK_SUBJECT;
+            edges[ _count_edges ].objects[ 0 ].type    = DataType.LinkSubject;
             _count_edges++;
         }
         needReidex = true;
@@ -494,11 +485,11 @@ final class Subject
 
             foreach (oo; pp.getObjects())
             {
-                if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
+                if (oo.type == DataType.LinkSubject)
                 {
                     oo.subject.reindex_predicate();
                 }
-                else if (oo.type == OBJECT_TYPE.TEXT_STRING || oo.type == OBJECT_TYPE.URI)
+                else if (oo.type == DataType.String || oo.type == DataType.Uri)
                 {
                     pp.objects_of_value[ oo.literal ] = oo;
                 }
@@ -602,7 +593,7 @@ class Predicate
     {
         if (count_objects > 0)
         {
-            if (objects[ 0 ].type == OBJECT_TYPE.LINK_CLUSTER && objects[ 0 ].cluster.length == 1)
+            if (objects[ 0 ].type == DataType.LinkCluster && objects[ 0 ].cluster.length == 1)
             {
                 return objects[ 0 ].cluster.data[ 0 ];
             }
@@ -641,7 +632,7 @@ class Predicate
         return objects[ count_objects - 1 ];
     }
 
-    Objectz addLiteral(string val, OBJECT_TYPE type)
+    Objectz addLiteral(string val, DataType type)
     {
         if (val is null)
             return null;
@@ -664,7 +655,7 @@ class Predicate
             objects.length += 16;
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].cluster = cl;
-        objects[ count_objects ].type    = OBJECT_TYPE.LINK_CLUSTER;
+        objects[ count_objects ].type    = DataType.LinkCluster;
         count_objects++;
     }
 
@@ -677,7 +668,7 @@ class Predicate
             objects.length += 16;
         objects[ count_objects ]         = new Objectz;
         objects[ count_objects ].subject = ss;
-        objects[ count_objects ].type    = OBJECT_TYPE.LINK_SUBJECT;
+        objects[ count_objects ].type    = DataType.LinkSubject;
         count_objects++;
     }
 
@@ -750,7 +741,7 @@ class Objectz
 
     Subject  reification = null;     // реификация для данного значения
 
-    byte     type = OBJECT_TYPE.TEXT_STRING;
+    DataType     type = DataType.String;
     LANG     lang;
 
     override string toString()

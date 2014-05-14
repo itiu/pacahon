@@ -32,7 +32,11 @@ enum DataType : ubyte
     String   = 2,
     Integer  = 4,
     Datetime = 8,
-    Float    = 16
+    Date	 = 16,
+    Float    = 32,
+    Bool	 = 64,
+    LinkCluster	 = 128,
+    LinkSubject	 = 129
 }
 
 enum EVENT : byte

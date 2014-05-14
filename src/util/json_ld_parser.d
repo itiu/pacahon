@@ -5,7 +5,7 @@ private import std.outbuffer, std.stdio, std.range, std.ascii, std.utf, std.conv
 private import onto.sgraph;
 private import util.utils;
 private import util.logger;
-
+private import pacahon.define;
 private import onto.lang;
 
 logger log;
@@ -466,7 +466,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     outbuff.write('\t');
             }
 
-            if (oo.type == OBJECT_TYPE.TEXT_STRING)
+            if (oo.type == DataType.String)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -540,7 +540,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                 }
                 //				log.trace ("write literal end");
             }
-            else if (oo.type == OBJECT_TYPE.URI)
+            else if (oo.type == DataType.Uri)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -557,7 +557,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
 //                    outbuff.write('"');
                 }
             }
-            else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
+            else if (oo.type == DataType.LinkSubject)
             {
                 if (ff == true)
                     outbuff.write(',');
@@ -578,7 +578,7 @@ void toJson_ld(Subject ss, ref OutBuffer outbuff, bool use_reif, int level = 0)
                     toJson_ld(oo.subject, outbuff, use_reif, level + 1);
                 }
             }
-            else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
+            else if (oo.type == DataType.LinkCluster)
             {
                 if (ff == true)
                     outbuff.write(',');

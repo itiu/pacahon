@@ -48,11 +48,11 @@ Subject put(Subject message, Predicate sender, Ticket *ticket, Context context, 
 
         try
         {
-            if (arg.type == OBJECT_TYPE.LINK_CLUSTER)
+            if (arg.type == DataType.LinkCluster)
             {
                 graphs_on_put = arg.cluster.data;
             }
-            else if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
+            else if (arg.type == DataType.LinkSubject)
             {
                 graphs_on_put      = new Subject[ 1 ];
                 graphs_on_put[ 0 ] = arg.subject;
@@ -185,11 +185,11 @@ public void get(Ticket *ticket, Subject message, Predicate sender, Context conte
 
             Subject[] queries;
 
-            if (arg.type == OBJECT_TYPE.LINK_CLUSTER)
+            if (arg.type == DataType.LinkCluster)
             {
                 queries = arg.cluster.data;
             }
-            else if (arg.type == OBJECT_TYPE.LINK_SUBJECT)
+            else if (arg.type == DataType.LinkSubject)
             {
                 queries      = new Subject[ 1 ];
                 queries[ 0 ] = arg.subject;

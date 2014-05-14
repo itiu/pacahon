@@ -365,7 +365,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                 foreach (oo; pp.getObjects())
                                 {
-                                    if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                    if (oo.type == DataType.String)
                                     {
                                         if (pp.count_objects > 1)
                                         {
@@ -389,7 +389,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                         all_text.write(data);
                                         all_text.write('|');
                                     }
-                                    else if (oo.type == OBJECT_TYPE.URI)
+                                    else if (oo.type == DataType.Uri)
                                     {
                                         if (oo.literal is null)
                                         {
@@ -451,7 +451,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     bool sp = true;
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && (oo.lang == LANG.RU || oo.lang == LANG.NONE))
+                                        if (oo.type == DataType.String && (oo.lang == LANG.RU || oo.lang == LANG.NONE))
                                         {
                                             if (sp == true)
                                             {
@@ -477,7 +477,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     sp = true;
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING && oo.lang == LANG.EN)
+                                        if (oo.type == DataType.String && oo.lang == LANG.EN)
                                         {
                                             if (sp == true)
                                             {
@@ -506,7 +506,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                        if (oo.type == DataType.String)
                                         {
                                             double data = to!double (oo.literal);
                                             doc.add_value(slot_L1, data, &err);
@@ -524,7 +524,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                     foreach (oo; pp.getObjects())
                                     {
-                                        if (oo.type == OBJECT_TYPE.TEXT_STRING)
+                                        if (oo.type == DataType.String)
                                         {
                                             long data = stringToTime(oo.literal);
                                             doc.add_value(slot_L1, data, &err);

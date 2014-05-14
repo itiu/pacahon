@@ -4,6 +4,7 @@ import std.outbuffer;
 import util.cbor;
 import onto.lang;
 import onto.sgraph;
+import pacahon.define;
 
 struct Element
 {
@@ -39,11 +40,11 @@ private void write_predicate(Predicate vv, ref OutBuffer ou)
         write_header(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
-        if (value.type == OBJECT_TYPE.LINK_SUBJECT)
+        if (value.type == DataType.LinkSubject)
         {
             write_subject(value.subject, ou);
         }
-        else if (value.type == OBJECT_TYPE.URI)
+        else if (value.type == DataType.Uri)
         {
             write_header(MajorType.TAG, TAG.URI, ou);
             write_string(value.literal, ou);
@@ -162,7 +163,7 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
                     else if (arr_el.tag == TAG.URI)
                     {
 //                      writeln ("#2 add as resource: ", arr_el.str);
-                        vals.addLiteral(arr_el.str, OBJECT_TYPE.TEXT_STRING);
+                        vals.addLiteral(arr_el.str, DataType.String);
                     }
                 }
             }

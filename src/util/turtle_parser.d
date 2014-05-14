@@ -4,6 +4,7 @@ private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, 
 
 private import util.utils;
 private import pacahon.know_predicates;
+private import pacahon.define;
 private import onto.lang;
 private import onto.sgraph;
 
@@ -471,10 +472,17 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
                     string type = data[ end_pos_str + 3..$ ];
                     data = data[ 0..end_pos_str ];
 
-                    if (type == "xsd:nonNegativeInteger")
+                    if (type == "xsd:dateTime")
                     {
-//                      writeln ("LITERAL TYPE=", type);
-                        pp.addLiteral(data, OBJECT_TYPE.UNSIGNED_INTEGER);
+                        pp.addLiteral(data, DataType.Datetime);
+                    }
+                    if (type == "xsd:date")
+                    {
+                        pp.addLiteral(data, DataType.Date);
+                    }
+                    if (type == "xsd:nonNegativeInteger" || type == "xsd:boolean")
+                    {
+                        pp.addLiteral(data, DataType.Integer);
                     }
                     else if (type == "xsd:string")
                     {
@@ -504,7 +512,7 @@ private char next_element(char *element, int el_length, Subject ss, string in_pr
                     data = tmp_uri;
             }
 
-            pp.addLiteral(data, OBJECT_TYPE.URI);
+            pp.addLiteral(data, DataType.Uri);
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
@@ -542,7 +550,7 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
             for (int i = 0; i < level; i++)
                 outbuff.write(cast(char[])" ");
 
-            if (oo.type == OBJECT_TYPE.TEXT_STRING)
+            if (oo.type == DataType.String)
             {
                 if (asCluster)
                     outbuff.write(cast(char[])"   \\\"");
@@ -605,18 +613,18 @@ void toTurtle(Subject ss, ref OutBuffer outbuff, int level = 0, bool asCluster =
                     outbuff.write(cast(char[])"@en");
                 }
             }
-            else if (oo.type == OBJECT_TYPE.URI)
+            else if (oo.type == DataType.Uri)
             {
                 outbuff.write(cast(char[])"   ");
                 outbuff.write(oo.literal);
             }
-            else if (oo.type == OBJECT_TYPE.LINK_SUBJECT)
+            else if (oo.type == DataType.LinkSubject)
             {
                 outbuff.write(cast(char[])"\n  [\n");
                 toTurtle(oo.subject, outbuff, level + 1);
                 outbuff.write(cast(char[])"\n  ]");
             }
-            else if (oo.type == OBJECT_TYPE.LINK_CLUSTER)
+            else if (oo.type == DataType.LinkCluster)
             {
                 outbuff.write(cast(char[])" \"\"\"");
                 foreach (s; oo.cluster.data)

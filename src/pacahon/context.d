@@ -104,8 +104,6 @@ interface Context
 
     @property search.vql.VQL vql();
 
-    bool authorize(string uri, Ticket *ticket, Access request_acess);
-
     ref string[ string ] get_prefix_map();
 
     Subject get_subject(string uid);
@@ -124,9 +122,11 @@ interface Context
     string look_string_signal(string key);
 
     // *************************************************** external api *********************************** //
+    bool authorize(string uri, Ticket *ticket, Access request_acess);
 
     public string[ 2 ] execute_script(string str);
 
+    //////////////////////////////////////////////////// ONTO //////////////////////////////////////////////
     public immutable(Class)[ string ] get_owl_classes();
     public immutable(Individual)[ string ] get_onto_as_map_individuals();
     public Class *get_class(string ur);
@@ -139,8 +139,8 @@ interface Context
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str);
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
-    public Individual                            get_individual(Ticket *ticket, string uri);
-    public Individual[]            get_individuals(Ticket *ticket, string[] uris);
+    public Individual               get_individual(Ticket *ticket, string uri);
+    public Individual[]             get_individuals(Ticket *ticket, string[] uris);
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
@@ -149,8 +149,9 @@ interface Context
     public void wait_thread(P_MODULE thread_id);
     public void set_trace(int idx, bool state);
 
-    public bool backup(int level = 0);
     public long count_individuals();
+    
+    public bool backup(int level = 0);
     public void freeze();
     public void unfreeze();
 }
