@@ -243,7 +243,6 @@ private void prepare_condition(Subject ss, ScriptVM script_vm)
             mandats[ ss.subject ] = mandat;
         }
 
-//					found_in_condition_templateIds_and_docFields (mandat.expression, "", cai.templateIds, cai.fields);
     }
     catch (Exception ex)
     {

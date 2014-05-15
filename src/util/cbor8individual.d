@@ -85,6 +85,24 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
 
         pos = ep;
     }
+    else if (header.type == MajorType.FLOAT_SIMPLE)
+    {
+        Resources resources = individual.resources.get(predicate_uri, Resources.init);
+        if (header.len == TRUE)
+        {
+        	resources ~= Resource(ResourceType.Boolean, true);
+            individual.resources[ predicate_uri ] = resources;
+        }
+        else if (header.len == FALSE)
+        {
+        	resources ~= Resource(ResourceType.Boolean, false);
+            individual.resources[ predicate_uri ] = resources;
+        }
+        else
+        {
+        }
+        
+    }    
     else if (header.type == MajorType.ARRAY)
     {
 //	writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
@@ -123,8 +141,12 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
             write_header(MajorType.TAG, TAG.URI, ou);
             write_string(value.data, ou);
         }
-        else
+        else if (value.type == ResourceType.Boolean)
         {
+       		write_bool(value.data, ou);
+        }
+        else
+        {	
             if (value.lang != LANG.NONE)
                 write_header(MajorType.TAG, value.lang + 41, ou);
             write_string(value.data, ou);

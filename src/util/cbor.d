@@ -171,7 +171,7 @@ public void write_string(string vv, ref OutBuffer ou)
 
 public void write_bool(string vv, ref OutBuffer ou)
 {
-    if (vv == "true")
+    if (vv == "1")
         write_header(MajorType.FLOAT_SIMPLE, TRUE, ou);
     else
         write_header(MajorType.FLOAT_SIMPLE, FALSE, ou);

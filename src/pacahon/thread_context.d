@@ -855,7 +855,7 @@ class PThreadContext : Context
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
         StopWatch sw; sw.start;
-
+        
         try
         {
             Tid tid_subject_manager;
@@ -877,10 +877,12 @@ class PThreadContext : Context
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
 
+            if (trace_msg[ 27 ] == 1)
+            	log.trace ("store_individual: %s", *indv);
+
             Resource[ string ] rdfType;
             setMapResources(indv.resources[ rdf__type ], rdfType);
-            //writeln ("@ put_individual:", indv.uri);
-
+            
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {
                 // before storing the data, expected availability acl_manager.

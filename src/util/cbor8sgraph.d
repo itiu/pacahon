@@ -133,9 +133,9 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
                     else if (val.type == MajorType.FLOAT_SIMPLE && val.dest_type == DataType.Bool)
                     {
                         if (val.bl == true)
-                            res1.addPredicate(key.str, "true", DataType.Bool);
+                            res1.addPredicate(key.str, "1", DataType.Bool);
                         else
-                            res1.addPredicate(key.str, "false", DataType.Bool);
+                            res1.addPredicate(key.str, "0", DataType.Bool);
                     }
                 }
             }
@@ -181,9 +181,9 @@ private static int read_element(ubyte[] src, Element *el, byte fields, Subject p
             if (arr_el.type == MajorType.FLOAT_SIMPLE && arr_el.dest_type == DataType.Bool)
             {
                 if (arr_el.bl == true)
-                    vals.addLiteral("true", DataType.Bool);
+                    vals.addLiteral("1", DataType.Bool);
                 else
-                    vals.addLiteral("false", DataType.Bool);
+                    vals.addLiteral("0", DataType.Bool);
             }
             else if (arr_el.type == MajorType.TEXT_STRING)
             {

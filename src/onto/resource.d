@@ -1,15 +1,17 @@
 module onto.resource;
 
 import onto.lang;
+import pacahon.define;
 
 enum ResourceType : ubyte
 {
-    Uri      = 1,
-    String   = 2,
-    Integer  = 4,
-    Datetime = 8,
-    Float    = 16,
-    Boolean  = 32
+    Uri      = DataType.Uri,
+    String   = DataType.String,
+    Integer  = DataType.Integer,
+    Datetime = DataType.Datetime,
+    Date	 = DataType.Date,
+    Float    = DataType.Float,
+    Boolean	 = DataType.Bool    	
 }
 
 enum ResourceOrigin : ubyte
@@ -55,6 +57,8 @@ struct Resource
     ResourceOrigin origin = ResourceOrigin.local;
 
     string         data;
+//    bool		   bool_data;	
+    
     LANG           lang = LANG.NONE;
 
     this(string str, ResourceOrigin _origin)
@@ -69,6 +73,15 @@ struct Resource
         data = str;
         type = _type;
         lang = _lang;
+    }
+
+    this(ResourceType _type, bool val)
+    {
+    	if (val == true)
+    		data = "1";
+    	else	
+    		data = "0";
+        type = _type;
     }
 
     string uri()
