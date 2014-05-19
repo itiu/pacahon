@@ -10,11 +10,9 @@ private
 
     import io.mq_client;
     import util.container;
-    import util.json_ld_parser;
     import util.logger;
     import util.utils;
     import util.cbor;
-    import util.cbor8sgraph;
     import util.cbor8individual;
 
     import pacahon.know_predicates;
@@ -26,7 +24,6 @@ private
 
     import onto.owl;
     import onto.individual;
-    import onto.sgraph;
     import onto.resource;
     import storage.lmdb_storage;
     import az.acl;
@@ -290,6 +287,11 @@ class PThreadContext : Context
             return (immutable(Individual)[ string ]).init;
     }
 
+
+    public string get_individual_as_cbor(string uri)
+    {
+        return inividuals_storage.find(uri);
+    }
 ///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
 
     public void push_signal(string key, long value)
@@ -352,15 +354,6 @@ class PThreadContext : Context
         return res;
     }
 
-    public void store_subject(Subject ss, bool prepareEvents = true)
-    {
-        string     ss_as_cbor = subject2cbor(ss);
-        Individual indv;
-
-        cbor2individual(&indv, ss_as_cbor);
-        store_individual(null, &indv, ss_as_cbor, prepareEvents);
-    }
-
     public int[ string ] get_key2slot()
     {
         int[ string ] key2slot;
@@ -382,16 +375,6 @@ class PThreadContext : Context
         return key2slot;
     }
 
-    public Subject get_subject(string uri)
-    {
-        return inividuals_storage.find_subject(uri);
-    }
-
-    public string get_subject_as_cbor(string uri)
-    {
-        return inividuals_storage.find(uri);
-    }
-
     ref string[ string ] get_prefix_map()
     {
         return prefix_map;
@@ -402,16 +385,16 @@ class PThreadContext : Context
         return _vql;
     }
 
-    private void subject2Ticket(Subject ticket, Ticket *tt)
+    private void subject2Ticket(ref Individual ticket, Ticket *tt)
     {
         string when;
         long   duration;
 
-        tt.id       = ticket.subject;
-        tt.user_uri = ticket.getFirstLiteral(ticket__accessor);
-        when        = ticket.getFirstLiteral(ticket__when);
-        string dd = ticket.getFirstLiteral(ticket__duration);
-        duration = parse!uint (dd);
+        tt.id       = ticket.uri;
+        tt.user_uri = ticket.getFirstResource(ticket__accessor).data;
+        when        = ticket.getFirstResource(ticket__when).data;
+        string dd   = ticket.getFirstResource(ticket__duration).data;
+        duration    = parse!uint (dd);
 
 //				writeln ("tt.userId=", tt.userId);
 
@@ -611,30 +594,37 @@ class PThreadContext : Context
 
             immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket,
                                                                                 "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
+            if (trace_msg[ 18 ] == 1)
+               	log.trace("authenticate, candidate_users=[%s]", candidate_users);
+
             foreach (user; candidate_users)
             {
                 string user_id = user.getFirstResource(veda_schema__owner).uri;
                 if (user_id is null)
                     continue;
 
+                if (trace_msg[ 18 ] == 1)
+                	log.trace("authenticate, user_id=[%s]", user_id);
+
+
                 iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
                 if (pass.length > 0 && pass[ 0 ].data == password)
                 {
-                    Subject new_ticket = new Subject;
-                    new_ticket.addPredicate(rdf__type, ticket__Ticket);
+                    Individual new_ticket;
+                    new_ticket.resources[rdf__type] ~= Resource(ticket__Ticket);
 
                     UUID new_id = randomUUID();
-                    new_ticket.subject = new_id.toString();
+                    new_ticket.uri = new_id.toString();
 
-                    new_ticket.addPredicate(ticket__accessor, user_id);
-                    new_ticket.addPredicate(ticket__when, getNowAsString());
-                    new_ticket.addPredicate(ticket__duration, "40000");
+                    new_ticket.resources[ticket__accessor] ~= Resource(user_id);
+                    new_ticket.resources[ticket__when] ~= Resource(getNowAsString());
+                    new_ticket.resources[ticket__duration] ~= Resource("40000");
 
                     if (trace_msg[ 18 ] == 1)
                         log.trace("authenticate, ticket__accessor=%s", user_id);
 
                     // store ticket
-                    string ss_as_cbor = subject2cbor(new_ticket);
+                    string ss_as_cbor = individual2cbor(&new_ticket);
 
                     Tid    tid_ticket_manager = getTid(P_MODULE.ticket_manager);
 
@@ -686,7 +676,8 @@ class PThreadContext : Context
                 if (ticket_str !is null && ticket_str.length > 128)
                 {
                     tt = new Ticket;
-                    Subject ticket = cbor2subject(ticket_str);
+                    Individual ticket;
+                    cbor2individual(&ticket, ticket_str);
                     subject2Ticket(ticket, tt);
                     tt.result               = ResultCode.OK;
                     user_of_ticket[ tt.id ] = tt;
@@ -750,6 +741,8 @@ class PThreadContext : Context
 
     public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str)
     {
+        immutable(Individual)[] res;
+        
         StopWatch sw; sw.start;
 
         if (trace_msg[ 26 ] == 1)
@@ -762,7 +755,6 @@ class PThreadContext : Context
 
         try
         {
-            immutable(Individual)[] res;
             if (query_str.indexOf("==") <= 0)
                 query_str = "'*' == '" ~ query_str ~ "'";
 
@@ -774,7 +766,7 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
 
             if (trace_msg[ 26 ] == 1)
-                log.trace("get_individuals_via_query: end, query_str=%s", query_str);
+                log.trace("get_individuals_via_query: end, query_str=%s, found=%d", query_str, res.length);
         }
     }
 
@@ -791,7 +783,7 @@ class PThreadContext : Context
                 if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
                 {
                     Individual individual         = Individual.init;
-                    string     individual_as_cbor = get_subject_as_cbor(uri);
+                    string     individual_as_cbor = get_individual_as_cbor(uri);
 
                     if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                         cbor2individual(&individual, individual_as_cbor);
@@ -826,7 +818,7 @@ class PThreadContext : Context
 
             if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
             {
-                string individual_as_cbor = get_subject_as_cbor(uri);
+                string individual_as_cbor = get_individual_as_cbor(uri);
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {

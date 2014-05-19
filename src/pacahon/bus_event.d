@@ -11,7 +11,6 @@ private import pacahon.know_predicates;
 private import pacahon.context;
 private import pacahon.define;
 private import onto.individual;
-private import onto.sgraph;
 private import onto.resource;
 
 logger log;

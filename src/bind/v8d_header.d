@@ -78,7 +78,7 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
 //          individual_2_idx[idx] = Individual.init;
         if (g_context !is null)
         {
-            string icb = g_context.get_subject_as_cbor(uri);
+            string icb = g_context.get_individual_as_cbor(uri);
             tmp_individual.data   = cast(char *)icb;
             tmp_individual.length = cast(int)icb.length;
             return &tmp_individual;

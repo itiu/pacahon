@@ -75,6 +75,13 @@ struct Resource
         lang = _lang;
     }
 
+    this(string str, LANG _lang = LANG.NONE)
+    {
+        data = str;
+        type = ResourceType.String;
+        lang = _lang;
+    }
+
     this(ResourceType _type, bool val)
     {
     	if (val == true)
@@ -132,3 +139,7 @@ bool anyExist(Resources rss, string object)
     return false;
 }
 
+//void addPredicate(Resources rss, string pp, string oo)
+//{
+//	rss[pp] ~= Resource (oo); 
+//}

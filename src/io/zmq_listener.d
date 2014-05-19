@@ -68,7 +68,7 @@ void zmq_thread(string thread_name, string props_file_name, int pos_in_listener_
             {
                 byte *data = cast(byte *) zmq_msg_data(&request);
 
-                get_message(data, data_length, null, out_data, context);
+                //get_message(data, data_length, null, out_data, context);
 
                 zmq_msg_close(&request);
 
@@ -96,7 +96,7 @@ void zmq_thread(string thread_name, string props_file_name, int pos_in_listener_
     catch (Exception ex)
     {
     }
-    zmq_close(responder);
-    zmq_term(ctx);
+    //zmq_close(responder);
+    //zmq_term(ctx);
 }
 

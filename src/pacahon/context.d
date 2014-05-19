@@ -6,7 +6,6 @@ private import util.container;
 private import search.vel;
 private import onto.owl;
 private import onto.individual;
-private import onto.sgraph;
 private import pacahon.define;
 
 private import bind.v8d_header;
@@ -106,13 +105,13 @@ interface Context
 
     ref string[ string ] get_prefix_map();
 
-    Subject get_subject(string uid);
-    string get_subject_as_cbor(string uid);
+//    Subject get_subject(string uid);
+    string get_individual_as_cbor(string uid);
 
     int[ string ] get_key2slot();
     long get_last_update_time();
 
-    void store_subject(Subject ss, bool prepareEvents = true);
+//    void store_subject(Subject ss, bool prepareEvents = true);
     public bool check_for_reload(string interthread_signal_id, void delegate() load);
 
     /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////

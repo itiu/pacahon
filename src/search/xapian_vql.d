@@ -4,12 +4,10 @@ import std.string, std.concurrency, std.stdio, std.datetime, std.conv;
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
-import util.cbor8sgraph;
 import search.vel;
 import pacahon.context;
 import pacahon.define;
 import pacahon.log_msg;
-import onto.sgraph;
 import storage.lmdb_storage;
 
 //////// logger ///////////////////////////////////////////

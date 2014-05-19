@@ -7,7 +7,6 @@ private
     import std.string, std.array, std.stdio, std.conv, std.datetime, std.json, std.outbuffer, std.c.string;
 
     import util.utils;
-    import onto.sgraph;
 }
 
 //  expression

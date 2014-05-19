@@ -7,12 +7,12 @@ import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
-import util.cbor8sgraph;
+import util.cbor8individual;
 import util.logger;
 
 import onto.resource;
 import onto.lang;
-import onto.sgraph;
+import onto.individual;
 
 import pacahon.define;
 import pacahon.know_predicates;
@@ -328,11 +328,13 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                     {
                         counter++;
 
-                        Subject ss = cbor2subject(msg);
+                        Individual ss;
+                        
+                        cbor2individual(&ss, msg);
 
                         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
-                        if (ss.subject !is null && ss.count_edges > 0)
+                        if (ss.uri !is null && ss.resources.length > 0)
                         {
                             OutBuffer all_text = new OutBuffer();
 
@@ -340,72 +342,72 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                             indexer.set_document(doc, &err);
 
                             if (trace_msg[ 220 ] == 1)
-                                log.trace("index document:[%s]", ss.subject);
+                                log.trace("index document:[%s]", ss.uri);
 
-                            foreach (pp; ss.getPredicates())
+                            foreach (predicate, resources; ss.resources)
                             {
                                 string prefix;
-                                int slot = get_slot_and_set_if_not_found(pp.predicate, key2slot);
+                                int slot = get_slot_and_set_if_not_found(predicate, key2slot);
 
                                 //all_text.write(escaping_or_uuid2search(pp.predicate));
                                 //all_text.write('|');
 
-                                string type = "?";
+                                string type = "xsd__string";
 
-                                if (pp.metadata !is null)
-                                {
-                                    type = pp.metadata.getFirstLiteral(owl__allValuesFrom);
-                                    pp.metadata = null;
-                                }
+//                                if (pp.metadata !is null)
+//                                {
+//                                    type = pp.metadata.getFirstLiteral(owl__allValuesFrom);
+//                                    pp.metadata = null;
+//                                }
 
                                 //writeln (pp.predicate, ".type:", type);
 
                                 string p_text_ru = "";
                                 string p_text_en = "";
 
-                                foreach (oo; pp.getObjects())
+                                foreach (oo; resources)
                                 {
                                     if (oo.type == DataType.String)
                                     {
-                                        if (pp.count_objects > 1)
+                                        if (resources.length > 1)
                                         {
                                             if (oo.lang == LANG.RU)
-                                                p_text_ru ~= oo.literal;
+                                                p_text_ru ~= oo.data;
                                             if (oo.lang == LANG.EN)
-                                                p_text_en ~= oo.literal;
+                                                p_text_en ~= oo.data;
                                         }
 
-                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate, key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                        string data = escaping_or_uuid2search(oo.literal);
+                                        string data = escaping_or_uuid2search(oo.data);
 
                                         if (trace_msg[ 220 ] == 1)
                                             log.trace("index as literal:[%s], lang=%s, prefix=%s", data, oo.lang, prefix);
 
                                         indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                                        doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                        doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
 
                                         all_text.write(data);
                                         all_text.write('|');
                                     }
                                     else if (oo.type == DataType.Uri)
                                     {
-                                        if (oo.literal is null)
+                                        if (oo.data is null)
                                         {
                                         }
                                         else
                                         {
-                                            int slot_L1 = get_slot_and_set_if_not_found(pp.predicate, key2slot);
+                                            int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                             prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                            string data = to_lower_and_replace_delimeters(oo.literal);
+                                            string data = to_lower_and_replace_delimeters(oo.data);
 
                                             if (trace_msg[ 220 ] == 1)
                                                 log.trace("index as resource:[%s], prefix=%s", data, prefix);
                                             indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
 
-                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
 
                                             all_text.write(data);
                                             all_text.write('|');
@@ -413,11 +415,11 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     }
                                 }
 
-                                if (pp.count_objects > 1)
+                                if (resources.length > 1)
                                 {
                                     if (p_text_ru.length > 0)
                                     {
-                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ "_ru", key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate ~ "_ru", key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_ru.ptr, p_text_ru.length, prefix.ptr, prefix.length, &err);
@@ -431,7 +433,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
                                     if (p_text_en.length > 0)
                                     {
-                                        int slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ "_en", key2slot);
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate ~ "_en", key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
                                         indexer.index_text(p_text_en.ptr, p_text_en.length, prefix.ptr, prefix.length, &err);
@@ -449,68 +451,68 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                 if (type == xsd__string)
                                 {
                                     bool sp = true;
-                                    foreach (oo; pp.getObjects())
+                                    foreach (oo; resources)
                                     {
                                         if (oo.type == DataType.String && (oo.lang == LANG.RU || oo.lang == LANG.NONE))
                                         {
                                             if (sp == true)
                                             {
-                                                slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".text_ru", key2slot);
+                                                slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".text_ru", key2slot);
                                                 prefix = "X" ~ text(slot_L1) ~ "X";
 
                                                 sp = false;
                                             }
 
-                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
+                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
+                                            indexer.index_text(oo.data.ptr, oo.data.length, prefix.ptr, prefix.length, &err);
 
                                             if (trace_msg[ 220 ] == 1)
-                                                log.trace("index as (ru or none) xsd:string [%s]", oo.literal);
+                                                log.trace("index as (ru or none) xsd:string [%s]", oo.data);
 
-                                            all_text.write(oo.literal);
+                                            all_text.write(oo.data);
                                             all_text.write('|');
 
-                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
+                                            //writeln ("slot:", slot_L1, ", value:", oo.data);
                                         }
                                     }
 
                                     sp = true;
-                                    foreach (oo; pp.getObjects())
+                                    foreach (oo; resources)
                                     {
                                         if (oo.type == DataType.String && oo.lang == LANG.EN)
                                         {
                                             if (sp == true)
                                             {
-                                                slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".text_en", key2slot);
+                                                slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".text_en", key2slot);
                                                 prefix = "X" ~ text(slot_L1) ~ "X";
 
                                                 sp = false;
                                             }
 
-                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
+                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
+                                            indexer.index_text(oo.data.ptr, oo.data.length, prefix.ptr, prefix.length, &err);
 
                                             if (trace_msg[ 220 ] == 1)
-                                                log.trace("index as (en) xsd:string [%s]", oo.literal);
+                                                log.trace("index as (en) xsd:string [%s]", oo.data);
 
-                                            all_text.write(oo.literal);
+                                            all_text.write(oo.data);
                                             all_text.write('|');
-                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
+                                            //writeln ("slot:", slot_L1, ", value:", oo.data);
                                         }
                                     }
                                 }
                                 else if (type == xsd__decimal)
                                 {
-                                    slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".decimal", key2slot);
+                                    slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".decimal", key2slot);
                                     prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                    foreach (oo; pp.getObjects())
+                                    foreach (oo; resources)
                                     {
                                         if (oo.type == DataType.String)
                                         {
-                                            double data = to!double (oo.literal);
+                                            double data = to!double (oo.data);
                                             doc.add_value(slot_L1, data, &err);
-                                            all_text.write(oo.literal);
+                                            all_text.write(oo.data);
                                             all_text.write('|');
 
                                             indexer.index_data(data, prefix.ptr, prefix.length, &err);
@@ -519,16 +521,16 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                 }
                                 else if (type == xsd__dateTime)
                                 {
-                                    slot_L1 = get_slot_and_set_if_not_found(pp.predicate ~ ".dateTime", key2slot);
+                                    slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".dateTime", key2slot);
                                     prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                    foreach (oo; pp.getObjects())
+                                    foreach (oo; resources)
                                     {
                                         if (oo.type == DataType.String)
                                         {
-                                            long data = stringToTime(oo.literal);
+                                            long data = stringToTime(oo.data);
                                             doc.add_value(slot_L1, data, &err);
-                                            all_text.write(oo.literal);
+                                            all_text.write(oo.data);
                                             all_text.write('|');
 
                                             indexer.index_data(data, prefix.ptr, prefix.length, &err);
@@ -546,9 +548,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                             if (trace_msg[ 221 ] == 1)
                                 log.trace("index all text [%s]", data);
 
-                            string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.subject);
+                            string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.uri);
                             doc.add_boolean_term(uuid.ptr, uuid.length, &err);
-                            doc.set_data(ss.subject.ptr, ss.subject.length, &err);
+                            doc.set_data(ss.uri.ptr, ss.uri.length, &err);
 
                             indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
 

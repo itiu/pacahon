@@ -3,13 +3,13 @@ module io.file_reader;
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
 import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.stdio : writeln;
 
-import onto.sgraph;
-
 import util.container;
 import util.cbor;
 import util.utils;
 import util.turtle_parser;
-import util.json_ld_parser;
+
+import onto.individual;
+import onto.resource;
 
 import pacahon.context;
 import pacahon.thread_context;
@@ -107,7 +107,7 @@ private void prepare_file(string file_name, Context context)
 
         if (buf !is null && buf.length > 0)
         {
-            Subject[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
+            Individual[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
 
             //writeln(context.get_prefix_map);
 
@@ -115,42 +115,43 @@ private void prepare_file(string file_name, Context context)
 
             foreach (ss; ss_list)
             {
-                string prefix = context.get_prefix_map.get(ss.subject, null);
+                string prefix = context.get_prefix_map.get(ss.uri, null);
 
-                //						writeln ("found prefix=", prefix);
                 if (prefix !is null)
                 {
-                    if (ss.isExsistsPredicate(rdf__type, owl__Ontology))
+					//writeln ("@found prefix=", prefix, " ss=", ss);
+                    if (ss.isExist(rdf__type, owl__Ontology))
                     {
-                        string version_onto = ss.getFirstLiteral(owl__versionInfo);
-//                        writeln(prefix, ", version=", version_onto);
+                        string version_onto = ss.getFirstResource(owl__versionInfo).data;
+                        //writeln(prefix, ", version=", version_onto);
 
                         // проверить какая версия данной онтологии в хранилище
-//                        writeln("look in storage[", ss.subject, "]");
-                        Subject sss = context.get_subject(ss.subject);
+                        //writeln("look in storage[", ss.uri, "]");
+                        Individual sss = context.get_individual(null, ss.uri);
+                        //writeln ("@sss=", sss);	
 
-                        if (sss !is null)
+                        if (sss.getStatus () == ResultCode.OK)
                         {
-                            Predicate aaa = sss.getPredicate(owl__versionInfo);
-                            if (aaa !is null)
+                            Resources aaa = sss.resources.get(owl__versionInfo, Resources.init);
+                            if (aaa != Resources.init)
                             {
-                                if (aaa.isExistLiteral(version_onto))
+                                if (aaa.anyExist(version_onto))
                                 {
-//                                    writeln("This version [", version_onto, "] onto[", prefix, "] already exist");
+                                    //writeln("@ This version [", version_onto, "] onto[", prefix, "] already exist");
                                 }
                                 else
                                 {
-//                                    writeln("1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+                                    //writeln("@ 1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
                                     for_load[ prefix ]     = true;
-                                    for_load[ ss.subject ] = true;
+                                    for_load[ ss.uri ] = true;
                                 }
                             }
                         }
                         else
                         {
-//                            writeln("2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+                            //writeln("@ 2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
                             for_load[ prefix ]     = true;
-                            for_load[ ss.subject ] = true;
+                            for_load[ ss.uri ] = true;
                         }
                     }
                 }
@@ -161,33 +162,33 @@ private void prepare_file(string file_name, Context context)
 
             foreach (ss; ss_list)
             {
-                if (ss.isExsistsPredicate(veda_schema__login, "veda"))
+                if (ss.isExist(veda_schema__login, "veda"))
                 {
                     writeln("FOUND SYSTEM ACCOUNT = ", ss);
-                    context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
+                    context.push_signal("43", ss.getFirstResource(veda_schema__password).data);
                 }
 
-                long pos_path_delimiter = indexOf(ss.subject, '/');
+                long pos_path_delimiter = indexOf(ss.uri, '/');
 
                 if (pos_path_delimiter < 0)
                 {
-                    long pos = indexOf(ss.subject, ':');
+                    long pos = indexOf(ss.uri, ':');
                     if (pos >= 0)
                     {
-                        string prefix = ss.subject[ 0..pos + 1 ];
+                        string prefix = ss.uri[ 0..pos + 1 ];
                         if (for_load.get(prefix, false) == true)
                         {
                             //writeln("#1 file_reader:store, ss=\n", ss);
-                            context.store_subject(ss);
+                            context.put_individual(null, ss.uri, ss);
                         }
                     }
                 }
                 else
                 {
-                    if (for_load.get(ss.subject, false) == true)
+                    if (for_load.get(ss.uri, false) == true)
                     {
-                        // writeln("#2 file_reader:store, ss=\n", ss);
-                        context.store_subject(ss);
+                         //writeln("#2 file_reader:store, ss=\n", ss);
+                            context.put_individual(null, ss.uri, ss);
                     }
                 }
             }
@@ -195,9 +196,9 @@ private void prepare_file(string file_name, Context context)
             Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
-            //put(Subject message, Predicate sender, Ticket *ticket, Context context, out bool isOk, out string reason)
-//                get_message(cast(byte *)buf, cast(int)buf.length, null, out_data, context);
+                
         }
+        //writeln ("file_reader::prepare_file end");
     }
     catch (Exception ex)
     {

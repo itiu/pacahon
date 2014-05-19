@@ -4,7 +4,6 @@ private
 {
     import std.stdio, std.datetime, std.conv, std.exception : assumeUnique;
 
-    import onto.sgraph;
     import onto.resource;
     import onto.individual;
 

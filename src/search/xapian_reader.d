@@ -6,7 +6,6 @@ import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
-import util.cbor8sgraph;
 
 import pacahon.define;
 import pacahon.know_predicates;
@@ -16,8 +15,6 @@ import pacahon.log_msg;
 //import storage.subject;
 import search.vel;
 import search.xapian_vql;
-
-import onto.sgraph;
 
 //////// logger ///////////////////////////////////////////
 import util.logger;
