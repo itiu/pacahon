@@ -402,7 +402,6 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
             it.next(&err);
         }
 
-
         if (trace_msg[ 200 ] == 1)
         {
             sw.stop();

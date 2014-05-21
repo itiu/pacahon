@@ -7,22 +7,28 @@ import util.container;
 import util.cbor;
 import util.utils;
 import util.turtle_parser;
+import util.logger;
 
 import onto.individual;
 import onto.resource;
 
 import pacahon.context;
 import pacahon.thread_context;
-import pacahon.server;
 import pacahon.define;
 import pacahon.know_predicates;
+import pacahon.log_msg;
+
+logger log;
+
+static this()
+{
+    log = new logger("pacahon", "log", "file_reader");
+}
 
 void file_reader_thread(P_MODULE name, string props_file_name)
 {
 	core.thread.Thread tr = core.thread.Thread.getThis();
 	tr.name = std.conv.text (name);	
-		
-    //writeln("SPAWN: file reader");
 
     try
     {
@@ -108,8 +114,9 @@ private void prepare_file(string file_name, Context context)
         if (buf !is null && buf.length > 0)
         {
             Individual[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
-
-            //writeln(context.get_prefix_map);
+            	
+            if (trace_msg[ 30 ] == 1)
+            	log.trace ("prefix_map=%s", context.get_prefix_map);
 
             bool[ string ] for_load;
 
@@ -119,16 +126,22 @@ private void prepare_file(string file_name, Context context)
 
                 if (prefix !is null)
                 {
-					//writeln ("@found prefix=", prefix, " ss=", ss);
+                    if (trace_msg[ 31 ] == 1)
+                	log.trace ("found prefix=%s ss=%s", prefix, ss);
+					
                     if (ss.isExist(rdf__type, owl__Ontology))
                     {
-                        string version_onto = ss.getFirstResource(owl__versionInfo).data;
-                        //writeln(prefix, ", version=", version_onto);
+                        string version_onto = ss.getFirstLiteral(owl__versionInfo);
+
+                        if (trace_msg[ 32 ] == 1)
+                        	log.trace("%s, readed version=%s", prefix, version_onto);
 
                         // проверить какая версия данной онтологии в хранилище
                         //writeln("look in storage[", ss.uri, "]");
                         Individual sss = context.get_individual(null, ss.uri);
-                        //writeln ("@sss=", sss);	
+
+                        if (trace_msg[ 33 ] == 1)
+                        	log.trace ("look in storage=%s, found=%s", ss.uri, sss);	
 
                         if (sss.getStatus () == ResultCode.OK)
                         {
@@ -165,7 +178,7 @@ private void prepare_file(string file_name, Context context)
                 if (ss.isExist(veda_schema__login, "veda"))
                 {
                     writeln("FOUND SYSTEM ACCOUNT = ", ss);
-                    context.push_signal("43", ss.getFirstResource(veda_schema__password).data);
+                    context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
                 }
 
                 long pos_path_delimiter = indexOf(ss.uri, '/');

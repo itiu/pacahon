@@ -90,12 +90,12 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
         Resources resources = individual.resources.get(predicate_uri, Resources.init);
         if (header.len == TRUE)
         {
-        	resources ~= Resource(ResourceType.Boolean, true);
+        	resources ~= Resource(true);
             individual.resources[ predicate_uri ] = resources;
         }
         else if (header.len == FALSE)
         {
-        	resources ~= Resource(ResourceType.Boolean, false);
+        	resources ~= Resource(false);
             individual.resources[ predicate_uri ] = resources;
         }
         else
@@ -139,17 +139,17 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         if (value.type == ResourceType.Uri)
         {
             write_header(MajorType.TAG, TAG.URI, ou);
-            write_string(value.data, ou);
+            write_string(value.get!string, ou);
         }
         else if (value.type == ResourceType.Boolean)
         {
-       		write_bool(value.data, ou);
+       		write_bool(value.get!bool, ou);
         }
         else
         {	
             if (value.lang != LANG.NONE)
                 write_header(MajorType.TAG, value.lang + 41, ou);
-            write_string(value.data, ou);
+            write_string(value.get!string, ou);
         }
     }
 }

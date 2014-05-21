@@ -59,6 +59,9 @@ enum ResultCode
     Not_Authorized        = 472,
     Authentication_Failed = 473,
     Not_Ready             = 474,
+    Fail_Open_Transaction = 475,
+    Fail_Commit 		  = 476,
+    Fail_Store			  = 477,
     Internal_Server_Error = 500,
     Not_Implemented       = 501,
     Service_Unavailable   = 503,
@@ -136,7 +139,8 @@ interface Context
     public bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
-    public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str);
+    public Individual[] get_individuals_via_query(Ticket * ticket, string query_str);
+    public immutable(Individual)[] iget_individuals_via_query(Ticket * ticket, string query_str);
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
     public Individual               get_individual(Ticket *ticket, string uri);
     public Individual[]             get_individuals(Ticket *ticket, string[] uris);

@@ -108,7 +108,7 @@ class Authorization : LmdbStorage
         {
             if (canXXX !is Resource.init)
             {
-                if (canXXX.data == "1")
+                if (canXXX == true)
                 {
                     count_new_bits++;
                     if (access & true_bit_pos)
@@ -140,18 +140,22 @@ class Authorization : LmdbStorage
         }
         else
         {
-            //writeln ("@ NOT FOUND-> ", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+            if (trace_msg[ 115 ] == 1)
+            	log.trace ("ACL NOT FOUND -> %s", permissionObject.uri ~ "+" ~ permissionSubject.uri);
             return false;
         }
 
         if (count_passed_bits < count_new_bits)
         {
-            //writeln ("@ PermissionStatement not exist, count_passed_bits = ", count_passed_bits, ", count_new_bits=", count_new_bits);
+            if (trace_msg[ 115 ] == 1)
+            	log.trace ("PermissionStatement not exist, count_passed_bits = %d, count_new_bits=%d", count_passed_bits, count_new_bits);
+            
             return false;
         }
         else
         {
-            //writeln("@ PermissionStatement already exist:", *prst);
+            if (trace_msg[ 115 ] == 1)
+            	log.trace ("PermissionStatement already exist: %s", *prst);
             return true;
         }
     }
@@ -336,7 +340,7 @@ void acl_manager(string thread_name, string db_path)
                             Resource canCreate = ind.getFirstResource(veda_schema__canCreate);
                             if (canCreate !is Resource.init)
                             {
-                                if (canCreate.data == "1")
+                                if (canCreate == true)
                                     access = access | Access.can_create;
                                 else
                                     access = access | Access.cant_create;
@@ -345,7 +349,7 @@ void acl_manager(string thread_name, string db_path)
                             Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
                             if (canDelete !is Resource.init)
                             {
-                                if (canDelete.data == "1")
+                                if (canDelete == true)
                                     access = access | Access.can_delete;
                                 else
                                     access = access | Access.cant_delete;
@@ -354,7 +358,7 @@ void acl_manager(string thread_name, string db_path)
                             Resource canRead = ind.getFirstResource(veda_schema__canRead);
                             if (canRead !is Resource.init)
                             {
-                                if (canRead.data == "1")
+                                if (canRead == true)
                                     access = access | Access.can_read;
                                 else
                                     access = access | Access.cant_read;
@@ -363,16 +367,16 @@ void acl_manager(string thread_name, string db_path)
                             Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
                             if (canUpdate !is Resource.init)
                             {
-                                if (canUpdate.data == "1")
+                                if (canUpdate == true)
                                     access = access | Access.can_update;
                                 else
                                     access = access | Access.cant_update;
                             }
 
-                            storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
+                            ResultCode res = storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
                             if (trace_msg[ 100 ] == 1)
-                                log.trace("[index] ++ ACL: %s+%s %s", permissionObject.uri, permissionSubject.uri, text (access));
+                                log.trace("[acl index] (%s) ACL: %s+%s %s", text(res), permissionObject.uri, permissionSubject.uri, text (access));
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
@@ -407,10 +411,10 @@ void acl_manager(string thread_name, string db_path)
                                     outbuff.write(';');
                                 }
 
-                                storage.put(rs.uri, outbuff.toString());
+                                ResultCode res = storage.put(rs.uri, outbuff.toString());
 
                                 if (trace_msg[ 101 ] == 1)
-                                    log.trace("[index] ++ MemberShip: %s : %s", rs.uri, outbuff.toString());
+                                    log.trace("[acl index] (%s) MemberShip: %s : %s", text(res), rs.uri, outbuff.toString());
                             }
                         }
                     }

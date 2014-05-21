@@ -188,7 +188,7 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
     JSONValue nil;
     try
     {
-        string condition_text = ss.getFirstResource(veda_schema__script).data;
+        string condition_text = ss.getFirstResource(veda_schema__script).literal;
         if (condition_text.length <= 0)
             return;
 

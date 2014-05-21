@@ -162,8 +162,13 @@ class LmdbStorage
         return update_or_create(ind.uri, content, new_hash);
     }
 
-    public void put(string _key, string value)
+    public ResultCode put(string _key, string value)
     {
+    	if (_key is null || _key.length < 1)
+            return ResultCode.No_Content;
+    	if (value is null || value.length < 1)
+            return ResultCode.No_Content;
+    		    	
         int     rc;
         MDB_dbi dbi;
         MDB_txn *txn;
@@ -171,14 +176,14 @@ class LmdbStorage
         rc = mdb_txn_begin(env, null, 0, &txn);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s, key=%s", path, fromStringz(mdb_strerror(rc)), _key);
+            return ResultCode.Fail_Open_Transaction;
         }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s, key=%s", path, fromStringz(mdb_strerror(rc)), _key);
+            return ResultCode.Fail_Open_Transaction;
         }
 
         MDB_val key;
@@ -194,8 +199,8 @@ class LmdbStorage
         rc = mdb_put(txn, dbi, &key, &data, 0);
         if (rc != 0)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s, key=%s", path, fromStringz(mdb_strerror(rc)), _key);
+            return ResultCode.Fail_Store;
         }
 
         rc = mdb_txn_commit(txn);
@@ -207,14 +212,15 @@ class LmdbStorage
 
                 // retry
                 put(_key, value);
-                return;
+                return ResultCode.OK;
             }
 
-            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ "(%s) ERR:%s, key=%s", path, fromStringz(mdb_strerror(rc)), _key);
+            return ResultCode.Fail_Commit;
         }
 
         mdb_dbi_close(env, dbi);
+        return ResultCode.OK;
     }
 
     public void flush(int force)

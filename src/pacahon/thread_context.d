@@ -290,7 +290,9 @@ class PThreadContext : Context
 
     public string get_individual_as_cbor(string uri)
     {
-        return inividuals_storage.find(uri);
+    	//writeln ("@ get_individual_as_cbor, uri=", uri);
+    	auto res = inividuals_storage.find(uri);
+        return res;
     }
 ///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
 
@@ -391,10 +393,10 @@ class PThreadContext : Context
         long   duration;
 
         tt.id       = ticket.uri;
-        tt.user_uri = ticket.getFirstResource(ticket__accessor).data;
-        when        = ticket.getFirstResource(ticket__when).data;
-        string dd   = ticket.getFirstResource(ticket__duration).data;
-        duration    = parse!uint (dd);
+        tt.user_uri = ticket.getFirstLiteral(ticket__accessor);
+        when        = ticket.getFirstLiteral(ticket__when);
+        string dd = ticket.getFirstLiteral(ticket__duration);
+        duration = parse!uint (dd);
 
 //				writeln ("tt.userId=", tt.userId);
 
@@ -590,25 +592,18 @@ class PThreadContext : Context
 
             Ticket                  ticket;
             ticket.result = ResultCode.Authentication_Failed;
+            
             Ticket                  *sys_ticket;
 
-            immutable(Individual)[] candidate_users = get_individuals_via_query(sys_ticket,
-                                                                                "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
-            if (trace_msg[ 18 ] == 1)
-               	log.trace("authenticate, candidate_users=[%s]", candidate_users);
-
+            Individual[] candidate_users = get_individuals_via_query(sys_ticket, "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
             foreach (user; candidate_users)
             {
                 string user_id = user.getFirstResource(veda_schema__owner).uri;
                 if (user_id is null)
                     continue;
 
-                if (trace_msg[ 18 ] == 1)
-                	log.trace("authenticate, user_id=[%s]", user_id);
-
-
-                iResources pass = user.resources.get(veda_schema__password, _empty_iResources);
-                if (pass.length > 0 && pass[ 0 ].data == password)
+                Resources pass = user.resources.get(veda_schema__password, _empty_Resources);
+                if (pass.length > 0 && pass[ 0 ] == password)
                 {
                     Individual new_ticket;
                     new_ticket.resources[rdf__type] ~= Resource(ticket__Ticket);
@@ -739,10 +734,8 @@ class PThreadContext : Context
         }
     }
 
-    public immutable(Individual)[] get_individuals_via_query(Ticket * ticket, string query_str)
+    public Individual[] get_individuals_via_query(Ticket* ticket, string query_str)
     {
-        immutable(Individual)[] res;
-        
         StopWatch sw; sw.start;
 
         if (trace_msg[ 26 ] == 1)
@@ -755,6 +748,7 @@ class PThreadContext : Context
 
         try
         {
+            Individual[] res;
             if (query_str.indexOf("==") <= 0)
                 query_str = "'*' == '" ~ query_str ~ "'";
 
@@ -766,9 +760,40 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
 
             if (trace_msg[ 26 ] == 1)
-                log.trace("get_individuals_via_query: end, query_str=%s, found=%d", query_str, res.length);
+                log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
     }
+
+    public immutable(Individual)[] iget_individuals_via_query(Ticket * ticket, string query_str)
+    {
+        StopWatch sw; sw.start;
+
+        if (trace_msg[ 26 ] == 1)
+        {
+            if (ticket !is null)
+                log.trace("iget_individuals_via_query: start, query_str=%s, ticket=%s", query_str, ticket.id);
+            else
+                log.trace("iget_individuals_via_query: start, query_str=%s, ticket=null", query_str);
+        }
+
+        try
+        {
+            immutable(Individual)[] res;
+            if (query_str.indexOf("==") <= 0)
+                query_str = "'*' == '" ~ query_str ~ "'";
+
+            vql.get(ticket, query_str, null, null, 10, 10000, res);
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+
+            if (trace_msg[ 26 ] == 1)
+                log.trace("iget_individuals_via_query: end, query_str=%s", query_str);
+        }
+    }
+
 
     public Individual[] get_individuals(Ticket *ticket, string[] uris)
     {
@@ -826,7 +851,9 @@ class PThreadContext : Context
                     individual.setStatus(ResultCode.OK);
                 }
                 else
+                {
                     individual.setStatus(ResultCode.Unprocessable_Entity);
+                }    
             }
             else
             {
@@ -834,6 +861,7 @@ class PThreadContext : Context
                     log.trace("get_individual, not authorized, uri=%s", uri);
                 individual.setStatus(ResultCode.Not_Authorized);
             }
+            
             return individual;
         }
         finally
@@ -852,6 +880,9 @@ class PThreadContext : Context
         {
             Tid tid_subject_manager;
             Tid tid_acl;
+
+            if (trace_msg[ 27 ] == 1)
+            	log.trace ("store_individual");
 
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;

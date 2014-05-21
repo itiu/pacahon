@@ -372,28 +372,28 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                         if (resources.length > 1)
                                         {
                                             if (oo.lang == LANG.RU)
-                                                p_text_ru ~= oo.data;
+                                                p_text_ru ~= oo.literal;
                                             if (oo.lang == LANG.EN)
-                                                p_text_en ~= oo.data;
+                                                p_text_en ~= oo.literal;
                                         }
 
                                         int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                        string data = escaping_or_uuid2search(oo.data);
+                                        string data = escaping_or_uuid2search(oo.literal);
 
                                         if (trace_msg[ 220 ] == 1)
                                             log.trace("index as literal:[%s], lang=%s, prefix=%s", data, oo.lang, prefix);
 
                                         indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                                        doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
+                                        doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
                                         all_text.write(data);
                                         all_text.write('|');
                                     }
                                     else if (oo.type == DataType.Uri)
                                     {
-                                        if (oo.data is null)
+                                        if (oo.literal is null)
                                         {
                                         }
                                         else
@@ -401,13 +401,13 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                             int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                             prefix = "X" ~ text(slot_L1) ~ "X";
 
-                                            string data = to_lower_and_replace_delimeters(oo.data);
+                                            string data = to_lower_and_replace_delimeters(oo.literal);
 
                                             if (trace_msg[ 220 ] == 1)
                                                 log.trace("index as resource:[%s], prefix=%s", data, prefix);
                                             indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
 
-                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
 
                                             all_text.write(data);
                                             all_text.write('|');
@@ -463,16 +463,16 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                                 sp = false;
                                             }
 
-                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
-                                            indexer.index_text(oo.data.ptr, oo.data.length, prefix.ptr, prefix.length, &err);
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
 
                                             if (trace_msg[ 220 ] == 1)
-                                                log.trace("index as (ru or none) xsd:string [%s]", oo.data);
+                                                log.trace("index as (ru or none) xsd:string [%s]", oo.literal);
 
-                                            all_text.write(oo.data);
+                                            all_text.write(oo.literal);
                                             all_text.write('|');
 
-                                            //writeln ("slot:", slot_L1, ", value:", oo.data);
+                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
                                         }
                                     }
 
@@ -489,15 +489,15 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                                 sp = false;
                                             }
 
-                                            doc.add_value(slot_L1, oo.data.ptr, oo.data.length, &err);
-                                            indexer.index_text(oo.data.ptr, oo.data.length, prefix.ptr, prefix.length, &err);
+                                            doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+                                            indexer.index_text(oo.literal.ptr, oo.literal.length, prefix.ptr, prefix.length, &err);
 
                                             if (trace_msg[ 220 ] == 1)
-                                                log.trace("index as (en) xsd:string [%s]", oo.data);
+                                                log.trace("index as (en) xsd:string [%s]", oo.literal);
 
-                                            all_text.write(oo.data);
+                                            all_text.write(oo.literal);
                                             all_text.write('|');
-                                            //writeln ("slot:", slot_L1, ", value:", oo.data);
+                                            //writeln ("slot:", slot_L1, ", value:", oo.literal);
                                         }
                                     }
                                 }
@@ -510,9 +510,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     {
                                         if (oo.type == DataType.String)
                                         {
-                                            double data = to!double (oo.data);
+                                            double data = to!double (oo.literal);
                                             doc.add_value(slot_L1, data, &err);
-                                            all_text.write(oo.data);
+                                            all_text.write(oo.literal);
                                             all_text.write('|');
 
                                             indexer.index_data(data, prefix.ptr, prefix.length, &err);
@@ -528,9 +528,9 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     {
                                         if (oo.type == DataType.String)
                                         {
-                                            long data = stringToTime(oo.data);
+                                            long data = stringToTime(oo.literal);
                                             doc.add_value(slot_L1, data, &err);
-                                            all_text.write(oo.data);
+                                            all_text.write(oo.literal);
                                             all_text.write('|');
 
                                             indexer.index_data(data, prefix.ptr, prefix.length, &err);

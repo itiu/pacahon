@@ -119,11 +119,11 @@ class LabeledMultiDigraph
         if (idx_tail == NONE)
         {
             Resource tail;
-            tail.data = tail_str;
+            tail = tail_str;
             tail.type = type;
             if (tail.type == ResourceType.Uri)
             {
-                if (tail.data.indexOf('/') > 0)
+                if (tail.get!string.indexOf('/') > 0)
                     tail.origin = ResourceOrigin.external;
             }
 
@@ -176,11 +176,11 @@ class LabeledMultiDigraph
             if (idx_resource == NONE)
             {
                 Resource rr;
-                rr.data = rr_str;
+                rr = rr_str;
                 rr.type = type;
                 if (rr.type == ResourceType.Uri)
                 {
-                    if (rr.data.indexOf('/') > 0)
+                    if (rr.get!string.indexOf('/') > 0)
                         rr.origin = ResourceOrigin.external;
                 }
                 rr.set_idx(elements.length);
@@ -230,7 +230,7 @@ class LabeledMultiDigraph
     {
         Resource rr;
 
-        rr.data = rr_str;
+        rr = rr_str;
         rr.type = type;
         rr.set_idx(idx_rr);
         if (rr.type == ResourceType.Uri)

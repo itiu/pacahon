@@ -169,9 +169,9 @@ public void write_string(string vv, ref OutBuffer ou)
     ou.write(vv);
 }
 
-public void write_bool(string vv, ref OutBuffer ou)
+public void write_bool(bool vv, ref OutBuffer ou)
 {
-    if (vv == "1")
+    if (vv == true)
         write_header(MajorType.FLOAT_SIMPLE, TRUE, ou);
     else
         write_header(MajorType.FLOAT_SIMPLE, FALSE, ou);

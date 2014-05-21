@@ -5,6 +5,7 @@ import onto.individual;
 import onto.resource;
 import onto.lang;
 import pacahon.context;
+import util.cbor8individual;
 
 ////////////////////////////  call D from C //////////////////////////////////////////
 
@@ -17,25 +18,14 @@ _Buff   tmp_individual;
 _Buff   g_script_result;
 _Buff   g_script_out;
 
-//Individual[int] individual_2_idx;
-//int[string] idx_2_uri;
-//int counter;
-
-//void clear_script_data_cache ()
-//{
-//	individual_2_idx = (Individual[int]).init;
-//	idx_2_uri = (int[string]).init;
-//	counter = 0;
-//}
-
 extern (C++)
 {
-struct _Buff
-{
-    char *data;
-    int  length;
-    int  allocated_size;
-}
+	struct _Buff
+	{
+		char *data;
+		int  length;
+		int  allocated_size;
+	}
 }
 
 extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
@@ -53,9 +43,8 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
         string cbor   = cast(string)_cbor[ 0.._cbor_length ].dup;
         string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
 
-//      writeln ("@Q ticket=", ticket);
-//      writeln ("@Q cbor=", cbor);
-		Ticket* ticket = g_context.get_ticket(ticket_id); 
+	Ticket* ticket = g_context.get_ticket(ticket_id); 
+
         return g_context.store_individual(ticket, null, cbor);
     }
     return ResultCode.Service_Unavailable;
@@ -66,16 +55,10 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
     string uri    = cast(string)_uri[ 0.._uri_length ];
     string ticket = cast(string)_ticket[ 0.._ticket_length ];
 
-/*
-    int idx = idx_2_uri.get (uri, -1);
-    if (idx < 0)
-    {
-        idx = counter++;
-        idx_2_uri[uri] = idx;
- */
+    //writeln ("@ read_individual, uri=", uri, ",  ticket=", ticket);
+
     if (uri != "$document")
     {
-//          individual_2_idx[idx] = Individual.init;
         if (g_context !is null)
         {
             string icb = g_context.get_individual_as_cbor(uri);
@@ -87,28 +70,35 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
     }
     else
     {
-//          individual_2_idx[idx] = g_individual;
+/*    	if (g_individual.data !is null)
+    	{
+    		Individual indv;
+    		cbor2individual (&indv, cast(string)g_individual.data[0..g_individual.length]);
+    		writeln ("@ read_individual, g_individual=", indv);
+    	}	
+    	else	
+    		writeln ("@ read_individual, g_individual= is null");*/
         return &g_individual;
     }
-//    }
+
 }
 
 ////////////////////////////  call C from D //////////////////////////////////////////
 
 extern (C++)
 {
-interface WrappedContext
-{
-}
+	interface WrappedContext
+	{
+	}
 
-interface WrappedScript
-{
-}
+	interface WrappedScript
+	{
+	}
 
-bool InitializeICU();
-WrappedContext new_WrappedContext();
-WrappedScript new_WrappedScript(WrappedContext _context, char *src);
-void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
+	bool InitializeICU();
+	WrappedContext new_WrappedContext();
+	WrappedScript new_WrappedScript(WrappedContext _context, char *src);
+	void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
 }
 
 alias new_WrappedContext new_ScriptVM;
