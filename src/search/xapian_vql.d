@@ -21,12 +21,9 @@ logger log()
 }
 //////// ////// ///////////////////////////////////////////
 
-public const string xapian_search_db_path  = "data/xapian-search";
-public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
+byte   err;
 
-byte                err;
-
-public              string[ string ] get_fields(string str_fields)
+public string[ string ] get_fields(string str_fields)
 {
     string[ string ] fields;
 
@@ -360,7 +357,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     if (trace_msg[ 200 ] == 1)
     {
-        log.trace("[%X] query=%s", cast(void*)query, get_query_description(query));
+        log.trace("[%X] query=%s", cast(void *)query, get_query_description(query));
         sw.start();
     }
 
@@ -376,7 +373,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         return err;
 
     if (trace_msg[ 200 ] == 1)
-        log.trace("[%X] found =%d, @matches =%d", cast(void*)query, matches.get_matches_estimated(&err), matches.size(&err));
+        log.trace("[%X] found =%d, @matches =%d", cast(void *)query, matches.get_matches_estimated(&err), matches.size(&err));
 
     if (matches !is null)
     {
@@ -406,7 +403,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         {
             sw.stop();
             long t = cast(long)sw.peek().usecs;
-            log.trace("[%X] authorized:%d, total time execute query: %s µs", cast(void*)query, read_count, text(t));
+            log.trace("[%X] authorized:%d, total time execute query: %s µs", cast(void *)query, read_count, text(t));
         }
 
         destroy_MSetIterator(it);
@@ -429,7 +426,7 @@ string get_query_description(XapianQuery query)
             return cast(immutable)descr_str[ 0..(*descr_len) ];
         }
         else
-        	return "no content";
+            return "no content";
     }
     return "NULL";
 }

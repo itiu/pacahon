@@ -41,14 +41,17 @@ public string serialize_key2slot(ref int[ string ] key2slot)
 
 public int[ string ] deserialize_key2slot(string data)
 {
+//	writeln ("@&1");
     int[ string ] key2slot;
 
     int idx = 0;
     foreach (record; csvReader!(Tuple!(string, int))(data))
     {
+//	writeln ("@&2 record=[", record, "]");
         key2slot[ record[ 0 ] ] = record[ 1 ];
         idx++;
     }
+//	writeln ("@&3");
 
     return key2slot;
 }

@@ -231,35 +231,23 @@ class PThreadContext : Context
         return name;
     }
 
-    public immutable(Class)[ string ] get_owl_classes()
+    public immutable(Class)[ string ] iget_owl_classes()
     {
         if (owl !is null)
         {
             check_for_reload("owl", &owl.load);
-            return owl.owl_classes;
+            return owl.iget_classes();
         }
         else
             return (immutable(Class)[ string ]).init;
     }
 
-/*
-    Class *[] owl_classes()
-    {
-        if (owl !is null)
-        {
-                owl.check_for_reload();
-            return owl.class_2_idx.values;
-        }
-        else
-            return (Class *[]).init;
-    }
- */
-    public Class *get_class(string uri)
+    public immutable(Class) * iget_class(string uri)
     {
         if (owl !is null)
         {
             check_for_reload("owl", &owl.load);
-            return owl.getClass(uri);
+            return uri in owl.iget_classes();
         }
         else
             return null;
@@ -281,7 +269,7 @@ class PThreadContext : Context
         if (owl !is null)
         {
             check_for_reload("owl", &owl.load);
-            return owl.individuals;
+            return owl.iget_individuals;
         }
         else
             return (immutable(Individual)[ string ]).init;
@@ -290,8 +278,9 @@ class PThreadContext : Context
 
     public string get_individual_as_cbor(string uri)
     {
-    	//writeln ("@ get_individual_as_cbor, uri=", uri);
-    	auto res = inividuals_storage.find(uri);
+        //writeln ("@ get_individual_as_cbor, uri=", uri);
+        auto res = inividuals_storage.find(uri);
+
         return res;
     }
 ///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
@@ -358,22 +347,9 @@ class PThreadContext : Context
 
     public int[ string ] get_key2slot()
     {
-        int[ string ] key2slot;
-        send(getTid(P_MODULE.xapian_thread_context), CMD.GET, CNAME.KEY2SLOT, thisTid);
-        receive((string msg)
-                {
-                    if (msg != old_msg_key2slot)
-                    {
-                        key2slot = deserialize_key2slot(msg);
-                        old_msg_key2slot = msg;
-                        old_key2slot = key2slot;
-                    }
-                    else
-                        key2slot = old_key2slot;
+        string key2slot_str = inividuals_storage.find(xapian_metadata_doc_id);
 
-                    //writeln ("@get_key2slot=", key2slot);
-                });
-
+        int[ string ] key2slot = deserialize_key2slot(key2slot_str);
         return key2slot;
     }
 
@@ -590,10 +566,10 @@ class PThreadContext : Context
             if (trace_msg[ 18 ] == 1)
                 log.trace("authenticate, login=[%s] password=[%s]", login, password);
 
-            Ticket                  ticket;
+            Ticket ticket;
             ticket.result = ResultCode.Authentication_Failed;
-            
-            Ticket                  *sys_ticket;
+
+            Ticket       *sys_ticket;
 
             Individual[] candidate_users = get_individuals_via_query(sys_ticket, "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
             foreach (user; candidate_users)
@@ -606,14 +582,14 @@ class PThreadContext : Context
                 if (pass.length > 0 && pass[ 0 ] == password)
                 {
                     Individual new_ticket;
-                    new_ticket.resources[rdf__type] ~= Resource(ticket__Ticket);
+                    new_ticket.resources[ rdf__type ] ~= Resource(ticket__Ticket);
 
                     UUID new_id = randomUUID();
                     new_ticket.uri = new_id.toString();
 
-                    new_ticket.resources[ticket__accessor] ~= Resource(user_id);
-                    new_ticket.resources[ticket__when] ~= Resource(getNowAsString());
-                    new_ticket.resources[ticket__duration] ~= Resource("40000");
+                    new_ticket.resources[ ticket__accessor ] ~= Resource(user_id);
+                    new_ticket.resources[ ticket__when ] ~= Resource(getNowAsString());
+                    new_ticket.resources[ ticket__duration ] ~= Resource("40000");
 
                     if (trace_msg[ 18 ] == 1)
                         log.trace("authenticate, ticket__accessor=%s", user_id);
@@ -734,7 +710,7 @@ class PThreadContext : Context
         }
     }
 
-    public Individual[] get_individuals_via_query(Ticket* ticket, string query_str)
+    public Individual[] get_individuals_via_query(Ticket *ticket, string query_str)
     {
         StopWatch sw; sw.start;
 
@@ -853,7 +829,7 @@ class PThreadContext : Context
                 else
                 {
                     individual.setStatus(ResultCode.Unprocessable_Entity);
-                }    
+                }
             }
             else
             {
@@ -861,7 +837,7 @@ class PThreadContext : Context
                     log.trace("get_individual, not authorized, uri=%s", uri);
                 individual.setStatus(ResultCode.Not_Authorized);
             }
-            
+
             return individual;
         }
         finally
@@ -875,14 +851,14 @@ class PThreadContext : Context
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
         StopWatch sw; sw.start;
-        
+
         try
         {
             Tid tid_subject_manager;
             Tid tid_acl;
 
             if (trace_msg[ 27 ] == 1)
-            	log.trace ("store_individual");
+                log.trace("store_individual");
 
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
@@ -901,11 +877,11 @@ class PThreadContext : Context
                 return ResultCode.No_Content;
 
             if (trace_msg[ 27 ] == 1)
-            	log.trace ("store_individual: %s", *indv);
+                log.trace("store_individual: %s", *indv);
 
             Resource[ string ] rdfType;
             setMapResources(indv.resources[ rdf__type ], rdfType);
-            
+
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {
                 // before storing the data, expected availability acl_manager.
@@ -1015,9 +991,9 @@ class PThreadContext : Context
 
     public bool backup(int level = 0)
     {
-    	if (level == 0)
-    		freeze ();
-    	   	
+        if (level == 0)
+            freeze();
+
         bool result = false;
 
         Tid  tid_subject_manager = getTid(P_MODULE.subject_manager);
@@ -1069,8 +1045,8 @@ class PThreadContext : Context
         else
             log.trace_log_and_console("BACKUP Ok, %s", backup_id);
 
-    	if (level == 0)
-    		unfreeze ();
+        if (level == 0)
+            unfreeze();
 
         return result;
     }
@@ -1087,7 +1063,7 @@ class PThreadContext : Context
         if (tid_subject_manager != Tid.init)
         {
             send(tid_subject_manager, CMD.FREEZE, thisTid);
-            receive((bool _res) {});            
+            receive((bool _res) {});
         }
     }
 

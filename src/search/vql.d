@@ -10,8 +10,6 @@ private
     import util.logger;
     import util.utils;
     import util.cbor;
-    import util.lmultidigraph;
-    import util.cbor8lmultidigraph;
     import util.cbor8individual;
 
     import pacahon.context;
@@ -88,7 +86,7 @@ class VQL
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
                    ref Individual[] individuals)
     {
-        int res_count;
+        int                       res_count;
 
         void delegate(string uri) dg;
         void collect_subject(string uri)
@@ -125,7 +123,7 @@ class VQL
         return res_count;
     }
 
-   public int get(Ticket *ticket, string query_str, ref Individual[] res)
+    public int get(Ticket *ticket, string query_str, ref Individual[] res)
     {
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
@@ -185,10 +183,11 @@ class VQL
             void delegate(string uri) dg;
             void collect_subject(string uri)
             {
-                string data = context.get_individual_as_cbor(uri);
+                string     data = context.get_individual_as_cbor(uri);
 
                 Individual ind;
-                cbor2individual (&ind, data);	
+
+                cbor2individual(&ind, data);
                 res ~= ind;
             }
             dg = &collect_subject;
@@ -203,68 +202,6 @@ class VQL
         return res_count;
     }
 
-    public int get(Ticket *ticket, string query_str, LabeledMultiDigraph lmg, ref immutable(Individual)[ string ] individuals)
-    {
-//        StopWatch sw;
-//        sw.start();
-
-        split_on_section(query_str);
-        int render = 10000;
-        try
-        {
-            if (found_sections[ RENDER ] !is null && found_sections[ RENDER ].length > 0)
-                render = parse!int (found_sections[ RENDER ]);
-        } catch (Exception ex)
-        {
-        }
-        int count_authorize = 10000;
-        try
-        {
-            if (found_sections[ AUTHORIZE ] !is null && found_sections[ AUTHORIZE ].length > 0)
-                count_authorize = parse!int (found_sections[ AUTHORIZE ]);
-        } catch (Exception ex)
-        {
-        }
-        string sort;
-        if (section_is_found[ SORT ] == true)
-            sort = found_sections[ SORT ];
-        int type_source = XAPIAN;
-        if (found_sections[ SOURCE ] == "xapian")
-            type_source = XAPIAN;
-        else if (found_sections[ SOURCE ] == "lmdb")
-            type_source = LMDB;
-
-        string dummy;
-        double d_dummy;
-        int    res_count;
-
-        if (type_source == XAPIAN)
-        {
-            void delegate(string uri) dg;
-            void collect_subject(string _uri)
-            {
-                //writeln ("lmg=", cast(void*)lmg);
-                string     data = context.get_individual_as_cbor(_uri);
-                string     uri  = add_cbor_to_lmultidigraph(lmg, data);
-
-                Individual individual = Individual();
-
-                cbor2individual(&individual, data);
-
-                individuals[ uri ] = individual.idup;
-            }
-            dg = &collect_subject;
-
-//        writeln ("@@1 found_sections[ FILTER ]=", found_sections[ FILTER ]);
-            res_count = xr.get(ticket, found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
-        }
-
-//        sw.stop();
-//        long t = cast(long)sw.peek().usecs;
-//        writeln("execute:", t, " µs");
-
-        return res_count;
-    }
 /*
     private void remove_predicates(Subject ss, ref string[ string ] fields)
     {
@@ -274,14 +211,14 @@ class VQL
         // TODO возможно не оптимальная фильтрация
         foreach (pp; ss.getPredicates)
         {
-//			writeln ("pp=", pp);
+   //			writeln ("pp=", pp);
             if ((pp.predicate in fields) is null)
             {
                 pp.count_objects = 0;
             }
         }
     }
-*/
+ */
     private void split_on_section(string query)
     {
         section_is_found[] = false;

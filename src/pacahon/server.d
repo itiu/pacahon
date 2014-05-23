@@ -117,7 +117,6 @@ void init_core()
     {
 //        log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
 //                                  pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
-
         Tid[ P_MODULE ] tids;
 
         tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, text(P_MODULE.interthread_signals));
@@ -160,7 +159,8 @@ void init_core()
         wait_starting_thread(P_MODULE.condition, tids);
 
         register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
-        Tid       tid_condition = locate(text(P_MODULE.condition));
+        Tid tid_condition = locate(text(P_MODULE.condition));
+
 
         JSONValue props;
 

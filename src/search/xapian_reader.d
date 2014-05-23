@@ -123,14 +123,14 @@ class XapianReader : SearchReader
         int[ string ] key2slot = context.get_key2slot();
         //writeln ("@key2slot=", key2slot);
 
-        auto fields = get_fields(str_fields);
+        auto        fields = get_fields(str_fields);
 
         XapianQuery query;
         TTA         tta = parse_expr(str_query);
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%X] query [%s]", cast(void*)query, str_query);
+            log.trace("[%X] query [%s]", cast(void *)query, str_query);
 
         if (query !is null)
         {

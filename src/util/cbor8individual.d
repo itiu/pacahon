@@ -5,7 +5,6 @@ private import onto.resource;
 private import onto.individual;
 private import onto.lang;
 private import util.cbor;
-private import util.lmultidigraph;
 
 string dummy;
 
@@ -90,19 +89,18 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
         Resources resources = individual.resources.get(predicate_uri, Resources.init);
         if (header.len == TRUE)
         {
-        	resources ~= Resource(true);
+            resources ~= Resource(true);
             individual.resources[ predicate_uri ] = resources;
         }
         else if (header.len == FALSE)
         {
-        	resources ~= Resource(false);
+            resources ~= Resource(false);
             individual.resources[ predicate_uri ] = resources;
         }
         else
         {
         }
-        
-    }    
+    }
     else if (header.type == MajorType.ARRAY)
     {
 //	writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
@@ -143,10 +141,10 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         }
         else if (value.type == ResourceType.Boolean)
         {
-       		write_bool(value.get!bool, ou);
+            write_bool(value.get!bool, ou);
         }
         else
-        {	
+        {
             if (value.lang != LANG.NONE)
                 write_header(MajorType.TAG, value.lang + 41, ou);
             write_string(value.get!string, ou);

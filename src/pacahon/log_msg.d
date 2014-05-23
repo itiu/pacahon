@@ -52,11 +52,11 @@ void unset_message(int idx)
 
 void set_trace(int idx, bool state)
 {
-	if (idx < 0 || idx >= trace_msg.length)
-		return;
-		
-	if (idx == 0)
-		trace_msg = state;
-	else	
-		trace_msg[ idx ] = state;
+    if (idx < 0 || idx >= trace_msg.length)
+        return;
+
+    if (idx == 0)
+        trace_msg = state;
+    else
+        trace_msg[ idx ] = state;
 }

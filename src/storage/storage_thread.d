@@ -68,6 +68,13 @@ public void individuals_manager(string thread_name, string db_path)
                     else
                         send(tid_response_reciever, false);
                 },
+                (CMD cmd, string key, string msg)
+                {
+                    if (cmd == CMD.PUT_KEY2SLOT)
+                    {
+                        storage.put(key, msg);
+                    }
+                },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
                     if (cmd == CMD.BACKUP)
@@ -145,7 +152,7 @@ public void individuals_manager(string thread_name, string db_path)
                             else if (cmd == CMD.FIND)
                             {
                                 string res = storage.find(msg);
-                                //writeln ("msg=", msg, ", $res = ", res);
+                                writeln("@FIND msg=", msg, ", $res = ", res);
                                 send(tid_response_reciever, msg, res, thisTid);
                             }
                             else
@@ -170,9 +177,9 @@ public void individuals_manager(string thread_name, string db_path)
 }
 
 /*
-public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level,
+   public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string l_token, out string op, out double _rd, int level,
                                                 ref Subjects res, Context context)
-{
+   {
     string dummy;
     double rd, ld;
 
@@ -180,8 +187,8 @@ public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string
     {
         string ls = transform_and_execute_vql_to_lmdb(tta.L, tta.op, dummy, dummy, ld, level + 1, res, context);
         string rs = transform_and_execute_vql_to_lmdb(tta.R, tta.op, dummy, dummy, rd, level + 1, res, context);
-//          writeln ("ls=", ls);
-//          writeln ("rs=", rs);
+   //          writeln ("ls=", ls);
+   //          writeln ("rs=", rs);
         if (ls == "@")
         {
             string  rr = context.get_subject_as_cbor(rs);
@@ -199,9 +206,9 @@ public string transform_and_execute_vql_to_lmdb(TTA tta, string p_op, out string
     }
     else
     {
-//		writeln ("#5 tta.op=", tta.op);
+   //		writeln ("#5 tta.op=", tta.op);
         return tta.op;
     }
     return null;
-}
-*/
+   }
+ */

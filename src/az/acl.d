@@ -141,21 +141,21 @@ class Authorization : LmdbStorage
         else
         {
             if (trace_msg[ 115 ] == 1)
-            	log.trace ("ACL NOT FOUND -> %s", permissionObject.uri ~ "+" ~ permissionSubject.uri);
+                log.trace("ACL NOT FOUND -> %s", permissionObject.uri ~ "+" ~ permissionSubject.uri);
             return false;
         }
 
         if (count_passed_bits < count_new_bits)
         {
             if (trace_msg[ 115 ] == 1)
-            	log.trace ("PermissionStatement not exist, count_passed_bits = %d, count_new_bits=%d", count_passed_bits, count_new_bits);
-            
+                log.trace("PermissionStatement not exist, count_passed_bits = %d, count_new_bits=%d", count_passed_bits, count_new_bits);
+
             return false;
         }
         else
         {
             if (trace_msg[ 115 ] == 1)
-            	log.trace ("PermissionStatement already exist: %s", *prst);
+                log.trace("PermissionStatement already exist: %s", *prst);
             return true;
         }
     }
@@ -178,13 +178,22 @@ class Authorization : LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            writeln("LmdbStorage:find #1, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
+        if (rc == MDB_MAP_RESIZED)
+        {
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            mdb_env_close(env);
+            open_db();
+
+            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+        }
+
         if (rc != 0)
-            writeln("LmdbStorage:find #2, mdb_tnx_begin, rc=", rc, ", err=", fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
 
         try
         {
@@ -227,10 +236,10 @@ class Authorization : LmdbStorage
 
             if (trace_msg[ 113 ] == 1)
             {
-            	log.trace("user_uri=%s", ticket.user_uri);
-            	log.trace("subject_groups=%s", text(subject_groups));
-            	log.trace("object_groups=%s", text (object_groups));
-            }  	
+                log.trace("user_uri=%s", ticket.user_uri);
+                log.trace("subject_groups=%s", text(subject_groups));
+                log.trace("object_groups=%s", text(object_groups));
+            }
 
             foreach (subject_group; subject_groups)
             {
@@ -246,7 +255,7 @@ class Authorization : LmdbStorage
                             string acl_key = object_group ~ "+" ~ subject_group;
 
                             if (trace_msg[ 112 ] == 1)
-                               	log.trace("look acl_key: [%s]", acl_key);
+                                log.trace("look acl_key: [%s]", acl_key);
 
                             key.mv_size = acl_key.length;
                             key.mv_data = cast(char *)acl_key;
@@ -257,8 +266,8 @@ class Authorization : LmdbStorage
                                 str = cast(string)(data.mv_data[ 0..data.mv_size ]);
 
                                 if (trace_msg[ 112 ] == 1)
-                                	log.trace("for [%s] found %s", acl_key, str);
-                                
+                                    log.trace("for [%s] found %s", acl_key, str);
+
                                 if (str !is null && str.length > 0 && (str[ 0 ] && request_access) == true)
                                 {
                                     isAccessAllow = true;
@@ -314,7 +323,7 @@ void acl_manager(string thread_name, string db_path)
                 (CMD cmd, EVENT type, string msg)
                 {
                     if (cmd == CMD.STORE)
-                    {                    	
+                    {
                         Individual ind;
                         cbor2individual(&ind, msg);
 
@@ -322,9 +331,9 @@ void acl_manager(string thread_name, string db_path)
 
                         if (rdfType.anyExist(veda_schema__PermissionStatement) == true)
                         {
-                        	if (trace_msg[ 114 ] == 1)
-                        		log.trace("store PermissionStatement: [%s]", ind);
-                        		                    	
+                            if (trace_msg[ 114 ] == 1)
+                                log.trace("store PermissionStatement: [%s]", ind);
+
                             Resource permissionObject = ind.getFirstResource(veda_schema__permissionObject);
                             Resource permissionSubject = ind.getFirstResource(veda_schema__permissionSubject);
 
@@ -376,13 +385,14 @@ void acl_manager(string thread_name, string db_path)
                             ResultCode res = storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
 
                             if (trace_msg[ 100 ] == 1)
-                                log.trace("[acl index] (%s) ACL: %s+%s %s", text(res), permissionObject.uri, permissionSubject.uri, text (access));
+                                log.trace("[acl index] (%s) ACL: %s+%s %s", text(res), permissionObject.uri, permissionSubject.uri,
+                                          text(access));
                         }
                         else if (rdfType.anyExist(veda_schema__Membership) == true)
                         {
-                        	if (trace_msg[ 114 ] == 1)
-                        		log.trace("store Membership: [%s]", ind);
-                        	
+                            if (trace_msg[ 114 ] == 1)
+                                log.trace("store Membership: [%s]", ind);
+
                             bool[ string ] add_memberOf;
                             Resources resource = ind.getResources(veda_schema__resource);
                             Resources memberOf = ind.getResources(veda_schema__memberOf);

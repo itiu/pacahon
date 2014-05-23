@@ -56,12 +56,7 @@ public void xapian_thread_context(string thread_name)
                 {
                     if (cmd == CMD.PUT)
                     {
-                        if (cname == CNAME.KEY2SLOT)
-                        {
-//                          writeln ("PUT:\n", _key2slot_str);
-                            key2slot_str = _key2slot_str;
-                        }
-                        else if (cname == CNAME.LAST_UPDATE_TIME)
+                        if (cname == CNAME.LAST_UPDATE_TIME)
                         {
                             last_update_time = Clock.currTime().stdTime() / 10000;
                         }
@@ -71,12 +66,7 @@ public void xapian_thread_context(string thread_name)
                 {
                     if (cmd == CMD.GET)
                     {
-                        if (cname == CNAME.KEY2SLOT)
-                        {
-                            //writeln ("GET:\n", key2slot_str);
-                            send(tid_sender, key2slot_str);
-                        }
-                        else if (cname == CNAME.LAST_UPDATE_TIME)
+                        if (cname == CNAME.LAST_UPDATE_TIME)
                         {
                             //writeln ("GET:\n", last_update_time, ");
                             send(tid_sender, last_update_time);
@@ -86,58 +76,26 @@ public void xapian_thread_context(string thread_name)
     }
 }
 
-private void store__key2slot(ref int[ string ] key2slot, ref XapianWritableDatabase indexer_db, ref XapianTermGenerator indexer,
-                             Tid tid_xapian_thread_io)
+private void store__key2slot(ref int[ string ] key2slot, Tid tid_subject_manager)
 {
 //	writeln ("#1 store__key2slot");
-    string         data = serialize_key2slot(key2slot);
+    string data = serialize_key2slot(key2slot);
 
-    XapianDocument doc = new_Document(&err);
-
-    indexer.set_document(doc, &err);
-
-    doc.set_data(data.ptr, data.length, &err);
-    string uuid = xapian_metadata_doc_id;
-    indexer.index_text(uuid.ptr, uuid.length, &err);
-    doc.add_boolean_term(uuid.ptr, uuid.length, &err);
-    indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
-    destroy_Document(doc);
-
-    send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
+    send(tid_subject_manager, CMD.PUT_KEY2SLOT, xapian_metadata_doc_id, data);
 }
 
-private int[ string ] read_key2slot(XapianWritableDatabase db, XapianQueryParser qp, XapianEnquire enquire, Tid tid_xapian_thread_io)
+private int[ string ] read_key2slot(Tid tid_subject_manager)
 {
     int[ string ] key2slot;
-    string      query_string = xapian_metadata_doc_id;
 
-    XapianQuery query = qp.parse_query(cast(char *)query_string, query_string.length, &err);
+    send(tid_subject_manager, CMD.FIND, xapian_metadata_doc_id, thisTid);
+    receive((string key, string data, Tid tid)
+            {
+//    writeln ("@KEY@SLOT=", data);
+                key2slot = deserialize_key2slot(data);
+            });
 
-    enquire.set_query(query, &err);
-
-    XapianMSet matches = enquire.get_mset(0, 1, &err);
-
-    //writeln("found =", matches.get_matches_estimated(&err));
-    //writeln("matches =", matches.size(&err));
-
-    XapianMSetIterator it = matches.iterator(&err);
-
-    if (it.is_next(&err) == true)
-    {
-        //      writeln ("#15 id=[", it.get_documentid(), "]");
-        XapianDocument doc = it.get_document(&err);
-
-        char           *data_str;
-        uint           *data_len;
-        doc.get_data(&data_str, &data_len, &err);
-        string         data = cast(immutable)data_str[ 0..(*data_len) ].dup;
-        send(tid_xapian_thread_io, CMD.PUT, CNAME.KEY2SLOT, data);
-        //writeln ("data=[", data, "]");
-
-        key2slot = deserialize_key2slot(data);
-    }
-
-    //writeln("slot size=", key2slot.length);
+//    writeln("slot size=", key2slot.length);
     return key2slot;
 }
 
@@ -150,7 +108,6 @@ private void printTid(string tag)
 void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
 {
     core.thread.Thread.getThis().name = thread_name;
-//    writeln("SPAWN: Xapian Indexer");
 
     try
     {
@@ -179,6 +136,8 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
     bool                   is_exist_db = exists(xapian_search_db_path);
 
+    writeln("@^3");
+
     // Open the database for update, creating a new database if necessary.
     indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
 //    indexer_db = new_InMemoryWritableDatabase(&err);
@@ -205,7 +164,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
     int[ string ] key2slot;
 
     //if (is_exist_db == true)
-    key2slot = read_key2slot(indexer_db, xapian_qp, xapian_enquire, key2slot_accumulator);
+    key2slot = read_key2slot(tid_subject_manager);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -268,14 +227,14 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                 {
                     if (key2slot.length - last_size_key2slot > 0)
                     {
-                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                        store__key2slot(key2slot, tid_subject_manager);
                         if (trace_msg[ 210 ] == 1)
                             log.trace("store__key2slot #1");
                         last_size_key2slot = key2slot.length;
                     }
                     indexer_db.commit(&err);
-                	
-                	 send(tid_response_reciever, msg);
+
+                    send(tid_response_reciever, msg);
                 },
                 (CMD cmd, Tid tid_response_reciever)
                 {
@@ -283,7 +242,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                     // следовательно нужно сделать коммит
                     if (key2slot.length - last_size_key2slot > 0)
                     {
-                        store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                        store__key2slot(key2slot, tid_subject_manager);
                         if (trace_msg[ 210 ] == 1)
                             log.trace("store__key2slot #2");
                         last_size_key2slot = key2slot.length;
@@ -309,7 +268,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                 log.trace("counter: %d, timer: commit index..", counter);
                             if (key2slot.length - last_size_key2slot > 0)
                             {
-                                store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                                store__key2slot(key2slot, tid_subject_manager);
                                 if (trace_msg[ 210 ] == 1)
                                     log.trace("store__key2slot");
                                 last_size_key2slot = key2slot.length;
@@ -329,7 +288,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                         counter++;
 
                         Individual ss;
-                        
+
                         cbor2individual(&ss, msg);
 
                         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
@@ -566,7 +525,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                     log.trace("commit index..");
 
                                 if (key2slot.length > 0)
-                                    store__key2slot(key2slot, indexer_db, indexer, key2slot_accumulator);
+                                    store__key2slot(key2slot, tid_subject_manager);
 
                                 indexer_db.commit(&err);
                             }

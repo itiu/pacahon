@@ -13,7 +13,6 @@ private
     import search.vql;
     import util.utils;
     import util.container;
-    import util.lmultidigraph;
 }
 
 struct Property
@@ -95,108 +94,122 @@ struct Class
 
 class OWL
 {
-    Context             context;
-    LabeledMultiDigraph lmg;
+    private Context context;
 
-    immutable(Individual)[ string ] individuals;
-    Class *[ size_t ] class_2_idx;
-    Property *[ size_t ] property_2_idx;
-    immutable(Class)[ string ] owl_classes;
+    Individual[ string ] individuals;
+
+    immutable(Individual)[ string ] i_individuals;
+    private immutable(Class)[ string ] i_owl_classes;
+
+    private Class[] owl_classes;
+    private Class *[ string ] uri_2_class;
+    private Property *[ string ] uri_2_property;
 
     public this(Context _context)
     {
         //interthread_signal_id = "onto";
         context = _context;
-        lmg     = new LabeledMultiDigraph();
     }
 
     Class *getClass(string uri)
     {
-        size_t idx = lmg.getIdxOfResource(uri);
+        Class *cc = uri_2_class.get(uri, null);
 
-        return class_2_idx.get(idx, null);
+        return cc;
     }
 
     Property *getProperty(string uri)
     {
-        size_t idx = lmg.getIdxOfResource(uri);
+        Property *cc = uri_2_property.get(uri, null);
 
-        return property_2_idx.get(idx, null);
+        return cc;
     }
+
+    immutable(Class)[ string ] iget_classes()
+    {
+        //writeln ("@#1");
+
+        return i_owl_classes;
+    }
+
+    immutable(Individual)[ string ] iget_individuals()
+    {
+        //writeln ("@$1");
+
+        return i_individuals;
+    }
+
 
     public void load()
     {
-        LabeledMultiDigraph lmg = new LabeledMultiDigraph();
-
-//		writeln (context.get_name, ", load onto to graph..");
-        context.vql().get(
-                          null,
+        Individual[] l_individuals;
+        writeln(context.get_name, ", load onto to graph..");
+        context.vql().get(null,
                           "return { '*'}
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
-                          lmg, individuals);
-        set_data(lmg);
-//		writeln ("load onto to graph..ok");
+                          l_individuals);
 
-//        writeln("# lmg.elements=", lmg.elements);
-//        lmg.getEdges1("mondi-schema:AdministrativeDocument");
-
-        foreach (cl_idx; class_2_idx.keys)
+        foreach (indv; l_individuals)
         {
-            Class *ccl = class_2_idx.get(cl_idx, null);
-            if (ccl !is null)
-            {
-                immutable Class iic = ccl.idup;
-                owl_classes[ iic.uri ] = iic;
-            }
+            individuals[ indv.uri ]   = indv;
+            i_individuals[ indv.uri ] = indv.idup;
+        }
+        prepare(individuals);
+
+        foreach (cl; owl_classes)
+        {
+            i_owl_classes[ cl.uri ] = cl.idup;
         }
     }
 
-    public void set_data(LabeledMultiDigraph _lmg)
+    private void prepare(ref Individual[ string ])
     {
-        lmg            = _lmg;
-        class_2_idx    = (Class *[ size_t ]).init;
-        property_2_idx = (Property *[ size_t ]).init;
+        uri_2_class    = (Class *[ string ]).init;
+        uri_2_property = (Property *[ string ]).init;
 
         // set classes
-        foreach (hh; lmg.getHeads())
+        foreach (hh; individuals.values)
         {
-            if (lmg.isExsistsEdge(hh, rdf__type, owl__Class) || lmg.isExsistsEdge(hh, rdf__type, rdfs__Class))
+            if (hh.isExist(rdf__type, owl__Class) || hh.isExist(rdf__type, rdfs__Class))
             {
-                Class *in_class = class_2_idx.get(hh.get_idx(), null);
+                Class *in_class = uri_2_class.get(hh.uri, null);
                 if (in_class is null)
                 {
-                    in_class     = new Class;
-                    in_class.uri = hh.uri;
-                    //in_class.properties   = new Property[ 0 ];
-                    class_2_idx[ hh.get_idx() ] = in_class;
-                    Set!Resource label          = lmg.getTail(hh, rdfs__label);
-                    in_class.label              = label.items;
+                    in_class              = new Class;
+                    in_class.uri          = hh.uri;
+                    uri_2_class[ hh.uri ] = in_class;
+                    Resource[] label = hh.getResources(rdfs__label);
+                    in_class.label = label;
                 }
             }
         }
 
         // set direct properties
-        foreach (hh; lmg.getHeads())
+        foreach (hh; individuals.values)
         {
-            if (lmg.isExsistsEdge(hh, rdf__type,
-                                  rdf__Property) ||
-                lmg.isExsistsEdge(hh, rdf__type, owl__ObjectProperty) || lmg.isExsistsEdge(hh, rdf__type, owl__DatatypeProperty))
+            if (
+                hh.isExist(rdf__type, rdf__Property) ||
+                hh.isExist(rdf__type, owl__ObjectProperty) ||
+                hh.isExist(rdf__type, owl__DatatypeProperty)
+                )
             {
-                Property *prop = property_2_idx.get(hh.get_idx(), null);
+                Property *prop = uri_2_property.get(hh.uri, null);
                 if (prop is null)
                 {
-                    prop                           = new Property;
-                    prop.uri                       = hh.uri;
-                    property_2_idx[ hh.get_idx() ] = prop;
-                    Set!Resource label             = lmg.getTail(hh, rdfs__label);
-                    prop.label                     = label.items;
+                    prop                     = new Property;
+                    prop.uri                 = hh.uri;
+                    uri_2_property[ hh.uri ] = prop;
+                    Resource[] label = hh.getResources(rdfs__label);
+                    prop.label = label;
                 }
 
 
-                Set!Resource domain = lmg.getTail(hh, rdfs__domain);
+                Resource[] domain = hh.getResources(rdfs__domain);
                 foreach (dc; domain)
                 {
-                    Set!Resource unionOf = lmg.getTail(dc, owl__unionOf);
+                    Individual ii = individuals.get(dc.uri, Individual.init);
+
+                    Resource[] unionOf = ii.getResources(owl__unionOf);
 
                     if (unionOf.length > 0)
                     {
@@ -207,12 +220,12 @@ class OWL
 //                            writeln("#unionOf=", uo);
                             if (uo.uri != owl__Thing)
                             {
-                                Class *in_class = class_2_idx.get(uo.get_idx(), null);
+                                Class *in_class = uri_2_class.get(uo.uri, null);
                                 if (in_class is null)
                                 {
-                                    in_class                    = new Class;
-                                    in_class.uri                = uo.uri;
-                                    class_2_idx[ uo.get_idx() ] = in_class;
+                                    in_class              = new Class;
+                                    in_class.uri          = uo.uri;
+                                    uri_2_class[ uo.uri ] = in_class;
                                 }
 
                                 in_class.properties ~= *prop;
@@ -223,13 +236,13 @@ class OWL
                     {
                         if (dc.uri != owl__Thing)
                         {
-                            Class *in_class = class_2_idx.get(dc.get_idx(), null);
+                            Class *in_class = uri_2_class.get(dc.uri, null);
                             if (in_class is null)
                             {
                                 in_class = new Class;
 
-                                in_class.uri                = dc.uri;
-                                class_2_idx[ dc.get_idx() ] = in_class;
+                                in_class.uri          = dc.uri;
+                                uri_2_class[ dc.uri ] = in_class;
                             }
 //                            in_class.properties.length += 1;
                             in_class.properties ~= *prop;
@@ -240,11 +253,11 @@ class OWL
         }
 
         // set inherit properties
-        foreach (cl_idx; class_2_idx.keys)
+        foreach (cl; uri_2_class.keys)
         {
-            Class *ccl = class_2_idx.get(cl_idx, null);
+            Class *ccl = uri_2_class.get(cl, null);
             if (ccl !is null)
-                add_inherit_properies(ccl, cl_idx, 0);
+                add_inherit_properies(ccl, cl, 0);
         }
 /*
         writeln("#class_2_properties=");
@@ -258,24 +271,26 @@ class OWL
  */
     }
 
-    private void add_inherit_properies(Class *to_cl, size_t look_cl_idx, int level)
+    private void add_inherit_properies(Class *to_cl, string look_cl, int level)
     {
         //writeln ("# add_inherit_properies, to_cl=", to_cl, ", look_cl_idx=", look_cl_idx);
-        Set!Resource list_subClassOf = lmg.getTail(look_cl_idx, rdfs__subClassOf);
+        Individual ii = individuals.get(look_cl, Individual.init);
+
+        Resource[] list_subClassOf = ii.getResources(rdfs__subClassOf);
         foreach (subClassOf; list_subClassOf)
         {
             //writeln ("# subClassOf", subClassOf);
             if (level == 0)
             {
-                Class *icl = class_2_idx.get(subClassOf.get_idx(), null);
+                Class *icl = uri_2_class.get(subClassOf.uri, null);
                 if (icl !is null)
                     to_cl.subClassOf ~= *icl;
             }
-            add_inherit_properies(to_cl, subClassOf.get_idx(), level + 1);
+            add_inherit_properies(to_cl, subClassOf.uri, level + 1);
         }
 
         //writeln ("#3 add_inherit_properies");
-        Class *icl = class_2_idx.get(look_cl_idx, null);
+        Class *icl = uri_2_class.get(look_cl, null);
         if (icl !is null && icl != to_cl)
         {
             to_cl.inherited_properties ~= icl.properties;
