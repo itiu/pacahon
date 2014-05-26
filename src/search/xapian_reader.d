@@ -109,16 +109,6 @@ class XapianReader : SearchReader
     private string dummy;
     private double d_dummy;
 
-    private void reopen_db()
-    {
-//        close_db();
-//        open_db();
-        xapian_db.reopen (&err);
-        if (err != 0)
-            writeln("VQL:reopen_db:err", err);
-    
-    }
-
     public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
                    void delegate(string uri) add_out_element)
     {
@@ -174,6 +164,29 @@ class XapianReader : SearchReader
         }
 
         return 0;
+    }
+
+    private void reopen_db()
+    {
+      byte err;
+
+//      xapian_db.close(&err);
+//      destroy_Database (xapian_db);
+//      xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
+//      if (err != 0)
+//          writeln("VQL:reopen_db:err", err);
+
+//        close_db();
+//        open_db();
+
+        xapian_db.reopen (&err);
+        if (err != 0)
+            writeln("VQL:reopen_db:err", err);
+
+      xapian_qp.set_database(xapian_db, &err);
+      if (err != 0)
+          writeln("VQL:set_database:err", err);
+    
     }
 
     private void open_db()
