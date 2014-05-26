@@ -101,7 +101,7 @@ class OWL
     immutable(Individual)[ string ] i_individuals;
     private immutable(Class)[ string ] i_owl_classes;
 
-    private Class[] owl_classes;
+//    private Class[] owl_classes;
     private Class *[ string ] uri_2_class;
     private Property *[ string ] uri_2_property;
 
@@ -143,20 +143,20 @@ class OWL
     public void load()
     {
         Individual[] l_individuals;
-        writeln(context.get_name, ", load onto to graph..");
+        writeln("[", context.get_name, "], load onto to graph..");
         context.vql().get(null,
                           "return { '*'}
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           l_individuals);
-
         foreach (indv; l_individuals)
         {
             individuals[ indv.uri ]   = indv;
             i_individuals[ indv.uri ] = indv.idup;
         }
+
         prepare(individuals);
 
-        foreach (cl; owl_classes)
+        foreach (cl; uri_2_class.values())
         {
             i_owl_classes[ cl.uri ] = cl.idup;
         }
