@@ -111,8 +111,12 @@ class XapianReader : SearchReader
 
     private void reopen_db()
     {
-        close_db();
-        open_db();
+//        close_db();
+//        open_db();
+        xapian_db.reopen (&err);
+        if (err != 0)
+            writeln("VQL:reopen_db:err", err);
+    
     }
 
     public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,

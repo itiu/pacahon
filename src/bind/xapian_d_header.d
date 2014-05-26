@@ -256,6 +256,7 @@ interface XapianDatabase
 {
     XapianEnquire new_Enquire(byte *err);
     void close(byte *err);
+    void reopen (byte *err);
 }
 
 interface XapianWritableDatabase
