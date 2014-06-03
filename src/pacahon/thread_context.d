@@ -33,7 +33,7 @@ logger log;
 
 static this()
 {
-    log = new logger("pacahon", "log", "context");
+    log = new logger("pacahon", "log", "API");
 }
 
 Tid    dummy_tid;
@@ -457,10 +457,13 @@ class PThreadContext : Context
         {
             signal.last_time_check = now;
             if (trace_msg[ 19 ] == 1)
-                log.trace("RELOAD for %s, signal.last_time_update(%d) > signal.last_time_check(%d)", interthread_signal_id,
+                log.trace("RELOAD for [%s], signal.last_time_update(%d) > signal.last_time_check(%d)", interthread_signal_id,
                           signal.last_time_update, signal.last_time_check);
 
+            signals[ interthread_signal_id ] = signal;
+
             load();
+
             return true;
         }
         else
@@ -469,12 +472,14 @@ class PThreadContext : Context
             signal.last_time_check = now;
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
-            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update <= 0)
+            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update < 0)
             {
                 signal.last_time_update = now_time_signal;
 
                 if (trace_msg[ 19 ] == 1)
-                    log.trace("RELOAD for %s", interthread_signal_id);
+                    log.trace("RELOAD for [%s], signal.last_time_update=(%d)", interthread_signal_id, signal.last_time_update);
+                    
+                signals[ interthread_signal_id ] = signal;
 
                 load();
 
