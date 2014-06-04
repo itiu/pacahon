@@ -215,6 +215,8 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
 //				writeln("CH0:", ch, ", ", cast(int)ch);
 
+				bool found_end_triplet_marker = false;
+
                 int length_el;
                 int depth = 0;
                 if (state != 2 && *start_el == '(')
@@ -274,7 +276,12 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                         while (end_el - src < len - 1)
                         {
 //							writeln("CH3:", ch, ", ", cast(int)ch);
-                            if (ch == ';' || ch == ' ' || ch == '\r')
+                            if (ch == ';')
+                            {
+                            	found_end_triplet_marker = true;
+                                break;
+                            }    
+                            if (ch == ' ' || ch == '\r')
                                 break;
                             if (ch == '\n' || ch == ',' || ch == '"')
                                 break;
@@ -350,7 +357,10 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 //				writeln ("1 END CH:", *ptr);
 
 //				writeln ("0 END CH:", *ptr);
-                ptr++;
+
+                if (found_end_triplet_marker == false)
+                	ptr++;
+                	
                 if (ptr - src > len - 2)
                     break;
                 ch = *ptr;
