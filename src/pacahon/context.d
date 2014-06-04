@@ -123,6 +123,7 @@ interface Context
     void push_signal(string key, string value);
     long look_integer_signal(string key);
     string look_string_signal(string key);
+    void set_reload_signal_to_local_thread(string interthread_signal_id);
 
     // *************************************************** external api *********************************** //
     bool authorize(string uri, Ticket *ticket, Access request_acess);

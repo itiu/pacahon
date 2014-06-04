@@ -235,7 +235,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            check_for_reload("owl", &owl.load);
+            check_for_reload("onto", &owl.load);
             return owl.iget_classes();
         }
         else
@@ -246,7 +246,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            check_for_reload("owl", &owl.load);
+            check_for_reload("onto", &owl.load);
             return uri in owl.iget_classes();
         }
         else
@@ -257,7 +257,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            check_for_reload("owl", &owl.load);
+            check_for_reload("onto", &owl.load);
             return owl.getProperty(uri);
         }
         else
@@ -268,7 +268,7 @@ class PThreadContext : Context
     {
         if (owl !is null)
         {
-            check_for_reload("owl", &owl.load);
+            check_for_reload("onto", &owl.load);
             return owl.iget_individuals;
         }
         else
@@ -295,6 +295,8 @@ class PThreadContext : Context
             {
                 send(tid_interthread_signals, CMD.PUT, key, value);
             }
+            
+            set_reload_signal_to_local_thread(key);
         }
         catch (Exception ex)
         {
@@ -426,9 +428,9 @@ class PThreadContext : Context
         long last_time_check  = 0;
     }
 
-    Signal *[ string ] signals;
+    Signal* [ string ] signals;
 
-    public void set_local_signal_for_reload(string interthread_signal_id)
+    public void set_reload_signal_to_local_thread(string interthread_signal_id)
     {
         Signal *signal = signals.get(interthread_signal_id, null);
 
@@ -440,6 +442,9 @@ class PThreadContext : Context
 
         long now = Clock.currStdTime() / 10000;
         signal.last_time_update = now;
+
+        if (trace_msg[ 19 ] == 1)
+           log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.last_time_update=%d", name, interthread_signal_id, signal.last_time_update);
     }
 
     public bool check_for_reload(string interthread_signal_id, void delegate() load)
@@ -453,34 +458,36 @@ class PThreadContext : Context
         }
 
         long now = Clock.currStdTime() / 10000;
+
+        if (trace_msg[ 19 ] == 1)
+           log.trace("[%s] CHECK FOR RELOAD [%s], last_time_update=%d, last_time_check=%d", name, interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
+
         if (signal.last_time_update > signal.last_time_check)
         {
             signal.last_time_check = now;
             if (trace_msg[ 19 ] == 1)
-                log.trace("RELOAD for [%s], signal.last_time_update(%d) > signal.last_time_check(%d)", interthread_signal_id,
-                          signal.last_time_update, signal.last_time_check);
-
-            signals[ interthread_signal_id ] = signal;
+                log.trace("[%s] RELOAD FOR [%s], last_time_update > last_time_check", name, interthread_signal_id);
 
             load();
 
             return true;
         }
-        else
-        if (now - signal.last_time_check > 10000 || now - signal.last_time_check < 0)
+        else if (now - signal.last_time_check > 10000 || now - signal.last_time_check < 0)
         {
             signal.last_time_check = now;
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
-            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update < 0)
+
+            if (trace_msg[ 19 ] == 1)
+                log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id, now_time_signal - signal.last_time_update);
+            
+            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update < 0 || now_time_signal == 0)
             {
                 signal.last_time_update = now_time_signal;
 
                 if (trace_msg[ 19 ] == 1)
-                    log.trace("RELOAD for [%s], signal.last_time_update=(%d)", interthread_signal_id, signal.last_time_update);
+                    log.trace("[%s] RELOAD FOR [%s]", name, interthread_signal_id);
                     
-                signals[ interthread_signal_id ] = signal;
-
                 load();
 
                 return true;
@@ -863,7 +870,7 @@ class PThreadContext : Context
             Tid tid_acl;
 
             if (trace_msg[ 27 ] == 1)
-                log.trace("store_individual");
+                log.trace("[%s] store_individual", name);
 
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
@@ -882,7 +889,7 @@ class PThreadContext : Context
                 return ResultCode.No_Content;
 
             if (trace_msg[ 27 ] == 1)
-                log.trace("store_individual: %s", *indv);
+                log.trace("[%s] store_individual: %s", name,  *indv);
 
             Resource[ string ] rdfType;
             setMapResources(indv.resources[ rdf__type ], rdfType);
@@ -925,7 +932,8 @@ class PThreadContext : Context
 
                 if (tid_search_manager != Tid.init)
                 {
-                    set_local_signal_for_reload("search");
+                	push_signal("search", Clock.currStdTime() / 10000);
+
                     send(tid_search_manager, CMD.STORE, ss_as_cbor);
                 }
 

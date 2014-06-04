@@ -136,8 +136,6 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
     bool                   is_exist_db = exists(xapian_search_db_path);
 
-    writeln("@^3");
-
     // Open the database for update, creating a new database if necessary.
     indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
 //    indexer_db = new_InMemoryWritableDatabase(&err);
