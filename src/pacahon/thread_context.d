@@ -295,7 +295,7 @@ class PThreadContext : Context
             {
                 send(tid_interthread_signals, CMD.PUT, key, value);
             }
-            
+
             set_reload_signal_to_local_thread(key);
         }
         catch (Exception ex)
@@ -428,7 +428,7 @@ class PThreadContext : Context
         long last_time_check  = 0;
     }
 
-    Signal* [ string ] signals;
+    Signal *[ string ] signals;
 
     public void set_reload_signal_to_local_thread(string interthread_signal_id)
     {
@@ -444,7 +444,8 @@ class PThreadContext : Context
         signal.last_time_update = now;
 
         if (trace_msg[ 19 ] == 1)
-           log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.last_time_update=%d", name, interthread_signal_id, signal.last_time_update);
+            log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.last_time_update=%d", name, interthread_signal_id,
+                      signal.last_time_update);
     }
 
     public bool check_for_reload(string interthread_signal_id, void delegate() load)
@@ -460,7 +461,8 @@ class PThreadContext : Context
         long now = Clock.currStdTime() / 10000;
 
         if (trace_msg[ 19 ] == 1)
-           log.trace("[%s] CHECK FOR RELOAD [%s], last_time_update=%d, last_time_check=%d", name, interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
+            log.trace("[%s] CHECK FOR RELOAD [%s], last_time_update=%d, last_time_check=%d", name, interthread_signal_id,
+                      now - signal.last_time_update, now - signal.last_time_check);
 
         if (signal.last_time_update > signal.last_time_check)
         {
@@ -479,15 +481,16 @@ class PThreadContext : Context
             long now_time_signal = look_integer_signal(interthread_signal_id);
 
             if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id, now_time_signal - signal.last_time_update);
-            
+                log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
+                          now_time_signal - signal.last_time_update);
+
             if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update < 0 || now_time_signal == 0)
             {
                 signal.last_time_update = now_time_signal;
 
                 if (trace_msg[ 19 ] == 1)
                     log.trace("[%s] RELOAD FOR [%s]", name, interthread_signal_id);
-                    
+
                 load();
 
                 return true;
@@ -889,7 +892,7 @@ class PThreadContext : Context
                 return ResultCode.No_Content;
 
             if (trace_msg[ 27 ] == 1)
-                log.trace("[%s] store_individual: %s", name,  *indv);
+                log.trace("[%s] store_individual: %s", name, *indv);
 
             Resource[ string ] rdfType;
             setMapResources(indv.resources[ rdf__type ], rdfType);
@@ -932,7 +935,7 @@ class PThreadContext : Context
 
                 if (tid_search_manager != Tid.init)
                 {
-                	push_signal("search", Clock.currStdTime() / 10000);
+                    push_signal("search", Clock.currStdTime() / 10000);
 
                     send(tid_search_manager, CMD.STORE, ss_as_cbor);
                 }
@@ -1007,61 +1010,66 @@ class PThreadContext : Context
         if (level == 0)
             freeze();
 
-        bool result = false;
-
-        Tid  tid_subject_manager = getTid(P_MODULE.subject_manager);
-
-        send(tid_subject_manager, CMD.BACKUP, "", thisTid);
-        string backup_id;
-        receive((string res) { backup_id = res; });
-
-        if (backup_id != "")
+        try
         {
-            result = true;
+            bool result = false;
 
-            string res;
-            Tid    tid_acl_manager = getTid(P_MODULE.acl_manager);
-            send(tid_acl_manager, CMD.BACKUP, backup_id, thisTid);
-            receive((string _res) { res = _res; });
-            if (res == "")
-                result = false;
-            else
+            Tid  tid_subject_manager = getTid(P_MODULE.subject_manager);
+
+            send(tid_subject_manager, CMD.BACKUP, "", thisTid);
+            string backup_id;
+            receive((string res) { backup_id = res; });
+
+            if (backup_id != "")
             {
-                Tid tid_ticket_manager = getTid(P_MODULE.ticket_manager);
-                send(tid_ticket_manager, CMD.BACKUP, backup_id, thisTid);
+                result = true;
+
+                string res;
+                Tid    tid_acl_manager = getTid(P_MODULE.acl_manager);
+                send(tid_acl_manager, CMD.BACKUP, backup_id, thisTid);
                 receive((string _res) { res = _res; });
                 if (res == "")
                     result = false;
                 else
                 {
-                    Tid tid_fulltext_indexer = getTid(P_MODULE.fulltext_indexer);
-                    send(tid_fulltext_indexer, CMD.BACKUP, backup_id, thisTid);
+                    Tid tid_ticket_manager = getTid(P_MODULE.ticket_manager);
+                    send(tid_ticket_manager, CMD.BACKUP, backup_id, thisTid);
                     receive((string _res) { res = _res; });
                     if (res == "")
                         result = false;
+                    else
+                    {
+                        Tid tid_fulltext_indexer = getTid(P_MODULE.fulltext_indexer);
+                        send(tid_fulltext_indexer, CMD.BACKUP, backup_id, thisTid);
+                        receive((string _res) { res = _res; });
+                        if (res == "")
+                            result = false;
+                    }
                 }
             }
-        }
 
-        if (result == false)
-        {
-            if (level < 10)
+            if (result == false)
             {
-                log.trace_log_and_console("BACKUP FAIL, repeat(%d) %s", level, backup_id);
+                if (level < 10)
+                {
+                    log.trace_log_and_console("BACKUP FAIL, repeat(%d) %s", level, backup_id);
 
-                core.thread.Thread.sleep(dur!("msecs")(500));
-                return backup(level + 1);
+                    core.thread.Thread.sleep(dur!("msecs")(500));
+                    return backup(level + 1);
+                }
+                else
+                    log.trace_log_and_console("BACKUP FAIL, %s", backup_id);
             }
             else
-                log.trace_log_and_console("BACKUP FAIL, %s", backup_id);
+                log.trace_log_and_console("BACKUP Ok, %s", backup_id);
+
+            return result;
         }
-        else
-            log.trace_log_and_console("BACKUP Ok, %s", backup_id);
-
-        if (level == 0)
-            unfreeze();
-
-        return result;
+        finally
+        {
+            if (level == 0)
+                unfreeze();
+        }
     }
 
     public long count_individuals()
@@ -1071,6 +1079,7 @@ class PThreadContext : Context
 
     public void freeze()
     {
+        writeln("FREEZE");
         Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
 
         if (tid_subject_manager != Tid.init)
@@ -1082,6 +1091,7 @@ class PThreadContext : Context
 
     public void unfreeze()
     {
+        writeln("UNFREEZE");
         Tid tid_subject_manager = getTid(P_MODULE.subject_manager);
 
         if (tid_subject_manager != Tid.init)
