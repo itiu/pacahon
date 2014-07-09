@@ -215,6 +215,6 @@ private void prepare_file(string file_name, Context context)
     }
     catch (Exception ex)
     {
-        writeln("EX!", ex);
+        writeln("file_reader:Exception!", ex);
     }
 }

@@ -894,8 +894,12 @@ class PThreadContext : Context
             if (trace_msg[ 27 ] == 1)
                 log.trace("[%s] store_individual: %s", name, *indv);
 
+            if (indv.resources.length == 0)
+              return ResultCode.No_Content;
+
             Resource[ string ] rdfType;
-            setMapResources(indv.resources[ rdf__type ], rdfType);
+                        
+           	setMapResources(indv.resources[ rdf__type ], rdfType);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {

@@ -15,11 +15,13 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     ElementHeader header;
 
     pos = read_header(src[ pos..$ ], &header);
-//    writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
+    //writeln ("read_element:[", cast(uint)src[0], " ", cast(uint)src[1], "]");
+    //writeln ("#^read_element, header=", header); 
+    //writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
 
     if (header.type == MajorType.MAP)
     {
-//        writeln("IS MAP, length=", header.len, ", pos=", pos);
+        //writeln("IS MAP, length=", header.len, ", pos=", pos);
         string new_subject_uri;
         string key;
         pos += read_element(individual, src[ pos..$ ], key);
@@ -35,11 +37,9 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
                 individual = &new_individual;
             }
             individual.uri = val.dup;
-//              new_subject_uri = lmg.addEdge(subject_uri, predicate_uri, val);
-//             else
             new_subject_uri = val;
 
-//            writeln ("@ id:", val, ", idx=", new_subject_idx);
+            //writeln ("@ id:", val);
         }
 
         foreach (i; 1 .. header.len)
@@ -53,15 +53,17 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     }
     else if (header.type == MajorType.TEXT_STRING)
     {
-//	writeln ("IS STRING, length=", header.len, ", pos=", pos);
+	//writeln ("IS STRING, length=", header.len, ", pos=", pos);
         int    ep = cast(int)(pos + header.len);
 
         string str = cast(string)src[ pos..ep ].dup;
         _key = str;
 
+        //writeln ("[", str, "]");        
+        
         if (subject_uri !is null && predicate_uri !is null)
         {
-//          writeln ("*1");
+          //writeln ("*1");
 
             Resources resources = individual.resources.get(predicate_uri, Resources.init);
 
@@ -103,11 +105,16 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     }
     else if (header.type == MajorType.ARRAY)
     {
-//	writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
+	//writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
         foreach (i; 0 .. header.len)
         {
             pos += read_element(individual, src[ pos..$ ], dummy, subject_uri, predicate_uri);
         }
+    }
+    else if (header.type == MajorType.TAG)
+    {
+	//writeln ("IS TAG, length=", header.len, ", pos=", pos);
+    	
     }
     return pos;
 }

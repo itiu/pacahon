@@ -1,5 +1,6 @@
 module onto.resource;
 
+import std.conv;
 import onto.lang;
 import pacahon.define;
 
@@ -112,7 +113,7 @@ struct Resource
         type = ResourceType.Boolean; m_bool = v; return v;
     }
     int opAssign(int v)
-    {
+    {double
         type = ResourceType.Integer; m_int = v; return v;
     }
     long opAssign(long v)
@@ -155,6 +156,20 @@ struct Resource
         type = ResourceType.Boolean;
     }
 
+    void toString(scope void delegate(const(char)[]) sink) const
+    {
+    	if (type == ResourceType.Uri || type == ResourceType.String)
+    		sink(get!string());
+    	else if (type == ResourceType.Boolean)
+    		sink(text (get!bool()));
+    	else if (type == ResourceType.Datetime)
+    		sink(get!string());    		    		
+    	else if (type == ResourceType.Float)
+    		sink(text (get!double()));    		    		
+    	else if (type == ResourceType.Integer)
+    		sink(text (get!long()));    		    		
+    }
+    
     @property string data()
     {
         return get!string();
