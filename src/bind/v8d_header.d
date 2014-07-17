@@ -55,7 +55,7 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
     string uri    = cast(string)_uri[ 0.._uri_length ];
     string ticket = cast(string)_ticket[ 0.._ticket_length ];
 
-    //writeln ("@ read_individual, uri=", uri, ",  ticket=", ticket);
+    //writeln ("@ read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
 
     if (uri != "$document")
     {
@@ -78,9 +78,19 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
     	}	
     	else	
     		writeln ("@ read_individual, g_individual= is null");*/
+        //dump (g_individual.data, 8);
         return &g_individual;
     }
 
+}
+
+void dump (char *data, int count)
+{
+        string res;	
+        for (int i = 0; i < count; i++)
+        	res ~= "[" ~ text (cast(uint)data[i]) ~ "]";
+	
+        writeln ("@d dump cbor=", res);
 }
 
 ////////////////////////////  call C from D //////////////////////////////////////////

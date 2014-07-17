@@ -9,7 +9,6 @@ private
     import std.conv;
 
     import util.container;
-    //   import util.utils;
 }
 
 enum : byte
@@ -118,18 +117,11 @@ public void write_header(MajorType type, ulong add_info, ref OutBuffer ou)
 {
     ubyte element_header;
 
-//    ulong add_info;
-
-//    add_info = len;
-
     if (add_info < 24)
     {
         ubyte ll = cast(ubyte)add_info;
         element_header = type | ll;
         ou.write(element_header);
-
-//	writeln ("element_header=",element_header);
-//	writeln ("@1 element_header=", element_header, ", len=", len);
     }
     else
     {
@@ -155,9 +147,7 @@ public void write_header(MajorType type, ulong add_info, ref OutBuffer ou)
         {
             element_header = type | 24;
             ou.write(element_header);
-//	writeln ("element_header=",element_header);
             ou.write(cast(ubyte)add_info);
-//	writeln ("len=",cast(ubyte)len);
         }
     }
 }
@@ -176,15 +166,6 @@ public void write_bool(bool vv, ref OutBuffer ou)
     else
         write_header(MajorType.FLOAT_SIMPLE, FALSE, ou);
 }
-
-//public void write(T) (T[] arr, ref OutBuffer ou)
-//{
-//    write_header(MajorType.ARRAY, arr.length, ou);
-//    foreach (value; arr)
-//    {
-//        write(value, ou);
-//    }
-//}
 
 private short short_from_buff(ubyte[] buff, int pos)
 {
@@ -246,7 +227,7 @@ public int read_header(ubyte[] src, ElementHeader *header)
     {
         if (ld > src.length)
         {
-            writeln("%%%%%%%%%%%%%%%%%%%%%%%% ld=", ld);
+            writeln("Err! @d cbor.read_header, ld=", ld);
             ld = src.length;
         }
         header.len  = ld;

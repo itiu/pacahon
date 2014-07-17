@@ -14,7 +14,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     int           pos;
     ElementHeader header;
 
-    pos = read_header(src[ pos..$ ], &header);
+    pos = read_header(src[ 0..$ ], &header);
     //writeln ("read_element:[", cast(uint)src[0], " ", cast(uint)src[1], "]");
     //writeln ("#^read_element, header=", header); 
     //writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
