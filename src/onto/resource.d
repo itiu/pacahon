@@ -4,17 +4,6 @@ import std.conv;
 import onto.lang;
 import pacahon.define;
 
-enum ResourceType : ubyte
-{
-    Uri      = DataType.Uri,
-    String   = DataType.String,
-    Integer  = DataType.Integer,
-    Datetime = DataType.Datetime,
-    Date     = DataType.Date,
-    Float    = DataType.Float,
-    Boolean  = DataType.Bool
-}
-
 enum ResourceOrigin : ubyte
 {
     local    = 1,
@@ -53,7 +42,7 @@ public bool anyExist(ref Resource[ string ] hrss, string[] objects)
 
 struct Resource
 {
-    ResourceType   type   = ResourceType.Uri;
+    DataType   type   = DataType.Uri;
     ResourceOrigin origin = ResourceOrigin.local;
     LANG lang = LANG.NONE;    
 
@@ -91,50 +80,50 @@ struct Resource
 
     bool opEquals(bool v) const
     {
-        return type == ResourceType.Boolean && m_bool == v;
+        return type == DataType.Boolean && m_bool == v;
     }
     bool opEquals(long v) const
     {
-        return type == ResourceType.Integer && m_int == v;
+        return type == DataType.Integer && m_int == v;
     }
     bool opEquals(double v) const
     {
-        return type == ResourceType.Float && m_float == v;
+        return type == DataType.Decimal && m_float == v;
     }
     bool opEquals(string v) const
     {
-        return (type == ResourceType.String || type == ResourceType.Uri) && m_string == v;
+        return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
 
     bool opAssign(bool v)
     {
-        type = ResourceType.Boolean; m_bool = v; return v;
+        type = DataType.Boolean; m_bool = v; return v;
     }
     int opAssign(int v)
     {double
-        type = ResourceType.Integer; m_int = v; return v;
+        type = DataType.Integer; m_int = v; return v;
     }
     long opAssign(long v)
     {
-        type = ResourceType.Integer; m_int = v; return v;
+        type = DataType.Integer; m_int = v; return v;
     }
     double opAssign(double v)
     {
-        type = ResourceType.Float; m_float = v; return v;
+        type = DataType.Decimal; m_float = v; return v;
     }
     string opAssign(string v)
     {
-        type = ResourceType.String; m_string = v; return v;
+        type = DataType.String; m_string = v; return v;
     }
 
     this(string str, ResourceOrigin _origin)
     {
         this   = str;
-        type   = ResourceType.Uri;
+        type   = DataType.Uri;
         origin = _origin;
     }
 
-    this(ResourceType _type, string str, LANG _lang = LANG.NONE)
+    this(DataType _type, string str, LANG _lang = LANG.NONE)
     {
         this = str;
         type = _type;
@@ -144,29 +133,29 @@ struct Resource
     this(string str, LANG _lang = LANG.NONE)
     {
         this = str;
-        type = ResourceType.String;
+        type = DataType.String;
         lang = _lang;
     }
 
     this(bool val)
     {
         this = val;
-        type = ResourceType.Boolean;
+        type = DataType.Boolean;
     }
 
     this(double val)
     {
         this = val;
-        type = ResourceType.Float;
+        type = DataType.Decimal;
     }
     
     this(ulong val)    
     {
         this = cast(long)val;
-        type = ResourceType.Integer;
+        type = DataType.Integer;
     }
     
-    this(ResourceType _type, ulong val)
+    this(DataType _type, ulong val)
     {
         this = cast(long)val;
         type = _type;    	
@@ -174,15 +163,15 @@ struct Resource
     
     void toString(scope void delegate(const(char)[]) sink) const
     {
-    	if (type == ResourceType.Uri || type == ResourceType.String)
+    	if (type == DataType.Uri || type == DataType.String)
     		sink(get!string());
-    	else if (type == ResourceType.Boolean)
+    	else if (type == DataType.Boolean)
     		sink(text (get!bool()));
-    	else if (type == ResourceType.Datetime)
+    	else if (type == DataType.Datetime)
     		sink(get!string());    		    		
-    	else if (type == ResourceType.Float)
+    	else if (type == DataType.Decimal)
     		sink(text (get!double()));    		    		
-    	else if (type == ResourceType.Integer)
+    	else if (type == DataType.Integer)
     		sink(text (get!long()));    		    		
     }
     
@@ -208,7 +197,7 @@ struct Resource
 
     string uri()
     {
-        if (type == ResourceType.Uri)
+        if (type == DataType.Uri)
             return m_string;
         else
             return null;
@@ -216,7 +205,7 @@ struct Resource
 
     void set_uri(string uri)
     {
-        type     = ResourceType.Uri;
+        type     = DataType.Uri;
         m_string = uri;
     }
 }

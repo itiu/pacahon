@@ -144,7 +144,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                 char *end_el   = ptr;
                 //writeln ("2 CH0 [", *start_el, "]");
 
-                ResourceType resource_type = ResourceType.String;
+                DataType resource_type = DataType.String;
                 ResourceOrigin resource_origin = ResourceOrigin.local;
 
                 // пропускаем термы в кавычках (" или """)
@@ -170,7 +170,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     {
                         if (ch == '"')
                         {
-                            resource_type = ResourceType.String;
+                            resource_type = DataType.String;
                             if (is_multiline_quote == true && end_el - src < len - 2 && *(end_el + 1) == '"' && *(end_el + 2) == '"')
                             {
                                 end_el += 2;
@@ -211,7 +211,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     }
                 }
                 else
-                	resource_type = ResourceType.Uri;
+                	resource_type = DataType.Uri;
 
 //				writeln("CH0:", ch, ", ", cast(int)ch);
 
@@ -250,7 +250,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     {
                         if (ch == '>')
                         {
-                            resource_type = ResourceType.Uri;
+                            resource_type = DataType.Uri;
                             resource_origin = ResourceOrigin.external;
                             break;
                         }
@@ -380,7 +380,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 }
 
 private char next_element(char *element, int el_length, Individual* ss, string in_predicate, out string out_predicate, byte *state,
-                          ResourceType resource_type, ref string[ string ] prefix_map)
+                          DataType resource_type, ref string[ string ] prefix_map)
 {
     if (element is null)
     {
@@ -459,7 +459,7 @@ private char next_element(char *element, int el_length, Individual* ss, string i
         
         Resources pp = ss.resources.get (in_predicate, Resources.init);        
 
-        if (resource_type == ResourceType.String)
+        if (resource_type == DataType.String)
         {
             if (data[ $ - 3 ] == '@')
             {
@@ -485,19 +485,19 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 
                     if (type == "xsd:dateTime")
                     {
-                        pp ~= Resource(ResourceType.Datetime, data);
+                        pp ~= Resource(DataType.Datetime, data);
                     }
                     else if (type == "xsd:date")
                     {
-                        pp ~= Resource(ResourceType.Date, data);
+                        pp ~= Resource(DataType.Datetime, data);
                     }
                     else if (type == "xsd:boolean")
                     {
-                        pp ~= Resource(ResourceType.Boolean, data);
+                        pp ~= Resource(DataType.Boolean, data);
                     }
                     else if (type == "xsd:nonNegativeInteger")
                     {
-                        pp ~= Resource(ResourceType.Integer, data);
+                        pp ~= Resource(DataType.Integer, data);
                     }
                     else if (type == "xsd:string")
                     {
@@ -527,7 +527,7 @@ private char next_element(char *element, int el_length, Individual* ss, string i
                     data = tmp_uri;
             }
 
-            pp ~= Resource(ResourceType.Uri, data);
+            pp ~= Resource(DataType.Uri, data);
 //            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }
         

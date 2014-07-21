@@ -5,6 +5,7 @@ private import onto.resource;
 private import onto.individual;
 private import onto.lang;
 private import util.cbor;
+private import pacahon.define;
 
 string dummy;
 
@@ -68,9 +69,9 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
             Resources resources = individual.resources.get(predicate_uri, Resources.init);
 
             if (header.tag == TAG.TEXT_RU)
-                resources ~= Resource(ResourceType.String, str, LANG.RU);
+                resources ~= Resource(DataType.String, str, LANG.RU);
             else if (header.tag == TAG.TEXT_EN)
-                resources ~= Resource(ResourceType.String, str, LANG.EN);
+                resources ~= Resource(DataType.String, str, LANG.EN);
             else if (header.tag == TAG.URI)
             {
                 if (str.indexOf('/') > 0)
@@ -79,7 +80,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
                     resources ~= Resource(str, ResourceOrigin.local);
             }
             else
-                resources ~= Resource(ResourceType.String, str);
+                resources ~= Resource(DataType.String, str);
 
             individual.resources[ predicate_uri ] = resources;
         }
@@ -99,7 +100,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     	
     	if (header.tag == TAG.EPOCH_DATE_TIME)
     	{
-    		resources ~= Resource(ResourceType.Datetime, value);
+    		resources ~= Resource(DataType.Datetime, value);
     	}
     	else
     	{
@@ -178,21 +179,21 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         write_type_value(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
-        if (value.type == ResourceType.Uri)
+        if (value.type == DataType.Uri)
         {
             write_type_value(MajorType.TAG, TAG.URI, ou);
             write_string(value.get!string, ou);
         }
-        else if (value.type == ResourceType.Integer)
+        else if (value.type == DataType.Integer)
         {
             write_integer(value.get!long, ou);        	        	
         }
-        else if (value.type == ResourceType.Datetime)
+        else if (value.type == DataType.Datetime)
         {
             write_type_value(MajorType.TAG, TAG.EPOCH_DATE_TIME, ou);
             write_integer(value.get!long, ou);        	        	
         }
-        else if (value.type == ResourceType.Float)
+        else if (value.type == DataType.Decimal)
         {
             double x = value.get!double;
         	double lg10 = log10(x);
@@ -204,7 +205,7 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
             write_integer(n, ou);        	        	        	
             write_integer(cast(long)(pow(10.0, f)), ou);        	        	
         }
-        else if (value.type == ResourceType.Boolean)
+        else if (value.type == DataType.Boolean)
         {
             write_bool(value.get!bool, ou);
         }
