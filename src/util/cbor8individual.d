@@ -132,13 +132,14 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     	{
     		Resources resources = individual.resources.get(predicate_uri, Resources.init);
     		
-    		ElementHeader exponent;    		
-    		pos += read_type_value(src, &exponent);
-    		
     		ElementHeader mantissa;
     		pos += read_type_value(src, &mantissa);
-    		    		    		
-            resources ~= Resource(mantissa.v_long * (10 ^ exponent.v_long));
+    		
+    		ElementHeader exponent;    		
+    		pos += read_type_value(src, &exponent);
+    		    		    		    		
+            resources ~= Resource(decimal (mantissa.v_long, exponent.v_long));
+//            	 mantissa.v_long * (10 ^ exponent.v_long));
             individual.resources[ predicate_uri ] = resources;
     	}
     	else
@@ -196,15 +197,17 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         }
         else if (value.type == DataType.Decimal)
         {
-            double x = value.get!double;
-        	double lg10 = log10(x);
-        	double f = fmod(lg10, 1.0);
-        	int n = cast(int)(lg10 - f);
+            decimal x = value.get!decimal;
+//        	double lg10 = log10(x);
+//        	double f = fmod(lg10, 1.0);
+//        	int n = cast(int)(lg10 - f);
         	
             write_type_value(MajorType.TAG, TAG.DECIMAL_FRACTION, ou);
             write_type_value(MajorType.ARRAY, 2, ou);
-            write_integer(n, ou);        	        	        	
-            write_integer(cast(long)(pow(10.0, f)), ou);        	        	
+//            write_integer(n, ou);        	        	        	
+//            write_integer(cast(long)(pow(10.0, f)), ou);        	        	
+            write_integer(x.mantissa, ou);        	        	        	
+            write_integer(x.exponent, ou);        	        	
         }
         else if (value.type == DataType.Boolean)
         {

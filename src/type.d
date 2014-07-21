@@ -9,3 +9,15 @@ enum DataType : ubyte
     Decimal     = 32,
     Boolean     = 64
 }
+
+struct decimal
+{
+	long mantissa;
+	long exponent;
+	
+	this (long m, long e)
+	{
+		mantissa = m;
+		exponent = e;
+	}
+}

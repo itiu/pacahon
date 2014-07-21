@@ -50,22 +50,20 @@ struct Resource
         void *[ 2 ] m_data;
         ref inout (T)getDataAs(T) () inout { static assert(T.sizeof <= m_data.sizeof); return *cast(inout (T) *)m_data.ptr; }
         @property ref inout (long)m_int() inout { return getDataAs!long (); }
-        @property ref inout (double)m_float() inout { return getDataAs!double (); }
+        @property ref inout (decimal)m_decimal() inout { return getDataAs!decimal (); }
         @property ref inout (bool)m_bool() inout { return getDataAs!bool(); }
         @property ref inout (string)m_string() inout { return getDataAs!string(); }
     }
+///////////////////////////////////////////
 
     @property inout (T)get(T) ()
     inout {
         static if (is (T == bool))
             return m_bool;
         else
-            static if (is (T == double))
-                return m_float;
+            static if (is (T == decimal))
+                return m_decimal;
             else
-                static if (is (T == float))
-                    return cast(T)m_float;
-                else
                     static if (is (T == long))
                         return m_int;
                     else
@@ -78,6 +76,7 @@ struct Resource
                                 static assert("Resource can only be casted to (bool, long, double, string. Not " ~ T.stringof ~ ".");
     }
 
+///////////////////////////////////////////
     bool opEquals(bool v) const
     {
         return type == DataType.Boolean && m_bool == v;
@@ -86,35 +85,36 @@ struct Resource
     {
         return type == DataType.Integer && m_int == v;
     }
-    bool opEquals(double v) const
+    bool opEquals(decimal v) const
     {
-        return type == DataType.Decimal && m_float == v;
+        return type == DataType.Decimal && m_decimal == v;
     }
     bool opEquals(string v) const
     {
         return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
-
+///////////////////////////////////////////
     bool opAssign(bool v)
     {
         type = DataType.Boolean; m_bool = v; return v;
     }
     int opAssign(int v)
-    {double
+    {
         type = DataType.Integer; m_int = v; return v;
     }
     long opAssign(long v)
     {
         type = DataType.Integer; m_int = v; return v;
     }
-    double opAssign(double v)
+    decimal opAssign(decimal v)
     {
-        type = DataType.Decimal; m_float = v; return v;
+        type = DataType.Decimal; m_decimal = v; return v;
     }
     string opAssign(string v)
     {
         type = DataType.String; m_string = v; return v;
     }
+///////////////////////////////////////////
 
     this(string str, ResourceOrigin _origin)
     {
@@ -143,7 +143,7 @@ struct Resource
         type = DataType.Boolean;
     }
 
-    this(double val)
+    this(decimal val)
     {
         this = val;
         type = DataType.Decimal;
@@ -170,7 +170,7 @@ struct Resource
     	else if (type == DataType.Datetime)
     		sink(get!string());    		    		
     	else if (type == DataType.Decimal)
-    		sink(text (get!double()));    		    		
+    		sink(text (get!decimal()));    		    		
     	else if (type == DataType.Integer)
     		sink(text (get!long()));    		    		
     }
