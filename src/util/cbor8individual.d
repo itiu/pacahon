@@ -1,6 +1,6 @@
 module util.cbor8individual;
 
-private import std.outbuffer, std.stdio, std.string;
+private import std.outbuffer, std.stdio, std.string, std.math;
 private import onto.resource;
 private import onto.individual;
 private import onto.lang;
@@ -14,7 +14,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     int           pos;
     ElementHeader header;
 
-    pos = read_header(src[ 0..$ ], &header);
+    pos = read_type_value(src[ 0..$ ], &header);
     //writeln ("read_element:[", cast(uint)src[0], " ", cast(uint)src[1], "]");
     //writeln ("#^read_element, header=", header); 
     //writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
@@ -42,7 +42,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
             //writeln ("@ id:", val);
         }
 
-        foreach (i; 1 .. header.len)
+        foreach (i; 1 .. header.v_long)
         {
             pos += read_element(individual, src[ pos..$ ], key);
 
@@ -54,7 +54,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     else if (header.type == MajorType.TEXT_STRING)
     {
 	//writeln ("IS STRING, length=", header.len, ", pos=", pos);
-        int    ep = cast(int)(pos + header.len);
+        int    ep = cast(int)(pos + header.v_long);
 
         string str = cast(string)src[ pos..ep ].dup;
         _key = str;
@@ -86,29 +86,66 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
 
         pos = ep;
     }
+    else if (header.type == MajorType.NEGATIVE_INTEGER)
+    {
+    	long value = header.v_long;
+    	Resources resources = individual.resources.get(predicate_uri, Resources.init);
+   		resources ~= Resource(value);    		    	
+    }
+    else if (header.type == MajorType.UNSIGNED_INTEGER)
+    {
+    	long value = header.v_long;
+    	Resources resources = individual.resources.get(predicate_uri, Resources.init);
+    	
+    	if (header.tag == TAG.EPOCH_DATE_TIME)
+    	{
+    		resources ~= Resource(ResourceType.Datetime, value);
+    	}
+    	else
+    	{
+    		resources ~= Resource(value);    		
+    	}
+    }
     else if (header.type == MajorType.FLOAT_SIMPLE)
     {
         Resources resources = individual.resources.get(predicate_uri, Resources.init);
-        if (header.len == TRUE)
+        if (header.v_long == TRUE)
         {
             resources ~= Resource(true);
             individual.resources[ predicate_uri ] = resources;
         }
-        else if (header.len == FALSE)
+        else if (header.v_long == FALSE)
         {
             resources ~= Resource(false);
             individual.resources[ predicate_uri ] = resources;
         }
         else
-        {
+        {        	
         }
     }
     else if (header.type == MajorType.ARRAY)
     {
-	//writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
-        foreach (i; 0 .. header.len)
-        {
-            pos += read_element(individual, src[ pos..$ ], dummy, subject_uri, predicate_uri);
+    	
+    	if (header.tag == TAG.DECIMAL_FRACTION)
+    	{
+    		Resources resources = individual.resources.get(predicate_uri, Resources.init);
+    		
+    		ElementHeader exponent;    		
+    		pos += read_type_value(src, &exponent);
+    		
+    		ElementHeader mantissa;
+    		pos += read_type_value(src, &mantissa);
+    		    		    		
+            resources ~= Resource(mantissa.v_long * (10 ^ exponent.v_long));
+            individual.resources[ predicate_uri ] = resources;
+    	}
+    	else
+    	{
+    	    //writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
+			foreach (i; 0 .. header.v_long)
+			{         
+				pos += read_element(individual, src[ pos..$ ], dummy, subject_uri, predicate_uri);
+			}
         }
     }
     else if (header.type == MajorType.TAG)
@@ -124,7 +161,7 @@ private void write_individual(Individual *ii, ref OutBuffer ou)
     ulong     map_len = ii.resources.length + 1;
     MajorType type    = MajorType.MAP;
 
-    write_header(type, map_len, ou);
+    write_type_value(type, map_len, ou);
     write_string("@", ou);
     write_string(ii.uri, ou);
 
@@ -138,13 +175,34 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
 {
     write_string(uri, ou);
     if (vv.length > 1)
-        write_header(MajorType.ARRAY, vv.length, ou);
+        write_type_value(MajorType.ARRAY, vv.length, ou);
     foreach (value; vv)
     {
         if (value.type == ResourceType.Uri)
         {
-            write_header(MajorType.TAG, TAG.URI, ou);
+            write_type_value(MajorType.TAG, TAG.URI, ou);
             write_string(value.get!string, ou);
+        }
+        else if (value.type == ResourceType.Integer)
+        {
+            write_integer(value.get!long, ou);        	        	
+        }
+        else if (value.type == ResourceType.Datetime)
+        {
+            write_type_value(MajorType.TAG, TAG.EPOCH_DATE_TIME, ou);
+            write_integer(value.get!long, ou);        	        	
+        }
+        else if (value.type == ResourceType.Float)
+        {
+            double x = value.get!double;
+        	double lg10 = log10(x);
+        	double f = fmod(lg10, 1.0);
+        	int n = cast(int)(lg10 - f);
+        	
+            write_type_value(MajorType.TAG, TAG.DECIMAL_FRACTION, ou);
+            write_type_value(MajorType.ARRAY, 2, ou);
+            write_integer(n, ou);        	        	        	
+            write_integer(cast(long)(pow(10.0, f)), ou);        	        	
         }
         else if (value.type == ResourceType.Boolean)
         {
@@ -153,7 +211,7 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         else
         {
             if (value.lang != LANG.NONE)
-                write_header(MajorType.TAG, value.lang + 41, ou);
+                write_type_value(MajorType.TAG, value.lang + 41, ou);
             write_string(value.get!string, ou);
         }
     }

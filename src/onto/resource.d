@@ -55,6 +55,7 @@ struct Resource
 {
     ResourceType   type   = ResourceType.Uri;
     ResourceOrigin origin = ResourceOrigin.local;
+    LANG lang = LANG.NONE;    
 
     private {
         void *[ 2 ] m_data;
@@ -105,9 +106,6 @@ struct Resource
         return (type == ResourceType.String || type == ResourceType.Uri) && m_string == v;
     }
 
-
-    LANG lang = LANG.NONE;
-
     bool opAssign(bool v)
     {
         type = ResourceType.Boolean; m_bool = v; return v;
@@ -156,6 +154,24 @@ struct Resource
         type = ResourceType.Boolean;
     }
 
+    this(double val)
+    {
+        this = val;
+        type = ResourceType.Float;
+    }
+    
+    this(ulong val)    
+    {
+        this = cast(long)val;
+        type = ResourceType.Integer;
+    }
+    
+    this(ResourceType _type, ulong val)
+    {
+        this = cast(long)val;
+        type = _type;    	
+    }    
+    
     void toString(scope void delegate(const(char)[]) sink) const
     {
     	if (type == ResourceType.Uri || type == ResourceType.String)
