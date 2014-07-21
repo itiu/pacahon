@@ -2,7 +2,7 @@ module onto.resource;
 
 import std.conv;
 import onto.lang;
-import pacahon.define;
+import type;
 
 enum ResourceOrigin : ubyte
 {

@@ -1,11 +1,12 @@
 module util.cbor8individual;
 
 private import std.outbuffer, std.stdio, std.string, std.math;
+private import type;
 private import onto.resource;
 private import onto.individual;
 private import onto.lang;
 private import util.cbor;
-private import pacahon.define;
+
 
 string dummy;
 

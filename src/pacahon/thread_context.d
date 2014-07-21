@@ -5,6 +5,7 @@ private
     import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid,
            std.file;
 
+    import type;
     import bind.xapian_d_header;
     import bind.v8d_header;
 

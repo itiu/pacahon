@@ -2,9 +2,9 @@ module util.turtle_parser;
 
 private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, std.outbuffer, std.array, std.uuid;
 
+private import type;
 private import util.utils;
 private import pacahon.know_predicates;
-private import pacahon.define;
 private import onto.lang;
 private import onto.individual;
 private import onto.resource;

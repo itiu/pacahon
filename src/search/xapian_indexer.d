@@ -4,6 +4,8 @@ module search.xapian_indexer;
 
 import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 
+private import type;
+
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
