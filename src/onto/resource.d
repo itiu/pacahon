@@ -54,7 +54,7 @@ struct Resource
         @property ref inout (bool)m_bool() inout { return getDataAs!bool(); }
         @property ref inout (string)m_string() inout { return getDataAs!string(); }
     }
-///////////////////////////////////////////
+    ///////////////////////////////////////////
 
     @property inout (T)get(T) ()
     inout {
@@ -76,7 +76,7 @@ struct Resource
                                 static assert("Resource can only be casted to (bool, long, double, string. Not " ~ T.stringof ~ ".");
     }
 
-///////////////////////////////////////////
+    ///////////////////////////////////////////
     bool opEquals(bool v) const
     {
         return type == DataType.Boolean && m_bool == v;
@@ -93,7 +93,8 @@ struct Resource
     {
         return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
-///////////////////////////////////////////
+    
+    ///////////////////////////////////////////
     bool opAssign(bool v)
     {
         type = DataType.Boolean; m_bool = v; return v;
@@ -114,8 +115,8 @@ struct Resource
     {
         type = DataType.String; m_string = v; return v;
     }
-///////////////////////////////////////////
-
+    
+    ///////////////////////////////////////////
     this(string str, ResourceOrigin _origin)
     {
         this   = str;

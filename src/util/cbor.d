@@ -178,10 +178,10 @@ public void write_type_value(MajorType type, long value, ref OutBuffer ou)
 
 public void write_integer(long vv, ref OutBuffer ou)
 {
-	if (vv > 0)
+	if (vv >= 0)
 		write_type_value(MajorType.UNSIGNED_INTEGER, vv, ou);
 	else
-		write_type_value(MajorType.NEGATIVE_INTEGER, vv, ou);		
+		write_type_value(MajorType.NEGATIVE_INTEGER, -vv , ou);		
 }
 
 public void write_string(string vv, ref OutBuffer ou)
@@ -255,7 +255,7 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
     {
     	if (type == MajorType.NEGATIVE_INTEGER)
     	{
-    		ld = (ld - 1) * -1;
+    		ld = -ld;
     	}
     	else if ((type == MajorType.ARRAY || type == MajorType.TEXT_STRING) && ld > src.length)
         {
