@@ -136,7 +136,7 @@ string toString(ElementHeader *el)
 
 ///////////////////////////////////////////////////////////////////////////
 
-public void write_type_value(MajorType type, long value, ref OutBuffer ou)
+public void write_type_value(MajorType type, ulong value, ref OutBuffer ou)
 {
     ubyte element_header;
 
@@ -148,30 +148,33 @@ public void write_type_value(MajorType type, long value, ref OutBuffer ou)
     }
     else
     {
-        if ((value & 0xff00000000000000) > 0)
+        if (value > uint.max)
         {
             element_header = type | 27;
             ou.write(element_header);
             ou.write(value);
         }
-        else if ((value & 0xff000000) > 0)
+        else if (value > ushort.max)
         {
             element_header = type | 26;
             ou.write(element_header);
             ou.write(cast(uint)value);
         }
-        else if ((value & 0xff00) > 0)
+        else if (value > ubyte.max)
         {
             element_header = type | 25;
             ou.write(element_header);
             ou.write(cast(ushort)value);
+//            writeln ("@p #write cast(ushort)value=", cast(ushort)value, ", value=", value);
         }
-        else if ((value & 0xff) > 0)
+        else
         {
             element_header = type | 24;
             ou.write(element_header);
             ou.write(cast(ubyte)value);
         }
+//        writeln ("@ element_header=", element_header);
+//       	writeln ("@ value=", value);        
     }
 }
 
@@ -198,23 +201,21 @@ public void write_bool(bool vv, ref OutBuffer ou)
         write_type_value(MajorType.FLOAT_SIMPLE, FALSE, ou);
 }
 
-private short short_from_buff(ubyte[] buff, int pos)
-{
-    short res = cast(short)(buff[ pos + 0 ] + ((cast(short)buff[ pos + 1 ]) << 8));
+private ushort ushort_from_buff(ubyte[] buff, int pos)
+{	
+	ushort res = *((cast(ushort*)(buff.ptr + pos)));
     return res;
 }
 
-private int int_from_buff(ubyte[] buff, int pos)
+private uint uint_from_buff(ubyte[] buff, int pos)
 {
-    int res =
-        buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
+	uint res = *((cast(uint*)(buff.ptr + pos)));
     return res;
 }
 
-private long long_from_buff(ubyte[] buff, int pos)
+private ulong ulong_from_buff(ubyte[] buff, int pos)
 {
-    long res =
-        buff[ pos + 0 ] + ((cast(uint)buff[ pos + 1 ]) << 8) + ((cast(uint)buff[ pos + 2 ]) << 16) + ((cast(uint)buff[ pos + 3 ]) << 24);
+	ulong res = *((cast(ulong*)(buff.ptr + pos)));
     return res;
 }
 
@@ -226,21 +227,34 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
 //    writeln ("hh & 0xe0=", hh & 0xe0);
 
     MajorType type  = cast(MajorType)(hh & 0xe0);
+        
     long     ld    = hh & 0x1f;
     int       d_pos = 1;
 
     if (ld > 23)
     {
         d_pos += 1 << (ld - 24);
-        if (ld == 24)
+        
+//    if (type == MajorType.NEGATIVE_INTEGER || type == MajorType.UNSIGNED_INTEGER)
+//    {
+//        writeln ("@p d_pos=", d_pos);
+//        writeln ("@p ld=", ld);
+//     }
+        
+        if (ld == 24)        
             ld = src[ 1 ];
         else if (ld == 25)
-            ld = short_from_buff(src, 1);
-        else if (ld == 26)
-            ld = int_from_buff(src, 1);
+            ld = ushort_from_buff(src, 1);
+        else if (ld == 26)        
+            ld = uint_from_buff(src, 1);
         else if (ld == 27)
-            ld = long_from_buff(src, 1);
+            ld = ulong_from_buff(src, 1);
     }
+    
+    //if (type == MajorType.NEGATIVE_INTEGER || type == MajorType.UNSIGNED_INTEGER)
+    //{
+    //    writeln ("@p res_ld=", ld);
+    //}    
 
     if (type == MajorType.TAG)
     {
@@ -254,8 +268,9 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
     else
     {
     	if (type == MajorType.NEGATIVE_INTEGER)
-    	{
+    	{    		
     		ld = -ld;
+    		//writeln ("@p #type=", text(type), ", ld=", ld);
     	}
     	else if ((type == MajorType.ARRAY || type == MajorType.TEXT_STRING) && ld > src.length)
         {
