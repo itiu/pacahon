@@ -1,6 +1,6 @@
 module onto.resource;
 
-import std.conv;
+import std.conv, std.stdio;
 import onto.lang;
 import type;
 
@@ -126,9 +126,24 @@ struct Resource
 
     this(DataType _type, string str, LANG _lang = LANG.NONE)
     {
-        this = str;
-        type = _type;
-        lang = _lang;
+    	if (_type == DataType.Integer)
+    	{
+    		try
+    		{
+    			this = parse!long (str);
+    			type = _type;
+    		}
+    		catch (Exception ex)
+    		{
+    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+    		}
+    	}
+    	else
+    	{
+    		this = str;
+    		type = _type;
+    		lang = _lang;
+        }
     }
 
     this(string str, LANG _lang = LANG.NONE)
