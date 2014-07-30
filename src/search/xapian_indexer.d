@@ -234,45 +234,45 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                     }
                     indexer_db.commit(&err);
 
-                	if (cmd == CMD.BACKUP)
-                	{                		
-                	string new_path_backup_xapian = dbs_backup ~ "/" ~ msg ~ "/" ~ "xapian-search";
+                    if (cmd == CMD.BACKUP)
+                    {
+                        string new_path_backup_xapian = dbs_backup ~ "/" ~ msg ~ "/" ~ "xapian-search";
 
-                	try
-                	{
-                		mkdir(new_path_backup_xapian);
-                	}
-                	catch (Exception ex)
-                	{
-                		writeln ("ex!", ex.msg);
-                	}
-                		
-                		try
-                		{
-                		auto oFiles = dirEntries(xapian_search_db_path, "*.*", SpanMode.depth);
-                		foreach (o; oFiles)
-                		{
-                			string new_path;
-                			string tt[] = o.name.split ("/");
-                			if (tt.length > 1)
-                				new_path = tt[$-1];
-                			else 	 
-                				new_path = o.name;
-                				
-                			new_path = new_path_backup_xapian ~ "/" ~ new_path; 
-                				
-                			//writeln ("COPY TO:", new_path);
-                			copy (o.name, new_path); 
-                			//writeln ("OK");
-                		}       
-                		}
-                		catch (Exception ex)
-                		{
-                			writeln ("ex!", ex.msg);
-                			send(tid_response_reciever, "");
-                		}         		        
-                	}
-                	
+                        try
+                        {
+                            mkdir(new_path_backup_xapian);
+                        }
+                        catch (Exception ex)
+                        {
+                            writeln("ex!", ex.msg);
+                        }
+
+                        try
+                        {
+                            auto oFiles = dirEntries(xapian_search_db_path, "*.*", SpanMode.depth);
+                            foreach (o; oFiles)
+                            {
+                                string new_path;
+                                string tt[] = o.name.split("/");
+                                if (tt.length > 1)
+                                    new_path = tt[ $ - 1 ];
+                                else
+                                    new_path = o.name;
+
+                                new_path = new_path_backup_xapian ~ "/" ~ new_path;
+
+                                //writeln ("COPY TO:", new_path);
+                                copy(o.name, new_path);
+                                //writeln ("OK");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            writeln("ex!", ex.msg);
+                            send(tid_response_reciever, "");
+                        }
+                    }
+
                     send(tid_response_reciever, msg);
                 },
                 (CMD cmd, Tid tid_response_reciever)
