@@ -12,10 +12,8 @@ private
 //  expression
 //  "==", "!="
 //  "=*" : полнотекстовый поиск
-//  "=+" : полнотекстовый поиск в реификации
 //  "&&", "||",
 //  ">", "<", ">=", "<=",
-//  "->" : переход по ссылке на другой документ
 
 protected bool delim(char c)
 {
@@ -36,14 +34,13 @@ private string is_op(string c)
     }
     else if (c.length == 2)
     {
+        if (c == ">=" || c == "<=" || c == "==" || c == "!=" || c == "=*" || c == "=+" || c == "||" || c == "&&")
+            return c;
         if (c[ 0 ] == '>' && c[ 1 ] != '=')
             return ">";
 
         if (c[ 0 ] == '<' && c[ 1 ] != '=')
-            return "<";
-
-        if (c == ">=" || c == "<=" || c == "==" || c == "!=" || c == "=*" || c == "=+" || c == "->" || c == "||" || c == "&&")
-            return c;
+            return "<";            
     }
     return null;
 }
@@ -53,7 +50,7 @@ private int priority(string op)
     if (op == "<" || op == "<=" || op == ">" || op == "=>")
         return 4;
 
-    if (op == "==" || op == "!=" || op == "=*" || op == "=+" || op == "->")
+    if (op == "==" || op == "!=" || op == "=*" || op == "=+")
         return 3;
 
     if (op == "&&")
@@ -85,8 +82,6 @@ private void process_op(ref stack!TTA st, string op)
 
     case "=+":  st.pushBack(new TTA(op, l, r));  break;
 
-    case "->":  st.pushBack(new TTA(op, l, r));  break;
-
     case ">=":  st.pushBack(new TTA(op, l, r));  break;
 
     case "<=":  st.pushBack(new TTA(op, l, r));  break;
@@ -99,22 +94,29 @@ private void process_op(ref stack!TTA st, string op)
     }
 }
 
-//int g_count = 0;
+enum Decor
+{
+	NONE,
+	QUOTED,
+	RANGE
+}
+
 class TTA
 {
     string op;
+
+    Decor token_decor = Decor.NONE;
 
     TTA    L;
     TTA    R;
     int    count = 0;
 
-    this(string _op, TTA _L, TTA _R)
+    this(string _op, TTA _L, TTA _R, Decor _token_decor = Decor.NONE)
     {
         op = _op;
         L  = _L;
         R  = _R;
-        //	g_count ++;
-        //	count = g_count;
+        token_decor = _token_decor;
     }
 
     override public string toString()
@@ -124,9 +126,17 @@ class TTA
 
         if (L !is null)
             res ~= L.toString();
-        res ~= op;
+
+       	if (token_decor == Decor.QUOTED)
+       		res ~= "\"" ~ op ~ "\"";
+       	else if (token_decor == Decor.RANGE)
+       		res ~= " RANGE (" ~ op ~ ")";
+       	else
+       		res ~= op;
+       	
         if (R !is null)
-            res ~= R.toString();
+       		res ~= R.toString();
+        
         return res ~ "}";
     }
 }
@@ -135,13 +145,13 @@ public TTA parse_expr(string s)
 {
     stack!TTA st    = new stack!TTA();
     stack!string op = new stack!string();
-    //	writeln("s=", s);
+    	//writeln("s=", s);
 
     for (int i = 0; i < s.length; i++)
     {
         if (!delim(s[ i ]))
         {
-            //	writeln("s[", i, "]:", s[i]);
+            //writeln("@p s[", i, "]:", s[i]);
             if (s[ i ] == '(')
                 op.pushBack("(");
             else if (s[ i ] == ')')
@@ -159,7 +169,7 @@ public TTA parse_expr(string s)
                 string curop = is_op(s[ i .. e ]);
                 if (curop !is null)
                 {
-                    //				writeln ("	curop:", curop);
+       				//writeln ("@p	curop:", curop);
                     while (!op.empty() && priority(op.back()) >= priority(curop))
                         process_op(st, op.popBack());
                     op.pushBack(curop);
@@ -178,9 +188,10 @@ public TTA parse_expr(string s)
                         int bp = i;
                         while (i < s.length && s[ i ] != '\'')
                             i++;
+                        //writeln ("@p #1	operand=", operand);
                         operand = s[ bp .. i ];
-                        //				    writeln ("	operand=", operand);
-                        st.pushBack(new TTA(operand, null, null));
+                        //writeln ("@p #2	operand=", operand);
+                        st.pushBack(new TTA(operand, null, null, Decor.QUOTED));
                     }
                     else if (s[ i ] == '`')
                     {
@@ -188,9 +199,10 @@ public TTA parse_expr(string s)
                         int bp = i;
                         while (i < s.length && s[ i ] != '`')
                             i++;
+                        // writeln ("@p #3	operand=", operand);
                         operand = s[ bp .. i ];
-                        //				    writeln ("	operand=", operand);
-                        st.pushBack(new TTA(operand, null, null));
+                        //writeln ("@p #4	operand=", operand);
+                        st.pushBack(new TTA(operand, null, null, Decor.QUOTED));
                     }
                     else if (s[ i ] == '[')
                     {
@@ -198,18 +210,22 @@ public TTA parse_expr(string s)
                         int bp = i;
                         while (i < s.length && s[ i ] != ']')
                             i++;
+                        //writeln ("@p #5	operand=", operand);
                         operand = s[ bp .. i ];
-                        //				    writeln ("	operand=", operand);
-                        st.pushBack(new TTA(operand, null, null));
+                       // writeln ("@p #6	operand=", operand);
+                        st.pushBack(new TTA(operand, null, null, Decor.RANGE));
                     }
                     else
                     {
+                    	// no quote
                         int bp = i;
                         while (i < s.length && s[ i ] != ' ' && s[ i ] != '&' && s[ i ] != '|' && s[ i ] != '=' && s[ i ] != '<' &&
                                s[ i ] != '>' && s[ i ] != '!' && s[ i ] != '-' && s[ i ] != ' ')
                             i++;
+
+                        //writeln ("@p #7	operand=", operand);
                         operand = s[ bp .. i ];
-                        //				    writeln ("	operand=", operand);
+                        //writeln ("@p #8	operand=", operand);
                         st.pushBack(new TTA(operand, null, null));
                     }
                 }

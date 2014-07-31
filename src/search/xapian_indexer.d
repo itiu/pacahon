@@ -345,20 +345,12 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                             foreach (predicate, resources; ss.resources)
                             {
                                 string prefix;
-                                int slot = get_slot_and_set_if_not_found(predicate, key2slot);
+                                //int slot = get_slot_and_set_if_not_found(predicate, key2slot);
 
                                 //all_text.write(escaping_or_uuid2search(pp.predicate));
                                 //all_text.write('|');
 
                                 string type = "xsd__string";
-
-//                                if (pp.metadata !is null)
-//                                {
-//                                    type = pp.metadata.getFirstLiteral(owl__allValuesFrom);
-//                                    pp.metadata = null;
-//                                }
-
-                                //writeln (pp.predicate, ".type:", type);
 
                                 string p_text_ru = "";
                                 string p_text_en = "";
@@ -381,7 +373,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                         string data = escaping_or_uuid2search(oo.literal);
 
                                         if (trace_msg[ 220 ] == 1)
-                                            log.trace("index as literal:[%s], lang=%s, prefix=%s", data, oo.lang, prefix);
+                                            log.trace("index [DataType.String] :[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix, predicate);
 
                                         indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
                                         doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
@@ -402,7 +394,7 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                             string data = to_lower_and_replace_delimeters(oo.literal);
 
                                             if (trace_msg[ 220 ] == 1)
-                                                log.trace("index as resource:[%s], prefix=%s", data, prefix);
+                                                log.trace("index [DataType.Uri] :[%s], prefix=%s[%s]", data, prefix, predicate);
                                             indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
 
                                             doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
@@ -410,6 +402,25 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
                                             all_text.write(data);
                                             all_text.write('|');
                                         }
+                                    }
+                                    else if (oo.type == DataType.Datetime)
+                                    {                                    	
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+                                        
+                                        long l_data = oo.get!long ();                                        
+                                        long std_time = unixTimeToStdTime(l_data); 
+                                        string data = SysTime (std_time).toISOString();                                        
+                                        indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+                                                                                                                                                                
+                                        doc.add_value(slot_L1, l_data, &err);
+                                        //   slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".Datetime", key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "D";
+                                        indexer.index_data(l_data, prefix.ptr, prefix.length, &err);
+
+                                        if (trace_msg[ 220 ] == 1)
+                                         log.trace("index [DataType.Datetime] :[%s][%s], prefix=%s[%s]", data, text (l_data), prefix, predicate);
+                                        
                                     }
                                 }
 

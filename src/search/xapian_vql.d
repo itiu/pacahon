@@ -81,13 +81,43 @@ public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2sl
     return sorter;
 }
 
+enum TokenType
+{
+	TEXT,
+	NUMBER,
+	DATE
+}
+
+private TokenType get_token_type (string token, out double value)
+{
+	TokenType res = TokenType.TEXT;
+
+	token = token.strip ();
+	
+    if (token.length == 19 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] == ':')
+    {
+    		value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
+        	return TokenType.DATE;
+    }
+    else
+    {
+            bool is_digit = false;
+            try
+            {
+                value = parse!double (token);
+                return TokenType.NUMBER;
+            }
+            catch (Exception ex)
+            {
+            }
+     }
+        
+	return res;
+}
+
 public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query,
                                       ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
 {
-//	string eee = "                                                                                       ";
-//	string e1 = text(level) ~ eee[0..level*3];
-//	writeln (e1, " #1, tta=", tta);
-
     string      dummy;
     double      rd, ld;
     XapianQuery query_r;
@@ -97,47 +127,30 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     {
         string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
         string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
-
-        if (rs.length == 19 && rs[ 4 ] == '-' && rs[ 7 ] == '-' && rs[ 10 ] == 'T' && rs[ 13 ] == ':' && rs[ 16 ] == ':')
+        
+        double value;
+        TokenType rs_type = get_token_type (rs, value);
+        if (rs_type == TokenType.DATE)
         {
-            // это дата
-            l_token = ls ~ ".dateTime";
+            l_token = ls;
             op      = tta.op;
-            _rd     = SysTime.fromISOExtString(rs).stdTime;
-//			writeln ("RS=", rs);
-//			writeln ("_rd=", _rd);
-            return rs;
+            _rd     = value;
+//			writeln ("@p RS=", rs);
+//			writeln ("@p _rd=", _rd);
+            return rs;        	
         }
-        else
-        {
-            bool is_digit = false;
-            try
-            {
-                auto b = parse!double (rs);
-                _rd      = b;
-                is_digit = true;
-            }
-            catch (Exception ex)
-            {
-            }
-
-            if (is_digit)
-            {
-                // это число
-                l_token = ls ~ ".decimal";
-                op      = tta.op;
-                return rs;
-            }
-        }
+        
     }
     else if (tta.op == "==" || tta.op == "!=")
     {
         string ls = transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
         string rs = transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
+        
         //writeln ("#2 % query_l=", query_l);
         //writeln ("#2 % query_r=", query_r);
-//          writeln ("ls=", ls);
-//          writeln ("rs=", rs);
+        //writeln ("ls=", ls);
+        //writeln ("rs=", rs);
+        
         if (query_l is null && query_r is null)
         {
             string xtr;
@@ -154,7 +167,8 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                 else
                 {
                     int slot = key2slot.get(ls, -1);
-                    //writeln ("slot=", slot);
+//                    writeln ("@p slot=", slot, " predicate=", ls);
+                    
                     if (indexOf(rs, '*') > 0 && rs.length > 3)
                     {
 //                  xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
@@ -165,11 +179,10 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                         if (tta.op == "!=")
                         {
 /*	TODO
-                         вероятно получаются не оптимальнми запросы вида
-                         '*' == 'rdf' && '*' != 'List*'
-                         @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
+ *  вероятно получаются не оптимальнми запросы вида
+ *  '*' == 'rdf' && '*' != 'List*'
+ *  @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
  */
-
                             flags     = flags | feature_flag.FLAG_PURE_NOT;
                             query_str = "NOT " ~ query_str;
                         }
@@ -182,8 +195,51 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                     }
                     else
                     {
-                        xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-                        query = new_Query(cast(char *)xtr, xtr.length, &err);
+                    	if (tta.R.token_decor == Decor.RANGE)    
+                    	{
+                    		string[] vals = rs.split (","); 
+                    		if (vals.length == 2)
+                    		{
+                    			double c_from, c_to;
+//                    			writeln ("@p vals=", vals);
+                    			
+                    			TokenType tt = get_token_type (vals[0], c_from);                    			
+                    			if (tt == TokenType.DATE || tt == TokenType.NUMBER)
+                    			{
+                    				tt = get_token_type (vals[1], c_to);                    			
+                    				if (tt == TokenType.DATE || tt == TokenType.NUMBER)
+                    				{                
+//			writeln ("@p c_from=", c_from);
+//			writeln ("@p c_to=", c_to);
+
+                    					    					
+                    					query = new_Query_range(xapian_op.OP_VALUE_RANGE, slot, c_from, c_to, &err);
+                    				}
+                    			}
+                    		}
+                    		
+                    	}   
+                    	else if (tta.R.token_decor == Decor.QUOTED)
+                    	{
+                    		xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+                    		query = new_Query(cast(const char *)xtr, xtr.length, &err);
+                        }
+                    	else
+                    	{
+                    		double d_val = parse!double (rs);
+                    		
+                    		char* str_val;
+                    		uint* str_val_length;                    		
+                    		sortable_serialise (d_val, &str_val, &str_val_length, &err);                    		
+                    		
+                    		uint len = *str_val_length;
+                    		
+                    		string tt = cast(string)str_val[0..len];
+                    		writeln ("@ length=", len, ", tt=", tt, ", d_val=", d_val); 
+                    		xtr   = "X" ~ text(slot) ~ "X" ~ tt;
+                    		query = new_Query(cast(char *)xtr, xtr.length, &err);                    		
+                    	}
+                    	
                         if (err != 0)
                             writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=x)", err);
                     }
@@ -248,20 +304,20 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
         if (t_op_l !is null)
             op = t_op_l;
 
-//	writeln (e1, "#E0 && token_L=", token_L);
-//	writeln (e1, "#E0 query_l=", get_query_description (query_l));
-//	writeln (e1, "#E0 query_r=", get_query_description (query_r));
+//	writeln ("@p && token_L=", token_L);
+//	writeln ("@p query_l=", get_query_description (query_l));
+//	writeln ("@p query_r=", get_query_description (query_r));
 
 
         if (token_L !is null && tta_L !is null)
         {
-//	writeln (e1, "#E0.1 &&");
+//	writeln ("@p #E0.1 &&");
             // это range
-//			writeln ("token_L=", token_L);
-//			writeln ("tta_R=", tta_R);
-//			writeln ("tta_L=", tta_L);
-//			writeln ("t_op_l=", t_op_l);
-//			writeln ("t_op_r=", t_op_r);
+//			writeln ("@p token_L=", token_L);
+//			writeln ("@p tta_R=", tta_R);
+//			writeln ("@p tta_L=", tta_L);
+//			writeln ("@p t_op_l=", t_op_l);
+//			writeln ("@p t_op_r=", t_op_r);
 
             double c_to, c_from;
 
@@ -275,17 +331,31 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
             if (t_op_l == "<")
                 c_to = ld;
 
-//			writeln ("c_from=", c_from);
-//			writeln ("c_to=", c_to);
+//			writeln ("@p c_from=", c_from);
+//			writeln ("@p c_to=", c_to);
 
             int slot = key2slot.get(token_L, -1);
-//			writeln ("#E1");
+//			writeln ("@p #E0");
 
             query_r = new_Query_range(xapian_op.OP_VALUE_RANGE, slot, c_from, c_to, &err);
-            query   = query_l.add_right_query(xapian_op.OP_AND, query_r, &err);
-//			writeln ("#E2 query=", get_query_description (query));
-            destroy_Query(query_r);
-            destroy_Query(query_l);
+            
+            if (query_l is null)
+            {
+            	query   = query_r;
+            	query_r = null;
+            }	
+            else            
+            	query   = query_l.add_right_query(xapian_op.OP_AND, query_r, &err);
+            	
+//			writeln ("@p #E3");
+			
+			if (query_r !is null)
+				destroy_Query(query_r);
+				
+			if (query_l !is null)
+				destroy_Query(query_l);
+				
+//			writeln ("@p #E4");
         }
         else
         {

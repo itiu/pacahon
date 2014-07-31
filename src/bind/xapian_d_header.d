@@ -353,7 +353,10 @@ XapianQuery new_Query(byte *err);
 XapianQuery new_Query(const char *_str, ulong _str_len, byte *err);
 //    XapianQuery new_Query_add (XapianQuery _left, XapianQuery _right);//, int op_);
 XapianQuery new_Query_range(int op_, int slot, double _begin, double _end, byte *err);
+XapianQuery new_Query_double(int op_, int slot, double _value, byte *err);
 XapianQuery new_Query_equal(int op_, int slot, const char *_str, ulong _str_len, byte *err);
+
+void sortable_serialise (double value, char **out_val, uint **out_val_length, byte *err);
 
 ////////
 

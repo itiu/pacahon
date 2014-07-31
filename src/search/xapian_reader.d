@@ -121,10 +121,17 @@ class XapianReader : SearchReader
 
         XapianQuery query;
         TTA         tta = parse_expr(str_query);
+
+        if (trace_msg[ 321 ] == 1)
+            log.trace("[%X] query [%s]", cast(void *)str_query, str_query);
+
+        if (trace_msg[ 321 ] == 1)
+            log.trace("[%X] tta [%s]", cast(void *)str_query, tta.toString ());
+            
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%X] query [%s]", cast(void *)query, str_query);
+            log.trace("[%X] xapian query [%s]", cast(void *)str_query, get_query_description (query));
 
         if (query !is null)
         {

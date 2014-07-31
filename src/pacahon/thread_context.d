@@ -713,10 +713,16 @@ class PThreadContext : Context
 
         try
         {
-            immutable(string)[] res;
-            if (query_str.indexOf("==") <= 0)
+            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
+            {
+            	
+            }   
+            else
+            {         
                 query_str = "'*' == '" ~ query_str ~ "'";
+            }    
 
+            immutable(string)[] res;
             vql.get(ticket, query_str, null, null, 10, 100000, res);
             return res;
         }
@@ -740,10 +746,16 @@ class PThreadContext : Context
 
         try
         {
-            Individual[] res;
-            if (query_str.indexOf("==") <= 0)
+            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
+            {
+            	
+            }   
+            else
+            {         
                 query_str = "'*' == '" ~ query_str ~ "'";
+            }    
 
+            Individual[] res;
             vql.get(ticket, query_str, null, null, 10, 10000, res);
             return res;
         }
@@ -770,10 +782,16 @@ class PThreadContext : Context
 
         try
         {
-            immutable(Individual)[] res;
-            if (query_str.indexOf("==") <= 0)
+            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
+            {
+            	
+            }   
+            else
+            {         
                 query_str = "'*' == '" ~ query_str ~ "'";
+            }    
 
+            immutable(Individual)[] res;
             vql.get(ticket, query_str, null, null, 10, 10000, res);
             return res;
         }
