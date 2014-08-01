@@ -126,12 +126,12 @@ class XapianReader : SearchReader
             log.trace("[%X] query [%s]", cast(void *)str_query, str_query);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%X] tta [%s]", cast(void *)str_query, tta.toString ());
-            
+            log.trace("[%X] TTA [%s]", cast(void *)str_query, tta.toString());
+
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%X] xapian query [%s]", cast(void *)str_query, get_query_description (query));
+            log.trace("[%X] xapian query [%s]", cast(void *)str_query, get_query_description(query));
 
         if (query !is null)
         {
@@ -175,7 +175,7 @@ class XapianReader : SearchReader
 
     private void reopen_db()
     {
-      byte err;
+        byte err;
 
 //      xapian_db.close(&err);
 //      destroy_Database (xapian_db);
@@ -186,14 +186,13 @@ class XapianReader : SearchReader
 //        close_db();
 //        open_db();
 
-        xapian_db.reopen (&err);
+        xapian_db.reopen(&err);
         if (err != 0)
             writeln("VQL:reopen_db:err", err);
 
-      xapian_qp.set_database(xapian_db, &err);
-      if (err != 0)
-          writeln("VQL:set_database:err", err);
-    
+        xapian_qp.set_database(xapian_db, &err);
+        if (err != 0)
+            writeln("VQL:set_database:err", err);
     }
 
     private void open_db()
