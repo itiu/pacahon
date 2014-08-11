@@ -499,6 +499,14 @@ private char next_element(char *element, int el_length, Individual* ss, string i
                     {
                         pp ~= Resource(DataType.Integer, data);
                     }
+                    else if (type == "xsd:integer")
+                    {
+                        pp ~= Resource(DataType.Integer, data);
+                    }
+                    else if (type == "xsd:decimal")
+                    {
+                        pp ~= Resource(DataType.Decimal, data);
+                    }
                     else if (type == "xsd:string")
                     {
                         pp ~= Resource(data);
