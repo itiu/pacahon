@@ -138,6 +138,19 @@ struct Resource
     			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
     		}
     	}
+    	else if (_type == DataType.Boolean)
+    	{
+    		try
+    		{
+    			this = parse!bool (str);
+    			type = _type;
+    		}
+    		catch (Exception ex)
+    		{
+    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+    		}
+    		
+    	}
     	else
     	{
     		this = str;
@@ -184,7 +197,7 @@ struct Resource
     	else if (type == DataType.Boolean)
     		sink(text (get!bool()));
     	else if (type == DataType.Datetime)
-    		sink(get!string());    		    		
+    		sink(text (get!long()));    		    		
     	else if (type == DataType.Decimal)
     		sink(text (get!decimal()));    		    		
     	else if (type == DataType.Integer)

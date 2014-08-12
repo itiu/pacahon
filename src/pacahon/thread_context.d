@@ -217,9 +217,12 @@ class PThreadContext : Context
         return res;
     }
 
-    bool authorize(string uri, Ticket *ticket, Access request_acess)
+    bool authorize(string uri, Ticket *ticket, ubyte request_acess)
     {
-        return acl_indexes.authorize(uri, ticket, request_acess);
+    	//writeln ("@p ### uri=", uri, " ", request_acess);
+    	ubyte res = acl_indexes.authorize(uri, ticket, request_acess);
+    	//writeln ("@p ### uri=", uri, " ", request_acess, " ", request_acess == res);
+        return request_acess == res;
     }
 
     public JSONValue get_props()
@@ -815,7 +818,7 @@ class PThreadContext : Context
 
             foreach (uri; uris)
             {
-                if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+                if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
                 {
                     Individual individual         = Individual.init;
                     string     individual_as_cbor = get_individual_as_cbor(uri);
@@ -835,6 +838,11 @@ class PThreadContext : Context
         }
     }
 
+    public ubyte get_right (Ticket *ticket, string uri)
+    {
+    	    return 	authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);   	
+    }
+
     public Individual get_individual(Ticket *ticket, string uri)
     {
         StopWatch sw; sw.start;
@@ -851,7 +859,7 @@ class PThreadContext : Context
         {
             Individual individual = Individual.init;
 
-            if (acl_indexes.authorize(uri, ticket, Access.can_read) == true)
+            if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
             {
                 string individual_as_cbor = get_individual_as_cbor(uri);
 

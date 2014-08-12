@@ -160,15 +160,17 @@ class Authorization : LmdbStorage
         }
     }
 
-    bool authorize(string uri, Ticket *ticket, Access request_access)
+    ubyte authorize(string uri, Ticket *ticket, ubyte request_access)
     {
+        ubyte res = 0;
+
         if (ticket is null)
-            return true;
+            return request_access;
+
+    	//writeln ("@p request_access=", request_access);
 
         if (trace_msg[ 111 ] == 1)
             log.trace("authorize %s", uri);
-
-        bool    isAccessAllow = false;
 
         MDB_txn *txn_r;
         MDB_dbi dbi;
@@ -243,7 +245,7 @@ class Authorization : LmdbStorage
 
             foreach (subject_group; subject_groups)
             {
-                if (isAccessAllow)
+                if (res == request_access)
                     break;
                 if (subject_group.length > 1)
                 {
@@ -268,13 +270,36 @@ class Authorization : LmdbStorage
                                 if (trace_msg[ 112 ] == 1)
                                     log.trace("for [%s] found %s", acl_key, str);
 
-                                if (str !is null && str.length > 0 && (str[ 0 ] && request_access) == true)
+                                if (str !is null && str.length > 0)
                                 {
-                                    isAccessAllow = true;
-                                    break;
+                                	//writeln ("@p res0=", res, ", str[ 0 ]=", cast (ubyte)str[ 0 ]);
+                                	if ((request_access & Access.can_read) != 0)
+                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_read & cast (ubyte)str[ 0 ]));
+                                	
+                                    if (res == request_access)
+                                    	break;
+                                    	
+                                	if ((request_access & Access.can_update) != 0)
+                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_update & cast (ubyte)str[ 0 ]));
+                                	
+                                    if (res == request_access)
+                                    	break;
+                                    	
+                                	if ((request_access & Access.can_delete) != 0)
+                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_delete & cast (ubyte)str[ 0 ]));
+                                	
+                                    if (res == request_access)
+                                    	break;
+                                    	
+                                	if ((request_access & Access.can_create) != 0)
+                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_create & cast (ubyte)str[ 0 ]));
+                                	
+                                    if (res == request_access)
+                                    	break;
+                                	//writeln ("@p res1=", res);
                                 }
                             }
-                            isAccessAllow = false;
+                            //isAccessAllow = false;
                         }
                     }
                 }
@@ -288,10 +313,11 @@ class Authorization : LmdbStorage
             mdb_txn_abort(txn_r);
 
             if (trace_msg[ 111 ] == 1)
-                log.trace("authorize %s, result=%s", uri, text(isAccessAllow));
+                log.trace("authorize %s, result=%s", uri, text(res));
         }
 
-        return isAccessAllow;
+        //writeln ("@p acl:return res=", res);
+        return res;
     }
 }
 
@@ -351,8 +377,8 @@ void acl_manager(string thread_name, string db_path)
                             {
                                 if (canCreate == true)
                                     access = access | Access.can_create;
-                                else
-                                    access = access | Access.cant_create;
+//                                else
+//                                    access = access | Access.cant_create;
                             }
 
                             Resource canDelete = ind.getFirstResource(veda_schema__canDelete);
@@ -360,8 +386,8 @@ void acl_manager(string thread_name, string db_path)
                             {
                                 if (canDelete == true)
                                     access = access | Access.can_delete;
-                                else
-                                    access = access | Access.cant_delete;
+//                                else
+//                                    access = access | Access.cant_delete;
                             }
 
                             Resource canRead = ind.getFirstResource(veda_schema__canRead);
@@ -369,8 +395,8 @@ void acl_manager(string thread_name, string db_path)
                             {
                                 if (canRead == true)
                                     access = access | Access.can_read;
-                                else
-                                    access = access | Access.cant_read;
+//                                else
+//                                    access = access | Access.cant_read;
                             }
 
                             Resource canUpdate = ind.getFirstResource(veda_schema__canUpdate);
@@ -378,8 +404,8 @@ void acl_manager(string thread_name, string db_path)
                             {
                                 if (canUpdate == true)
                                     access = access | Access.can_update;
-                                else
-                                    access = access | Access.cant_update;
+//                                else
+//                                    access = access | Access.cant_update;
                             }
 
                             ResultCode res = storage.put(permissionObject.uri ~ "+" ~ permissionSubject.uri, "" ~ access);
