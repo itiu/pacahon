@@ -7,12 +7,23 @@ private
     import onto.resource;
     import onto.individual;
 
+    import util.utils;
+    import util.container;
+    import util.logger;        
+
     import pacahon.know_predicates;
     import pacahon.context;
     import pacahon.interthread_signals;
+    import pacahon.log_msg;    
+    
     import search.vql;
-    import util.utils;
-    import util.container;
+}
+
+logger log;
+
+static this()
+{
+    log = new logger("pacahon", "log", "owl");
 }
 
 struct Property
@@ -143,11 +154,18 @@ class OWL
     public void load()
     {
         Individual[] l_individuals;
-        writeln("[", context.get_name, "], load onto to graph..");
+
+        if (trace_msg[ 20 ] == 1)
+        	log.trace_log_and_console ("[%s] load onto to graph..", context.get_name);
+
         context.vql().get(null,
                           "return { '*'}
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           l_individuals);
+
+        if (trace_msg[ 20 ] == 1)
+        	log.trace_log_and_console ("[%s] count individuals: %d", context.get_name, l_individuals.length);
+        
         foreach (indv; l_individuals)
         {
             individuals[ indv.uri ]   = indv;
@@ -160,6 +178,9 @@ class OWL
         {
             i_owl_classes[ cl.uri ] = cl.idup;
         }
+
+        if (trace_msg[ 20 ] == 1)
+        	log.trace_log_and_console ("[%s] load onto to graph..Ok", context.get_name);
     }
 
     private void prepare(ref Individual[ string ])

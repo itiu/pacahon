@@ -403,7 +403,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     }
     else if (tta.op == "||")
     {
-        //writeln("#4 ||");
+//        writeln("#4.1 ||");
 
         if (tta.R !is null)
             transform_vql_to_xapian(tta.R, tta.op, dummy, dummy, query_r, key2slot, rd, level + 1, qp);
@@ -411,13 +411,16 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
         if (tta.L !is null)
             transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
 
-        query = query_l.add_right_query(xapian_op.OP_OR, query_r, &err);
+        if (query_l !is null)    
+        	query = query_l.add_right_query(xapian_op.OP_OR, query_r, &err);
 
         if (query_r !is null)
             destroy_Query(query_r);
 
         if (query_l !is null)
             destroy_Query(query_l);
+            
+//        writeln("#4.e");
     }
     else
     {
@@ -425,7 +428,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
         //writeln("#5 tta.op=", tta.op);
         return tta.op;
     }
-    //writeln("#6 null");
+//    writeln("#6 null");
     return null;
 }
 

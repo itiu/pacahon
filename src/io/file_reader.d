@@ -53,13 +53,14 @@ void file_reader_thread(P_MODULE name, string props_file_name)
         auto oFiles = dirEntries(path, "*.{ttl}", SpanMode.depth);
 
         foreach (o; oFiles)
-        {
-//	        writeln ("@@ file:", o);
+        {       	
             if ((o.name in prev_state_of_files) !is null)
             {
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
                 {
-                    //writeln("file is modifed [", o.name, "]");
+                	if (trace_msg[ 29 ] == 1)
+                		log.trace ("load modifed file=%s", o.name);
+                		
                     prev_state_of_files[ o.name ] = o.timeLastModified;
                     files_to_load[ o.name ]       = true;
                 }
@@ -67,7 +68,10 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             else
             {
                 prev_state_of_files[ o.name ] = o.timeLastModified;
-                //writeln("new file [", o.name, "]");
+
+                	if (trace_msg[ 29 ] == 1)
+                		log.trace ("load new file=%s", o.name);
+                		
                 files_to_load[ o.name ] = true;
             }
         }
@@ -76,7 +80,9 @@ void file_reader_thread(P_MODULE name, string props_file_name)
         {
             foreach (fn; files_to_load.keys)
             {
-//              writeln ("@@ fn:", fn);
+               	if (trace_msg[ 29 ] == 1)
+               		log.trace ("load sequence, file=%s", fn);
+               		
                 prepare_file(fn, context);
             }
         }
@@ -127,7 +133,7 @@ private void prepare_file(string file_name, Context context)
                 if (prefix !is null)
                 {
                     if (trace_msg[ 31 ] == 1)
-                	log.trace ("found prefix=%s ss=%s", prefix, ss);
+                    	log.trace ("found prefix=%s ss=%s", prefix, ss);
 					
                     if (ss.isExist(rdf__type, owl__Ontology))
                     {

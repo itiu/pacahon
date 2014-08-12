@@ -306,7 +306,15 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                         ss = new Individual();
 
                     string out_predicate;
-                    prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, resource_type, prefix_map);
+                    
+                    try
+                    {
+                    	prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, resource_type, prefix_map);
+                    }
+                    catch (Exception ex)
+                    {
+                    	writeln ("EX!", __FUNCTION__, ":", __LINE__, ex.msg);
+                    }
 //					writeln ("@ ++ predicate=", predicate, ", out_predicate=", out_predicate);
 
                     predicate = out_predicate;
