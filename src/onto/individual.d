@@ -69,6 +69,13 @@ struct Individual
 
         return null;
     }
+    
+    void addResource (string uri, Resource rs)
+    {
+         Resources rss = resources.get (uri, Resources.init);
+         rss ~= rs;	
+         resources[uri] = rss;    	
+    }	
 /*
     Resource getFirstIResource(string predicate)
     {

@@ -2,6 +2,21 @@ module type;
 
 import std.math, std.stdio, std.conv, std.string;
 
+enum Access : ubyte
+{
+    can_create  = 1,
+    can_read    = 2,
+    can_update  = 4,
+    can_delete  = 8,
+    cant_create = 16,
+    cant_read   = 32,
+    cant_update = 64,
+    cant_delete = 128
+}
+
+Access[] access_list = [Access.can_create, Access.can_read, Access.can_update, Access.can_delete, Access.cant_create, 
+Access.cant_read, Access.cant_update, Access.cant_delete];
+
 enum DataType : ubyte
 {
     Uri         = 1,

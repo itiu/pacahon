@@ -2,6 +2,9 @@ module pacahon.define;
 
 import util.container;
 import std.concurrency;
+import pacahon.know_predicates;
+
+string[] access_list_predicates = [veda_schema__canCreate, veda_schema__canRead, veda_schema__canUpdate, veda_schema__canDelete];
 
 enum CNAME : byte
 {
@@ -34,21 +37,6 @@ enum EVENT : byte
     ERROR     = 5,
     NOT_READY = 6
 }
-
-enum Access : ubyte
-{
-    can_create  = 1,
-    can_read    = 2,
-    can_update  = 4,
-    can_delete  = 8,
-    cant_create = 16,
-    cant_read   = 32,
-    cant_update = 64,
-    cant_delete = 128
-}
-
-Access[] access_list = [Access.can_create, Access.can_read, Access.can_update, Access.can_delete, Access.cant_create, 
-Access.cant_read, Access.cant_update, Access.cant_delete];
 
 const string        dbs_backup             = "./backup";
 const string        dbs_data               = "./data";

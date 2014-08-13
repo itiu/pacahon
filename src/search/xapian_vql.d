@@ -5,6 +5,7 @@ import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
 import search.vel;
+import type;
 import pacahon.context;
 import pacahon.define;
 import pacahon.log_msg;

@@ -15,6 +15,7 @@ private
     import util.cbor8individual;
     import util.logger;
 
+    import type;
     import pacahon.context;
     import pacahon.define;
     import pacahon.know_predicates;
@@ -276,7 +277,7 @@ class Authorization : LmdbStorage
 
                                 if (str !is null && str.length > 0)
                                 {
-                                    foreach (access; access_list)
+                                    foreach (int idx, access; access_list)
                                     {
                                         if ((request_access & access) != 0)
                                         {
@@ -285,7 +286,7 @@ class Authorization : LmdbStorage
                                             if (set_bit > 0)
                                             {
                                                 if (trace !is null)
-                                                    trace(object_group, subject_group, text (access));
+                                                    trace(object_group, subject_group, access_list_predicates[idx]);
                                                     
                                                 res = cast(ubyte)(res | set_bit);
 
