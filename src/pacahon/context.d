@@ -151,7 +151,8 @@ interface Context
     public ResultCode post_individual(Ticket *ticket, Individual individual);
 
     ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
-    public ubyte get_right (Ticket *ticket, string uri);
+    public ubyte get_rights (Ticket *ticket, string uri);
+    public string get_rights_origin (Ticket *ticket, string uri);
 
     ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
 

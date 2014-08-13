@@ -47,6 +47,9 @@ enum Access : ubyte
     cant_delete = 128
 }
 
+Access[] access_list = [Access.can_create, Access.can_read, Access.can_update, Access.can_delete, Access.cant_create, 
+Access.cant_read, Access.cant_update, Access.cant_delete];
+
 const string        dbs_backup             = "./backup";
 const string        dbs_data               = "./data";
 const string        individuals_db_path    = "./data/lmdb-individuals";

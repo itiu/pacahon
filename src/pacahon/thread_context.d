@@ -219,9 +219,10 @@ class PThreadContext : Context
 
     bool authorize(string uri, Ticket *ticket, ubyte request_acess)
     {
-    	//writeln ("@p ### uri=", uri, " ", request_acess);
-    	ubyte res = acl_indexes.authorize(uri, ticket, request_acess);
-    	//writeln ("@p ### uri=", uri, " ", request_acess, " ", request_acess == res);
+        //writeln ("@p ### uri=", uri, " ", request_acess);
+        ubyte res = acl_indexes.authorize(uri, ticket, request_acess);
+
+        //writeln ("@p ### uri=", uri, " ", request_acess, " ", request_acess == res);
         return request_acess == res;
     }
 
@@ -718,12 +719,11 @@ class PThreadContext : Context
         {
             if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
             {
-            	
-            }   
+            }
             else
-            {         
+            {
                 query_str = "'*' == '" ~ query_str ~ "'";
-            }    
+            }
 
             immutable(string)[] res;
             vql.get(ticket, query_str, null, null, 10, 100000, res);
@@ -751,12 +751,11 @@ class PThreadContext : Context
         {
             if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
             {
-            	
-            }   
+            }
             else
-            {         
+            {
                 query_str = "'*' == '" ~ query_str ~ "'";
-            }    
+            }
 
             Individual[] res;
             vql.get(ticket, query_str, null, null, 10, 10000, res);
@@ -787,12 +786,11 @@ class PThreadContext : Context
         {
             if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
             {
-            	
-            }   
+            }
             else
-            {         
+            {
                 query_str = "'*' == '" ~ query_str ~ "'";
-            }    
+            }
 
             immutable(Individual)[] res;
             vql.get(ticket, query_str, null, null, 10, 10000, res);
@@ -838,9 +836,22 @@ class PThreadContext : Context
         }
     }
 
-    public ubyte get_right (Ticket *ticket, string uri)
+    public ubyte get_rights(Ticket *ticket, string uri)
     {
-    	    return 	authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);   	
+        return acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);
+    }
+
+    public string get_rights_origin(Ticket *ticket, string uri)
+    {
+    	string res;
+    	void trace (string log_info)
+    	{
+    		res ~= "{" ~ log_info ~ "}\n";
+    	}
+    	
+        acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, &trace);
+        
+        return "{" ~ res ~ "}";
     }
 
     public Individual get_individual(Ticket *ticket, string uri)
@@ -922,11 +933,11 @@ class PThreadContext : Context
                 log.trace("[%s] store_individual: %s", name, *indv);
 
             if (indv.resources.length == 0)
-              return ResultCode.No_Content;
+                return ResultCode.No_Content;
 
             Resource[ string ] rdfType;
-                        
-           	setMapResources(indv.resources[ rdf__type ], rdfType);
+
+            setMapResources(indv.resources[ rdf__type ], rdfType);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {

@@ -160,14 +160,14 @@ class Authorization : LmdbStorage
         }
     }
 
-    ubyte authorize(string uri, Ticket *ticket, ubyte request_access)
+    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string log_record) trace = null)
     {
         ubyte res = 0;
 
         if (ticket is null)
             return request_access;
 
-    	//writeln ("@p request_access=", request_access);
+        //writeln ("@p request_access=", request_access);
 
         if (trace_msg[ 111 ] == 1)
             log.trace("authorize %s", uri);
@@ -245,12 +245,16 @@ class Authorization : LmdbStorage
 
             foreach (subject_group; subject_groups)
             {
-                if (res == request_access)
+                if (res == request_access && trace is null)
                     break;
+
                 if (subject_group.length > 1)
                 {
                     foreach (object_group; object_groups)
                     {
+                        if (res == request_access && trace is null)
+                            break;
+
                         if (object_group.length > 1)
                         {
                             // 3. поиск подходящего acl
@@ -272,31 +276,23 @@ class Authorization : LmdbStorage
 
                                 if (str !is null && str.length > 0)
                                 {
-                                	//writeln ("@p res0=", res, ", str[ 0 ]=", cast (ubyte)str[ 0 ]);
-                                	if ((request_access & Access.can_read) != 0)
-                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_read & cast (ubyte)str[ 0 ]));
-                                	
-                                    if (res == request_access)
-                                    	break;
-                                    	
-                                	if ((request_access & Access.can_update) != 0)
-                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_update & cast (ubyte)str[ 0 ]));
-                                	
-                                    if (res == request_access)
-                                    	break;
-                                    	
-                                	if ((request_access & Access.can_delete) != 0)
-                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_delete & cast (ubyte)str[ 0 ]));
-                                	
-                                    if (res == request_access)
-                                    	break;
-                                    	
-                                	if ((request_access & Access.can_create) != 0)
-                                		res = cast (ubyte) (res | cast(ubyte)(Access.can_create & cast (ubyte)str[ 0 ]));
-                                	
-                                    if (res == request_access)
-                                    	break;
-                                	//writeln ("@p res1=", res);
+                                    foreach (access; access_list)
+                                    {
+                                        if ((request_access & access) != 0)
+                                        {
+                                            ubyte set_bit = cast(ubyte)(access & cast(ubyte)str[ 0 ]);
+
+                                            if (set_bit > 0)
+                                            {
+                                                if (trace !is null)
+                                                    trace(acl_key);
+                                                res = cast(ubyte)(res | set_bit);
+
+                                                if (res == request_access && trace is null)
+                                                	break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                             //isAccessAllow = false;
