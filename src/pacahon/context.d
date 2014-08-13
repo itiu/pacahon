@@ -152,7 +152,7 @@ interface Context
 
     ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
     public ubyte get_rights (Ticket *ticket, string uri);
-    public string get_rights_origin (Ticket *ticket, string uri);
+    public void get_rights_origin (Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace);
 
     ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
 

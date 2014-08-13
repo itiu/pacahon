@@ -841,17 +841,9 @@ class PThreadContext : Context
         return acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);
     }
 
-    public string get_rights_origin(Ticket *ticket, string uri)
+    public void get_rights_origin(Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace)
     {
-    	string res;
-    	void trace (string log_info)
-    	{
-    		res ~= "{" ~ log_info ~ "}\n";
-    	}
-    	
-        acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, &trace);
-        
-        return "{" ~ res ~ "}";
+        acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, trace);
     }
 
     public Individual get_individual(Ticket *ticket, string uri)

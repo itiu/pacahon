@@ -160,7 +160,7 @@ class Authorization : LmdbStorage
         }
     }
 
-    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string log_record) trace = null)
+    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string resource_group, string subject_group, string right) trace = null)
     {
         ubyte res = 0;
 
@@ -285,7 +285,8 @@ class Authorization : LmdbStorage
                                             if (set_bit > 0)
                                             {
                                                 if (trace !is null)
-                                                    trace(acl_key);
+                                                    trace(object_group, subject_group, text (access));
+                                                    
                                                 res = cast(ubyte)(res | set_bit);
 
                                                 if (res == request_access && trace is null)
