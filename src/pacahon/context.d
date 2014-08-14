@@ -109,9 +109,6 @@ interface Context
 
     ref string[ string ] get_prefix_map();
 
-//    Subject get_subject(string uid);
-    string get_individual_as_cbor(string uid);
-
     int[ string ] get_key2slot();
     long get_last_update_time();
 
@@ -126,7 +123,8 @@ interface Context
     void set_reload_signal_to_local_thread(string interthread_signal_id);
     bool authorize(string uri, Ticket *ticket, ubyte request_acess);
     Individual[] get_individuals_via_query(Ticket *ticket, string query_str);
-
+    public string get_individual_from_storage(string uri);
+    
     // *************************************************** external api *********************************** //
     public string[ 2 ] execute_script(string str);
 

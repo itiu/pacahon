@@ -70,7 +70,7 @@ class VQL
         {
             Individual individual = Individual();
 
-            string     data = context.get_individual_as_cbor(uri);
+            string     data = context.get_individual_from_storage(uri);
 
             cbor2individual(&individual, data);
 
@@ -93,7 +93,7 @@ class VQL
         {
             Individual individual = Individual();
 
-            string     data = context.get_individual_as_cbor(uri);
+            string     data = context.get_individual_from_storage(uri);
 
             cbor2individual(&individual, data);
 
@@ -183,7 +183,7 @@ class VQL
             void delegate(string uri) dg;
             void collect_subject(string uri)
             {
-                string     data = context.get_individual_as_cbor(uri);
+                string     data = context.get_individual_from_storage(uri);
 
                 Individual ind;
 

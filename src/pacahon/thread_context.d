@@ -281,7 +281,7 @@ class PThreadContext : Context
     }
 
 
-    public string get_individual_as_cbor(string uri)
+    public string get_individual_from_storage(string uri)
     {
         //writeln ("@ get_individual_as_cbor, uri=", uri);
         auto res = inividuals_storage.find(uri);
@@ -710,42 +710,6 @@ class PThreadContext : Context
 
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
-    public string               	 get_individual_as_cbor(Ticket *ticket, string uri)
-    {
-    	return "";
-    }
-    
-    public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris)
-    {
-    	immutable(string)[] res;
-    	return res;
-    }
-
-
-    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str)
-    {
-        StopWatch sw; sw.start;
-
-        try
-        {
-            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
-            {
-            }
-            else
-            {
-                query_str = "'*' == '" ~ query_str ~ "'";
-            }
-
-            immutable(string)[] res;
-            vql.get(ticket, query_str, null, null, 10, 100000, res);
-            return res;
-        }
-        finally
-        {
-            stat(CMD.GET, sw);
-        }
-    }
-
     public Individual[] get_individuals_via_query(Ticket *ticket, string query_str)
     {
         StopWatch sw; sw.start;
@@ -779,37 +743,9 @@ class PThreadContext : Context
             if (trace_msg[ 26 ] == 1)
                 log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
-    }
-
-    public Individual[] get_individuals(Ticket *ticket, string[] uris)
-    {
-        StopWatch sw; sw.start;
-
-        try
-        {
-            Individual[] res = Individual[].init;
-
-            foreach (uri; uris)
-            {
-                if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
-                {
-                    Individual individual         = Individual.init;
-                    string     individual_as_cbor = get_individual_as_cbor(uri);
-
-                    if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-                        cbor2individual(&individual, individual_as_cbor);
-
-                    res ~= individual;
-                }
-            }
-
-            return res;
-        }
-        finally
-        {
-            stat(CMD.GET, sw);
-        }
-    }
+    }    
+    
+    //////////// external ////////////    
 
     public ubyte get_rights(Ticket *ticket, string uri)
     {
@@ -819,6 +755,30 @@ class PThreadContext : Context
     public void get_rights_origin(Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace)
     {
         acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, trace);
+    }
+
+    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str)
+    {
+        StopWatch sw; sw.start;
+
+        try
+        {
+            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
+            {
+            }
+            else
+            {
+                query_str = "'*' == '" ~ query_str ~ "'";
+            }
+
+            immutable(string)[] res;
+            vql.get(ticket, query_str, null, null, 10, 100000, res);
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
     }
 
     public Individual get_individual(Ticket *ticket, string uri)
@@ -839,7 +799,7 @@ class PThreadContext : Context
 
             if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
             {
-                string individual_as_cbor = get_individual_as_cbor(uri);
+                string individual_as_cbor = get_individual_from_storage(uri);
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {
@@ -867,6 +827,117 @@ class PThreadContext : Context
                 log.trace("get_individual: end, uri=%s", uri);
         }
     }
+
+    public Individual[] get_individuals(Ticket *ticket, string[] uris)
+    {
+        StopWatch sw; sw.start;
+
+        try
+        {
+            Individual[] res = Individual[].init;
+
+            foreach (uri; uris)
+            {
+                if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+                {
+                    Individual individual         = Individual.init;
+                    string     individual_as_cbor = get_individual_from_storage(uri);
+
+                    if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                        cbor2individual(&individual, individual_as_cbor);
+
+                    res ~= individual;
+                }
+            }
+
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
+    }
+
+    public string get_individual_as_cbor(Ticket *ticket, string uri)
+    {
+    	string res = "E";
+        StopWatch sw; sw.start;
+/*
+        if (trace_msg[ 25 ] == 1)
+        {
+            if (ticket !is null)
+                log.trace("get_individual as cbor, uri=%s, ticket=%s", uri, ticket.id);
+            else
+                log.trace("get_individual as cbor, uri=%s, ticket=null", uri);
+        }
+
+        try
+        {
+            if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+            {
+                string individual_as_cbor = get_individual_from_storage(uri);
+
+                if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                {
+                    res = individual_as_cbor;
+                }
+                else
+                {
+                    res[0] = ResultCode.Unprocessable_Entity;
+                }
+            }
+            else
+            {
+                if (trace_msg[ 25 ] == 1)
+                    log.trace("get_individual as cbor, not authorized, uri=%s", uri);
+                res[0] = ResultCode.ResultCode.Not_Authorized;
+            }
+
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+            if (trace_msg[ 25 ] == 1)
+                log.trace("get_individual as cbor: end, uri=%s", uri);
+        }
+*/
+    	return res;
+    }
+    
+    public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris)
+    {
+        StopWatch sw; sw.start;
+/*
+        try
+        {
+            string[] res = string[].init;
+
+            foreach (uri; uris)
+            {
+                if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+                {
+                    Individual individual         = Individual.init;
+                    string     individual_as_cbor = get_individual_from_storage(uri);
+
+                    if (individual_as_cbor !is null && individual_as_cbor.length > 1)
+                        cbor2individual(&individual, individual_as_cbor);
+
+                    res ~= individual;
+                }
+            }
+
+            return res;
+        }
+        finally
+        {
+            stat(CMD.GET, sw);
+        }
+*/        
+    	immutable(string)[] res;
+    	return res;
+    }
+
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
     {
