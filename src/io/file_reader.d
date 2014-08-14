@@ -59,7 +59,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                 if (o.timeLastModified != prev_state_of_files[ o.name ])
                 {
                 	if (trace_msg[ 29 ] == 1)
-                		log.trace ("load modifed file=%s", o.name);
+                		log.trace ("look modifed file=%s", o.name);
                 		
                     prev_state_of_files[ o.name ] = o.timeLastModified;
                     files_to_load[ o.name ]       = true;
@@ -70,7 +70,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                 prev_state_of_files[ o.name ] = o.timeLastModified;
 
                 	if (trace_msg[ 29 ] == 1)
-                		log.trace ("load new file=%s", o.name);
+                		log.trace ("look new file=%s", o.name);
                 		
                 files_to_load[ o.name ] = true;
             }
@@ -78,16 +78,22 @@ void file_reader_thread(P_MODULE name, string props_file_name)
 
         if (exists(path ~ "/.load_sequence") == false)
         {
+           	if (trace_msg[ 29 ] == 1)
+           		log.trace ("load directory sequence");
+
             foreach (fn; files_to_load.keys)
             {
                	if (trace_msg[ 29 ] == 1)
-               		log.trace ("load sequence, file=%s", fn);
+               		log.trace ("load directory sequence, file=%s", fn);
                		
                 prepare_file(fn, context);
             }
         }
         else
         {
+           	if (trace_msg[ 29 ] == 1)
+           		log.trace ("load custom sequence");
+
             auto     load_sequence = cast(char[]) read(path ~ "/.load_sequence");
             string[] els           = cast(string[])load_sequence.split('\n');
             foreach (el; els)
@@ -115,6 +121,9 @@ private void prepare_file(string file_name, Context context)
     // 2. попутно находит системный аккаунт (veda)
     try
     {
+        if (trace_msg[ 30 ] == 1)
+        	log.trace ("prepare_file %s", file_name);
+
         auto buf = cast(ubyte[]) read(file_name);
 
         if (buf !is null && buf.length > 0)
@@ -122,12 +131,21 @@ private void prepare_file(string file_name, Context context)
             Individual[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
             	
             if (trace_msg[ 30 ] == 1)
+            	log.trace ("ss_list.count=%d", ss_list.length);
+
+            if (trace_msg[ 30 ] == 1)
             	log.trace ("prefix_map=%s", context.get_prefix_map);
 
             bool[ string ] for_load;
 
             foreach (ss; ss_list)
             {
+            	if (ss.uri[$-1] == '#')
+            		ss.uri.length = ss.uri.length - 1;
+            	
+            	if (trace_msg[ 31 ] == 1)
+            		log.trace ("prepare uri=%s", ss.uri);
+            		            		
                 string prefix = context.get_prefix_map.get(ss.uri, null);
 
                 if (prefix !is null)
