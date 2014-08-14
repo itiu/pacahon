@@ -710,6 +710,17 @@ class PThreadContext : Context
 
 
     ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+    public string               	 get_individual_as_cbor(Ticket *ticket, string uri)
+    {
+    	return "";
+    }
+    
+    public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris)
+    {
+    	immutable(string)[] res;
+    	return res;
+    }
+
 
     public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str)
     {
@@ -769,42 +780,6 @@ class PThreadContext : Context
                 log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
     }
-
-    public immutable(Individual)[] iget_individuals_via_query(Ticket * ticket, string query_str)
-    {
-        StopWatch sw; sw.start;
-
-        if (trace_msg[ 26 ] == 1)
-        {
-            if (ticket !is null)
-                log.trace("iget_individuals_via_query: start, query_str=%s, ticket=%s", query_str, ticket.id);
-            else
-                log.trace("iget_individuals_via_query: start, query_str=%s, ticket=null", query_str);
-        }
-
-        try
-        {
-            if (query_str.indexOf("==") > 0 || query_str.indexOf("&&") > 0 || query_str.indexOf("||") > 0)
-            {
-            }
-            else
-            {
-                query_str = "'*' == '" ~ query_str ~ "'";
-            }
-
-            immutable(Individual)[] res;
-            vql.get(ticket, query_str, null, null, 10, 10000, res);
-            return res;
-        }
-        finally
-        {
-            stat(CMD.GET, sw);
-
-            if (trace_msg[ 26 ] == 1)
-                log.trace("iget_individuals_via_query: end, query_str=%s", query_str);
-        }
-    }
-
 
     public Individual[] get_individuals(Ticket *ticket, string[] uris)
     {

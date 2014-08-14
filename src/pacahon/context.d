@@ -125,6 +125,7 @@ interface Context
     string look_string_signal(string key);
     void set_reload_signal_to_local_thread(string interthread_signal_id);
     bool authorize(string uri, Ticket *ticket, ubyte request_acess);
+    Individual[] get_individuals_via_query(Ticket *ticket, string query_str);
 
     // *************************************************** external api *********************************** //
     public string[ 2 ] execute_script(string str);
@@ -140,11 +141,13 @@ interface Context
     public bool is_ticket_valid(string ticket_id);
 
     ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
-    public Individual[]             get_individuals_via_query(Ticket *ticket, string query_str);
-    public immutable(Individual)[] iget_individuals_via_query(Ticket * ticket, string query_str);
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
+
     public Individual               get_individual(Ticket *ticket, string uri);
     public Individual[]             get_individuals(Ticket *ticket, string[] uris);
+
+    public string               	 get_individual_as_cbor(Ticket *ticket, string uri);
+    public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris);
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
