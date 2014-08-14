@@ -1,6 +1,6 @@
 module onto.resource;
 
-import std.conv, std.stdio;
+import std.conv, std.stdio, std.datetime;
 import onto.lang;
 import type;
 
@@ -126,12 +126,27 @@ struct Resource
 
     this(DataType _type, string str, LANG _lang = LANG.NONE)
     {
-    	if (_type == DataType.Integer)
+    	if (_type == DataType.Datetime)
+    	{
+    		try
+    		{
+    			if (str.length == 10 && str[ 4 ] == '-' && str[ 7 ] == '-')
+    				str = str ~ "T00:00:00";
+    			
+    			long value = stdTimeToUnixTime(SysTime.fromISOExtString(str, UTC()).stdTime);
+    			
+    			this = value;
+    		}
+    		catch (Exception ex)
+    		{
+    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+    		}    		
+    	}
+    	else if (_type == DataType.Integer)
     	{
     		try
     		{
     			this = parse!long (str);
-    			type = _type;
     		}
     		catch (Exception ex)
     		{
@@ -143,7 +158,6 @@ struct Resource
     		try
     		{
     			this = parse!bool (str);
-    			type = _type;
     		}
     		catch (Exception ex)
     		{
@@ -154,9 +168,9 @@ struct Resource
     	else
     	{
     		this = str;
-    		type = _type;
     		lang = _lang;
         }
+   		type = _type;
     }
 
     this(string str, LANG _lang = LANG.NONE)
