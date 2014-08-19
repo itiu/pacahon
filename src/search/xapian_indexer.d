@@ -107,8 +107,12 @@ private void printTid(string tag)
 }
 
 
-void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_manager, Tid key2slot_accumulator)
+void xapian_indexer(string thread_name)
 {
+	Tid tid_subject_manager;
+	Tid tid_acl_manager;
+	Tid key2slot_accumulator;
+	
     core.thread.Thread.getThis().name = thread_name;
 
     try
@@ -144,6 +148,11 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
     if (err != 0)
     {
         writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
+
+        receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, false);
+            });
         return;
     }
 
@@ -163,9 +172,6 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
 
     int[ string ] key2slot;
 
-    //if (is_exist_db == true)
-    key2slot = read_key2slot(tid_subject_manager);
-
     // SEND ready
     receive((Tid tid_response_reciever)
             {
@@ -175,56 +181,28 @@ void xapian_indexer(string thread_name, Tid tid_subject_manager, Tid tid_acl_man
     while (true)
     {
         receive(
-                /*(CMD cmd, string str_query, string str_fields, string sort, int count_authorize, Tid tid_sender)
-                   {
-                   //writeln (cast(void*)indexer_db, " @0 cmd=", cmd, ", str_query: ", str_query);
-                   //writeln ("@xapian_indexer:key2slot=", key2slot);
-                   if (cmd == CMD.FIND)
-                   {
-                   auto fields = get_fields(str_fields);
-
-                   XapianQuery query;
-                   TTA tta = parse_expr(str_query);
-                   transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
-
-                   if (query !is null)
-                   {
-                    int count = 0;
-                    xapian_enquire = indexer_db.new_Enquire(&err);
-
-                    XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
-
-                    void delegate(string uri) dg;
-                    void collect_subject(string uri)
-                    {
-                        send(tid_sender, CMD.PUT, msg);
-                    }
-                    dg = &collect_subject;
-
-                    int state = -1;
-                    while (state == -1)
-                    {
-                        state =
-                            exec_xapian_query_and_queue_authorize(null, query, sorter, xapian_enquire, count_authorize, fields, dg,
-                                                                  tid_subject_manager,
-                                                                  tid_acl_manager);
-                        if (state == -1)
-                        {
-                            writeln("@2 ERR state=", state);
-                            xapian_enquire = indexer_db.new_Enquire(&err);
-                        }
-                    }
-
-                    destroy_Enquire(xapian_enquire);
-                    destroy_Query(query);
-                    destroy_MultiValueKeyMaker(sorter);
-                   }
-
-                   send(tid_sender, CMD.END_DATA);
-                   }
-                   }, */
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
+                	if (cmd == CMD.SET)
+                	{
+                		if (msg == "subject_manager")
+                		{
+                			tid_subject_manager = tid_response_reciever;
+                			
+                			if (key2slot.length == 0 && tid_subject_manager != Tid.init)
+                				key2slot = read_key2slot(tid_subject_manager);    	
+                		}
+                		else if (msg == "acl_manager")
+                		{
+                			 tid_acl_manager = tid_response_reciever;
+                		}
+                		else if (msg == "xapian_thread_context")
+                		{
+                			 key2slot_accumulator = tid_response_reciever;
+                		}
+                		return;
+                	}
+                	
                     if (key2slot.length - last_size_key2slot > 0)
                     {
                         store__key2slot(key2slot, tid_subject_manager);

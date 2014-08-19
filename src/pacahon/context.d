@@ -26,6 +26,7 @@ enum CMD : byte
     FREEZE       = 42,
     UNFREEZE     = 43,
     PUT_KEY2SLOT = 44,
+    SET			 = 45,		
     NOP          = 64
 }
 

@@ -1,7 +1,7 @@
 module pacahon.define;
 
 import util.container;
-import std.concurrency;
+import std.concurrency, std.file;
 import pacahon.know_predicates;
 
 string[] access_list_predicates = [veda_schema__canCreate, veda_schema__canRead, veda_schema__canUpdate, veda_schema__canDelete];
@@ -47,7 +47,7 @@ const string        acl_indexes_db_path    = "./data/acl-indexes";
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
 
-import std.file;
+
 void create_folder_struct()
 {
     try
@@ -88,5 +88,5 @@ void create_folder_struct()
     }
     catch (Exception ex)
     {
-    }
+    }    
 }

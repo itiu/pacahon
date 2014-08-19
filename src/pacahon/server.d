@@ -84,8 +84,9 @@ void commiter(string thread_name, Tid tid, Tid tid_subject_manager, Tid tid_acl_
     }
 }
 
-void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
+bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
 {
+	bool res;
     Tid tid = tids[ tid_idx ];
 
     if (tid == Tid.init)
@@ -94,9 +95,13 @@ void wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     send(tid, thisTid);
     receive((bool isReady)
             {
+            	res = isReady;
                 if (trace_msg[ 50 ] == 1)
                     log.trace("STARTED THREAD: %s", text(tid_idx));
+                if (res == false)    
+                    log.trace("FAIL START THREAD: %s", text(tid_idx));
             });
+    return res;
 }
 
 void init_core()
@@ -119,6 +124,11 @@ void init_core()
 //                                  pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
         Tid[ P_MODULE ] tids;
 
+        tids[ P_MODULE.fulltext_indexer ] =
+            spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer));
+        if (wait_starting_thread(P_MODULE.fulltext_indexer, tids) == false)
+        	return;
+
         tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, text(P_MODULE.interthread_signals));
         wait_starting_thread(P_MODULE.interthread_signals, tids);
 
@@ -130,14 +140,13 @@ void init_core()
 
         tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, text(P_MODULE.acl_manager), acl_indexes_db_path);
         wait_starting_thread(P_MODULE.acl_manager, tids);
-
+        
         tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context, text(P_MODULE.xapian_thread_context));
         wait_starting_thread(P_MODULE.xapian_thread_context, tids);
 
-        tids[ P_MODULE.fulltext_indexer ] =
-            spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer), tids[ P_MODULE.subject_manager ], tids[ P_MODULE.acl_manager ],
-                  tids[ P_MODULE.xapian_thread_context ]);
-        wait_starting_thread(P_MODULE.fulltext_indexer, tids);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.subject_manager), tids[ P_MODULE.subject_manager ]);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.acl_manager), tids[ P_MODULE.acl_manager ]);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.xapian_thread_context), tids[ P_MODULE.xapian_thread_context ]);
 
         tids[ P_MODULE.commiter ] =
             spawn(&commiter, text(P_MODULE.commiter), tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ],
