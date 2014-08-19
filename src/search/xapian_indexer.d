@@ -181,28 +181,31 @@ void xapian_indexer(string thread_name)
     while (true)
     {
         receive(
-                (CMD cmd, string msg, Tid tid_response_reciever)
+                (CMD cmd, P_MODULE module_id, Tid tid_response_reciever)
                 {
                 	if (cmd == CMD.SET)
                 	{
-                		if (msg == "subject_manager")
+                		if (module_id == P_MODULE.subject_manager)
                 		{
                 			tid_subject_manager = tid_response_reciever;
                 			
                 			if (key2slot.length == 0 && tid_subject_manager != Tid.init)
                 				key2slot = read_key2slot(tid_subject_manager);    	
                 		}
-                		else if (msg == "acl_manager")
+                		else if (module_id == P_MODULE.acl_manager)
                 		{
                 			 tid_acl_manager = tid_response_reciever;
                 		}
-                		else if (msg == "xapian_thread_context")
+                		else if (module_id == P_MODULE.xapian_thread_context)
                 		{
                 			 key2slot_accumulator = tid_response_reciever;
                 		}
                 		return;
                 	}
-                	
+
+                },
+                (CMD cmd, string msg, Tid tid_response_reciever)
+                {                	
                     if (key2slot.length - last_size_key2slot > 0)
                     {
                         store__key2slot(key2slot, tid_subject_manager);

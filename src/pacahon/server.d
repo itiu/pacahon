@@ -144,9 +144,9 @@ void init_core()
         tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context, text(P_MODULE.xapian_thread_context));
         wait_starting_thread(P_MODULE.xapian_thread_context, tids);
 
-        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.subject_manager), tids[ P_MODULE.subject_manager ]);
-        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.acl_manager), tids[ P_MODULE.acl_manager ]);
-        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, text (P_MODULE.xapian_thread_context), tids[ P_MODULE.xapian_thread_context ]);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, P_MODULE.subject_manager, tids[ P_MODULE.subject_manager ]);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, P_MODULE.acl_manager, tids[ P_MODULE.acl_manager ]);
+        send(tids[ P_MODULE.fulltext_indexer ], CMD.SET, P_MODULE.xapian_thread_context, tids[ P_MODULE.xapian_thread_context ]);
 
         tids[ P_MODULE.commiter ] =
             spawn(&commiter, text(P_MODULE.commiter), tids[ P_MODULE.fulltext_indexer ], tids[ P_MODULE.subject_manager ],
