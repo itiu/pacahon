@@ -975,7 +975,7 @@ class PThreadContext : Context
 
             Resource[ string ] rdfType;
 
-            setMapResources(indv.resources[ rdf__type ], rdfType);
+            setMapResources(indv.resources.get (rdf__type, Resources.init), rdfType);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {
