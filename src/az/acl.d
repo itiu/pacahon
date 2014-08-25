@@ -311,7 +311,7 @@ class Authorization : LmdbStorage
             mdb_txn_abort(txn_r);
 
             if (trace_msg[ 111 ] == 1)
-                log.trace("authorize %s, result=%s", uri, text(res));
+                log.trace("authorize %s, request=%s, answer=%s", uri, text(request_access), text(res));
         }
 
         //writeln ("@p acl:return res=", res);
