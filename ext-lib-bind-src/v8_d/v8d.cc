@@ -328,7 +328,8 @@ void GetIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
         //    std::string           vv = std::string(*s1);
 
 
-        //std::cout << "@c:get #3 [" << vv << "]" << std::endl;
+        //std::cout << "@c:get #3 " << std::endl;
+//        std::cout << "@c:get #3 [" << vv << "]" << std::endl;
         args.GetReturnValue().Set(oo);
     }
 }

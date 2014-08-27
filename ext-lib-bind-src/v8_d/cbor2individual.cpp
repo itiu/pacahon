@@ -293,11 +293,13 @@ void write_resources(string uri, vector <Resource> vv, std::vector<char> &ou)
 void cbor2individual(Individual *individual, string in_str)
 {
 //    hexdump(abStack, 100);
-
+	//std::cout << "@c cbor2individual #1" << std::endl;
 //    char *data_ptr = reinterpret_cast<char *>(&in_str[ 0 ]);
     const char *data_ptr = in_str.c_str();
+	//std::cout << "@c cbor2individual #2" << std::endl;
 
     read_element(individual, data_ptr, 0, in_str.size(), "", "");
+	//std::cout << "@c cbor2individual #3" << std::endl;
 }
 
 void individual2cbor(Individual *individual, std::vector<char> &ou)
