@@ -38,6 +38,10 @@ extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
 
 extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length)
 {
+	try
+	{
+    //writeln ("@p:v8d put_individual");		
+
     if (g_context !is null)
     {
         string cbor   = cast(string)_cbor[ 0.._cbor_length ].dup;
@@ -48,14 +52,22 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
         return g_context.store_individual(ticket, null, cbor);
     }
     return ResultCode.Service_Unavailable;
+    }
+	finally
+	{
+    //writeln ("@p:v8d end put_individual");		
+	}
+    
 }
 
 extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length)
 {
+	try
+	{
     string uri    = cast(string)_uri[ 0.._uri_length ];
     string ticket = cast(string)_ticket[ 0.._ticket_length ];
 
-    //writeln ("@ read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
+    //writeln ("@p:v8d read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
 
     if (uri != "$document")
     {
@@ -81,6 +93,11 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
         //dump (g_individual.data, 8);
         return &g_individual;
     }
+    }
+	finally
+	{
+    //writeln ("@p:v8d end read_individual");		
+	}
 
 }
 
