@@ -563,6 +563,10 @@ void xapian_indexer(string thread_name)
 
                             destroy_Document(doc);
                         }
+
+                            if (trace_msg[ 221 ] == 1)
+                                log.trace("index end");
+                        
                     }
                 },
                 (CMD cmd, int arg, bool arg2)

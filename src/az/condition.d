@@ -118,6 +118,9 @@ public void condition_thread(string thread_name, string props_file_name)
 
                                             count++;
                                             script_vm.run(mandat.script);
+                                            
+                                            if (trace_msg[ 300 ] == 1)
+                                                log.trace("end exec script");
                                         }
                                         catch (Exception ex)
                                         {
