@@ -77,6 +77,13 @@ void write_bool(bool vv, std::vector<char> &ou)
         write_type_value(FLOAT_SIMPLE, _FALSE, ou);
 }
 
+uint16_t ubyte_from_buff(const char *buff, int b_pos, int pos)
+{
+    uint8_t res = *(((uint8_t *)(buff + b_pos + pos)));
+
+    return res;
+}
+
 uint16_t ushort_from_buff(const char *buff, int b_pos, int pos)
 {
     uint16_t res = *(((uint16_t *)(buff + b_pos + pos)));
@@ -113,11 +120,13 @@ uint32_t read_type_value(const char *src, int b_pos, int e_pos, ElementHeader *h
     int64_t   ld    = hh & 0x1f;
     int       d_pos = 1;
 
+    //std::cout << "@c #read_header2 len=" << ld << std::endl;
+
     if (ld > 23)
     {
         d_pos += 1 << (ld - 24);
         if (ld == 24)
-            ld = src[ b_pos + 1 ];
+        	ld = ubyte_from_buff(src, b_pos, 1);
         else if (ld == 25)
             ld = ushort_from_buff(src, b_pos, 1);
         else if (ld == 26)
@@ -151,7 +160,7 @@ uint32_t read_type_value(const char *src, int b_pos, int e_pos, ElementHeader *h
         header->v_long = ld;
         header->type   = type;
     }
-//    writeln ("type=", type, ", length=", ld, ", d_pos=", d_pos, ", src.length=", src.length);
+    //std::cout << "@c #read_header4 type=" << type << ", length=" << ld << ", d_pos=" << d_pos << ", b_pos=" << b_pos << ", e_pos=" << e_pos << std::endl;
 
     return d_pos;
 }
