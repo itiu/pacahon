@@ -1011,13 +1011,17 @@ class PThreadContext : Context
 
             if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
             {
-                Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
 
-                if (tid_search_manager != Tid.init)
-                {
-                    push_signal("search", Clock.currStdTime() / 10000);
+            	if (indv.isExist (veda_schema__deleted, true) == false)
+            	{	
+            		Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
 
-                    send(tid_search_manager, CMD.STORE, ss_as_cbor);
+            		if (tid_search_manager != Tid.init)
+            		{
+            			push_signal("search", Clock.currStdTime() / 10000);
+
+            			send(tid_search_manager, CMD.STORE, ss_as_cbor);
+            		}
                 }
 
                 if (prepareEvents == true)

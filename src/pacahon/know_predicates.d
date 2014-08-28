@@ -17,7 +17,8 @@ public const string owl__unionOf          = "owl:unionOf";
 public const string owl__Thing            = "owl:Thing";
 public const string owl__Class            = "owl:Class";
 
-//public const string veda__mandat	= "veda:mandat";
+public const string veda_schema__actualVersion       = "veda-schema:actualVersion";
+public const string veda_schema__deleted             = "veda-schema:deleted";
 public const string veda_schema__script              = "veda-schema:script";
 public const string veda_schema__login               = "veda-schema:login";
 public const string veda_schema__password            = "veda-schema:password";
@@ -31,11 +32,10 @@ public const string veda_schema__permissionObject    = "veda-schema:permissionOb
 public const string veda_schema__permissionSubject   = "veda-schema:permissionSubject";
 public const string veda_schema__AllResourcesGroup   = "veda-schema:AllResourcesGroup";
 public const string veda_schema__Mandate             = "veda-schema:Mandate";
-
-public const string veda_schema__resource   = "veda-schema:resource";
-public const string veda_schema__memberOf   = "veda-schema:memberOf";
-public const string veda_schema__Membership = "veda-schema:Membership";
-public const string veda_schema__owner      = "veda-schema:owner";
+public const string veda_schema__resource            = "veda-schema:resource";
+public const string veda_schema__memberOf            = "veda-schema:memberOf";
+public const string veda_schema__Membership          = "veda-schema:Membership";
+public const string veda_schema__owner               = "veda-schema:owner";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------
