@@ -20,9 +20,9 @@ import util.utils;
 
 void zmq_thread(string thread_name, string props_file_name, int pos_in_listener_section)
 {
-	core.thread.Thread tr = core.thread.Thread.getThis();
-	tr.name = thread_name;		
-		
+    core.thread.Thread tr = core.thread.Thread.getThis();
+    tr.name = thread_name;
+
     //writeln("SPAWN: zmq listener");
 
     Context context = new PThreadContext(props_file_name, "zmq");
