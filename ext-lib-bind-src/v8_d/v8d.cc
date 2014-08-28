@@ -137,6 +137,7 @@ void jsobject2individual(Local<Value> value, Individual *indv, Resource *resourc
         Local<Value>          v_data;
         Local<Value>          v_lang;
         Local<Value>          v_type;
+        bool is_lang_set = false;
 
         uint32_t              length = propertyNames->Length();
         for (uint32_t i = 0; i < length; i++)
@@ -164,6 +165,7 @@ void jsobject2individual(Local<Value> value, Individual *indv, Resource *resourc
             {
                 // это поле для модели индивида в js
                 v_lang              = obj->Get(js_key);
+                is_lang_set = true;
                 is_individual_value = true;
             }
             else if (name == "@")
@@ -210,14 +212,14 @@ void jsobject2individual(Local<Value> value, Individual *indv, Resource *resourc
             {
                 Resource rc;
 
-                if (type == _String)
+                if (type == _String && is_lang_set == true)
                 {
-                    int lang = v_lang->ToInt32()->Value();
+               		int lang = v_lang->ToInt32()->Value();
 
-                    if (lang == 1)
-                        rc.lang = LANG_RU;
-                    else if (lang == 2)
-                        rc.lang = LANG_EN;
+               		if (lang == 1)
+               			rc.lang = LANG_RU;
+               		else if (lang == 2)
+               			rc.lang = LANG_EN;
                 }
 
                 v8::String::Utf8Value s1_1(v_data);
