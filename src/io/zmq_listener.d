@@ -1,3 +1,6 @@
+/**
+  * ZeroMQ Client
+  */
 module io.zmq_listener;
 
 import core.stdc.stdio;

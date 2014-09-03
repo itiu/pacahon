@@ -1,3 +1,6 @@
+/**
+  * VQL parser
+  */
 module search.vel;
 
 // VEDA EXPRESSION LANG

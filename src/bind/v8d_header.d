@@ -1,3 +1,6 @@
+/**
+  * обвязка к v8d
+  */
 module bind.v8d_header;
 
 import std.stdio, std.conv;

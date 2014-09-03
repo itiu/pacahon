@@ -1,3 +1,6 @@
+/**
+  * CBOR: cbor <-> individual
+  */
 module util.cbor8individual;
 
 private import std.outbuffer, std.stdio, std.string;

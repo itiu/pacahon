@@ -1,3 +1,6 @@
+/**
+  * обработка событий 
+  */
 module pacahon.bus_event;
 
 private import std.outbuffer, std.stdio, std.concurrency, std.datetime, std.conv;

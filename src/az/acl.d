@@ -1,3 +1,7 @@
+/**
+  * авторизация
+  */
+
 module az.acl;
 
 private

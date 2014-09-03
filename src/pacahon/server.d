@@ -1,3 +1,6 @@
+/**
+  * сервер
+  */
 module pacahon.server;
 
 private

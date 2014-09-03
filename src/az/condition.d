@@ -1,3 +1,6 @@
+/**
+  * выполнение JS скриптов
+  */
 module az.condition;
 
 private

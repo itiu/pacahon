@@ -1,3 +1,6 @@
+/**
+  * настройка логгирования
+  */
 module pacahon.log_msg;
 
 private import util.logger;

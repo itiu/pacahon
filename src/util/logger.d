@@ -1,3 +1,6 @@
+/**
+  * logger
+  */
 module util.logger;
 
 // TODO: ++ module core.sys.posix.syslog;

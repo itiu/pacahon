@@ -1,3 +1,7 @@
+/**
+  * VQL -> xapian
+  */
+
 module search.xapian_vql;
 
 import std.string, std.concurrency, std.stdio, std.datetime, std.conv;

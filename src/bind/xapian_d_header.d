@@ -1,3 +1,7 @@
+/**
+  * обвязка к xapin
+  */
+
 module bind.xapian_d_header;
 
 //import core.runtime;

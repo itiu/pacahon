@@ -1,3 +1,6 @@
+/**
+  * turtle parser
+  */
 module util.turtle_parser;
 
 private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, std.outbuffer, std.array, std.uuid;

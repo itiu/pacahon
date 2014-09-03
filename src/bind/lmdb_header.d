@@ -1,3 +1,6 @@
+/**
+  * обвязка к lmdb
+  */
 module bind.lmdb_header;
 
 import core.sys.posix.sys.stat;

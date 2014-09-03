@@ -1,3 +1,7 @@
+/**
+  * Ресурс
+  */
+
 module onto.resource;
 
 import std.conv, std.stdio, std.datetime;

@@ -1,3 +1,7 @@
+/**
+  * utils
+  */
+
 module util.utils;
 
 private
@@ -255,9 +259,9 @@ static this()
  * русская буква будет заменена на соответствующую английскую. Не русские
  * символы останутся прежними.
  *
- * @param text
+ * Parameters: text
  *            исходный текст с русскими символами
- * @return результат
+ * Returns: результат
  */
 public static string toTranslit(string text)
 {
@@ -292,7 +296,11 @@ public long get_int(JSONValue jv, string field_name)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/**
+ * возвращает локальное время
+ *
+ * Returns: структура tm
+ */
 public tm *get_local_time()
 {
     time_t rawtime;

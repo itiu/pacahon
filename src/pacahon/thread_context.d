@@ -1,3 +1,7 @@
+/**
+  * Внешнее API - Реализация
+  */
+
 module pacahon.thread_context;
 
 private
@@ -577,6 +581,11 @@ class PThreadContext : Context
         }
     }
 
+/**
+    аутентификация
+    Params: string login, string password
+    Returns: ticket = сессионный билет
+*/  
     public Ticket authenticate(string login, string password)
     {
         StopWatch sw; sw.start;

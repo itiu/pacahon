@@ -1,3 +1,6 @@
+/**
+  * Внешнее API
+  */
 module pacahon.context;
 
 private import std.concurrency, std.datetime, std.json;
@@ -94,6 +97,9 @@ struct Ticket
     }
 }
 
+/**
+  * Внешнее API - Интерфейс
+  */
 interface Context
 {
     string get_name();
@@ -116,7 +122,8 @@ interface Context
 //    void store_subject(Subject ss, bool prepareEvents = true);
     public bool check_for_reload(string interthread_signal_id, void delegate() load);
 
-    /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////
+//    /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////
+     
     void push_signal(string key, long value);
     void push_signal(string key, string value);
     long look_integer_signal(string key);
@@ -129,17 +136,31 @@ interface Context
     // *************************************************** external api *********************************** //
     public string[ 2 ] execute_script(string str);
 
-    //////////////////////////////////////////////////// ONTO //////////////////////////////////////////////
+//    //////////////////////////////////////////////////// ONTO //////////////////////////////////////////////
+
     public immutable(Class)[ string ] iget_owl_classes();
     public immutable(Individual)[ string ] get_onto_as_map_individuals();
     public immutable(Class) * iget_class(string ur);
 
-    //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+// //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////    
+    /**
+    * аутентификация
+    * Parameters: login, password
+    * Returns: ticket = сессионный билет
+	*/
     public Ticket authenticate(string login, string password);
+    
+    /**
+     * Получить обьект Ticket по Id
+     */
     public Ticket *get_ticket(string ticket_id);
+
+    /**
+     * проверить сессионный билет
+     */
     public bool is_ticket_valid(string ticket_id);
 
-    ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
+    // ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     public immutable(string)[]     get_individuals_ids_via_query(Ticket * ticket, string query_str);
 
     public Individual               get_individual(Ticket *ticket, string uri);
@@ -152,11 +173,11 @@ interface Context
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
     public ResultCode post_individual(Ticket *ticket, Individual individual);
 
-    ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
+    // ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
     public ubyte get_rights (Ticket *ticket, string uri);
     public void get_rights_origin (Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace);
 
-    ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
+    // ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
 
     public void wait_thread(P_MODULE thread_id);
     public void set_trace(int idx, bool state);

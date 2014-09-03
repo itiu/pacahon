@@ -1,3 +1,7 @@
+/**
+  * обвязка к rabbit mq
+  */
+
 module bind.librabbitmq_headers;
 
 private import std.c.string;

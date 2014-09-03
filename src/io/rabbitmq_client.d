@@ -1,3 +1,7 @@
+/**
+  * RabbitMQ Client
+  */
+
 module io.rabbitmq_client;
 
 private import core.thread;

@@ -1,3 +1,6 @@
+/**
+  * загрузка индивидов из *.ttl
+  */
 module io.file_reader;
 
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;

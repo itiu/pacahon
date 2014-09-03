@@ -1,4 +1,7 @@
-//////////////////////////////////////////// USE XAPIAN SEARCH ///////////////////////////////////////////////////////////////
+/**
+  *     XAPIAN READER 
+  */
+
 module search.xapian_reader;
 
 import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;

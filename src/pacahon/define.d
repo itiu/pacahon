@@ -1,3 +1,7 @@
+/**
+  * define
+  */
+
 module pacahon.define;
 
 import util.container;

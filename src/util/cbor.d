@@ -1,3 +1,6 @@
+/**
+  * CBOR общее
+  */
 module util.cbor;
 
 private

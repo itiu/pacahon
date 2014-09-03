@@ -1,3 +1,6 @@
+/**
+  * процесс отвечающий за хранение
+  */
 module storage.storage_thread;
 
 private

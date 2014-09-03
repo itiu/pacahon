@@ -1,6 +1,9 @@
+/**
+  * VQL executor
+  */
+
 module search.vql;
 
-// VEDA QUERY LANG
 
 private
 {

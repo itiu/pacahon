@@ -1,3 +1,6 @@
+/**
+  * lmdb реализация хранилища
+  */
 module storage.lmdb_storage;
 
 private

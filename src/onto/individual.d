@@ -1,3 +1,6 @@
+/**
+  * Индивидуал
+  */
 module onto.individual;
 
 private import onto.resource;

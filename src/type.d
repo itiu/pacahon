@@ -1,3 +1,6 @@
+/**
+  * общие типы
+  */         
 module type;
 
 import std.math, std.stdio, std.conv, std.string;
