@@ -5,15 +5,34 @@ module type;
 
 import std.math, std.stdio, std.conv, std.string;
 
-enum Access : ubyte
+/// Uri
+alias string Uri;
+
+/// битовые поля для прав 
+public enum Access : ubyte
 {
+	/// создание	
     can_create  = 1,
+    
+    /// чтение
     can_read    = 2,
+    
+    /// изменеие    
     can_update  = 4,
+    
+    /// удаление
     can_delete  = 8,
+    
+    /// запрет создания
     cant_create = 16,
+    
+    /// запрет чтения
     cant_read   = 32,
+    
+    /// запрет обновления
     cant_update = 64,
+    
+    /// запрет удаления
     cant_delete = 128
 }
 

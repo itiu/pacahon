@@ -25,7 +25,7 @@ import pacahon.log_msg;
 import search.vel;
 import search.xapian_vql;
 
-//////// logger ///////////////////////////////////////////
+// ////// logger ///////////////////////////////////////////
 import util.logger;
 logger _log;
 logger log()
@@ -34,9 +34,9 @@ logger log()
         _log = new logger("pacahon", "log", "search");
     return _log;
 }
-//////// ////// ///////////////////////////////////////////
+// ////// ////// ///////////////////////////////////////////
 
-byte err;
+protected byte err;
 
 public void xapian_thread_context(string thread_name)
 {
@@ -133,7 +133,7 @@ void xapian_indexer(string thread_name)
     {
     }
 
-    ///////////// XAPIAN INDEXER ///////////////////////////
+    // /////////// XAPIAN INDEXER ///////////////////////////
     XapianWritableDatabase indexer_db;
     XapianTermGenerator    indexer;
     string                 lang    = "russian";

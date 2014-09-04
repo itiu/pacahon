@@ -37,7 +37,7 @@ private
    индекс:
                 permissionObject + permissionSubject
 *********************************************************************/
-byte   err;
+protected byte   err;
 
 logger log;
 

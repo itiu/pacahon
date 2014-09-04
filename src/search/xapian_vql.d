@@ -15,7 +15,7 @@ import pacahon.define;
 import pacahon.log_msg;
 import storage.lmdb_storage;
 
-//////// logger ///////////////////////////////////////////
+// ////// logger ///////////////////////////////////////////
 import util.logger;
 logger _log;
 logger log()
@@ -24,9 +24,9 @@ logger log()
         _log = new logger("pacahon", "log", "search");
     return _log;
 }
-//////// ////// ///////////////////////////////////////////
+// ////// ////// ///////////////////////////////////////////
 
-byte   err;
+protected byte   err;
 
 public string[ string ] get_fields(string str_fields)
 {
