@@ -953,6 +953,12 @@ class PThreadContext : Context
             Tid tid_subject_manager;
             Tid tid_acl;
 
+            if (indv !is null && (indv.uri is null || indv.uri.length < 3))
+            {
+            	log.trace("Ex! store_subject:%s", indv);
+            	return ResultCode.Unprocessable_Entity;
+            }
+            	
             if (trace_msg[ 27 ] == 1)
                 log.trace("[%s] store_individual", name);
 

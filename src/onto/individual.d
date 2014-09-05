@@ -1,6 +1,6 @@
 /**
-  * Индивидуал
-  */
+ * Индивидуал
+ */
 module onto.individual;
 
 private import onto.resource;
@@ -36,6 +36,12 @@ struct Individual
         rc = _rc;
     }
 
+    this(string _uri, Resources[ string ] _resources)
+    {
+        uri       = _uri;
+        resources = _resources;
+    }
+
     immutable this(string _uri, immutable(Resources[ string ]) _resources)
     {
         uri       = _uri;
@@ -48,6 +54,15 @@ struct Individual
         immutable Resources[ string ]    tmp1 = assumeUnique(resources);
 
         immutable(Individual) result = immutable Individual(uri, tmp1);
+        return result;
+    }
+
+    Individual dup()
+    {
+        resources.rehash();
+        Resources[ string ]    tmp1 = resources.dup;
+
+        Individual result = Individual(uri, tmp1);
         return result;
     }
 
@@ -72,13 +87,14 @@ struct Individual
 
         return null;
     }
-    
-    void addResource (string uri, Resource rs)
+
+    void addResource(string uri, Resource rs)
     {
-         Resources rss = resources.get (uri, Resources.init);
-         rss ~= rs;	
-         resources[uri] = rss;    	
-    }	
+        Resources rss = resources.get(uri, Resources.init);
+
+        rss ~= rs;
+        resources[ uri ] = rss;
+    }
 /*
     Resource getFirstIResource(string predicate)
     {
@@ -132,5 +148,32 @@ struct Individual
             }
         }
         return false;
+    }
+
+    Individual apply(Individual item)
+    {
+        Individual res = this.dup();
+
+        if (item.uri != uri)
+            return res;
+
+        foreach (key, rss; item.resources)
+        {
+            Resources new_rss = Resources.init;
+            foreach (rs; rss)
+            {
+                new_rss ~= rs;
+            }
+
+            Resources exists_rss = resources.get(key, Resources.init);
+            foreach (rs; exists_rss)
+            {
+                new_rss ~= rs;
+            }
+
+            res.resources[ key ] = new_rss;
+        }
+
+        return res;
     }
 }

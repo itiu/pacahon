@@ -218,8 +218,18 @@ private void prepare_file(string file_name, Context context)
                         string prefix = ss.uri[ 0..pos + 1 ];
                         if (for_load.get(prefix, false) == true)
                         {
+                            Individual indv_in_storage = context.get_individual(null, ss.uri);
                             //writeln("#1 file_reader:store, ss=\n", ss);
-                            context.put_individual(null, ss.uri, ss);
+                            if (indv_in_storage.getStatus() == ResultCode.OK)
+                            {
+                            //writeln("#2 file_reader:store, indv_in_storage=\n", indv_in_storage);
+                            	// обьеденить данные: ss = ss + indv_in_storage 
+                            	ss = ss.apply (indv_in_storage);
+                            //writeln("#3 file_reader:store, ss=\n", ss);
+                            }
+                            ResultCode res = context.put_individual(null, ss.uri, ss);
+                            if (res != ResultCode.OK)
+                            	log.trace("individual =%s, not store, errcode =%s", ss.uri, text (res));
                         }
                     }
                 }
