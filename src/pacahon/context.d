@@ -320,6 +320,7 @@ interface Context
     		Код результата операции
 	*/
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
+    
     public ResultCode post_individual(Ticket *ticket, Individual individual);
 
     // ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
@@ -327,23 +328,57 @@ interface Context
      получить список доступных прав для пользователя на указанномый uri      
      Params: 
      		 ticket = указатель на обьект Ticket
-    		 uri   = uri субьекта
+    		 uri    = uri субьекта
     
      Returns: 
     		байт содержащий установленные биты (type.Access)    
 	*/
-
     public ubyte get_rights (Ticket *ticket, string uri);
+    
+    
+    /**
+     получить детализированный список доступных прав для пользователя на указанномый uri      
+     Params: 
+     		 ticket = указатель на обьект Ticket
+    		 uri    = uri субьекта
+    		 trace  = функция делегат, собирающая результат выполнения функции
+	*/
     public void get_rights_origin (Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace);
 
     // ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
 
+    /**
+     ожидать, пока освободится процесс      
+     Params: 
+     		 thread_id = id процесса из перечисления P_MODULE
+	*/
     public void wait_thread(P_MODULE thread_id);
+
+    /**
+     включить/выключить отладочные сообщения      
+     Params: 
+     		 idx   = id отладочного сообщения (0 - все сообщения)
+     		 state = true/false
+	*/
     public void set_trace(int idx, bool state);
 
+    /**
+     количество индивидуалов в базе данных     
+	*/
     public long count_individuals();
 
+    /**
+     выполнить бэкапирование базы данных      
+	*/
     public bool backup(int level = 0);
+
+    /**
+     остановить выполнение операций записи, новые команды на запись не принимаются      
+	*/
     public void freeze();
+
+    /**
+     возобновить прием операций записи на выполнение      
+	*/
     public void unfreeze();
 }

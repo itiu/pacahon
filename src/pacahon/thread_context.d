@@ -46,6 +46,7 @@ Tid    dummy_tid;
 string g_str_script_result;
 string g_str_script_out;
 
+/// реализация интерфейса Context
 class PThreadContext : Context
 {
     bool[ P_MODULE ] is_traced_module;
@@ -292,7 +293,7 @@ class PThreadContext : Context
 
         return res;
     }
-///////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
+// /////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
 
     public void push_signal(string key, long value)
     {
@@ -330,7 +331,7 @@ class PThreadContext : Context
         }
     }
 
-///////////////////////////////////////////////////////////////////////////////////////////////
+// /////////////////////////////////////////////////////////////////////////////////////////////
 
     public Tid getTid(P_MODULE tid_id)
     {
@@ -430,7 +431,7 @@ class PThreadContext : Context
             log.trace(func[ (func.lastIndexOf(".") + 1)..$ ] ~ ": t=%d µs", t);
     }
 
-    //////////////////////////////////////////////////////////////////////////////////
+    // ////////////////////////////////////////////////////////////////////////////////
     struct Signal
     {
         long last_time_update = 0;
@@ -553,7 +554,7 @@ class PThreadContext : Context
 
     // *************************************************** external api *********************************** //
 
-    ///////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
+    // /////////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
 
     public bool is_ticket_valid(string ticket_id)
     {
@@ -580,12 +581,7 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
         }
     }
-
-/**
-    аутентификация
-    Params: string login, string password
-    Returns: ticket = сессионный билет
-*/  
+ 
     public Ticket authenticate(string login, string password)
     {
         StopWatch sw; sw.start;
@@ -718,7 +714,7 @@ class PThreadContext : Context
     }
 
 
-    ////////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
+    // //////////////////////////////////////////// INDIVIDUALS IO /////////////////////////////////////
     public Individual[] get_individuals_via_query(Ticket *ticket, string query_str)
     {
         StopWatch sw; sw.start;
@@ -754,7 +750,7 @@ class PThreadContext : Context
         }
     }    
     
-    //////////// external ////////////    
+    // ////////// external ////////////    
 
     public ubyte get_rights(Ticket *ticket, string uri)
     {
