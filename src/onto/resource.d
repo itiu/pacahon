@@ -1,6 +1,6 @@
 /**
-  * Ресурс
-  */
+ * Ресурс
+ */
 
 module onto.resource;
 
@@ -46,15 +46,15 @@ public bool anyExist(ref Resource[ string ] hrss, string[] objects)
 
 struct Resource
 {
-    DataType   type   = DataType.Uri;
+    DataType       type   = DataType.Uri;
     ResourceOrigin origin = ResourceOrigin.local;
-    LANG lang = LANG.NONE;    
+    LANG           lang   = LANG.NONE;
 
     private {
         void *[ 2 ] m_data;
         ref inout (T)getDataAs(T) () inout { static assert(T.sizeof <= m_data.sizeof); return *cast(inout (T) *)m_data.ptr; }
         @property ref inout (long)m_int() inout { return getDataAs!long (); }
-        @property ref inout (decimal)m_decimal() inout { return getDataAs!decimal (); }
+        @property ref inout (decimal)m_decimal() inout { return getDataAs!decimal(); }
         @property ref inout (bool)m_bool() inout { return getDataAs!bool(); }
         @property ref inout (string)m_string() inout { return getDataAs!string(); }
     }
@@ -68,16 +68,16 @@ struct Resource
             static if (is (T == decimal))
                 return m_decimal;
             else
-                    static if (is (T == long))
-                        return m_int;
+                static if (is (T == long))
+                    return m_int;
+                else
+                    static if (is (T == ulong))
+                        return cast(ulong)m_int;
                     else
-                        static if (is (T == ulong))
-                            return cast(ulong)m_int;
+                        static if (is (T == string))
+                            return m_string;
                         else
-                            static if (is (T == string))
-                                return m_string;
-                            else
-                                static assert("Resource can only be casted to (bool, long, double, string. Not " ~ T.stringof ~ ".");
+                            static assert("Resource can only be casted to (bool, long, double, string. Not " ~ T.stringof ~ ".");
     }
 
     ///////////////////////////////////////////
@@ -97,7 +97,7 @@ struct Resource
     {
         return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
-    
+
     ///////////////////////////////////////////
     bool opAssign(bool v)
     {
@@ -119,7 +119,7 @@ struct Resource
     {
         type = DataType.String; m_string = v; return v;
     }
-    
+
     ///////////////////////////////////////////
     this(string str, ResourceOrigin _origin)
     {
@@ -130,51 +130,50 @@ struct Resource
 
     this(DataType _type, string str, LANG _lang = LANG.NONE)
     {
-    	if (_type == DataType.Datetime)
-    	{
-    		try
-    		{
-    			if (str.length == 10 && str[ 4 ] == '-' && str[ 7 ] == '-')
-    				str = str ~ "T00:00:00";
-    			
-    			long value = stdTimeToUnixTime(SysTime.fromISOExtString(str, UTC()).stdTime);
-    			
-    			this = value;
-    		}
-    		catch (Exception ex)
-    		{
-    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
-    		}    		
-    	}
-    	else if (_type == DataType.Integer)
-    	{
-    		try
-    		{
-    			this = parse!long (str);
-    		}
-    		catch (Exception ex)
-    		{
-    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
-    		}
-    	}
-    	else if (_type == DataType.Boolean)
-    	{
-    		try
-    		{
-    			this = parse!bool (str);
-    		}
-    		catch (Exception ex)
-    		{
-    			writeln ("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
-    		}
-    		
-    	}
-    	else
-    	{
-    		this = str;
-    		lang = _lang;
+        if (_type == DataType.Datetime)
+        {
+            try
+            {
+                if (str.length == 10 && str[ 4 ] == '-' && str[ 7 ] == '-')
+                    str = str ~ "T00:00:00";
+
+                long value = stdTimeToUnixTime(SysTime.fromISOExtString(str, UTC()).stdTime);
+
+                this = value;
+            }
+            catch (Exception ex)
+            {
+                writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+            }
         }
-   		type = _type;
+        else if (_type == DataType.Integer)
+        {
+            try
+            {
+                this = parse!long (str);
+            }
+            catch (Exception ex)
+            {
+                writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+            }
+        }
+        else if (_type == DataType.Boolean)
+        {
+            try
+            {
+                this = parse!bool(str);
+            }
+            catch (Exception ex)
+            {
+                writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+            }
+        }
+        else
+        {
+            this = str;
+            lang = _lang;
+        }
+        type = _type;
     }
 
     this(string str, LANG _lang = LANG.NONE)
@@ -195,33 +194,33 @@ struct Resource
         this = val;
         type = DataType.Decimal;
     }
-    
-    this(ulong val)    
+
+    this(ulong val)
     {
         this = cast(long)val;
         type = DataType.Integer;
     }
-    
+
     this(DataType _type, ulong val)
     {
         this = cast(long)val;
-        type = _type;    	
-    }    
-    
+        type = _type;
+    }
+
     void toString(scope void delegate(const(char)[]) sink) const
     {
-    	if (type == DataType.Uri || type == DataType.String)
-    		sink(get!string());
-    	else if (type == DataType.Boolean)
-    		sink(text (get!bool()));
-    	else if (type == DataType.Datetime)
-    		sink(text (get!long()));    		    		
-    	else if (type == DataType.Decimal)
-    		sink(text (get!decimal()));    		    		
-    	else if (type == DataType.Integer)
-    		sink(text (get!long()));    		    		
+        if (type == DataType.Uri || type == DataType.String)
+            sink(get!string());
+        else if (type == DataType.Boolean)
+            sink(text(get!bool()));
+        else if (type == DataType.Datetime)
+            sink(text(get!long ()));
+        else if (type == DataType.Decimal)
+            sink(text(get!decimal()));
+        else if (type == DataType.Integer)
+            sink(text(get!long ()));
     }
-    
+
     @property string data()
     {
         return get!string();

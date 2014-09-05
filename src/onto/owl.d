@@ -1,6 +1,6 @@
 /**
-  * OWL
-  */
+ * OWL
+ */
 
 module onto.owl;
 
@@ -13,13 +13,13 @@ private
 
     import util.utils;
     import util.container;
-    import util.logger;        
+    import util.logger;
 
     import pacahon.know_predicates;
     import pacahon.context;
     import pacahon.interthread_signals;
-    import pacahon.log_msg;    
-    
+    import pacahon.log_msg;
+
     import search.vql;
 }
 
@@ -160,7 +160,7 @@ class OWL
         Individual[] l_individuals;
 
         if (trace_msg[ 20 ] == 1)
-        	log.trace_log_and_console ("[%s] load onto to graph..", context.get_name);
+            log.trace_log_and_console("[%s] load onto to graph..", context.get_name);
 
         context.vql().get(null,
                           "return { '*'}
@@ -168,8 +168,8 @@ class OWL
                           l_individuals);
 
         if (trace_msg[ 20 ] == 1)
-        	log.trace_log_and_console ("[%s] count individuals: %d", context.get_name, l_individuals.length);
-        
+            log.trace_log_and_console("[%s] count individuals: %d", context.get_name, l_individuals.length);
+
         foreach (indv; l_individuals)
         {
             individuals[ indv.uri ]   = indv;
@@ -184,7 +184,7 @@ class OWL
         }
 
         if (trace_msg[ 20 ] == 1)
-        	log.trace_log_and_console ("[%s] load onto to graph..Ok", context.get_name);
+            log.trace_log_and_console("[%s] load onto to graph..Ok", context.get_name);
     }
 
     private void prepare(ref Individual[ string ])
