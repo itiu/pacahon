@@ -20,10 +20,16 @@ private
 
 alias Individual[] Individuals;
 
-struct Individual
+/// Индивидуал
+public struct Individual
 {
+	/// URI
     string             uri;
+    
+    /// Hashmap массивов ресурсов, где ключем является predicate (P из SPO) 
     Resources[ string ]    resources;
+    
+    /// Код ошибки, используется при создании экземпляра индивидуала
     private ResultCode rc;
 
     ResultCode         getStatus()

@@ -43,11 +43,16 @@ public bool anyExist(ref Resource[ string ] hrss, string[] objects)
     return false;
 }
 
-
+/// Ресурс
 struct Resource
 {
+	/// Тип 
     DataType       type   = DataType.Uri;
+
+	/// Источник 
     ResourceOrigin origin = ResourceOrigin.local;
+    
+    /// Язык
     LANG           lang   = LANG.NONE;
 
     private {
@@ -58,8 +63,9 @@ struct Resource
         @property ref inout (bool)m_bool() inout { return getDataAs!bool(); }
         @property ref inout (string)m_string() inout { return getDataAs!string(); }
     }
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
 
+    /// Получить содержимое
     @property inout (T)get(T) ()
     inout {
         static if (is (T == bool))
@@ -80,7 +86,7 @@ struct Resource
                             static assert("Resource can only be casted to (bool, long, double, string. Not " ~ T.stringof ~ ".");
     }
 
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
     bool opEquals(bool v) const
     {
         return type == DataType.Boolean && m_bool == v;
@@ -98,7 +104,7 @@ struct Resource
         return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
 
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
     bool opAssign(bool v)
     {
         type = DataType.Boolean; m_bool = v; return v;
@@ -120,7 +126,8 @@ struct Resource
         type = DataType.String; m_string = v; return v;
     }
 
-    ///////////////////////////////////////////
+    // /////////////////////////////////////////
+    /// конструктор
     this(string str, ResourceOrigin _origin)
     {
         this   = str;
@@ -128,6 +135,7 @@ struct Resource
         origin = _origin;
     }
 
+    /// конструктор
     this(DataType _type, string str, LANG _lang = LANG.NONE)
     {
         if (_type == DataType.Datetime)
@@ -176,6 +184,7 @@ struct Resource
         type = _type;
     }
 
+    /// конструктор
     this(string str, LANG _lang = LANG.NONE)
     {
         this = str;
@@ -183,24 +192,28 @@ struct Resource
         lang = _lang;
     }
 
+    /// конструктор
     this(bool val)
     {
         this = val;
         type = DataType.Boolean;
     }
 
+    /// конструктор
     this(decimal val)
     {
         this = val;
         type = DataType.Decimal;
     }
 
+    /// конструктор
     this(ulong val)
     {
         this = cast(long)val;
         type = DataType.Integer;
     }
 
+    /// конструктор
     this(DataType _type, ulong val)
     {
         this = cast(long)val;

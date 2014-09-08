@@ -34,40 +34,40 @@ enum CMD : byte
     NOP          = 64
 }
 
-/// имена процессов
+/// Имена процессов
 public enum P_MODULE : byte
 {
-	/// выдача и проверка тикетов 
+	/// Выдача и проверка тикетов 
     ticket_manager             = 0,
     
-    /// чтение и сохранение индивидуалов 
+    /// Чтение и сохранение индивидуалов 
     subject_manager            = 1,
     
-    /// индексирование прав, проверка прав
+    /// Индексирование прав, проверка прав
     acl_manager                = 2,
     
-    /// полнотекстовое индексирование 
+    /// Полнотекстовое индексирование 
     xapian_thread_context      = 3,
     
-    /// полнотекстовое индексирование 
+    /// Полнотекстовое индексирование 
     fulltext_indexer           = 4,
     
-    /// сбор статистики
+    /// Сбор статистики
     statistic_data_accumulator = 5,
     
-    /// запуск внешних скриптов
+    /// Запуск внешних скриптов
     condition                  = 6,
     
-    /// сохранение накопленных данных в полнотекстовом индексаторе
+    /// Сохранение накопленных данных в полнотекстовом индексаторе
     commiter                   = 7,
     
-    /// вывод статистики
+    /// Вывод статистики
     print_statistic            = 8,
     
-    /// межпроцессные сигналы
+    /// Межпроцессные сигналы
     interthread_signals        = 9,
     
-    /// загрузка из файлов
+    /// Загрузка из файлов
     file_reader                = 10,
     
     zmq_listener               = 11,
@@ -148,17 +148,17 @@ public struct Ticket
 	/// ID
     string     id;
     
-    /// uri пользователя
+    /// Uri пользователя
     string     user_uri;
     
-    /// код результата, если тикет не валидный != $(D ResultCode.Ok)  
+    /// Код результата, если тикет не валидный != ResultCode.Ok  
     ResultCode result;
 //    string[] parentUnitIds = new string[ 0 ];
 
-	/// время жизни тикета в миллисекундах
+	/// Время жизни тикета в миллисекундах
     long       end_time;
 
-    /// конструктор
+    /// Конструктор
     immutable this(string _id, string _user_uri, long _end_time)
     {
         id       = _id;
@@ -166,7 +166,7 @@ public struct Ticket
         end_time = _end_time;
     }
 
-    /// создание $(D immutable) копии
+    /// Создание $(D immutable) копии
     immutable(Ticket) idup()
     {
         immutable(Ticket) result = immutable Ticket(id, user_uri, end_time);
@@ -260,7 +260,7 @@ interface Context
     		 Uri
     
      Returns: 
-    		авторизованный экземпляр Individual 
+    		авторизованный экземпляр onto.Individual
 	*/
     public Individual               get_individual(Ticket *ticket, Uri uri);
 
