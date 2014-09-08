@@ -1,5 +1,5 @@
 /**
-  * общие типы
+  * Общие типы
   */         
 module type;
 
@@ -8,44 +8,56 @@ import std.math, std.stdio, std.conv, std.string;
 /// Uri
 alias string Uri;
 
-/// битовые поля для прав 
+/// Битовые поля для прав 
 public enum Access : ubyte
 {
-	/// создание	
+	/// Создание	
     can_create  = 1,
     
-    /// чтение
+    /// Чтение
     can_read    = 2,
     
-    /// изменеие    
+    /// Изменеие    
     can_update  = 4,
     
-    /// удаление
+    /// Удаление
     can_delete  = 8,
     
-    /// запрет создания
+    /// Запрет создания
     cant_create = 16,
     
-    /// запрет чтения
+    /// Запрет чтения
     cant_read   = 32,
     
-    /// запрет обновления
+    /// Запрет обновления
     cant_update = 64,
     
-    /// запрет удаления
+    /// Запрет удаления
     cant_delete = 128
 }
 
 Access[] access_list = [Access.can_create, Access.can_read, Access.can_update, Access.can_delete, Access.cant_create, 
 Access.cant_read, Access.cant_update, Access.cant_delete];
 
+/// Перечисление - Типы данных
 enum DataType : ubyte
 {
+	/// URI
     Uri         = 1,
+    
+    /// Строка
     String      = 2,
+
+    /// Целочисленное число
     Integer     = 4,
+
+    /// Время
     Datetime    = 8,
+
+    /// Десятичное число
     Decimal     = 32,
+
+    /// Boolean
     Boolean     = 64
 }
 
