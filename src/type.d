@@ -40,7 +40,7 @@ Access[] access_list = [Access.can_create, Access.can_read, Access.can_update, A
 Access.cant_read, Access.cant_update, Access.cant_delete];
 
 /// Перечисление - Типы данных
-enum DataType : ubyte
+public enum DataType : ubyte
 {
 	/// URI
     Uri         = 1,

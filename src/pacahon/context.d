@@ -191,10 +191,7 @@ interface Context
 
     @property search.vql.VQL vql();
 
-    ref string[ string ] get_prefix_map();
-
     int[ string ] get_key2slot();
-    long get_last_update_time();
 
 //    void store_subject(Subject ss, bool prepareEvents = true);
     public bool check_for_reload(string interthread_signal_id, void delegate() load);
@@ -206,11 +203,23 @@ interface Context
     long look_integer_signal(string key);
     string look_string_signal(string key);
     void set_reload_signal_to_local_thread(string interthread_signal_id);
-    bool authorize(string uri, Ticket *ticket, ubyte request_acess);
-    Individual[] get_individuals_via_query(Ticket *ticket, string query_str);
-    public string get_individual_from_storage(string uri);
+    bool authorize(string uri, Ticket *ticket, ubyte request_acess);    
+    Individual[] get_individuals_via_query(Ticket *ticket, string query_str);    
+    string get_individual_from_storage(string uri);
+
+    // *************************************************** external API ? *********************************** //
+    ref string[ string ] get_prefix_map();
+    long get_last_update_time();    
     
-    // *************************************************** external api *********************************** //
+    // *************************************************** external API *********************************** //
+    /**
+     Выполнить скрипт
+     Params: 
+    		str = строка содержащая скрипт
+    
+     Returns: 
+    		string[ 2 ], [0] - результат выполнения, [1] - не используется
+	*/
     public string[ 2 ] execute_script(string str);
 
 //    //////////////////////////////////////////////////// ONTO //////////////////////////////////////////////
@@ -221,7 +230,7 @@ interface Context
 
 // //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////    
     /**
-     аутентификация
+     Aутентификация
      Params: 
     		login = имя пользователя
     		password = хэш пароля
@@ -232,18 +241,18 @@ interface Context
     public Ticket authenticate(string login, string password);
     
     /**
-      Получить обьект Ticket по Id
+      Вернуть обьект Ticket по Id
      */
     public Ticket *get_ticket(string ticket_id);
 
     /**
-      проверить сессионный билет
+      Проверить сессионный билет
      */
     public bool is_ticket_valid(string ticket_id);
 
     // ////////////////////////////////////////////// INDIVIDUALS IO ////////////////////////////////////////////
     /**
-     получить индивидуалов согласно заданному запросу      
+     Вернуть индивидуалов согласно заданному запросу      
      Params: 
      		ticket = указатель на экземпляр Ticket
      		query_str = строка содержащая VQL запрос
@@ -254,7 +263,7 @@ interface Context
     public immutable(string)[]     get_individuals_ids_via_query(Ticket *ticket, string query_str);
 
     /**
-     получить индивидуала по его uri      
+     Вернуть индивидуала по его uri      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 Uri
@@ -265,7 +274,7 @@ interface Context
     public Individual               get_individual(Ticket *ticket, Uri uri);
 
     /**
-     получить список индивидуалов по списку uri      
+     Вернуть список индивидуалов по списку uri      
      Params: 
      		ticket = указатель на обьект Ticket
     		uris   = список содержащий заданные uri
@@ -276,7 +285,7 @@ interface Context
     public Individual[]             get_individuals(Ticket *ticket, string[] uris);
 
     /**
-     получить индивидуала(CBOR) по его uri      
+     Вернуть индивидуала(CBOR) по его uri      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 uri
@@ -287,7 +296,7 @@ interface Context
     public string               	 get_individual_as_cbor(Ticket *ticket, string uri);
 
     /**
-    * получить список индивидуалов(CBOR) по списку uri      
+    * Вернуть список индивидуалов(CBOR) по списку uri      
      Params: 
      		ticket = указатель на обьект Ticket
     		uris   = список содержащий заданные uri
@@ -298,7 +307,7 @@ interface Context
     public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris);
 
     /**
-    * сохранить индивидуал      
+    * Сохранить индивидуал      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 indv   = указатель на экземпляр Individual, сохраняется если !is null
@@ -310,7 +319,7 @@ interface Context
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
 
     /**
-     сохранить индивидуал, по указанному uri      
+     Сохранить индивидуал, по указанному uri      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 indv   = указатель на экземпляр Individual, сохраняется если !is null
@@ -325,7 +334,7 @@ interface Context
 
     // ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
     /**
-     получить список доступных прав для пользователя на указанномый uri      
+     Вернуть список доступных прав для пользователя на указанномый uri      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 uri    = uri субьекта
@@ -337,7 +346,7 @@ interface Context
     
     
     /**
-     получить детализированный список доступных прав для пользователя на указанномый uri      
+     Вернуть детализированный список доступных прав для пользователя на указанномый uri      
      Params: 
      		 ticket = указатель на обьект Ticket
     		 uri    = uri субьекта
@@ -348,14 +357,14 @@ interface Context
     // ////////////////////////////////////////////// TOOLS ////////////////////////////////////////////
 
     /**
-     ожидать, пока освободится процесс      
+     Ожидать, пока освободится процесс      
      Params: 
      		 thread_id = id процесса из перечисления P_MODULE
 	*/
     public void wait_thread(P_MODULE thread_id);
 
     /**
-     включить/выключить отладочные сообщения      
+     Включить/выключить отладочные сообщения      
      Params: 
      		 idx   = id отладочного сообщения (0 - все сообщения)
      		 state = true/false
@@ -363,22 +372,22 @@ interface Context
     public void set_trace(int idx, bool state);
 
     /**
-     количество индивидуалов в базе данных     
+     Количество индивидуалов в базе данных     
 	*/
     public long count_individuals();
 
     /**
-     выполнить бэкапирование базы данных      
+     Выполнить бэкапирование базы данных      
 	*/
     public bool backup(int level = 0);
 
     /**
-     остановить выполнение операций записи, новые команды на запись не принимаются      
+     Остановить выполнение операций записи, новые команды на запись не принимаются      
 	*/
     public void freeze();
 
     /**
-     возобновить прием операций записи на выполнение      
+     Возобновить прием операций записи на выполнение      
 	*/
     public void unfreeze();
 }

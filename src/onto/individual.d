@@ -1,23 +1,17 @@
 /**
- * Индивидуал
+ * Индивидуал (субьект)
  */
 module onto.individual;
-
-private import onto.resource;
 
 private
 {
     import std.stdio, std.typecons, std.conv, std.exception : assumeUnique;
 
-    import onto.owl;
-
-    import pacahon.know_predicates;
-    import pacahon.context;
-    import util.utils;
-    import util.container;
-    import util.cbor8individual;
+    import onto.owl, onto.resource;
+    import pacahon.know_predicates, pacahon.context;
+    import util.utils, util.container, util.cbor8individual;
 }
-
+/// Массив индивидуалов
 alias Individual[] Individuals;
 
 /// Индивидуал
@@ -29,14 +23,14 @@ public struct Individual
     /// Hashmap массивов ресурсов, где ключем является predicate (P из SPO) 
     Resources[ string ]    resources;
     
-    /// Код ошибки, используется при создании экземпляра индивидуала
     private ResultCode rc;
 
-    ResultCode         getStatus()
+    /// Вернуть код ошибки
+    public ResultCode         getStatus()
     {
         return rc;
     }
-
+   
     void setStatus(ResultCode _rc)
     {
         rc = _rc;
