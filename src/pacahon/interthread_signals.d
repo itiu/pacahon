@@ -1,6 +1,6 @@
 /**
-  * обмен сообщениями между нитями
-  */
+ * обмен сообщениями между нитями
+ */
 module pacahon.interthread_signals;
 
 import core.thread, std.conv, std.concurrency, std.stdio, std.datetime;

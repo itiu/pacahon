@@ -1,6 +1,6 @@
 /**
-  * сервер
-  */
+ * сервер
+ */
 module pacahon.server;
 
 private
@@ -89,8 +89,8 @@ void commiter(string thread_name, Tid tid, Tid tid_subject_manager, Tid tid_acl_
 
 bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
 {
-	bool res;
-    Tid tid = tids[ tid_idx ];
+    bool res;
+    Tid  tid = tids[ tid_idx ];
 
     if (tid == Tid.init)
         throw new Exception("wait_starting_thread: Tid=" ~ text(tid_idx) ~ " not found", __FILE__, __LINE__);
@@ -98,10 +98,10 @@ bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     send(tid, thisTid);
     receive((bool isReady)
             {
-            	res = isReady;
+                res = isReady;
                 if (trace_msg[ 50 ] == 1)
                     log.trace("STARTED THREAD: %s", text(tid_idx));
-                if (res == false)    
+                if (res == false)
                     log.trace("FAIL START THREAD: %s", text(tid_idx));
             });
     return res;
@@ -130,7 +130,7 @@ void init_core()
         tids[ P_MODULE.fulltext_indexer ] =
             spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer));
         if (wait_starting_thread(P_MODULE.fulltext_indexer, tids) == false)
-        	return;
+            return;
 
         tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, text(P_MODULE.interthread_signals));
         wait_starting_thread(P_MODULE.interthread_signals, tids);
@@ -143,7 +143,7 @@ void init_core()
 
         tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, text(P_MODULE.acl_manager), acl_indexes_db_path);
         wait_starting_thread(P_MODULE.acl_manager, tids);
-        
+
         tids[ P_MODULE.xapian_thread_context ] = spawn(&xapian_thread_context, text(P_MODULE.xapian_thread_context));
         wait_starting_thread(P_MODULE.xapian_thread_context, tids);
 

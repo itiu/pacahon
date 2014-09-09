@@ -1,6 +1,6 @@
 /**
-  * define
-  */
+ * define
+ */
 
 module pacahon.define;
 
@@ -8,7 +8,7 @@ import util.container;
 import std.concurrency, std.file;
 import pacahon.know_predicates;
 
-string[] access_list_predicates = [veda_schema__canCreate, veda_schema__canRead, veda_schema__canUpdate, veda_schema__canDelete];
+string[] access_list_predicates = [ veda_schema__canCreate, veda_schema__canRead, veda_schema__canUpdate, veda_schema__canDelete ];
 
 enum CNAME : byte
 {
@@ -92,5 +92,5 @@ void create_folder_struct()
     }
     catch (Exception ex)
     {
-    }    
+    }
 }

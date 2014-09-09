@@ -1,6 +1,6 @@
 /**
-  * Внешнее API - Реализация
-  */
+ * Внешнее API - Реализация
+ */
 
 module pacahon.thread_context;
 
@@ -581,7 +581,7 @@ class PThreadContext : Context
             stat(CMD.GET, sw);
         }
     }
- 
+
     public Ticket authenticate(string login, string password)
     {
         StopWatch sw; sw.start;
@@ -748,16 +748,17 @@ class PThreadContext : Context
             if (trace_msg[ 26 ] == 1)
                 log.trace("get_individuals_via_query: end, query_str=%s", query_str);
         }
-    }    
-    
-    // ////////// external ////////////    
+    }
+
+    // ////////// external ////////////
 
     public ubyte get_rights(Ticket *ticket, string uri)
     {
         return acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);
     }
 
-    public void get_rights_origin(Ticket *ticket, string uri, void delegate(string resource_group, string subject_group, string right) trace)
+    public void get_rights_origin(Ticket *ticket, string uri,
+                                  void delegate(string resource_group, string subject_group, string right) trace)
     {
         acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, trace);
     }
@@ -865,8 +866,9 @@ class PThreadContext : Context
 
     public string get_individual_as_cbor(Ticket *ticket, string uri)
     {
-    	string res = "E";
+        string    res = "E";
         StopWatch sw; sw.start;
+
 /*
         if (trace_msg[ 25 ] == 1)
         {
@@ -906,13 +908,14 @@ class PThreadContext : Context
             if (trace_msg[ 25 ] == 1)
                 log.trace("get_individual as cbor: end, uri=%s", uri);
         }
-*/
-    	return res;
+ */
+        return res;
     }
-    
-    public immutable(string)[]     get_individuals_as_cbor(Ticket *ticket, string[] uris)
+
+    public immutable(string)[] get_individuals_as_cbor(Ticket * ticket, string[] uris)
     {
         StopWatch sw; sw.start;
+
 /*
         try
         {
@@ -938,9 +941,9 @@ class PThreadContext : Context
         {
             stat(CMD.GET, sw);
         }
-*/        
-    	immutable(string)[] res;
-    	return res;
+ */
+        immutable(string)[] res;
+        return res;
     }
 
 
@@ -955,10 +958,10 @@ class PThreadContext : Context
 
             if (indv !is null && (indv.uri is null || indv.uri.length < 3))
             {
-            	log.trace("Ex! store_subject:%s", indv);
-            	return ResultCode.Unprocessable_Entity;
+                log.trace("Ex! store_subject:%s", indv);
+                return ResultCode.Unprocessable_Entity;
             }
-            	
+
             if (trace_msg[ 27 ] == 1)
                 log.trace("[%s] store_individual", name);
 
@@ -986,7 +989,7 @@ class PThreadContext : Context
 
             Resource[ string ] rdfType;
 
-            setMapResources(indv.resources.get (rdf__type, Resources.init), rdfType);
+            setMapResources(indv.resources.get(rdf__type, Resources.init), rdfType);
 
             if (rdfType.anyExist(veda_schema__Membership) == true)
             {
@@ -1022,17 +1025,16 @@ class PThreadContext : Context
 
             if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
             {
+                if (indv.isExist(veda_schema__deleted, true) == false)
+                {
+                    Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
 
-            	if (indv.isExist (veda_schema__deleted, true) == false)
-            	{	
-            		Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
+                    if (tid_search_manager != Tid.init)
+                    {
+                        push_signal("search", Clock.currStdTime() / 10000);
 
-            		if (tid_search_manager != Tid.init)
-            		{
-            			push_signal("search", Clock.currStdTime() / 10000);
-
-            			send(tid_search_manager, CMD.STORE, ss_as_cbor);
-            		}
+                        send(tid_search_manager, CMD.STORE, ss_as_cbor);
+                    }
                 }
 
                 if (prepareEvents == true)

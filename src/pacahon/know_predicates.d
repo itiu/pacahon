@@ -1,6 +1,6 @@
 /**
-  * Предикаты используемые в Pacahon
-  */
+ * Предикаты используемые в Pacahon
+ */
 module pacahon.know_predicates;
 
 public const string owl__Ontology    = "owl:Ontology";
