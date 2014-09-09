@@ -4,7 +4,7 @@
 module pacahon.bus_event;
 
 private import std.outbuffer, std.stdio, std.concurrency, std.datetime, std.conv;
-
+import type;
 private import util.container;
 private import util.logger;
 private import util.utils;

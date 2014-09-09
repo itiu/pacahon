@@ -14,6 +14,7 @@ private
     import util.cbor;
     import util.cbor8individual;
 
+    import type;
     import onto.individual;
     import pacahon.know_predicates;
     import pacahon.context;

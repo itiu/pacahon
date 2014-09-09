@@ -9,6 +9,7 @@ private
     version (linux)
         import std.c.linux.linux, core.stdc.stdlib;
 
+    import type;
     import io.mq_client;
     import io.rabbitmq_client;
     import io.file_reader;

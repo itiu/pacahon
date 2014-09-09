@@ -1,5 +1,9 @@
 /**
-  * Общие типы
+  * Общие определения
+
+ Copyright: © 2014 Semantic Machines
+ License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+ Authors: Valeriy Bushenev
   */         
 module type;
 
@@ -61,35 +65,90 @@ public enum DataType : ubyte
     Boolean     = 64
 }
 
+/// Команды используемые процессами
+enum CMD : byte
+{
+	/// Сохранить
+    STORE        = 1,
+    
+    /// Сохранить
+    PUT          = 1,
+    
+    /// Найти
+    FIND         = 2,
+
+    /// Получить
+    GET          = 2,
+    
+    /// Проверить
+    EXAMINE      = 4,
+    
+    /// Авторизовать
+    AUTHORIZE    = 8,
+    
+    /// Коммит
+    COMMIT       = 16,
+    
+    /// Конец данных
+    END_DATA     = 32,
+    
+    /// Вклчить/выключить отладочные сообщения
+    SET_TRACE    = 33,
+    
+    /// Перезагрузить
+    RELOAD       = 40,
+    
+    /// Backup
+    BACKUP       = 41,
+    
+    /// Остановить прием команд на изменение
+    FREEZE       = 42,
+
+    /// Возобновить прием команд на изменение
+    UNFREEZE     = 43,
+    
+    /// Сохранить соответствие ключ - слот (xapian)
+    PUT_KEY2SLOT = 44,
+    
+    /// Установить
+    SET          = 45,
+    
+    /// Пустая комманда
+    NOP          = 64
+}
+
+
+/// Десятичное число
 struct decimal
 {
+	/// мантисса
 	long mantissa;
+	
+	/// экспонента
 	long exponent;
 	
+	/// конструктор
 	this (long m, long e)
 	{
 		mantissa = m;
 		exponent = e;
 	}	
 
+	/// конструктор
 	this (string num)
 	{
-//		writeln ("@p#1 num=", num);
 		string[] ff = split (num, ".");		
 		
 		if (ff.length == 2)
 		{
 			long sfp = ff[1].length;
-//			writeln ("@p#1 sfp=", sfp);
 			
 			mantissa = to!long (ff[0] ~ ff[1]);
 			exponent = -sfp; 
-
-//			writeln ("@p#1 mantissa=", mantissa);
-//			writeln ("@p#1 exponent=", exponent);
 		}
 	}	
 	
+	/// конструктор
 	this (double num)
 	{
 		byte sign = 1;
@@ -100,14 +159,10 @@ struct decimal
 			sign = -1;
 		}			
 		
-//		writeln ("@p#2 num=", num);
-
 		byte count;
 		double x = num;
 		while (true)
 		{
-//			writeln ("@p#2 x=", x, ", d=", x - cast(long)(x), ", cast(long)(x)=", cast(long)(x));
-
 			if (x - cast(long)(x) <= 0)
 				break;
 
@@ -117,11 +172,9 @@ struct decimal
 		mantissa = cast(long)(num*pow (10, count))*sign;
 		
 		exponent =  -count;
-
-//			writeln ("@p#2 mantissa=", mantissa);
-//			writeln ("@p#2 exponent=", exponent);
 	}
-	
+
+	/// вернуть double
 	double toDouble ()
 	{
 		try

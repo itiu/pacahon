@@ -1,5 +1,10 @@
 /**
  * Внешнее API
+
+ Copyright: © 2014 Semantic Machines
+ License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+ Authors: Valeriy Bushenev
+
  */
 module pacahon.context;
 
@@ -13,26 +18,6 @@ private import onto.individual;
 private import pacahon.define;
 
 private import bind.v8d_header;
-
-enum CMD : byte
-{
-    STORE        = 1,
-    PUT          = 1,
-    FIND         = 2,
-    GET          = 2,
-    EXAMINE      = 4,
-    AUTHORIZE    = 8,
-    COMMIT       = 16,
-    END_DATA     = 32,
-    SET_TRACE    = 33,
-    RELOAD       = 40,
-    BACKUP       = 41,
-    FREEZE       = 42,
-    UNFREEZE     = 43,
-    PUT_KEY2SLOT = 44,
-    SET          = 45,
-    NOP          = 64
-}
 
 /// Имена процессов
 public enum P_MODULE : byte

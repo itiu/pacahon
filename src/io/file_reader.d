@@ -6,6 +6,7 @@ module io.file_reader;
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
 import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.stdio : writeln;
 
+import type;
 import util.container;
 import util.cbor;
 import util.utils;

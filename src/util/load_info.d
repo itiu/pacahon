@@ -5,14 +5,9 @@ module util.load_info;
 
 private
 {
-    import core.thread;
-    import std.array : appender;
-    import std.format;
-    import std.stdio;
-    import std.datetime;
-    import std.concurrency;
-    import std.datetime;
+    import core.thread, std.format, std.stdio, std.datetime, std.concurrency,std.datetime, std.array : appender;
 
+    import type;
     import util.utils;
     import util.logger;
 

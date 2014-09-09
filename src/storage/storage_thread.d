@@ -8,7 +8,7 @@ private
     import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.outbuffer, std.string;
 
     import bind.lmdb_header;
-
+    import type;
     import util.logger;
     import util.utils;
     import util.cbor;
