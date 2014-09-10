@@ -8,26 +8,18 @@ private
 {
     import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.array, std.outbuffer;
 
-    import onto.individual;
-    import onto.resource;
+    import onto.individual, onto.resource;
 
     import bind.lmdb_header;
 
-    import util.logger;
-    import util.utils;
-    import util.cbor;
-    import util.cbor8individual;
-    import util.logger;
+    import util.logger, util.utils, util.cbor, util.cbor8individual, util.logger;
 
     import type;
-    import pacahon.context;
-    import pacahon.define;
-    import pacahon.know_predicates;
-    import pacahon.log_msg;
+    import pacahon.context, pacahon.define, pacahon.know_predicates, pacahon.log_msg;
     import storage.lmdb_storage;
 }
 
-//////////////// ACLManager
+// ////////////// ACLManager
 
 /*********************************************************************
    permissionObject uri
@@ -46,6 +38,7 @@ static this()
     log = new logger("pacahon", "log", "acl");
 }
 
+/// Хранение, чтение PermissionStatement, Membership
 class Authorization : LmdbStorage
 {
     this(string _path, DBMode mode)

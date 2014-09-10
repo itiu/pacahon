@@ -11,13 +11,9 @@ private
 
     import onto.individual;
 
-    import util.logger;
-    import util.utils;
-    import util.cbor;
-    import util.cbor8individual;
+    import util.logger, util.utils, util.cbor, util.cbor8individual;
 
-    import pacahon.context;
-    import pacahon.define;
+    import pacahon.context, pacahon.define;
 }
 
 logger log;
@@ -27,20 +23,31 @@ static this()
     log = new logger("pacahon", "log", "lmdb");
 }
 
+/// Режим работы хранилища 
 enum DBMode
 {
+	/// чтение
     R  = true,
+    
+    /// чтение/запись
     RW = false
 }
 
-enum Result
+/// Результат
+public enum Result
 {
+	/// OK
     Ok,
+    
+    /// Ошибка
     Err,
+    
+    /// Ничего
     Nothing
 }
 
-class LmdbStorage
+/// key-value хранилище на lmdb
+public class LmdbStorage
 {
     MDB_env             *env;
     public const string summ_hash_this_db_id;
@@ -49,6 +56,7 @@ class LmdbStorage
     private string      _path;
     string              db_name;
 
+    /// конструктор
     this(string _path_, DBMode _mode)
     {
         _path                = _path_;
