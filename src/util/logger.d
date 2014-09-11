@@ -19,7 +19,8 @@ private
     import std.concurrency;
 }
 
-void logger_process()
+/// Процесс отвечающий за логгирование
+private void logger_process()
 {
     //writeln("SPAWN: Logger");
     LoggerQueue llq = null;
@@ -45,6 +46,21 @@ void logger_process()
     }
 }
 
+/** класс logger
+
+Sample:
+
+...
+
+logger log;
+
+static this()
+{
+    log = new logger("pacahon", "log", "API");
+}
+
+...
+*/
 public class logger
 {
     private string log_name = "app";
@@ -66,6 +82,7 @@ public class logger
         }
     }
 
+    /// Конструктор
     this(string _log_name, string _ext, string _src)
     {
         log_name = _log_name;
@@ -73,7 +90,13 @@ public class logger
         ext      = _ext;
     }
 
-    void trace(Char, A ...) (in Char[] fmt, A args)
+    /**
+    	Записать информацию в лог файл.
+       Params:
+                fmt = разметка сообщения
+                args = выводимые переменные
+    */
+    public void trace(Char, A ...) (in Char[] fmt, A args)
     {
         init_tid_logger();
         auto writer = appender!string();
@@ -81,7 +104,13 @@ public class logger
         send(tid_logger, 'T', log_name, ext, src, writer.data);
     }
 
-    void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
+    /**
+    	Записать информацию в лог файл и на консоль.
+       Params:
+                fmt = разметка сообщения
+                args = выводимые переменные
+    */
+    public void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
     {
         init_tid_logger();
         auto writer = appender!string();
@@ -89,7 +118,14 @@ public class logger
         send(tid_logger, 'C', log_name, ext, src, writer.data);
     }
 
-    void trace_io(bool io, byte *data, ulong length)
+    /**
+    	Записать информацию о вводе/выводе в лог файл.
+       Params:
+       			io = указатель направления информации (I/O)
+                data = указатель на данные
+                length = длинна блока данных 
+    */
+    public void trace_io(bool io, byte *data, ulong length)
     {
         init_tid_logger();
         if (io == true)
@@ -104,7 +140,7 @@ public class logger
 alias long _time;
 
 
-public class LoggerQueue
+private class LoggerQueue
 {
     private int    count     = 0;
     private int    prev_time = 0;

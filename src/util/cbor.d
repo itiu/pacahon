@@ -42,6 +42,7 @@ int BREAK = 0x1f;
 /** Semantic tag value describing CBOR content. */
 int TAG_CBOR_MARKER = 55799;
 
+/// Основные типы данных CBOR
 enum MajorType : ubyte
 {
     /** Major type 0: unsigned integers. */
@@ -69,6 +70,7 @@ enum MajorType : ubyte
     FLOAT_SIMPLE     = 7 << 5
 }
 
+/// Теги CBOR
 enum TAG : ubyte
 {
     NONE                        = 255,
@@ -122,12 +124,16 @@ enum TAG : ubyte
     MIME_MESSAGE                = 36
 }
 
+/// Элемент/заголовок
 struct ElementHeader
 {
+	/// Тип
     MajorType type;
     
+    /// Число
    	long      v_long;
     
+    /// Тэг
     TAG       tag = TAG.NONE;
 }
 
@@ -139,6 +145,7 @@ string toString(ElementHeader *el)
 
 ///////////////////////////////////////////////////////////////////////////
 
+/// Записать в буффер тип и значение
 public void write_type_value(MajorType type, ulong value, ref OutBuffer ou)
 {
     ubyte element_header;
@@ -182,6 +189,7 @@ public void write_type_value(MajorType type, ulong value, ref OutBuffer ou)
 }
 
 
+/// Записать в буффер integer
 public void write_integer(long vv, ref OutBuffer ou)
 {
 	if (vv >= 0)
@@ -190,12 +198,14 @@ public void write_integer(long vv, ref OutBuffer ou)
 		write_type_value(MajorType.NEGATIVE_INTEGER, -vv , ou);		
 }
 
+/// Записать в буффер строку
 public void write_string(string vv, ref OutBuffer ou)
 {
     write_type_value(MajorType.TEXT_STRING, vv.length, ou);
     ou.write(vv);
 }
 
+/// Записать в буффер boolean
 public void write_bool(bool vv, ref OutBuffer ou)
 {
     if (vv == true)
@@ -204,25 +214,28 @@ public void write_bool(bool vv, ref OutBuffer ou)
         write_type_value(MajorType.FLOAT_SIMPLE, FALSE, ou);
 }
 
+/// Записать в буффер ushort
 private ushort ushort_from_buff(ubyte[] buff, int pos)
 {	
 	ushort res = *((cast(ushort*)(buff.ptr + pos)));
     return res;
 }
 
+/// Записать в буффер uint
 private uint uint_from_buff(ubyte[] buff, int pos)
 {
 	uint res = *((cast(uint*)(buff.ptr + pos)));
     return res;
 }
 
+/// Записать в буффер ulong
 private ulong ulong_from_buff(ubyte[] buff, int pos)
 {
 	ulong res = *((cast(ulong*)(buff.ptr + pos)));
     return res;
 }
 
-
+/// Читать из буффера тип и значение
 public int read_type_value(ubyte[] src, ElementHeader *header)
 {
     ubyte hh = src[ 0 ];

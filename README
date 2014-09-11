@@ -70,3 +70,8 @@ linux:
     git clone git@github.com:itiu/pacahon.git
     cd pacahon
     dub
+
+3. Документация:
+
+    dub build --build=ddox
+    firefox docs/index.html

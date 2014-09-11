@@ -7,26 +7,14 @@ module util.utils;
 private
 {
     import core.stdc.stdio;
-    import std.file;
-    import std.datetime;
-    import std.json;
-    import std.c.string;
-    import std.c.linux.linux;
-    import std.format;
-    import std.stdio;
-    import std.conv;
-    import std.string;
-    import std.concurrency;
-    import std.ascii;
-    import std.csv;
-    import std.typecons;
-    import std.outbuffer;
+    import std.file, std.datetime, std.json, std.c.string, std.c.linux.linux, std.format, std.stdio, std.conv, std.string, std.concurrency;
+    import std.ascii, std.csv, std.typecons, std.outbuffer;
 
     import util.container;
-    import pacahon.know_predicates;
-    import pacahon.context;
+    import pacahon.know_predicates, pacahon.context;
 }
 
+/// serialize key2slot struct
 public string serialize_key2slot(ref int[ string ] key2slot)
 {
     OutBuffer outbuff = new OutBuffer();
@@ -43,6 +31,7 @@ public string serialize_key2slot(ref int[ string ] key2slot)
     return outbuff.toString();
 }
 
+/// parse key2slot struct
 public int[ string ] deserialize_key2slot(string data)
 {
 //	writeln ("@&1");
@@ -133,14 +122,6 @@ string fromStringz(char *s)
 string fromStringz(char *s, int len)
 {
     return cast(string)(s ? s[ 0 .. len ] : null);
-}
-
-public string generateMsgId()
-{
-    SysTime sysTime = Clock.currTime(UTC());
-    long    tm      = sysTime.stdTime;
-
-    return "msg:M" ~ text(tm);
 }
 
 // !!! stupid, but quickly
