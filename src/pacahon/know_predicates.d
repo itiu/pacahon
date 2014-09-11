@@ -143,16 +143,16 @@ public const string dc__hasPart = "dc:hasPart";
 //public const string swrc__email      = "swrc:email";
 //public const string swrc__phone      = "swrc:phone";
 
-public const string msg__Message     = "msg:Message";
-public const string msg__args        = "msg:args";
-public const string msg__reciever    = "msg:reciever";
-public const string msg__ticket      = "msg:ticket"; // TODO оставить один, или msg:ticket или auth:ticket
-public const string msg__sender      = "msg:sender";
-public const string msg__command     = "msg:command";
-public const string msg__status      = "msg:status";
-public const string msg__reason      = "msg:reason";
-public const string msg__result      = "msg:result";
-public const string msg__in_reply_to = "msg:in-reply-to";
+//public const string msg__Message     = "msg:Message";
+//public const string msg__args        = "msg:args";
+//public const string msg__reciever    = "msg:reciever";
+//public const string msg__ticket      = "msg:ticket"; // TODO оставить один, или msg:ticket или auth:ticket
+//public const string msg__sender      = "msg:sender";
+//public const string msg__command     = "msg:command";
+//public const string msg__status      = "msg:status";
+//public const string msg__reason      = "msg:reason";
+//public const string msg__result      = "msg:result";
+//public const string msg__in_reply_to = "msg:in-reply-to";
 
 public const string ticket__Ticket               = "ticket:Ticket";
 public const string ticket__accessor             = "ticket:accessor";
@@ -160,19 +160,19 @@ public const string ticket__parentUnitOfAccessor = "ticket:parentUnitOfAccessor"
 public const string ticket__when                 = "ticket:when";
 public const string ticket__duration             = "ticket:duration";
 
-public const string auth__Authenticated = "auth:Authenticated";
+//public const string auth__Authenticated = "auth:Authenticated";
 //public const string auth__ticket        = "auth:ticket";
-public const string auth__credential = "auth:credential";
-public const string auth__login      = "auth:login";
+//public const string auth__credential = "auth:credential";
+//public const string auth__login      = "auth:login";
 
-public const string pacahon__on_trace_msg  = "pacahon:on-trace-msg";
-public const string pacahon__off_trace_msg = "pacahon:off-trace-msg";
+//public const string pacahon__on_trace_msg  = "pacahon:on-trace-msg";
+//public const string pacahon__off_trace_msg = "pacahon:off-trace-msg";
 
-public const string query__all_predicates = "query:all_predicates";
-public const string query__get_reifed     = "query:get_reifed";
-public const string query__get            = "query:get";
+//public const string query__all_predicates = "query:all_predicates";
+//public const string query__get_reifed     = "query:get_reifed";
+//public const string query__get            = "query:get";
 
-public const string event__Event = "event:Event";               // субьект типа Событие
+//public const string event__Event = "event:Event";               // субьект типа Событие
 //public const string event__autoremove   = "event:autoremove";   // если == "yes", фильтр должен будет удален после исполнения
 //public const string event__subject_type = "event:subject_type"; // тип отслеживаемого субьекта
 //public const string event__when         = "event:when";         // after/before
