@@ -1,6 +1,6 @@
 /**
-  * обвязка к v8d
-  */
+ * обвязка к v8d
+ */
 module bind.v8d_header;
 
 import std.stdio, std.conv;
@@ -23,12 +23,12 @@ _Buff   g_script_out;
 
 extern (C++)
 {
-	struct _Buff
-	{
-		char *data;
-		int  length;
-		int  allocated_size;
-	}
+struct _Buff
+{
+    char *data;
+    int  length;
+    int  allocated_size;
+}
 }
 
 extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
@@ -41,94 +41,93 @@ extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
 
 extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length)
 {
-	try
-	{
-    //writeln ("@p:v8d put_individual");		
-
-    if (g_context !is null)
+    try
     {
-        string cbor   = cast(string)_cbor[ 0.._cbor_length ].dup;
-        string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
+        //writeln ("@p:v8d put_individual");
 
-	Ticket* ticket = g_context.get_ticket(ticket_id); 
+        if (g_context !is null)
+        {
+            string cbor      = cast(string)_cbor[ 0.._cbor_length ].dup;
+            string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
 
-        return g_context.store_individual(ticket, null, cbor);
+            Ticket *ticket = g_context.get_ticket(ticket_id);
+
+            return g_context.store_individual(ticket, null, cbor);
+        }
+        return ResultCode.Service_Unavailable;
     }
-    return ResultCode.Service_Unavailable;
+    finally
+    {
+        //writeln ("@p:v8d end put_individual");
     }
-	finally
-	{
-    //writeln ("@p:v8d end put_individual");		
-	}
-    
 }
 
 extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length)
 {
-	try
-	{
-    string uri    = cast(string)_uri[ 0.._uri_length ];
-    string ticket = cast(string)_ticket[ 0.._ticket_length ];
-
-    //writeln ("@p:v8d read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
-
-    if (uri != "$document")
+    try
     {
-        if (g_context !is null)
+        string uri    = cast(string)_uri[ 0.._uri_length ];
+        string ticket = cast(string)_ticket[ 0.._ticket_length ];
+
+        //writeln ("@p:v8d read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
+
+        if (uri != "$document")
         {
-            string icb = g_context.get_individual_from_storage(uri);
-            tmp_individual.data   = cast(char *)icb;
-            tmp_individual.length = cast(int)icb.length;
-            return &tmp_individual;
+            if (g_context !is null)
+            {
+                string icb = g_context.get_individual_from_storage(uri);
+                tmp_individual.data   = cast(char *)icb;
+                tmp_individual.length = cast(int)icb.length;
+                return &tmp_individual;
+            }
+            return null;
         }
-        return null;
+        else
+        {
+/*      if (g_individual.data !is null)
+        {
+                Individual indv;
+                cbor2individual (&indv, cast(string)g_individual.data[0..g_individual.length]);
+                writeln ("@ read_individual, g_individual=", indv);
+        }
+        else
+                writeln ("@ read_individual, g_individual= is null");*/
+            //dump (g_individual.data, 8);
+            return &g_individual;
+        }
     }
-    else
+    finally
     {
-/*    	if (g_individual.data !is null)
-    	{
-    		Individual indv;
-    		cbor2individual (&indv, cast(string)g_individual.data[0..g_individual.length]);
-    		writeln ("@ read_individual, g_individual=", indv);
-    	}	
-    	else	
-    		writeln ("@ read_individual, g_individual= is null");*/
-        //dump (g_individual.data, 8);
-        return &g_individual;
+        //writeln ("@p:v8d end read_individual");
     }
-    }
-	finally
-	{
-    //writeln ("@p:v8d end read_individual");		
-	}
-
 }
 
-void dump (char *data, int count)
+void dump(char *data, int count)
 {
-        string res;	
-        for (int i = 0; i < count; i++)
-        	res ~= "[" ~ text (cast(uint)data[i]) ~ "]";
-	
-        writeln ("@d dump cbor=", res);
+    string res;
+
+    for (int i = 0; i < count; i++)
+        res ~= "[" ~ text(cast(uint)data[ i ]) ~ "]";
+
+    writeln("@d dump cbor=", res);
 }
 
 // //////////////////////////  call C from D //////////////////////////////////////////
 
 extern (C++)
 {
-	interface WrappedContext
-	{
-	}
+interface WrappedContext
+{
+}
 
-	interface WrappedScript
-	{
-	}
+interface WrappedScript
+{
+}
 
-	bool InitializeICU();
-	WrappedContext new_WrappedContext();
-	WrappedScript new_WrappedScript(WrappedContext _context, char *src);
-	void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
+bool InitializeICU();
+WrappedContext new_WrappedContext();
+WrappedScript new_WrappedScript(WrappedContext _context, char *src);
+void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
 }
 
 alias new_WrappedContext new_ScriptVM;

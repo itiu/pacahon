@@ -1,5 +1,5 @@
 /**
-  * загрузка индивидов из *.ttl
+  * загрузка индивидов в базу данных из *.ttl
   */
 module io.file_reader;
 
@@ -29,6 +29,7 @@ static this()
     log = new logger("pacahon", "log", "file_reader");
 }
 
+/// процесс отслеживающий появление новых файлов и добавление их содержимого в базу данных
 void file_reader_thread(P_MODULE name, string props_file_name)
 {
     core.thread.Thread tr = core.thread.Thread.getThis();

@@ -1,6 +1,6 @@
 /**
-  * обвязка к rabbit mq
-  */
+ * обвязка к rabbit mq
+ */
 
 module bind.librabbitmq_headers;
 

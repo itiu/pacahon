@@ -1,9 +1,9 @@
 /**
- обвязка к xapin
+   обвязка к xapin
 
- Copyright: © 2014 Semantic Machines
- License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
- Authors: Valeriy Bushenev
+   Copyright: © 2014 Semantic Machines
+   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+   Authors: Valeriy Bushenev
 
  */
 
@@ -244,51 +244,51 @@ const int DB_OPEN                = 4;
 
 extern (C++)
 {
-/// Base class for value range processors 
+/// Base class for value range processors
 interface XapianNumberValueRangeProcessor
 {
 }
 
-/// Parses a piece of text and generate terms. 
+/// Parses a piece of text and generate terms.
 interface XapianTermGenerator
 {
-	/// Set the XapianStem object to be used for generating stemmed terms. 
+    /// Set the XapianStem object to be used for generating stemmed terms.
     void set_stemmer(XapianStem stemmer, byte *err);
 
-	/// -
+    /// -
     void set_document(XapianDocument doc, byte *err);
 
-	/// -
+    /// -
     void index_text(const char *data_str, ulong data_len, byte *err);
 
-	/// -
+    /// -
     void index_text(const char *data_str, ulong data_len, const char *prefix_str, ulong prefix_len, byte *err);
 
-	/// -
+    /// -
     void index_text_without_positions(const char *data_str, ulong data_len, byte *err);
 
-	/// -
+    /// -
     void index_text_without_positions(const char *data_str, ulong data_len, const char *prefix_str, ulong prefix_len, byte *err);
 
-	/// -
+    /// -
     void index_data(int data, const char *prefix_str, ulong prefix_len, byte *err);
 
-	/// -
+    /// -
     void index_data(long data, const char *prefix_str, ulong prefix_len, byte *err);
 
-	/// -
+    /// -
     void index_data(float data, const char *prefix_str, ulong prefix_len, byte *err);
 
-	/// -
+    /// -
     void index_data(double data, const char *prefix_str, ulong prefix_len, byte *err);
 }
 
-/// This class is used to access a database, or a group of databases. 
+/// This class is used to access a database, or a group of databases.
 interface XapianDatabase
 {
     XapianEnquire new_Enquire(byte *err);
     void close(byte *err);
-    void reopen (byte *err);
+    void reopen(byte *err);
 }
 
 /// This class provides read/write access to a database
@@ -301,14 +301,14 @@ interface XapianWritableDatabase
     void close(byte *err);
 }
 
-/// Class representing a query 
+/// Class representing a query
 interface XapianQuery
 {
     void get_description(char **out_val, uint **out_val_length, byte *err);
     XapianQuery add_right_query(int op_, XapianQuery _right, byte *err);
 }
 
-/// A handle representing a document in a Xapian database 
+/// A handle representing a document in a Xapian database
 interface XapianDocument
 {
     char *get_data(char **out_val, uint **out_val_length, byte *err);
@@ -332,7 +332,7 @@ interface XapianMSetIterator
     bool is_next(byte *err);
 }
 
-/// A match set (MSet) 
+/// A match set (MSet)
 interface XapianMSet
 {
     int get_matches_estimated(byte *err);
@@ -340,7 +340,7 @@ interface XapianMSet
     XapianMSetIterator iterator(byte *err);
 }
 
-/// This class provides an interface to the information retrieval system for the purpose of searching 
+/// This class provides an interface to the information retrieval system for the purpose of searching
 interface XapianEnquire
 {
     void set_query(XapianQuery query, byte *err);
@@ -349,12 +349,12 @@ interface XapianEnquire
     void clear_matchspies();
 }
 
-/// Class representing a stemming algorithm 
+/// Class representing a stemming algorithm
 interface XapianStem
 {
 }
 
-/// Build a XapianQuery object from a user query string 
+/// Build a XapianQuery object from a user query string
 interface XapianQueryParser
 {
     void set_stemmer(XapianStem stemmer, byte *err);
@@ -369,7 +369,7 @@ interface XapianQueryParser
     void add_valuerangeprocessor(XapianNumberValueRangeProcessor pp, byte *err);
 }
 
-/// KeyMaker subclass which combines several values 
+/// KeyMaker subclass which combines several values
 interface XapianMultiValueKeyMaker
 {
     void add_value(int pos, byte *err);
@@ -422,7 +422,7 @@ XapianQuery new_Query_double(int op_, int slot, double _value, byte *err);
 XapianQuery new_Query_equal(int op_, int slot, const char *_str, ulong _str_len, byte *err);
 
 /// -
-void sortable_serialise (double value, char **out_val, uint **out_val_length, byte *err);
+void sortable_serialise(double value, char **out_val, uint **out_val_length, byte *err);
 
 ////////
 
@@ -446,5 +446,4 @@ void destroy_MultiValueKeyMaker(XapianMultiValueKeyMaker sorter);
 
 /// -
 void destroy_Database(XapianDatabase db);
-
 }
