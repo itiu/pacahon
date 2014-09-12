@@ -1,6 +1,6 @@
 /**
-  * выполнение JS скриптов
-  */
+ * выполнение JS скриптов
+ */
 module az.condition;
 
 private
@@ -8,34 +8,15 @@ private
     import std.json, std.stdio, std.string, std.array, std.datetime, std.concurrency, std.conv, std.file;
     import core.thread;
 
-    import util.container;
-    import util.utils;
-    import util.logger;
-    import util.cbor;
-    import util.cbor8individual;
+    import util.container, util.utils, util.logger, util.cbor, util.cbor8individual;
 
     import type;
     import onto.individual;
-    import pacahon.know_predicates;
-    import pacahon.context;
-    import pacahon.define;
-    import pacahon.thread_context;
-    import pacahon.log_msg;
+    import pacahon.know_predicates, pacahon.context, pacahon.define, pacahon.thread_context, pacahon.log_msg;
 
-    import search.vel;
-    import search.vql;
+    import search.vel, search.vql;
 
     import bind.v8d_header;
-}
-
-enum RightType
-{
-    CREATE = 0,
-    READ   = 1,
-    WRITE  = 2,
-    UPDATE = 3,
-    DELETE = 4,
-    ADMIN  = 5
 }
 
 logger log;
@@ -50,14 +31,14 @@ struct Mandat
     string id;
     string whom;
     string right;
-    string condition;
-    Script script;
+    string str_script;
+    Script compiled_script;
 }
 
-int     count;
-Context context;
-Mandat[ string ] mandats;
-VQL     vql;
+private int     count;
+private Context context;
+private         Mandat[ string ] mandats;
+private VQL     vql;
 
 public void condition_thread(string thread_name, string props_file_name)
 {
@@ -113,16 +94,16 @@ public void condition_thread(string thread_name, string props_file_name)
 
                                 foreach (mandat; mandats.values)
                                 {
-                                    if (mandat.script !is null)
+                                    if (mandat.compiled_script !is null)
                                     {
                                         try
                                         {
                                             if (trace_msg[ 300 ] == 1)
-                                                log.trace("exec script : %s ", mandat.condition);
+                                                log.trace("exec script : %s ", mandat.str_script);
 
                                             count++;
-                                            script_vm.run(mandat.script);
-                                            
+                                            script_vm.run(mandat.compiled_script);
+
                                             if (trace_msg[ 300 ] == 1)
                                                 log.trace("end exec script");
                                         }
@@ -221,11 +202,11 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
                 el = condition_json.object.get("condition", nil);
                 if (el != nil)
                 {
-                    mandat.condition = el.str;
-                    mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+                    mandat.str_script      = el.str;
+                    mandat.compiled_script = script_vm.compile(cast(char *)(mandat.str_script ~ "\0"));
 
                     if (trace_msg[ 310 ] == 1)
-                        log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.condition);
+                        log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.str_script);
 
                     mandats[ ss.uri ] = mandat;
                 }
@@ -233,14 +214,13 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
         }
         else
         {
-            mandat.condition = condition_text;
-            mandat.script    = script_vm.compile(cast(char *)(mandat.condition ~ "\0"));
+            mandat.str_script      = condition_text;
+            mandat.compiled_script = script_vm.compile(cast(char *)(mandat.str_script ~ "\0"));
             if (trace_msg[ 310 ] == 1)
-                log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.condition);
+                log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.str_script);
 
             mandats[ ss.uri ] = mandat;
         }
-
     }
     catch (Exception ex)
     {
