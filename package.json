@@ -5,7 +5,7 @@
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
 	"-ddoxFilterArgs": ["--unittest-examples", "--min-protection=Public", "--only-documented", "--ex", "vibe."],
-	"dependencies": {"zeromq":"~master", "pacahon_third_party": ">=1.0.3"},
+	"dependencies": {"zeromq":"~master", "pacahon_third_party": ">=1.0.4"},
 	"license": "LGPL v3",
 	"buildOptions": ["releaseMode", "optimize", "inline"],
         "sourceFiles":["lib64/libv8d.a", "lib64/libxapiand.a"]
