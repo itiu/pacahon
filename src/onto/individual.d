@@ -7,7 +7,7 @@ private
 {
     import std.stdio, std.typecons, std.conv, std.exception : assumeUnique;
 
-    import onto.owl, onto.resource;
+    import onto.resource;
     import pacahon.know_predicates, pacahon.context;
     import util.utils, util.container, util.cbor8individual;
 }

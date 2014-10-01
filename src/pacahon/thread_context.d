@@ -10,27 +10,14 @@ private
            std.file;
 
     import type;
-    import bind.xapian_d_header;
-    import bind.v8d_header;
+    import bind.xapian_d_header, bind.v8d_header;
 
     import io.mq_client;
-    import util.container;
-    import util.logger;
-    import util.utils;
-    import util.cbor;
-    import util.cbor8individual;
+    import util.container, util.logger, util.utils, util.cbor, util.cbor8individual;
 
-    import pacahon.know_predicates;
-    import pacahon.define;
-    import pacahon.context;
-    import pacahon.bus_event;
-    import pacahon.interthread_signals;
-    import pacahon.log_msg;
+    import pacahon.know_predicates, pacahon.define, pacahon.context, pacahon.bus_event, pacahon.interthread_signals, pacahon.log_msg;
 
-    import onto.owl;
-    import onto.individual;
-    import onto.resource;
-    import storage.lmdb_storage;
+    import onto.onto, onto.individual, onto.resource, storage.lmdb_storage;
     import az.acl;
 }
 
@@ -61,7 +48,7 @@ class PThreadContext : Context
 
     ScriptVM              script_vm;
 
-    private OWL           owl;
+    private Onto          onto;
     private JSONValue     props;
 
     private string        name;
@@ -123,8 +110,8 @@ class PThreadContext : Context
             //pacahon.event_filter.load_events(this);
             //writeln(context_name ~ ": load events... ok");
 
-            owl = new OWL(this);
-            owl.load();
+            onto = new Onto(this);
+            onto.load();
         }
     }
 
@@ -241,45 +228,12 @@ class PThreadContext : Context
         return name;
     }
 
-    public immutable(Class)[ string ] iget_owl_classes()
-    {
-        if (owl !is null)
-        {
-            check_for_reload("onto", &owl.load);
-            return owl.iget_classes();
-        }
-        else
-            return (immutable(Class)[ string ]).init;
-    }
-
-    public immutable(Class) * iget_class(string uri)
-    {
-        if (owl !is null)
-        {
-            check_for_reload("onto", &owl.load);
-            return uri in owl.iget_classes();
-        }
-        else
-            return null;
-    }
-
-    public Property *get_property(string uri)
-    {
-        if (owl !is null)
-        {
-            check_for_reload("onto", &owl.load);
-            return owl.getProperty(uri);
-        }
-        else
-            return null;
-    }
-
     public immutable(Individual)[ string ] get_onto_as_map_individuals()
     {
-        if (owl !is null)
+        if (onto !is null)
         {
-            check_for_reload("onto", &owl.load);
-            return owl.iget_individuals;
+            check_for_reload("onto", &onto.load);
+            return onto.iget_individuals;
         }
         else
             return (immutable(Individual)[ string ]).init;

@@ -13,7 +13,7 @@ private import std.concurrency, std.datetime, std.json;
 private import type;
 private import util.container;
 private import search.vel;
-private import onto.owl;
+private import onto.onto;
 private import onto.individual;
 private import pacahon.define;
 
@@ -168,8 +168,6 @@ interface Context
 
     ScriptVM get_ScriptVM();
 
-    Property *get_property(string ur);
-
     JSONValue get_props();
 
     Tid getTid(P_MODULE tid_name);
@@ -209,9 +207,7 @@ interface Context
 
 //    //////////////////////////////////////////////////// ONTO //////////////////////////////////////////////
 
-    public immutable(Class)[ string ] iget_owl_classes();
     public immutable(Individual)[ string ] get_onto_as_map_individuals();
-    public immutable(Class) * iget_class(string ur);
 
 // //////////////////////////////////////////////////// TICKET //////////////////////////////////////////////
     /**
