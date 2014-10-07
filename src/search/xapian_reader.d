@@ -1,6 +1,6 @@
 /**
-  *     XAPIAN READER 
-  */
+ *     XAPIAN READER
+ */
 
 module search.xapian_reader;
 
@@ -135,8 +135,8 @@ class XapianReader : SearchReader
 
         if (query !is null)
         {
-        	if (trace_msg[ 321 ] == 1)
-        		log.trace("[%X] xapian query [%s]", cast(void *)str_query, get_query_description(query));
+            if (trace_msg[ 321 ] == 1)
+                log.trace("[%X] xapian query [%s]", cast(void *)str_query, get_query_description(query));
 
             int count = 0;
             xapian_enquire = xapian_db.new_Enquire(&err);

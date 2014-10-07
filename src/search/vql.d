@@ -1,6 +1,6 @@
 /**
-  * VQL executor
-  */
+ * VQL executor
+ */
 
 module search.vql;
 

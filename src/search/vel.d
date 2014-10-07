@@ -1,6 +1,6 @@
 /**
-  * VQL parser
-  */
+ * VQL parser
+ */
 module search.vel;
 
 // VEDA EXPRESSION LANG
@@ -39,11 +39,12 @@ private string is_op(string c)
     {
         if (c == ">=" || c == "<=" || c == "==" || c == "!=" || c == "=*" || c == "=+" || c == "||" || c == "&&")
             return c;
+
         if (c[ 0 ] == '>' && c[ 1 ] != '=')
             return ">";
 
         if (c[ 0 ] == '<' && c[ 1 ] != '=')
-            return "<";            
+            return "<";
     }
     return null;
 }
@@ -99,16 +100,16 @@ private void process_op(ref stack!TTA st, string op)
 
 enum Decor
 {
-	NONE,
-	QUOTED,
-	RANGE
+    NONE,
+    QUOTED,
+    RANGE
 }
 
 class TTA
 {
     string op;
 
-    Decor token_decor = Decor.NONE;
+    Decor  token_decor = Decor.NONE;
 
     TTA    L;
     TTA    R;
@@ -116,9 +117,9 @@ class TTA
 
     this(string _op, TTA _L, TTA _R, Decor _token_decor = Decor.NONE)
     {
-        op = _op;
-        L  = _L;
-        R  = _R;
+        op          = _op;
+        L           = _L;
+        R           = _R;
         token_decor = _token_decor;
     }
 
@@ -130,16 +131,16 @@ class TTA
         if (L !is null)
             res ~= L.toString();
 
-       	if (token_decor == Decor.QUOTED)
-       		res ~= "\"" ~ op ~ "\"";
-       	else if (token_decor == Decor.RANGE)
-       		res ~= " RANGE (" ~ op ~ ")";
-       	else
-       		res ~= op;
-       	
+        if (token_decor == Decor.QUOTED)
+            res ~= "\"" ~ op ~ "\"";
+        else if (token_decor == Decor.RANGE)
+            res ~= " RANGE (" ~ op ~ ")";
+        else
+            res ~= op;
+
         if (R !is null)
-       		res ~= R.toString();
-        
+            res ~= R.toString();
+
         return res ~ "}";
     }
 }
@@ -148,7 +149,7 @@ public TTA parse_expr(string s)
 {
     stack!TTA st    = new stack!TTA();
     stack!string op = new stack!string();
-    	//writeln("s=", s);
+    //writeln("s=", s);
 
     for (int i = 0; i < s.length; i++)
     {
@@ -172,7 +173,7 @@ public TTA parse_expr(string s)
                 string curop = is_op(s[ i .. e ]);
                 if (curop !is null)
                 {
-       				//writeln ("@p	curop:", curop);
+                    //writeln ("@p	curop:", curop);
                     while (!op.empty() && priority(op.back()) >= priority(curop))
                         process_op(st, op.popBack());
                     op.pushBack(curop);
@@ -215,12 +216,12 @@ public TTA parse_expr(string s)
                             i++;
                         //writeln ("@p #5	operand=", operand);
                         operand = s[ bp .. i ];
-                       // writeln ("@p #6	operand=", operand);
+                        // writeln ("@p #6	operand=", operand);
                         st.pushBack(new TTA(operand, null, null, Decor.RANGE));
                     }
                     else
                     {
-                    	// no quote
+                        // no quote
                         int bp = i;
                         while (i < s.length && s[ i ] != ' ' && s[ i ] != '&' && s[ i ] != '|' && s[ i ] != '=' && s[ i ] != '<' &&
                                s[ i ] != '>' && s[ i ] != '!' && s[ i ] != '-' && s[ i ] != ' ')

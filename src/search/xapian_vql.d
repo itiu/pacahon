@@ -1,6 +1,6 @@
 /**
-  * VQL -> xapian
-  */
+ * VQL -> xapian
+ */
 
 module search.xapian_vql;
 
@@ -26,9 +26,9 @@ logger log()
 }
 // ////// ////// ///////////////////////////////////////////
 
-protected byte   err;
+protected byte err;
 
-public string[ string ] get_fields(string str_fields)
+public         string[ string ] get_fields(string str_fields)
 {
     string[ string ] fields;
 
@@ -416,15 +416,15 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
         if (tta.L !is null)
             transform_vql_to_xapian(tta.L, tta.op, dummy, dummy, query_l, key2slot, ld, level + 1, qp);
 
-        if (query_l !is null)    
-        	query = query_l.add_right_query(xapian_op.OP_OR, query_r, &err);
+        if (query_l !is null)
+            query = query_l.add_right_query(xapian_op.OP_OR, query_r, &err);
 
         if (query_r !is null)
             destroy_Query(query_r);
 
         if (query_l !is null)
             destroy_Query(query_l);
-            
+
 //        writeln("#4.e");
     }
     else
