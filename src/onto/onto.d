@@ -1,19 +1,17 @@
 /**
- * ONTO
+ * кэш из индивидов относящихся к онтологии
  */
 
 module onto.onto;
 
+// TODO сделать перезагрузку онтологии в случае ее изменения (проверять CRC?)
+
 private
 {
     import std.stdio, std.datetime, std.conv, std.exception : assumeUnique;
-
     import onto.resource, onto.individual;
-
     import util.utils, util.container, util.logger;
-
     import pacahon.know_predicates, pacahon.context, pacahon.interthread_signals, pacahon.log_msg;
-
     import search.vql;
 }
 
@@ -27,10 +25,10 @@ static this()
 class Onto
 {
     private Context context;
+    public int reload_count = 0;
 
     Individual[ string ] individuals;
     immutable(Individual)[ string ] i_individuals;
-
 
     public this(Context _context)
     {
@@ -45,9 +43,9 @@ class Onto
         return i_individuals;
     }
 
-
     public void load()
     {
+    	reload_count ++;
         Individual[] l_individuals;
 
         if (trace_msg[ 20 ] == 1)
@@ -70,4 +68,5 @@ class Onto
         if (trace_msg[ 20 ] == 1)
             log.trace_log_and_console("[%s] load onto to graph..Ok", context.get_name);
     }
+    
 }

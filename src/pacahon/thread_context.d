@@ -38,10 +38,7 @@ class PThreadContext : Context
 {
     bool[ P_MODULE ] is_traced_module;
 
-    /// deprecated vvv
     private Ticket *[ string ] user_of_ticket;
-    private bool use_caching_of_documents = false;
-    /// deprecated ^^^
 
     // // // authorization
     private Authorization acl_indexes;
@@ -96,23 +93,25 @@ class PThreadContext : Context
             {
                 throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
             }
-
-            // использование кеша документов
-            if (("use_caching_of_documents" in props.object) !is null)
-            {
-                if (props.object[ "use_caching_of_documents" ].str == "true")
-                    use_caching_of_documents = true;
-            }
-
-            _vql = new search.vql.VQL(this);
+        }    
+        _vql = new search.vql.VQL(this);
 
             //writeln(context_name ~ ": load events");
             //pacahon.event_filter.load_events(this);
             //writeln(context_name ~ ": load events... ok");
 
-            onto = new Onto(this);
-            onto.load();
+        onto = new Onto(this);
+        onto.load();
+    }
+    
+    public Onto get_onto ()
+    {
+        if (onto !is null)
+        {
+            check_for_reload("onto", &onto.load);
         }
+    	
+    	return onto;
     }
 
     public long get_last_update_time()

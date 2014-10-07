@@ -223,7 +223,8 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         }
     }
 }
-/////////////////////////////////////////////////////////////////////////////////////
+
+// ///////////////////////////////////////////////////////////////////////////////////
 public void cbor2individual(Individual *individual, string in_str)
 {
     read_element(individual, cast(ubyte[])in_str, dummy);

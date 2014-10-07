@@ -378,26 +378,6 @@ public class LmdbStorage
         return ev;
     }
 
-//    public Subject find_subject(string uri)
-//    {
-//        Subject ind;
-//        string  str = find(uri);
-
-//        if (str !is null)
-//            ind = cbor2subject(str);
-//        return ind;
-//    }
-
-    public Individual find_individual(string uri)
-    {
-        Individual ind;
-        string     str = find(uri);
-
-        if (str !is null)
-            cbor2individual(&ind, str);
-        return ind;
-    }
-
     public long count_entries()
     {
         long    count = -1;
@@ -455,9 +435,22 @@ public class LmdbStorage
 
         return count;
     }
+    
+    public Individual find_individual(string uri)
+    {
+        Individual ind;
+        string     str = find(uri);
+
+        if (str !is null)
+            cbor2individual(&ind, str);
+        return ind;
+    }    
 
     public string find(string uri)
     {
+    	if (uri is null || uri.length < 3)
+    		return null;
+    	
         string  str;
         int     rc;
         MDB_txn *txn_r;

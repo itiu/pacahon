@@ -189,6 +189,7 @@ interface Context
     bool authorize(string uri, Ticket *ticket, ubyte request_acess);
     Individual[] get_individuals_via_query(Ticket *ticket, string query_str);
     string get_individual_from_storage(string uri);
+    Onto get_onto ();
 
     // *************************************************** external API ? *********************************** //
     ref string[ string ] get_prefix_map();

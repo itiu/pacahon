@@ -1,32 +1,20 @@
 /**
-  * XAPIAN indexer thread
-  */
+ * XAPIAN indexer thread
+ */
 
 module search.xapian_indexer;
 
-import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
-
+private import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 private import type;
-
-import bind.xapian_d_header;
-import util.utils;
-import util.cbor;
-import util.cbor8individual;
-import util.logger;
-
-import onto.resource;
-import onto.lang;
-import onto.individual;
-
-import pacahon.define;
-import pacahon.know_predicates;
-import pacahon.context;
-import pacahon.log_msg;
-import search.vel;
-import search.xapian_vql;
+private import bind.xapian_d_header;
+private import util.utils, util.cbor, util.cbor8individual, util.logger;
+private import onto.onto, onto.resource, onto.lang, onto.individual;
+private import pacahon.define, pacahon.know_predicates, pacahon.context, pacahon.log_msg, pacahon.thread_context;
+private import storage.lmdb_storage;
+private import search.vel, search.xapian_vql;
 
 // ////// logger ///////////////////////////////////////////
-import util.logger;
+private import util.logger;
 logger _log;
 logger log()
 {
@@ -111,10 +99,57 @@ private void printTid(string tag)
 
 void xapian_indexer(string thread_name)
 {
-	Tid tid_subject_manager;
-	Tid tid_acl_manager;
-	Tid key2slot_accumulator;
-	
+    // //////////////////////////////////
+    Context context;
+    Onto    onto;
+
+    Individual[ string ] class_property__2__indiviual;
+
+    Individual[ string ] uri__2__indiviual;
+    void get_index_onto()
+    {
+        if (context is null)
+            context = new PThreadContext(null, thread_name);
+
+        if (class_property__2__indiviual.length == 0)
+        {
+            Individual[] l_individuals;
+            context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
+
+            foreach (indv; l_individuals)
+            {
+                uri__2__indiviual[ indv.uri ] = indv;
+                Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
+                Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
+
+                if (forClasses.length == 0)
+                    forClasses ~= Resource.init;
+
+                if (forProperties.length == 0)
+                    forProperties ~= Resource.init;
+
+                foreach (forClass; forClasses)
+                {
+                    foreach (forProperty; forProperties)
+                    {
+                        string key = forClass.uri ~ forProperty.uri;
+                        class_property__2__indiviual[ key ] = indv;
+                        //writeln("@@@ key=", key, ", uri=", indv.uri);
+                    }
+                }
+            }
+        }
+    }
+
+
+    // //////////////////////////////////
+    LmdbStorage inividuals_storage;
+    inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R);
+
+    Tid tid_subject_manager;
+    Tid tid_acl_manager;
+    Tid key2slot_accumulator;
+
     core.thread.Thread.getThis().name = thread_name;
 
     try
@@ -152,9 +187,9 @@ void xapian_indexer(string thread_name)
         writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
 
         receive((Tid tid_response_reciever)
-            {
-                send(tid_response_reciever, false);
-            });
+                {
+                    send(tid_response_reciever, false);
+                });
         return;
     }
 
@@ -185,29 +220,28 @@ void xapian_indexer(string thread_name)
         receive(
                 (CMD cmd, P_MODULE module_id, Tid tid_response_reciever)
                 {
-                	if (cmd == CMD.SET)
-                	{
-                		if (module_id == P_MODULE.subject_manager)
-                		{
-                			tid_subject_manager = tid_response_reciever;
-                			
-                			if (key2slot.length == 0 && tid_subject_manager != Tid.init)
-                				key2slot = read_key2slot(tid_subject_manager);    	
-                		}
-                		else if (module_id == P_MODULE.acl_manager)
-                		{
-                			 tid_acl_manager = tid_response_reciever;
-                		}
-                		else if (module_id == P_MODULE.xapian_thread_context)
-                		{
-                			 key2slot_accumulator = tid_response_reciever;
-                		}
-                		return;
-                	}
+                    if (cmd == CMD.SET)
+                    {
+                        if (module_id == P_MODULE.subject_manager)
+                        {
+                            tid_subject_manager = tid_response_reciever;
 
+                            if (key2slot.length == 0 && tid_subject_manager != Tid.init)
+                                key2slot = read_key2slot(tid_subject_manager);
+                        }
+                        else if (module_id == P_MODULE.acl_manager)
+                        {
+                            tid_acl_manager = tid_response_reciever;
+                        }
+                        else if (module_id == P_MODULE.xapian_thread_context)
+                        {
+                            key2slot_accumulator = tid_response_reciever;
+                        }
+                        return;
+                    }
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
-                {                	
+                {
                     if (key2slot.length - last_size_key2slot > 0)
                     {
                         store__key2slot(key2slot, tid_subject_manager);
@@ -307,25 +341,28 @@ void xapian_indexer(string thread_name)
                     }
                     else
                     {
+                        get_index_onto();
+
                         counter++;
 
-                        Individual ss;
+                        Individual indv;
 
-                        cbor2individual(&ss, msg);
+                        cbor2individual(&indv, msg);
 
                         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
-                        if (ss.uri !is null && ss.resources.length > 0)
+                        if (indv.uri !is null && indv.resources.length > 0)
                         {
                             OutBuffer all_text = new OutBuffer();
-
                             XapianDocument doc = new_Document(&err);
                             indexer.set_document(doc, &err);
 
                             if (trace_msg[ 220 ] == 1)
-                                log.trace("index document:[%s]", ss.uri);
+                                log.trace("index document:[%s]", indv.uri);
 
-                            foreach (predicate, resources; ss.resources)
+                            Resources types = indv.getResources(rdf__type);
+
+                            foreach (predicate, resources; indv.resources)
                             {
                                 string prefix;
                                 //int slot = get_slot_and_set_if_not_found(predicate, key2slot);
@@ -338,31 +375,108 @@ void xapian_indexer(string thread_name)
                                 string p_text_ru = "";
                                 string p_text_en = "";
 
+                                void index_literal(string predicate, Resource oo)
+                                {
+//                                        if (resources.length > 1)
+                                    {
+                                        if (oo.lang == LANG.RU)
+                                            p_text_ru ~= oo.literal;
+                                        else if (oo.lang == LANG.EN)
+                                            p_text_en ~= oo.literal;
+                                    }
+
+                                    int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
+                                    prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                    string data = escaping_or_uuid2search(oo.literal);
+
+                                    if (trace_msg[ 220 ] == 1)
+                                        log.trace("index [DataType.String] :[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix,
+                                                  predicate);
+
+                                    indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+                                    doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
+
+                                    all_text.write(data);
+                                    all_text.write('|');
+                                }
+                                void prepare_index(ref Individual idx, string link, string ln, int level = 0)
+                                {
+                                    // 1. считать индивид по ссылке
+                                    Individual inner_indv = inividuals_storage.find_individual(link);
+
+                                    string tab; for (int i = 0; i < level; i++)
+                                        tab ~= "	";
+
+                                    //writeln (tab);
+                                    //writeln (tab, "@inner_indv = ", inner_indv);
+                                    //writeln (tab, "@idx = ", idx);
+                                    foreach (predicate, values; idx.resources)
+                                    {
+                                        //writeln (tab, "@@@5 predicate = ", predicate);
+                                        if (predicate == "vdi:inherited_index")
+                                        {
+                                            foreach (value; values)
+                                            {
+                                                //writeln (tab, "@@@5.0 value = ", value);
+                                                // ссылка на наследуемый индекс, переходим вниз
+                                                Individual inhr_idx =
+                                                    uri__2__indiviual.get(value.uri, Individual.init);
+                                                //writeln (tab, "@@@5.1 inhr_idx = ", inhr_idx);
+                                                if (inhr_idx != Individual.init)
+                                                {
+                                                    Resources forProperties =
+                                                        inhr_idx.getResources("vdi:forProperty");
+                                                    if (forProperties != Resources.init)
+                                                    {
+                                                        foreach (forProperty; forProperties)
+                                                        {
+                                                            //writeln (tab, "@@@5.2 forProperty = ", forProperty);
+                                                            Resources links =
+                                                                inner_indv.getResources(forProperty.uri);
+                                                            //writeln (tab, "@@@5.3 links = ", links);
+                                                            foreach (link; links)
+                                                            {
+                                                                prepare_index(inhr_idx, link.uri,
+                                                                              ln ~ "." ~ forProperty.uri,
+                                                                              level + 1);
+                                                            }
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        // в этом индексе не указанно на какое свойство будет индексация,
+                                                        // значит берем поля указанные vdi:indexed_field в текущем индивиде
+                                                        Resources indexed_fields =
+                                                            inhr_idx.getResources("vdi:indexed_field");
+                                                        if (indexed_fields != Resources.init)
+                                                        {
+                                                            foreach (indexed_field; indexed_fields)
+                                                            {
+                                                                //writeln (tab, "@@@6 indexed_field = ", indexed_field);
+
+                                                                Resources rrc =
+                                                                    inner_indv.getResources(indexed_field.uri);
+                                                                foreach (rc; rrc)
+                                                                {
+                                                                    //writeln (tab, "index ", ln ~ "." ~ indexed_field.uri, " = ", rc);
+                                                                    index_literal(ln ~ "." ~ indexed_field.uri,
+                                                                                  rc);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
                                 foreach (oo; resources)
                                 {
                                     if (oo.type == DataType.String)
                                     {
-                                        if (resources.length > 1)
-                                        {
-                                            if (oo.lang == LANG.RU)
-                                                p_text_ru ~= oo.literal;
-                                            if (oo.lang == LANG.EN)
-                                                p_text_en ~= oo.literal;
-                                        }
-
-                                        int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
-                                        prefix = "X" ~ text(slot_L1) ~ "X";
-
-                                        string data = escaping_or_uuid2search(oo.literal);
-
-                                        if (trace_msg[ 220 ] == 1)
-                                            log.trace("index [DataType.String] :[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix, predicate);
-
-                                        indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                                        doc.add_value(slot_L1, oo.literal.ptr, oo.literal.length, &err);
-
-                                        all_text.write(data);
-                                        all_text.write('|');
+                                        index_literal(predicate, oo);
                                     }
                                     else if (oo.type == DataType.Uri)
                                     {
@@ -371,6 +485,44 @@ void xapian_indexer(string thread_name)
                                         }
                                         else
                                         {
+                                            // если это относится к class_property__2__indiviual, следует обновить
+
+                                            if (predicate != rdf__type)
+                                            {
+                                                // используем информацию о типе
+                                                foreach (_type; types)
+                                                {
+                                                    // в онтологии найти для данного класса и для данного предиката
+                                                    // информацию об индексировании
+                                                    Individual idx = class_property__2__indiviual.get(_type.uri ~ predicate,
+                                                                                                      Individual.init);
+                                                    if (idx != Individual.init)
+                                                    {
+                                                        //writeln("@@@ class= ", _type.uri, ", predicate=", predicate);
+
+                                                        //writeln("@@@1 _type.uri ~ predicate= ", _type.uri ~ predicate);
+                                                        //writeln("idx=", idx.uri);
+                                                    }
+                                                    else
+                                                    {
+                                                        idx = class_property__2__indiviual.get(predicate, Individual.init);
+
+                                                        if (idx != Individual.init)
+                                                        {
+                                                            //writeln("@@@ class= ", _type.uri, ", predicate=", predicate);
+
+                                                            // для предиката
+                                                            //writeln("@@@3");
+                                                            //writeln("idx=", idx.uri);
+
+                                                            // индексируем по найденному idx
+
+                                                            prepare_index(idx, oo.literal, predicate);
+                                                        }
+                                                    }
+                                                }
+                                            }
+
                                             int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                             prefix = "X" ~ text(slot_L1) ~ "X";
 
@@ -387,23 +539,23 @@ void xapian_indexer(string thread_name)
                                         }
                                     }
                                     else if (oo.type == DataType.Datetime)
-                                    {                                    	
+                                    {
                                         int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "X";
-                                        
-                                        long l_data = oo.get!long ();                                        
-                                        long std_time = unixTimeToStdTime(l_data); 
-                                        string data = SysTime (std_time).toISOString();                                        
+
+                                        long l_data = oo.get!long ();
+                                        long std_time = unixTimeToStdTime(l_data);
+                                        string data = SysTime(std_time).toISOString();
                                         indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
-                                                                                                                                                                
+
                                         doc.add_value(slot_L1, l_data, &err);
                                         //   slot_L1 = get_slot_and_set_if_not_found(predicate ~ ".Datetime", key2slot);
                                         prefix = "X" ~ text(slot_L1) ~ "D";
                                         indexer.index_data(l_data, prefix.ptr, prefix.length, &err);
 
                                         if (trace_msg[ 220 ] == 1)
-                                         log.trace("index [DataType.Datetime] :[%s][%s], prefix=%s[%s]", data, text (l_data), prefix, predicate);
-                                        
+                                            log.trace("index [DataType.Datetime] :[%s][%s], prefix=%s[%s]", data, text(l_data), prefix,
+                                                      predicate);
                                     }
                                 }
 
@@ -540,9 +692,9 @@ void xapian_indexer(string thread_name)
                             if (trace_msg[ 221 ] == 1)
                                 log.trace("index all text [%s]", data);
 
-                            string uuid = "uid_" ~ to_lower_and_replace_delimeters(ss.uri);
+                            string uuid = "uid_" ~ to_lower_and_replace_delimeters(indv.uri);
                             doc.add_boolean_term(uuid.ptr, uuid.length, &err);
-                            doc.set_data(ss.uri.ptr, ss.uri.length, &err);
+                            doc.set_data(indv.uri.ptr, indv.uri.length, &err);
 
                             indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
 
@@ -566,9 +718,8 @@ void xapian_indexer(string thread_name)
                             destroy_Document(doc);
                         }
 
-                            if (trace_msg[ 221 ] == 1)
-                                log.trace("index end");
-                        
+                        if (trace_msg[ 221 ] == 1)
+                            log.trace("index end");
                     }
                 },
                 (CMD cmd, int arg, bool arg2)
