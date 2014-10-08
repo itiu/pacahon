@@ -152,8 +152,8 @@ public void load()
 
     Individual[] res;
     vql.get(null,
-            "return { 'veda-schema:script'}
-            filter { 'rdf:type' == 'veda-schema:Mandate'}",
+            "return { 'v-s:script'}
+            filter { 'rdf:type' == 'v-s:Mandate'}",
             res);
 
     int count = 0;

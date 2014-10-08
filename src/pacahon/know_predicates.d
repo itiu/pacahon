@@ -36,45 +36,45 @@ public const string owl__Thing            = "owl:Thing";
 public const string owl__Class            = "owl:Class";
 
 /// -
-public const string veda_schema__actualVersion       = "veda-schema:actualVersion";
+public const string veda_schema__actualVersion       = "v-s:actualVersion";
 /// -
-public const string veda_schema__deleted             = "veda-schema:deleted";
+public const string veda_schema__deleted             = "v-s:deleted";
 /// -
-public const string veda_schema__script              = "veda-schema:script";
+public const string veda_schema__script              = "v-s:script";
 /// -
-public const string veda_schema__login               = "veda-schema:login";
+public const string veda_schema__login               = "v-s:login";
 /// -
-public const string veda_schema__password            = "veda-schema:password";
+public const string veda_schema__password            = "v-s:password";
 /// -
-public const string veda_schema__PermissionStatement = "veda-schema:PermissionStatement";
+public const string veda_schema__PermissionStatement = "v-s:PermissionStatement";
 /// -
-public const string veda_schema__canCreate           = "veda-schema:canCreate";
+public const string veda_schema__canCreate           = "v-s:canCreate";
 /// -
-public const string veda_schema__canDelete           = "veda-schema:canDelete";
+public const string veda_schema__canDelete           = "v-s:canDelete";
 /// -
-public const string veda_schema__canRead             = "veda-schema:canRead";
+public const string veda_schema__canRead             = "v-s:canRead";
 /// -
-public const string veda_schema__canUpdate           = "veda-schema:canUpdate";
+public const string veda_schema__canUpdate           = "v-s:canUpdate";
 /// -
-public const string veda_schema__created             = "veda-schema:created";
+public const string veda_schema__created             = "v-s:created";
 /// -
-public const string veda_schema__permissionObject    = "veda-schema:permissionObject";
+public const string veda_schema__permissionObject    = "v-s:permissionObject";
 /// -
-public const string veda_schema__permissionSubject   = "veda-schema:permissionSubject";
+public const string veda_schema__permissionSubject   = "v-s:permissionSubject";
 /// -
-public const string veda_schema__AllResourcesGroup   = "veda-schema:AllResourcesGroup";
+public const string veda_schema__AllResourcesGroup   = "v-s:AllResourcesGroup";
 /// -
-public const string veda_schema__Mandate             = "veda-schema:Mandate";
+public const string veda_schema__Mandate             = "v-s:Mandate";
 /// -
-public const string veda_schema__resource            = "veda-schema:resource";
+public const string veda_schema__resource            = "v-s:resource";
 /// -
-public const string veda_schema__memberOf            = "veda-schema:memberOf";
+public const string veda_schema__memberOf            = "v-s:memberOf";
 /// -
-public const string veda_schema__Membership          = "veda-schema:Membership";
+public const string veda_schema__Membership          = "v-s:Membership";
 /// -
-public const string veda_schema__owner               = "veda-schema:owner";
+public const string veda_schema__owner               = "v-s:owner";
 /// -
-//public const string veda_schema__Appointment 		  = "veda-schema:Appointment";
+//public const string veda_schema__Appointment 		  = "v-s:Appointment";
 
 public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------

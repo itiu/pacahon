@@ -42,7 +42,7 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
 
         if (rdfType.anyExist(veda_schema__Mandate))
         {
-            // изменения в veda-schema:Mandate, послать модуль Condition сигнал о перезагузке скрипта
+            // изменения в v-s:Mandate, послать модуль Condition сигнал о перезагузке скрипта
             send(tid_condition, CMD.RELOAD, subject_as_cbor, thisTid);
             receive((bool){});
         }
