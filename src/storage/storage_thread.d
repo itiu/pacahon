@@ -30,7 +30,7 @@ static this()
 public void individuals_manager(string thread_name, string db_path)
 {
     core.thread.Thread.getThis().name = thread_name;
-    LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW);
+    LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW, "individuals_manager");
     int         size_bin_log          = 0;
     int         max_size_bin_log      = 10_000_000;
     string      bin_log_name          = get_new_binlog_name(db_path);

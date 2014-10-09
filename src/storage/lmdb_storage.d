@@ -55,15 +55,17 @@ public class LmdbStorage
     private DBMode      mode;
     private string      _path;
     string              db_name;
+    string parent_thread_name;
 
     /// конструктор
-    this(string _path_, DBMode _mode)
+    this(string _path_, DBMode _mode, string _parent_thread_name)
     {
         _path                = _path_;
         db_name              = _path[ (lastIndexOf(path, '/') + 1)..$ ];
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
-
+        parent_thread_name   = _parent_thread_name;
+        
         create_folder_struct();
         open_db();
     }
@@ -155,7 +157,7 @@ public class LmdbStorage
         if (rc == 0)
         {
             size_t map_size     = stat.me_mapsize;
-            size_t new_map_size = map_size + 10_048_576;
+            size_t new_map_size = map_size + 100 * 10_048_576;
 
             log.trace_log_and_console("Growth database (%s) prev MAP_SIZE=" ~ text(map_size) ~ ", new MAP_SIZE=" ~ text(new_map_size),
                                       _path);
@@ -165,6 +167,7 @@ public class LmdbStorage
             {
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             }
+             core.thread.Thread.sleep(dur!("msecs")(10));
         }
     }
 
@@ -459,7 +462,7 @@ public class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            log.trace_log_and_console("warn:" ~ __FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
             mdb_txn_abort(txn_r);
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }

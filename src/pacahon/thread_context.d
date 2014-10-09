@@ -64,9 +64,9 @@ class PThreadContext : Context
 
     this(string property_file_path, string context_name)
     {
-        inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R);
-        tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R);
-        acl_indexes        = new Authorization(acl_indexes_db_path, DBMode.R);
+        inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R, context_name ~ ":inividuals");
+        tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R, context_name ~ ":tickets");
+        acl_indexes        = new Authorization(acl_indexes_db_path, DBMode.R, context_name ~ ":acl");
 
         name = context_name;
 

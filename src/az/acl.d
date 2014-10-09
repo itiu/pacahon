@@ -41,9 +41,9 @@ static this()
 /// Хранение, чтение PermissionStatement, Membership
 class Authorization : LmdbStorage
 {
-    this(string _path, DBMode mode)
+    this(string _path, DBMode mode, string _parent_thread_name)
     {
-        super(_path, mode);
+        super(_path, mode, _parent_thread_name);
     }
 
     bool isExistMemberShip(Individual *membership)
@@ -323,7 +323,7 @@ void acl_manager(string thread_name, string db_path)
 
     core.thread.Thread.getThis().name = thread_name;
 //    writeln("SPAWN: acl manager");
-    LmdbStorage storage      = new LmdbStorage(acl_indexes_db_path, DBMode.RW);
+    LmdbStorage storage      = new LmdbStorage(acl_indexes_db_path, DBMode.RW, "acl_manager");
     string      bin_log_name = get_new_binlog_name(db_path);
 
     // SEND ready

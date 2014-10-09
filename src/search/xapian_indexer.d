@@ -134,7 +134,7 @@ void xapian_indexer(string thread_name)
                     {
                         string key = forClass.uri ~ forProperty.uri;
                         class_property__2__indiviual[ key ] = indv;
-                        //writeln("@@@ key=", key, ", uri=", indv.uri);
+                        writeln("@@@search indexes, key=", key, ", uri=", indv.uri);
                     }
                 }
             }
@@ -144,7 +144,7 @@ void xapian_indexer(string thread_name)
 
     // //////////////////////////////////
     LmdbStorage inividuals_storage;
-    inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R);
+    inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R, "search:inividuals");
 
     Tid tid_subject_manager;
     Tid tid_acl_manager;
@@ -377,7 +377,12 @@ void xapian_indexer(string thread_name)
 
                                 void index_literal(string predicate, Resource oo)
                                 {
-//                                        if (resources.length > 1)
+                                    string data = escaping_or_uuid2search(oo.literal);
+                                    
+                                    if (data.length < 1)
+                                    	return;
+                                    	
+                                	//                                        if (resources.length > 1)
                                     {
                                         if (oo.lang == LANG.RU)
                                             p_text_ru ~= oo.literal;
@@ -387,8 +392,6 @@ void xapian_indexer(string thread_name)
 
                                     int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
                                     prefix = "X" ~ text(slot_L1) ~ "X";
-
-                                    string data = escaping_or_uuid2search(oo.literal);
 
                                     if (trace_msg[ 220 ] == 1)
                                         log.trace("index [DataType.String] :[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix,
@@ -453,15 +456,14 @@ void xapian_indexer(string thread_name)
                                                         {
                                                             foreach (indexed_field; indexed_fields)
                                                             {
-                                                                //writeln (tab, "@@@6 indexed_field = ", indexed_field);
-
                                                                 Resources rrc =
                                                                     inner_indv.getResources(indexed_field.uri);
                                                                 foreach (rc; rrc)
                                                                 {
-                                                                    //writeln (tab, "index ", ln ~ "." ~ indexed_field.uri, " = ", rc);
-                                                                    index_literal(ln ~ "." ~ indexed_field.uri,
-                                                                                  rc);
+                                                                	if (trace_msg[ 213 ] == 1)
+                                                                		log.trace ("index %s = %s ", ln ~ "." ~ indexed_field.uri, rc);
+                                                                	
+                                                                    index_literal(ln ~ "." ~ indexed_field.uri, rc);
                                                                 }
                                                             }
                                                         }
@@ -497,11 +499,12 @@ void xapian_indexer(string thread_name)
                                                     Individual idx = class_property__2__indiviual.get(_type.uri ~ predicate,
                                                                                                       Individual.init);
                                                     if (idx != Individual.init)
-                                                    {
-                                                        //writeln("@@@ class= ", _type.uri, ", predicate=", predicate);
+                                                    {                                                    	
+                                                        //writeln("@@@A class= ", _type.uri, ", predicate=", predicate);
 
-                                                        //writeln("@@@1 _type.uri ~ predicate= ", _type.uri ~ predicate);
-                                                        //writeln("idx=", idx.uri);
+                                                        //writeln("@@@A 1 _type.uri ~ predicate= ", _type.uri ~ predicate);
+                                                        //writeln("@@@A idx=", idx.uri);
+                                                        prepare_index(idx, oo.literal, predicate);
                                                     }
                                                     else
                                                     {
@@ -509,14 +512,13 @@ void xapian_indexer(string thread_name)
 
                                                         if (idx != Individual.init)
                                                         {
-                                                            //writeln("@@@ class= ", _type.uri, ", predicate=", predicate);
+                                                            //writeln("@@@B class= ", _type.uri, ", predicate=", predicate);
 
                                                             // для предиката
-                                                            //writeln("@@@3");
-                                                            //writeln("idx=", idx.uri);
+                                                            //writeln("@@@B 3");
+                                                            //writeln("@@@B idx=", idx.uri);
 
                                                             // индексируем по найденному idx
-
                                                             prepare_index(idx, oo.literal, predicate);
                                                         }
                                                     }
