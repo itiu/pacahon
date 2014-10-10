@@ -21,6 +21,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 {
 //	StopWatch sw;
 //	sw.start();
+//	writeln ("@ parse_turtle_string");
 
     if (src is null)
         return null;
@@ -45,7 +46,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
     while (ch != 0 && ptr - src < len)
     {
-//				writeln ("0 BEGIN CH:", *ptr);
+//		writeln ("0 BEGIN CH:", *ptr, ", pos=", ptr - src, ", len=", len);
         prev_ch = ch;
         ptr++;
         if (ptr - src > len)
@@ -133,7 +134,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
             while (ch != '\n' && ch != '\r' && ch != 0)
             {
-//				writeln ("1 BEGIN CH:", *ptr);
+	//			writeln ("1 BEGIN CH:", *ptr, ", pos=", ptr - src, ", len=", len);
 
                 // пропустим пробелы и tab
                 while ((ch == ' ' || ch == '\t') && ptr - src < len)
@@ -324,7 +325,6 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
                     if (prev_el == '.')
                     {
-//						writeln ("@ add to res:", ss.subject);
                         res ~= *ss;
                         predicate = null;
                         if (level == 0)
@@ -433,7 +433,6 @@ private char next_element(char *element, int el_length, Individual* ss, string i
         }
 
         ss.uri = uri;
-//	    writeln ("@ add new subject=", ss.subject);
         *state        = 1;
         out_predicate = in_predicate;
         return 0;
@@ -472,7 +471,8 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 
         if (resource_type == DataType.String)
         {
-            if (data[ $ - 3 ] == '@')
+//    writeln ("$6.1 len=", data.length, ", data=[", data, "]");
+            if (data.length > 3 && data[ $ - 3 ] == '@')
             {
                 LANG lang = LANG.NONE;
                 if (data[ $ - 2 ] == 'r' && data[ $ - 1 ] == 'u')
@@ -483,9 +483,10 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 
                 pp ~= Resource(data[ 0..$ - 4 ], lang);
             }
-            else if (data[ $ ] != '"')
+            else if (data[ $ - 1] != '"')
             {
-                int end_pos_str = el_length;
+                int end_pos_str = el_length - 1;
+ //   writeln ("$8.0 end_pos_str=", end_pos_str);
                 while (data[ end_pos_str ] != '"' && end_pos_str > 0)
                     end_pos_str--;
 
@@ -547,7 +548,6 @@ private char next_element(char *element, int el_length, Individual* ss, string i
             }
 
             pp ~= Resource(DataType.Uri, data);
-//            writeln ("addResource - ", ss.subject, " : ", pp.predicate, " : ", data);
         }
         
         //writeln ("@ pp =", pp);
