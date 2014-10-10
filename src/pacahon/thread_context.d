@@ -933,9 +933,9 @@ class PThreadContext : Context
             //if (trace_msg[ 27 ] == 1)
             //    log.trace("[%s] store_individual 2", name);
                 
+            Individual tmp_indv;
             if (indv is null && ss_as_cbor !is null)
             {
-                Individual tmp_indv;
                 indv = &tmp_indv;
                 cbor2individual(indv, ss_as_cbor);
             }
