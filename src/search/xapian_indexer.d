@@ -394,7 +394,7 @@ void xapian_indexer(string thread_name)
                                     prefix = "X" ~ text(slot_L1) ~ "X";
 
                                     if (trace_msg[ 220 ] == 1)
-                                        log.trace("index [DataType.String] :[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix,
+                                        log.trace("index_literal:[%s], lang=%s, prefix=%s[%s]", data, oo.lang, prefix,
                                                   predicate);
 
                                     indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
