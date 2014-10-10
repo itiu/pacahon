@@ -123,6 +123,12 @@ private TokenType get_token_type(string token, out double value)
 public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, out string op, out XapianQuery query,
                                       ref int[ string ] key2slot, out double _rd, int level, XapianQueryParser qp)
 {
+	if (key2slot.length == 0)
+	{
+		writeln ("!!! Err: key2slot is EMPTY");
+		return null;
+	}	
+	
     string      dummy;
     double      rd, ld;
     XapianQuery query_r;
