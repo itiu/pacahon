@@ -7,7 +7,7 @@ module pacahon.thread_context;
 private
 {
     import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid,
-           std.file;
+            std.file, std.path;
 
     import type;
     import bind.xapian_d_header, bind.v8d_header;
@@ -133,15 +133,18 @@ class PThreadContext : Context
 
         foreach (path; [ "./public/js/server", "./public/js/common" ])
         {
-            auto oFiles = dirEntries(path, "*.{js}", SpanMode.depth);
+            auto oFiles = dirEntries(path, SpanMode.depth);
 
             foreach (o; oFiles)
-            {
-                writeln(" load script:", o);
-                auto str_js        = cast(ubyte[]) read(o.name);
-                auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-                if (str_js_script !is null)
-                    scripts ~= str_js_script;
+            {            	
+            	if (extension (o.name) == ".js")
+            	{
+            		writeln(" load script:", o);
+            		auto str_js        = cast(ubyte[]) read(o.name);
+            		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+            		if (str_js_script !is null)
+            			scripts ~= str_js_script;
+                }    
             }
         }
 
@@ -921,9 +924,15 @@ class PThreadContext : Context
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
 
+            //if (trace_msg[ 27 ] == 1)
+            //    log.trace("[%s] store_individual 1", name);
+
             if (ss_as_cbor is null)
                 ss_as_cbor = individual2cbor(indv);
 
+            //if (trace_msg[ 27 ] == 1)
+            //    log.trace("[%s] store_individual 2", name);
+                
             if (indv is null && ss_as_cbor !is null)
             {
                 Individual tmp_indv;
@@ -931,12 +940,15 @@ class PThreadContext : Context
                 cbor2individual(indv, ss_as_cbor);
             }
 
+            //if (trace_msg[ 27 ] == 1)
+            //    log.trace("[%s] store_individual 3", name);
+
             if (indv is null && ss_as_cbor is null)
                 return ResultCode.No_Content;
 
             if (trace_msg[ 27 ] == 1)
                 log.trace("[%s] store_individual: %s", name, *indv);
-
+                
             if (indv.resources.length == 0)
                 return ResultCode.No_Content;
 

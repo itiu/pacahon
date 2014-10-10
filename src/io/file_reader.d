@@ -1,6 +1,6 @@
 /**
-  * загрузка индивидов в базу данных из *.ttl
-  */
+ * загрузка индивидов в базу данных из *.ttl
+ */
 module io.file_reader;
 
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
@@ -49,55 +49,50 @@ void file_reader_thread(P_MODULE name, string props_file_name)
 
     Context context = new PThreadContext(props_file_name, "file_reader");
 
-    SysTime[ string ] prev_state_of_files;
+    SysTime[ string ] file_modification_time;
     string path = "./ontology";
 
     while (true)
     {
         bool[ string ] files_to_load;
-        auto oFiles = dirEntries(path, "*.{ttl}", SpanMode.depth);
-
-        foreach (o; oFiles)
-        {
-            if ((o.name in prev_state_of_files) !is null)
-            {
-                if (o.timeLastModified != prev_state_of_files[ o.name ])
-                {
-                    if (trace_msg[ 29 ] == 1)
-                        log.trace("look modifed file=%s", o.name);
-
-                    prev_state_of_files[ o.name ] = o.timeLastModified;
-                    files_to_load[ o.name ]       = true;
-                }
-            }
-            else
-            {
-                prev_state_of_files[ o.name ] = o.timeLastModified;
-
-                if (trace_msg[ 29 ] == 1)
-                    log.trace("look new file=%s", o.name);
-
-                files_to_load[ o.name ] = true;
-            }
-        }
 
         if (exists(path ~ "/.load_sequence") == false)
         {
-            if (trace_msg[ 29 ] == 1)
-                log.trace("load directory sequence");
+            auto oFiles = dirEntries(path, SpanMode.depth);
 
-            foreach (fn; files_to_load.keys)
+            if (extension(o.name) == ".ttl")
             {
                 if (trace_msg[ 29 ] == 1)
-                    log.trace("load directory sequence, file=%s", fn);
+                    log.trace("load directory sequence");
 
-                prepare_file(fn, context);
+                foreach (o; oFiles)
+                {
+                    if ((o.name in file_modification_time) !is null)
+                    {
+                        if (o.timeLastModified != file_modification_time[ o.name ])
+                        {
+                            if (trace_msg[ 29 ] == 1)
+                                log.trace("look modifed file=%s", o.name);
+
+                            file_modification_time[ o.name ] = o.timeLastModified;
+                            files_to_load[ o.name ]          = true;
+                        }
+                    }
+                    else
+                    {
+                        file_modification_time[ o.name ] = o.timeLastModified;
+                        files_to_load[ o.name ]          = true;
+
+                        if (trace_msg[ 29 ] == 1)
+                            log.trace("look new file=%s", o.name);
+                    }
+                }
             }
         }
         else
         {
             if (trace_msg[ 29 ] == 1)
-                log.trace("load custom sequence");
+                log.trace("[%s] load custom sequence", name);
 
             auto     load_sequence = cast(char[]) read(path ~ "/.load_sequence");
             string[] els           = cast(string[])load_sequence.split('\n');
@@ -106,16 +101,40 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                 auto fn = el.strip();
                 if (fn.length > 4)
                 {
-                    if (files_to_load.get(path ~ "/" ~ fn, false) == true)
+                    string file_name = path ~ "/" ~ fn;
+                    //writeln ("@1 file_name=", file_name);
+
+                    if ((file_name in file_modification_time) !is null)
                     {
-                        prepare_file(path ~ "/" ~ fn, context);
+                        //writeln ("@1.1 file_name=", file_name);
+                        SysTime lst_mdf = timeLastModified(file_name);
+                        if (lst_mdf != file_modification_time[ file_name ])
+                        {
+                            file_modification_time[ file_name ] = lst_mdf;
+                            files_to_load[ file_name ]          = true;
+                        }
+                    }
+                    else
+                    {
+                        //writeln ("@1.2 file_name=", file_name);
+                        SysTime lst_mdf = timeLastModified(file_name);
+                        file_modification_time[ file_name ] = lst_mdf;
+                        files_to_load[ file_name ]          = true;
                     }
                 }
             }
         }
 
+        writeln("@2 files_to_load=", files_to_load);
+        foreach (fn; files_to_load.keys)
+        {
+            if (trace_msg[ 29 ] == 1)
+                log.trace("load directory sequence, file=%s", fn);
 
-        core.thread.Thread.sleep(dur!("seconds")(10));
+            prepare_file(fn, context);
+        }
+
+        core.thread.Thread.sleep(dur!("seconds")(30));
     }
 }
 
@@ -224,14 +243,14 @@ private void prepare_file(string file_name, Context context)
                             //writeln("#1 file_reader:store, ss=\n", ss);
                             if (indv_in_storage.getStatus() == ResultCode.OK)
                             {
-                            //writeln("#2 file_reader:store, indv_in_storage=\n", indv_in_storage);
-                            	// обьеденить данные: ss = ss + indv_in_storage 
-                            	ss = ss.apply (indv_in_storage);
-                            //writeln("#3 file_reader:store, ss=\n", ss);
+                                //writeln("#2 file_reader:store, indv_in_storage=\n", indv_in_storage);
+                                // обьеденить данные: ss = ss + indv_in_storage
+                                ss = ss.apply(indv_in_storage);
+                                //writeln("#3 file_reader:store, ss=\n", ss);
                             }
                             ResultCode res = context.put_individual(null, ss.uri, ss);
                             if (res != ResultCode.OK)
-                            	log.trace("individual =%s, not store, errcode =%s", ss.uri, text (res));
+                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
                         }
                     }
                 }
