@@ -238,6 +238,9 @@ private ulong ulong_from_buff(ubyte[] buff, int pos)
 /// Читать из буффера тип и значение
 public int read_type_value(ubyte[] src, ElementHeader *header)
 {
+	if (src.length == 0)
+		throw new Exception ("read_type_value:block is empty");
+	
     ubyte hh = src[ 0 ];
 //    writeln ("hh=", hh);
 //    writeln ("hh & 0xe0=", hh & 0xe0);
@@ -291,7 +294,8 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
     	else if ((type == MajorType.ARRAY || type == MajorType.TEXT_STRING) && ld > src.length)
         {
             writeln("Err! @d cbor.read_header, ld=", ld);
-            ld = src.length;
+            throw new Exception ("Err! @d cbor.read_header, ld=" ~ text (ld) ~ ", src=["~ text (src) ~ "]");
+            //ld = src.length;
         }
         
         header.v_long  = ld;
