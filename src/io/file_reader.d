@@ -4,7 +4,7 @@
 module io.file_reader;
 
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
-import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.stdio : writeln;
+import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.path, std.stdio : writeln;
 
 import type;
 import util.container;
@@ -60,12 +60,12 @@ void file_reader_thread(P_MODULE name, string props_file_name)
         {
             auto oFiles = dirEntries(path, SpanMode.depth);
 
-            if (extension(o.name) == ".ttl")
-            {
-                if (trace_msg[ 29 ] == 1)
-                    log.trace("load directory sequence");
+            if (trace_msg[ 29 ] == 1)
+                log.trace("load directory sequence");
 
-                foreach (o; oFiles)
+            foreach (o; oFiles)
+            {
+                if (extension(o.name) == ".ttl")
                 {
                     if ((o.name in file_modification_time) !is null)
                     {
@@ -125,7 +125,6 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             }
         }
 
-        writeln("@2 files_to_load=", files_to_load);
         foreach (fn; files_to_load.keys)
         {
             if (trace_msg[ 29 ] == 1)
@@ -149,7 +148,6 @@ private void prepare_file(string file_name, Context context)
             log.trace("prepare_file %s", file_name);
 
         auto buf = cast(ubyte[]) read(file_name);
-
         if (buf !is null && buf.length > 0)
         {
             Individual[] ss_list = parse_turtle_string(cast(char *)buf, cast(int)buf.length, context.get_prefix_map);
