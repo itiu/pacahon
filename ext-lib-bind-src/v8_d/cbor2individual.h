@@ -45,6 +45,8 @@ struct Resource
     int64_t long_data;
     int64_t decimal_mantissa_data;
     int64_t decimal_expanent_data;
+
+    Resource () : type(0), origin(0), lang(0), long_data(0), decimal_mantissa_data(0), decimal_expanent_data(0), str_data (""), bool_data(false){};
 };
 
 struct Individual
@@ -57,6 +59,8 @@ struct Element
 {
     int    pos;
     string str;
+    
+    Element () : pos (0), str ("") {};
 };
 
 Element read_element(Individual *individual, std::vector<char> &src, int b_pos, int e_pos, string subject_uri, string predicate_uri,

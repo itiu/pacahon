@@ -129,6 +129,8 @@ struct ElementHeader
     MajorType type;
     int64_t   v_long;
     uint8_t   tag;
+
+    ElementHeader () : type(UNSIGNED_INTEGER), v_long(0), tag(NONE){}; 
 };
 
 

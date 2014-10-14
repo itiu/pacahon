@@ -250,9 +250,12 @@ void write_resources(string uri, vector <Resource> vv, std::vector<char> &ou)
         Resource value = vv[ i ];
         if (value.type == _Uri)
         {
-            write_type_value(TAG, URI, ou);
-            write_string(value.str_data, ou);
-            //std::cout << "@c #write_resources2 data=" << value.str_data << std::endl;
+	    if (value.str_data.length () > 0)
+	    {
+        	write_type_value(TAG, URI, ou);
+        	write_string(value.str_data, ou);
+        	  //  std::cout << "@c #write uri data=" << value.str_data << std::endl;
+	    }
         }
         else if (value.type == _Integer)
         {
@@ -278,11 +281,16 @@ void write_resources(string uri, vector <Resource> vv, std::vector<char> &ou)
         }
         else
         {
-            if (value.lang != LANG_NONE)
-                write_type_value(TAG, value.lang + 41, ou);
-            write_string(value.str_data, ou);
+	    if (value.str_data.length () > 0)
+	    {
+//std::cout << "@c#1 " << " value.lang= " <<  (uint64_t)value.lang << std::endl;
 
-            //std::cout << "@c #write_resources2 data=" << value.str_data << std::endl;
+        	if (value.lang != LANG_NONE)
+            	    write_type_value(TAG, value.lang + 41, ou);
+        	write_string(value.str_data, ou);	
+
+        	   // std::cout << "@c #write string data=" << value.str_data << std::endl;
+	    }
         }
     }
 }

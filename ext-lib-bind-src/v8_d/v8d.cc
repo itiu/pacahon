@@ -338,41 +338,49 @@ void GetIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
 
 void PutIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
+    int res = 500;
     Isolate *isolate = args.GetIsolate();
 
-    //printf ("@!2\n");
     if (args.Length() != 2)
     {
-        //printf ("@!3\n");
         isolate->ThrowException(v8::String::NewFromUtf8(isolate, "Bad parameters"));
 
-        //printf ("@!4\n");
         return;
     }
 
-    //printf ("@@!5\n");
     if (args[ 1 ]->IsObject())
     {
         Individual individual;
         //std::cout << "@c:put #1" << std::endl;
         jsobject2individual(args[ 1 ], &individual, NULL, "");
 
+	//std::cout << "@c-js:put uri=" << individual.uri << std::endl;
+
         //std::cout << "@c:put #2" << std::endl;
-
-        std::vector<char> buff;
-
-        individual2cbor(&individual, buff);
-        //std::cout << "@c:put #3" << std::endl;
-        const char            *ptr = reinterpret_cast<const char *> (&buff[ 0 ]);
 
         v8::String::Utf8Value str_ticket(args[ 0 ]);
         const char            *ticket = ToCString(str_ticket);
 
-        put_individual(ticket, str_ticket.length(), ptr, buff.size());
+        std::vector<char> buff;
+        
+        individual2cbor(&individual, buff);
+
+        char *ptr = buff.data ();
+
+        res = put_individual(ticket, str_ticket.length(), ptr, buff.size());
+
+//	if (res != 200 && res != 1022)
+//	{
+//    	    buff.clear();
+//    	    individual2cbor(&individual, buff, true);
+//	}
 
         buff.clear();
         //std::cout << "@c:put #4" << std::endl;
     }
+
+    args.GetReturnValue().Set(res);
+    //std::cout << "@c:put #e" << std::endl;
 }
 
 

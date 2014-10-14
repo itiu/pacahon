@@ -17,7 +17,7 @@ using namespace std;
 
 void write_type_value(MajorType type, int64_t value, std::vector<char> &ou)
 {
-    uint8_t element_header;
+    uint8_t element_header = 0;
 
     if (value < 24)
     {
