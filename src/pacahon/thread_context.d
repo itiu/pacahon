@@ -937,7 +937,13 @@ class PThreadContext : Context
             if (indv is null && ss_as_cbor !is null)
             {
                 indv = &tmp_indv;
-                cbor2individual(indv, ss_as_cbor);
+                int code = cbor2individual(indv, ss_as_cbor);
+                if (code < 0)
+                {
+                	//cbor2individual(indv, ss_as_cbor);
+                	log.trace("ERR:store_individual:cbor2individual [%s]", ss_as_cbor);
+                	return ResultCode.Unprocessable_Entity;
+                }	
             }
 
             //if (trace_msg[ 27 ] == 1)

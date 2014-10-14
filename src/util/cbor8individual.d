@@ -10,7 +10,6 @@ private import onto.individual;
 private import onto.lang;
 private import util.cbor;
 
-
 string dummy;
 
 private static int read_element(Individual *individual, ubyte[] src, out string _key, string subject_uri = null,
@@ -20,19 +19,34 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     ElementHeader header;
 
     pos = read_type_value(src[ 0..$ ], &header);
-    //writeln ("read_element:[", cast(uint)src[0], " ", cast(uint)src[1], "]");
-    //writeln ("#^read_element, header=", header); 
-    //writeln ("read_element:[", cast(string)src[0..pos+header.len], "],[", src[0..pos+header.len], "]");
 
+    if (pos == 0)
+    {
+   		writeln ("@^^^0 individual=", *individual);
+    	throw new Exception ("no content in pos");
+    }	
+    	
     if (header.type == MajorType.MAP)
     {
         //writeln("IS MAP, length=", header.len, ", pos=", pos);
         string new_subject_uri;
         string key;
-        pos += read_element(individual, src[ pos..$ ], key);
-
+        int len = read_element(individual, src[ pos..$ ], key);
+       	if (len <= 0)
+       	{
+       		writeln ("@^^^1 individual=", *individual);
+       		throw new Exception ("no content in pos");
+       	}	
+        pos += len;
+        
         string val;
-        pos += read_element(individual, src[ pos..$ ], val);
+        len = read_element(individual, src[ pos..$ ], val);
+       	if (len <= 0)
+       	{
+       		writeln ("@^^^2 individual=", *individual);
+       		throw new Exception ("no content in pos");
+       	}	
+        pos += len;
 
         if (key == "@")
         {
@@ -49,11 +63,23 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
 
         foreach (i; 1 .. header.v_long)
         {
-            pos += read_element(individual, src[ pos..$ ], key);
+        	int len1 = read_element(individual, src[ pos..$ ], key);
+        	if (len1 <= 0)
+        	{
+        		writeln ("@^^^3 individual=", *individual);
+        		throw new Exception ("no content in pos");
+        	}	
+            pos += len1;
 
             string new_predicate_uri = key;
 
-            pos += read_element(individual, src[ pos..$ ], dummy, new_subject_uri, new_predicate_uri);
+            len1 = read_element(individual, src[ pos..$ ], dummy, new_subject_uri, new_predicate_uri);
+        	if (len1 <= 0)
+        	{
+        		writeln ("@^^^4 individual=", *individual);
+        		throw new Exception ("no content in pos");
+        	}	
+            pos += len1;
         }
     }
     else if (header.type == MajorType.TEXT_STRING)
@@ -100,7 +126,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     }
     else if (header.type == MajorType.UNSIGNED_INTEGER)
     {
-//   		writeln ("@p #read_element MajorType.UNSIGNED_INTEGER #0");	
+   		//writeln ("@p #read_element MajorType.UNSIGNED_INTEGER #0");	
     	long value = header.v_long;
     	Resources resources = individual.resources.get(predicate_uri, Resources.init);
     	
@@ -114,7 +140,7 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     		resources ~= Resource(value);    		
     	}
         individual.resources[ predicate_uri ] = resources;
-//   		writeln ("@p #read_element MajorType.UNSIGNED_INTEGER #end");	
+   		//writeln ("@p #read_element MajorType.UNSIGNED_INTEGER #end");	
     }
     else if (header.type == MajorType.FLOAT_SIMPLE)
     {
@@ -154,7 +180,13 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     	    //writeln ("IS ARRAY, length=", header.len, ", pos=", pos);
 			foreach (i; 0 .. header.v_long)
 			{         
-				pos += read_element(individual, src[ pos..$ ], dummy, subject_uri, predicate_uri);
+				int len = read_element(individual, src[ pos..$ ], dummy, subject_uri, predicate_uri);
+				if (len <= 0)
+				{
+					writeln ("@^^^5 individual=", *individual);
+					throw new Exception ("no content in pos");
+				}
+				pos += len;
 			}
         }
     }
@@ -190,8 +222,12 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
     {
         if (value.type == DataType.Uri)
         {
-            write_type_value(MajorType.TAG, TAG.URI, ou);
-            write_string(value.get!string, ou);
+        	string svalue = value.get!string;
+        	if (svalue !is null && svalue.length > 0)
+        	{
+        		write_type_value(MajorType.TAG, TAG.URI, ou);
+        		write_string(svalue, ou);
+            }
         }
         else if (value.type == DataType.Integer)
         {
@@ -217,17 +253,28 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         }
         else
         {
-            if (value.lang != LANG.NONE)
-                write_type_value(MajorType.TAG, value.lang + 41, ou);
-            write_string(value.get!string, ou);
+        	string svalue = value.get!string;
+        	if (svalue !is null && svalue.length > 0)
+        	{
+        		if (value.lang != LANG.NONE)
+        			write_type_value(MajorType.TAG, value.lang + 41, ou);
+        		write_string(svalue, ou);
+            }
         }
     }
 }
 
 // ///////////////////////////////////////////////////////////////////////////////////
-public void cbor2individual(Individual *individual, string in_str)
+public int cbor2individual(Individual *individual, string in_str)
 {
-    read_element(individual, cast(ubyte[])in_str, dummy);
+	try
+	{
+		return read_element(individual, cast(ubyte[])in_str, dummy);
+    }
+	catch (Exception ex)
+	{
+		return -1;
+	}
 }
 
 public string individual2cbor(Individual *in_obj)

@@ -125,12 +125,12 @@ public class LmdbStorage
 
         rc = mdb_env_create(&env);
         if (rc != 0)
-            log.trace_log_and_console("%s(%s) ERR#1:%s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console("%s(%s) WARN#1:%s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, fromStringz(mdb_strerror(rc)));
         else
         {
             rc = mdb_env_open(env, cast(char *)_path, MDB_NOMETASYNC | MDB_NOSYNC, std.conv.octal !664);
             if (rc != 0)
-                log.trace_log_and_console("%s(%s) ERR#2:%s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console("%s(%s) WARN#2:%s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, fromStringz(mdb_strerror(rc)));
 
             if (rc == 0 && mode == DBMode.RW)
             {
@@ -145,7 +145,7 @@ public class LmdbStorage
         }
     }
 
-    private void growth_db(MDB_env *env, MDB_txn *txn)
+    private int growth_db(MDB_env *env, MDB_txn *txn)
     {
         int         rc;
         MDB_envinfo stat;
@@ -166,9 +166,12 @@ public class LmdbStorage
             if (rc != 0)
             {
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
+                core.thread.Thread.sleep(dur!("msecs")(100));
+                return growth_db(env, txn);                
             }
             core.thread.Thread.sleep(dur!("msecs")(10));
         }
+        return rc;
     }
 
     public EVENT update_or_create(string cbor, out string new_hash)
@@ -394,6 +397,10 @@ public class LmdbStorage
         {
             log.trace_log_and_console("warn:" ~ __FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
+
+           	// TODO: sleep ?
+           	core.thread.Thread.sleep(dur!("msecs")(1));
+            
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
@@ -401,7 +408,7 @@ public class LmdbStorage
         {
             if (rc == MDB_MAP_RESIZED)
             {
-                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) WARN:%s", _path, fromStringz(mdb_strerror(rc)));
                 mdb_env_close(env);
                 open_db();
 
@@ -464,6 +471,10 @@ public class LmdbStorage
         {
             log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
             mdb_txn_abort(txn_r);
+
+           	// TODO: sleep ?
+           	core.thread.Thread.sleep(dur!("msecs")(1));
+
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
@@ -471,7 +482,7 @@ public class LmdbStorage
         {
             if (rc == MDB_MAP_RESIZED)
             {
-                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) MSG:%s", _path, fromStringz(mdb_strerror(rc)));
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) WARN:%s", _path, fromStringz(mdb_strerror(rc)));
                 mdb_env_close(env);
                 open_db();
 
@@ -482,6 +493,7 @@ public class LmdbStorage
             	log.trace_log_and_console("[%s] warn 2: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
             	mdb_txn_abort(txn_r);
             
+            	// TODO: sleep ?
             	core.thread.Thread.sleep(dur!("msecs")(1));
             	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
            	}   

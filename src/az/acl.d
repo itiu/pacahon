@@ -180,12 +180,15 @@ class Authorization : LmdbStorage
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
+            // TODO: sleep ?
+           	core.thread.Thread.sleep(dur!("msecs")(1));
+
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
         if (rc == MDB_MAP_RESIZED)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) WARN:%s", path, fromStringz(mdb_strerror(rc)));
             mdb_env_close(env);
             open_db();
 

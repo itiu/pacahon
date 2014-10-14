@@ -67,7 +67,9 @@ enum MajorType : ubyte
     TAG              = 6 << 5,
         
     /** Major type 7: floating point, simple data types. */
-    FLOAT_SIMPLE     = 7 << 5
+    FLOAT_SIMPLE     = 7 << 5,
+
+    NONE	     = 255
 }
 
 /// Теги CBOR
@@ -128,7 +130,7 @@ enum TAG : ubyte
 struct ElementHeader
 {
 	/// Тип
-    MajorType type;
+    MajorType type = MajorType.NONE;
     
     /// Число
    	long      v_long;
@@ -238,12 +240,10 @@ private ulong ulong_from_buff(ubyte[] buff, int pos)
 /// Читать из буффера тип и значение
 public int read_type_value(ubyte[] src, ElementHeader *header)
 {
-	if (src.length == 0)
-		throw new Exception ("read_type_value:block is empty");
+    if (src.length == 0)
+    	return 0;
 	
     ubyte hh = src[ 0 ];
-//    writeln ("hh=", hh);
-//    writeln ("hh & 0xe0=", hh & 0xe0);
 
     MajorType type  = cast(MajorType)(hh & 0xe0);
         
@@ -253,13 +253,7 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
     if (ld > 23)
     {
         d_pos += 1 << (ld - 24);
-        
-//    if (type == MajorType.NEGATIVE_INTEGER || type == MajorType.UNSIGNED_INTEGER)
-//    {
-//        writeln ("@p d_pos=", d_pos);
-//        writeln ("@p ld=", ld);
-//     }
-        
+                
         if (ld == 24)        
             ld = src[ 1 ];
         else if (ld == 25)
@@ -278,14 +272,20 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
     if (type == MajorType.TAG)
     {
         ElementHeader main_type_header;
-        d_pos      += read_type_value(src[ d_pos..$ ], &main_type_header);
+        int len = read_type_value(src[ d_pos..$ ], &main_type_header);
+        if (len <= 0)
+        {
+        		writeln ("@%%%1");
+        		throw new Exception ("no content in pos");      	
+        }	
+        d_pos      += len;
         header.tag  = cast(TAG)ld;
         header.v_long  = main_type_header.v_long;
         header.type = main_type_header.type;
 //      writeln ("HEADER:", header.toString());
     }
     else
-    {
+    {    	
     	if (type == MajorType.NEGATIVE_INTEGER)
     	{    		
     		ld = -ld;
@@ -299,12 +299,38 @@ public int read_type_value(ubyte[] src, ElementHeader *header)
         }
         
         header.v_long  = ld;
-        header.type = type;
+        header.type = type;                
     }
 //    writeln ("type=", type, ", length=", ld, ", d_pos=", d_pos, ", src.length=", src.length);
 
     return d_pos;
 }
 
+void hexdump(T)(string z, T[] s)
+{
+    char[] pad = z.dup;
+    pad[] = ' ';
 
+    writefln("%s, %s * %s", z, s.length, T.sizeof);
 
+    writef("%s --> ", z);
+    byte * b = cast(byte*) s.ptr;
+    int N = cast(int)(s.length*T.sizeof);
+
+    for(int i = 0; i < N; i++) {
+        writef("%2.2x ", b[i]);
+
+        if ((i & 7) == 7)
+        	writef(" ", pad);
+        
+        if ((i & 15) == 15)
+        {
+        	writef("    ", pad);
+        	for (int j = i - 15; j <= i; j++)
+        		writef("%s", cast(char)b[j]);
+        	
+            writef("\n %s    ", pad);
+        }    
+    }
+    writefln("\n");
+}
