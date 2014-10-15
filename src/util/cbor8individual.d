@@ -216,14 +216,16 @@ private void write_individual(Individual *ii, ref OutBuffer ou)
 private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
 {
     write_string(uri, ou);
+
     if (vv.length > 1)
         write_type_value(MajorType.ARRAY, vv.length, ou);
+        
     foreach (value; vv)
     {
         if (value.type == DataType.Uri)
         {
         	string svalue = value.get!string;
-        	if (svalue !is null && svalue.length > 0)
+        	//if (svalue !is null && svalue.length > 0)
         	{
         		write_type_value(MajorType.TAG, TAG.URI, ou);
         		write_string(svalue, ou);
@@ -254,7 +256,7 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
         else
         {
         	string svalue = value.get!string;
-        	if (svalue !is null && svalue.length > 0)
+        	//if (svalue !is null && svalue.length > 0)
         	{
         		if (value.lang != LANG.NONE)
         			write_type_value(MajorType.TAG, value.lang + 41, ou);

@@ -250,7 +250,7 @@ void write_resources(string uri, vector <Resource> vv, std::vector<char> &ou)
         Resource value = vv[ i ];
         if (value.type == _Uri)
         {
-	    if (value.str_data.length () > 0)
+	    //if (value.str_data.length () > 0)
 	    {
         	write_type_value(TAG, URI, ou);
         	write_string(value.str_data, ou);
@@ -281,7 +281,7 @@ void write_resources(string uri, vector <Resource> vv, std::vector<char> &ou)
         }
         else
         {
-	    if (value.str_data.length () > 0)
+	    //if (value.str_data.length () > 0)
 	    {
 //std::cout << "@c#1 " << " value.lang= " <<  (uint64_t)value.lang << std::endl;
 
