@@ -103,6 +103,40 @@ struct Resource
     {
         return (type == DataType.String || type == DataType.Uri) && m_string == v;
     }
+    bool opEquals(Resource rv) const
+    {
+    	if (type == rv.type)
+    	{
+    		
+        if (type == DataType.Boolean)
+        {
+        	return rv.get!bool == m_bool;
+        }   
+        else
+        {
+            if (type == DataType.Decimal)
+            {
+        	return rv.get!decimal == m_decimal;
+             }   
+            else
+            {
+                if (type == DataType.Integer)
+                {
+        	return rv.get!long == m_int;
+                   } 
+                else
+                {                
+                        if (type == DataType.String || type == DataType.Uri)
+                        {
+                           return rv.get!string == m_string; 
+                        }
+                }
+            } 
+    	}
+    	}
+    	
+    		return false;
+    }
 
     // /////////////////////////////////////////
     bool opAssign(bool v)
