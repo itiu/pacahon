@@ -469,13 +469,16 @@ public class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
-            mdb_txn_abort(txn_r);
+        	for (int i = 0; i < 10 || rc != 0; i++)
+        	{
+            //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+            	mdb_txn_abort(txn_r);
 
            	// TODO: sleep ?
-           	core.thread.Thread.sleep(dur!("msecs")(1));
+           //	core.thread.Thread.sleep(dur!("msecs")(1));
 
-            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            }
         }
 
         if (rc != 0)
@@ -494,14 +497,17 @@ public class LmdbStorage
             	mdb_txn_abort(txn_r);
             
             	// TODO: sleep ?
-            	core.thread.Thread.sleep(dur!("msecs")(1));
-            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            	//core.thread.Thread.sleep(dur!("msecs")(1));
+            	//rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                mdb_env_close(env);
+                open_db();
+            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);                            	
            	}   
         }
            	
         if (rc != 0)
         {            
-            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) MSG:%s", _path, fromStringz(mdb_strerror(rc)));
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
            	return null;
         }
 
