@@ -245,7 +245,7 @@ class PThreadContext : Context
     public string get_individual_from_storage(string uri)
     {
         //writeln ("@ get_individual_as_cbor, uri=", uri);
-        auto res = inividuals_storage.find(uri);
+        string res = inividuals_storage.find(uri);
 
         return res;
     }
