@@ -178,13 +178,17 @@ class Authorization : LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
-            mdb_txn_abort(txn_r);
-            // TODO: sleep ?
-           	core.thread.Thread.sleep(dur!("msecs")(1));
+        	for (int i = 0; i < 10 || rc != 0; i++)
+        	{
+            //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+            	mdb_txn_abort(txn_r);
 
-            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-        }
+           	// TODO: sleep ?
+           //	core.thread.Thread.sleep(dur!("msecs")(1));
+
+            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            }
+        }	
 
         if (rc == MDB_MAP_RESIZED)
         {
