@@ -54,7 +54,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
 
     while (true)
     {
-        bool[ string ] files_to_load;
+        Set!string files_to_load;
 
         if (exists(path ~ "/.load_sequence") == false)
         {
@@ -75,13 +75,13 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                                 log.trace("look modifed file=%s", o.name);
 
                             file_modification_time[ o.name ] = o.timeLastModified;
-                            files_to_load[ o.name ]          = true;
+                            files_to_load ~= o.name;
                         }
                     }
                     else
                     {
                         file_modification_time[ o.name ] = o.timeLastModified;
-                        files_to_load[ o.name ]          = true;
+                        files_to_load ~= o.name;
 
                         if (trace_msg[ 29 ] == 1)
                             log.trace("look new file=%s", o.name);
@@ -111,7 +111,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                         if (lst_mdf != file_modification_time[ file_name ])
                         {
                             file_modification_time[ file_name ] = lst_mdf;
-                            files_to_load[ file_name ]          = true;
+                            files_to_load ~= file_name;
                         }
                     }
                     else
@@ -119,16 +119,16 @@ void file_reader_thread(P_MODULE name, string props_file_name)
                         //writeln ("@1.2 file_name=", file_name);
                         SysTime lst_mdf = timeLastModified(file_name);
                         file_modification_time[ file_name ] = lst_mdf;
-                        files_to_load[ file_name ]          = true;
+                        files_to_load ~= file_name;
                     }
                 }
             }
         }
 
-        foreach (fn; files_to_load.keys)
+        foreach (fn; files_to_load)
         {
             if (trace_msg[ 29 ] == 1)
-                log.trace("load directory sequence, file=%s", fn);
+                log.trace("load file=%s", fn);
 
             prepare_file(fn, context);
         }
