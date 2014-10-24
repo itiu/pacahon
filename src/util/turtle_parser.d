@@ -64,8 +64,6 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
             // new line
             new_line_ptr = ptr;
 
-            // printf("!NewLine!%s\n", new_line_ptr);
-
             if (ch == '@')
             {
                 // это блок назначения префиксов
@@ -141,6 +139,18 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                 {
                     ptr++;
                     ch = *ptr;
+                }
+                if (ch == '#')
+                {
+                	// это комментарий
+
+                	// пропускаем строку
+                	while (ch != '\n' && ch != '\r' && ptr - src < len)
+                	{
+                		ptr++;
+                		ch = *ptr;
+                    }
+                	continue;
                 }
 
                 // это начало элемента
