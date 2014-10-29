@@ -446,16 +446,6 @@ public class LmdbStorage
         return count;
     }
     
-    public Individual find_individual(string uri)
-    {
-        Individual ind;
-        string     str = find(uri);
-
-        if (str !is null)
-            cbor2individual(&ind, str);
-        return ind;
-    }    
-
     public string find(string uri)
     {
     	if (uri is null || uri.length < 3)
@@ -538,6 +528,17 @@ public class LmdbStorage
 
         return str;
     }
+
+    public Individual find_individual(string uri)
+    {
+        Individual ind;
+        string     str = find(uri);
+
+        if (str !is null)
+            cbor2individual(&ind, str);
+        return ind;
+    }    
+    
 }
 
 string get_new_binlog_name(string db_path)

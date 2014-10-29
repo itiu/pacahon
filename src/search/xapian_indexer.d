@@ -403,6 +403,7 @@ void xapian_indexer(string thread_name)
                                     all_text.write(data);
                                     all_text.write('|');
                                 }
+                                
                                 void prepare_index(ref Individual idx, string link, string ln, int level = 0)
                                 {
                                     // 1. считать индивид по ссылке
