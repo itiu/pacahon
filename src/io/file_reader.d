@@ -249,6 +249,8 @@ private void prepare_file(string file_name, Context context)
                             ResultCode res = context.put_individual(null, ss.uri, ss);
                             if (res != ResultCode.OK)
                                 log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
+                                
+                            context.wait_thread(P_MODULE.fulltext_indexer);    
                         }
                     }
                 }
