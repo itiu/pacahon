@@ -248,9 +248,7 @@ private void prepare_file(string file_name, Context context)
                             }
                             ResultCode res = context.put_individual(null, ss.uri, ss);
                             if (res != ResultCode.OK)
-                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
-                                
-                            context.wait_thread(P_MODULE.fulltext_indexer);    
+                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));                                
                         }
                     }
                 }
@@ -267,6 +265,8 @@ private void prepare_file(string file_name, Context context)
             Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
+                
+            context.wait_thread(P_MODULE.fulltext_indexer);                    
         }
         //writeln ("file_reader::prepare_file end");
     }
