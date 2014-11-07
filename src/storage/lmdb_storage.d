@@ -459,7 +459,7 @@ public class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-        	for (int i = 0; i < 10 || rc != 0; i++)
+        	for (int i = 0; i < 10 && rc != 0; i++)
         	{
             //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
             	mdb_txn_abort(txn_r);
@@ -507,7 +507,7 @@ public class LmdbStorage
             if (rc != 0)
             {
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
-                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                return null;
             }
 
             MDB_val key;
@@ -522,6 +522,8 @@ public class LmdbStorage
             }
         }catch (Exception ex)
         {
+            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, ex.msg);
+            return null;
         }
 
         mdb_txn_abort(txn_r);

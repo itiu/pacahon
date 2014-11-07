@@ -266,8 +266,10 @@ private void prepare_file(string file_name, Context context)
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
                 
-            context.wait_thread(P_MODULE.fulltext_indexer);                    
         }
+
+        context.wait_thread(P_MODULE.fulltext_indexer);                    
+
         //writeln ("file_reader::prepare_file end");
     }
     catch (Exception ex)
