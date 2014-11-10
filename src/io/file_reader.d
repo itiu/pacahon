@@ -256,19 +256,21 @@ private void prepare_file(string file_name, Context context)
                 {
                     if (for_load.get(ss.uri, false) == true)
                     {
-                        //writeln("#2 file_reader:store, ss=\n", ss);
+                        if (trace_msg[ 33 ] == 1)
+                            log.trace("file_reader:store, uri=%s", ss.uri);
                         context.put_individual(null, ss.uri, ss);
                     }
                 }
             }
 
+            context.wait_thread(P_MODULE.fulltext_indexer);  
+
             Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
                 
+            context.set_reload_signal_to_local_thread("search");                  
         }
-
-        context.wait_thread(P_MODULE.fulltext_indexer);                    
 
         //writeln ("file_reader::prepare_file end");
     }
