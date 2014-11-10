@@ -461,11 +461,12 @@ public class LmdbStorage
         {
         	for (int i = 0; i < 10 && rc != 0; i++)
         	{
-            //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+        		log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
             	mdb_txn_abort(txn_r);
 
-           	// TODO: sleep ?
-           //	core.thread.Thread.sleep(dur!("msecs")(1));
+            	// TODO: sleep ?
+            	if (i > 3)	
+            		core.thread.Thread.sleep(dur!("msecs")(10));
 
             	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
             }
@@ -491,7 +492,7 @@ public class LmdbStorage
             	//rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
                 mdb_env_close(env);
                 open_db();
-            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);                            	
+            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
            	}   
         }
            	
@@ -526,7 +527,10 @@ public class LmdbStorage
             return null;
         }
 
-        mdb_txn_abort(txn_r);
+        scope (exit)
+        {
+        	mdb_txn_abort(txn_r);
+        }
 
         return str;
     }
