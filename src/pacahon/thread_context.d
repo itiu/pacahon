@@ -317,8 +317,12 @@ class PThreadContext : Context
     {
         string key2slot_str = inividuals_storage.find(xapian_metadata_doc_id);
 
-        int[ string ] key2slot = deserialize_key2slot(key2slot_str);
-        return key2slot;
+    	if (key2slot_str !is null)
+    	{
+    		int[ string ] key2slot = deserialize_key2slot(key2slot_str);
+    		return key2slot;
+        }
+    	return (int[ string ]).init;
     }
 
     ref string[ string ] get_prefix_map()
