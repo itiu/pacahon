@@ -1,9 +1,9 @@
 /**
  * Внешнее API
 
- Copyright: © 2014 Semantic Machines
- License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
- Authors: Valeriy Bushenev
+   Copyright: © 2014 Semantic Machines
+   License: Subject to the terms of the MIT license, as written in the included LICENSE.txt file.
+   Authors: Valeriy Bushenev
 
  */
 module pacahon.context;
@@ -189,7 +189,7 @@ interface Context
     bool authorize(string uri, Ticket *ticket, ubyte request_acess);
     Individual[] get_individuals_via_query(Ticket *ticket, string query_str);
     string get_individual_from_storage(string uri);
-    Onto get_onto ();
+    Onto get_onto();
 
     // *************************************************** external API ? *********************************** //
     ref string[ string ] get_prefix_map();

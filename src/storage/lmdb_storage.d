@@ -1,6 +1,6 @@
 /**
-  * lmdb реализация хранилища
-  */
+ * lmdb реализация хранилища
+ */
 module storage.lmdb_storage;
 
 private
@@ -23,12 +23,12 @@ static this()
     log = new logger("pacahon", "log", "lmdb");
 }
 
-/// Режим работы хранилища 
+/// Режим работы хранилища
 enum DBMode
 {
-	/// чтение
+    /// чтение
     R  = true,
-    
+
     /// чтение/запись
     RW = false
 }
@@ -36,12 +36,12 @@ enum DBMode
 /// Результат
 public enum Result
 {
-	/// OK
+    /// OK
     Ok,
-    
+
     /// Ошибка
     Err,
-    
+
     /// Ничего
     Nothing
 }
@@ -55,7 +55,7 @@ public class LmdbStorage
     private DBMode      mode;
     private string      _path;
     string              db_name;
-    string parent_thread_name;
+    string              parent_thread_name;
 
     /// конструктор
     this(string _path_, DBMode _mode, string _parent_thread_name)
@@ -65,7 +65,7 @@ public class LmdbStorage
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
         parent_thread_name   = _parent_thread_name;
-        
+
         create_folder_struct();
         open_db();
     }
@@ -167,7 +167,7 @@ public class LmdbStorage
             {
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
                 core.thread.Thread.sleep(dur!("msecs")(100));
-                return growth_db(env, txn);                
+                return growth_db(env, txn);
             }
             core.thread.Thread.sleep(dur!("msecs")(10));
         }
@@ -398,9 +398,9 @@ public class LmdbStorage
             log.trace_log_and_console("warn:" ~ __FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn_r);
 
-           	// TODO: sleep ?
-           	core.thread.Thread.sleep(dur!("msecs")(1));
-            
+            // TODO: sleep ?
+            core.thread.Thread.sleep(dur!("msecs")(1));
+
             rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
@@ -445,12 +445,12 @@ public class LmdbStorage
 
         return count;
     }
-    
+
     public string find(string uri)
     {
-    	if (uri is null || uri.length < 3)
-    		return null;
-    	
+        if (uri is null || uri.length < 3)
+            return null;
+
         string  str;
         int     rc;
         MDB_txn *txn_r;
@@ -459,16 +459,16 @@ public class LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-        	for (int i = 0; i < 10 && rc != 0; i++)
-        	{
-        		//log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
-            	mdb_txn_abort(txn_r);
+            for (int i = 0; i < 10 && rc != 0; i++)
+            {
+                //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+                mdb_txn_abort(txn_r);
 
-            	// TODO: sleep ?
-            	if (i > 3)	
-            		core.thread.Thread.sleep(dur!("msecs")(10));
+                // TODO: sleep ?
+                if (i > 3)
+                    core.thread.Thread.sleep(dur!("msecs")(10));
 
-            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
             }
         }
 
@@ -484,22 +484,22 @@ public class LmdbStorage
             }
             else if (rc == MDB_BAD_RSLOT)
             {
-            	log.trace_log_and_console("[%s] warn 2: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
-            	mdb_txn_abort(txn_r);
-            
-            	// TODO: sleep ?
-            	//core.thread.Thread.sleep(dur!("msecs")(1));
-            	//rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                log.trace_log_and_console("[%s] warn 2: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+                mdb_txn_abort(txn_r);
+
+                // TODO: sleep ?
+                //core.thread.Thread.sleep(dur!("msecs")(1));
+                //rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
                 mdb_env_close(env);
                 open_db();
-            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
-           	}   
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            }
         }
-           	
+
         if (rc != 0)
-        {            
+        {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
-           	return null;
+            return null;
         }
 
         try
@@ -529,7 +529,7 @@ public class LmdbStorage
 
         scope (exit)
         {
-        	mdb_txn_abort(txn_r);
+            mdb_txn_abort(txn_r);
         }
 
         return str.dup;
@@ -543,8 +543,7 @@ public class LmdbStorage
         if (str !is null)
             cbor2individual(&ind, str);
         return ind;
-    }    
-    
+    }
 }
 
 string get_new_binlog_name(string db_path)

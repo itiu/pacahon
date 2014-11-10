@@ -4,114 +4,114 @@
 module pacahon.know_predicates;
 
 /// -
-public const string owl__Ontology    = "owl:Ontology";
+public const string owl__Ontology = "owl:Ontology";
 
 /// -
 public const string owl__versionInfo = "owl:versionInfo";
 /// -
-public const string rdf__Property    = "rdf:Property";
+public const string rdf__Property = "rdf:Property";
 //public const string       owl__imports = "owl:imports";
 /// -
 public const string owl__Restriction = "owl:Restriction";
 //public const string       owl__hasPart        = "owl:hasPart";
 /// -
-public const string owl__onProperty       = "owl:onProperty";
+public const string owl__onProperty = "owl:onProperty";
 /// -
-public const string owl__allValuesFrom    = "owl:allValuesFrom";
+public const string owl__allValuesFrom = "owl:allValuesFrom";
 /// -
-public const string owl__someValuesFrom   = "owl:someValuesFrom";
+public const string owl__someValuesFrom = "owl:someValuesFrom";
 /// -
-public const string owl__maxCardinality   = "owl:maxCardinality";
+public const string owl__maxCardinality = "owl:maxCardinality";
 /// -
-public const string owl__minCardinality   = "owl:minCardinality";
+public const string owl__minCardinality = "owl:minCardinality";
 /// -
-public const string owl__ObjectProperty   = "owl:ObjectProperty";
+public const string owl__ObjectProperty = "owl:ObjectProperty";
 /// -
 public const string owl__DatatypeProperty = "owl:DatatypeProperty";
 /// -
-public const string owl__unionOf          = "owl:unionOf";
+public const string owl__unionOf = "owl:unionOf";
 /// -
-public const string owl__Thing            = "owl:Thing";
+public const string owl__Thing = "owl:Thing";
 /// -
-public const string owl__Class            = "owl:Class";
+public const string owl__Class = "owl:Class";
 
 /// -
-public const string veda_schema__actualVersion       = "v-s:actualVersion";
+public const string veda_schema__actualVersion = "v-s:actualVersion";
 /// -
-public const string veda_schema__deleted             = "v-s:deleted";
+public const string veda_schema__deleted = "v-s:deleted";
 /// -
-public const string veda_schema__script              = "v-s:script";
+public const string veda_schema__script = "v-s:script";
 /// -
-public const string veda_schema__login               = "v-s:login";
+public const string veda_schema__login = "v-s:login";
 /// -
-public const string veda_schema__password            = "v-s:password";
+public const string veda_schema__password = "v-s:password";
 /// -
 public const string veda_schema__PermissionStatement = "v-s:PermissionStatement";
 /// -
-public const string veda_schema__canCreate           = "v-s:canCreate";
+public const string veda_schema__canCreate = "v-s:canCreate";
 /// -
-public const string veda_schema__canDelete           = "v-s:canDelete";
+public const string veda_schema__canDelete = "v-s:canDelete";
 /// -
-public const string veda_schema__canRead             = "v-s:canRead";
+public const string veda_schema__canRead = "v-s:canRead";
 /// -
-public const string veda_schema__canUpdate           = "v-s:canUpdate";
+public const string veda_schema__canUpdate = "v-s:canUpdate";
 /// -
-public const string veda_schema__created             = "v-s:created";
+public const string veda_schema__created = "v-s:created";
 /// -
-public const string veda_schema__permissionObject    = "v-s:permissionObject";
+public const string veda_schema__permissionObject = "v-s:permissionObject";
 /// -
-public const string veda_schema__permissionSubject   = "v-s:permissionSubject";
+public const string veda_schema__permissionSubject = "v-s:permissionSubject";
 /// -
-public const string veda_schema__AllResourcesGroup   = "v-s:AllResourcesGroup";
+public const string veda_schema__AllResourcesGroup = "v-s:AllResourcesGroup";
 /// -
-public const string veda_schema__Mandate             = "v-s:Mandate";
+public const string veda_schema__Mandate = "v-s:Mandate";
 /// -
-public const string veda_schema__resource            = "v-s:resource";
+public const string veda_schema__resource = "v-s:resource";
 /// -
-public const string veda_schema__memberOf            = "v-s:memberOf";
+public const string veda_schema__memberOf = "v-s:memberOf";
 /// -
-public const string veda_schema__Membership          = "v-s:Membership";
+public const string veda_schema__Membership = "v-s:Membership";
 /// -
-public const string veda_schema__owner               = "v-s:owner";
+public const string veda_schema__owner = "v-s:owner";
 /// -
-//public const string veda_schema__Appointment 		  = "v-s:Appointment";
+//public const string veda_schema__Appointment        = "v-s:Appointment";
 
-public string[]     owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
+public string[] owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
 //--------------------------------------------------------------------------------
 
 /// -
-public const string rdf__type      = "rdf:type";
+public const string rdf__type = "rdf:type";
 /// -
-public const string rdf__subject   = "rdf:subject";
+public const string rdf__subject = "rdf:subject";
 /// -
 public const string rdf__predicate = "rdf:predicate";
 /// -
-public const string rdf__object    = "rdf:object";
+public const string rdf__object = "rdf:object";
 /// -
 public const string rdf__Statement = "rdf:Statement";
 //public const string rdf__datatype  = "rdf:datatype";
 
 /// -
-public const string rdfs__Class      = "rdfs:Class";
+public const string rdfs__Class = "rdfs:Class";
 /// -
 public const string rdfs__subClassOf = "rdfs:subClassOf";
 /// -
-public const string rdfs__label      = "rdfs:label";
+public const string rdfs__label = "rdfs:label";
 /// -
-public const string rdfs__comment    = "rdfs:comment";
+public const string rdfs__comment = "rdfs:comment";
 /// -
-public const string rdfs__domain     = "rdfs:domain";
+public const string rdfs__domain = "rdfs:domain";
 
 
 //http://www.w3.org/TR/2001/REC-xmlschema-2-20010502/#datatype
 /// -
-public const string xsd__string   = "xsd:string";
+public const string xsd__string = "xsd:string";
 /// -
-public const string xsd__boolean  = "xsd:boolean";
+public const string xsd__boolean = "xsd:boolean";
 /// -
 public const string xsd__dateTime = "xsd:dateTime";
 /// -
-public const string xsd__decimal  = "xsd:decimal";
+public const string xsd__decimal = "xsd:decimal";
 
 // http://www.daml.org/services/owl-s/1.0/Process.owl
 //public const string process__Input         = "process:Input";
@@ -122,9 +122,9 @@ public const string xsd__decimal  = "xsd:decimal";
 public const string dc__creator = "dc:creator";
 //public const string dc__dateSubmitted = "dc:dateSubmitted";
 /// -
-public const string dc__modified   = "dc:modified";
+public const string dc__modified = "dc:modified";
 /// -
-public const string dc__created    = "dc:created";
+public const string dc__created = "dc:created";
 /// -
 public const string dc__identifier = "dc:identifier";
 //public const string dc__subject       = "dc:subject";

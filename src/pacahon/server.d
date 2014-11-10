@@ -31,7 +31,7 @@ private
     import pacahon.interthread_signals;
 
     import search.xapian_indexer;
-    
+
     import backtrace.backtrace;
     import Backtrace = backtrace.backtrace;
 }
@@ -57,14 +57,14 @@ extern (C) public void sighandler1(int sig) nothrow @system
 {
     try
     {
-    	printPrettyTrace(stderr);
-    	 
-    	string err; 
-    	if (sig == SIGBUS)
-    	 err = "SIGBUS";
-    	else if (sig == SIGSEGV)
-    	 err = "SIGSEGV";
-    	 
+        printPrettyTrace(stderr);
+
+        string err;
+        if (sig == SIGBUS)
+            err = "SIGBUS";
+        else if (sig == SIGSEGV)
+            err = "SIGSEGV";
+
         log.trace_log_and_console("signal %s caught...\n", err);
         system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
         //Runtime.terminate();
@@ -134,12 +134,12 @@ bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
 
 void init_core()
 {
-	Backtrace.install(stderr);
-	
+    Backtrace.install(stderr);
+
     log    = new logger("pacahon", "log", "server");
     io_msg = new logger("pacahon", "io", "server");
     Tid[ P_MODULE ] tids;
-        
+
     version (linux)
     {
         // установим обработчик сигналов прерывания процесса

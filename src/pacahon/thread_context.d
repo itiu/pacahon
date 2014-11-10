@@ -7,7 +7,7 @@ module pacahon.thread_context;
 private
 {
     import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid,
-            std.file, std.path;
+           std.file, std.path;
 
     import type;
     import bind.xapian_d_header, bind.v8d_header;
@@ -93,25 +93,25 @@ class PThreadContext : Context
             {
                 throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
             }
-        }    
+        }
         _vql = new search.vql.VQL(this);
 
-            //writeln(context_name ~ ": load events");
-            //pacahon.event_filter.load_events(this);
-            //writeln(context_name ~ ": load events... ok");
+        //writeln(context_name ~ ": load events");
+        //pacahon.event_filter.load_events(this);
+        //writeln(context_name ~ ": load events... ok");
 
         onto = new Onto(this);
         onto.load();
     }
-    
-    public Onto get_onto ()
+
+    public Onto get_onto()
     {
         if (onto !is null)
         {
             check_for_reload("onto", &onto.load);
         }
-    	
-    	return onto;
+
+        return onto;
     }
 
     public long get_last_update_time()
@@ -136,15 +136,15 @@ class PThreadContext : Context
             auto oFiles = dirEntries(path, SpanMode.depth);
 
             foreach (o; oFiles)
-            {            	
-            	if (extension (o.name) == ".js")
-            	{
-            		writeln(" load script:", o);
-            		auto str_js        = cast(ubyte[]) read(o.name);
-            		auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
-            		if (str_js_script !is null)
-            			scripts ~= str_js_script;
-                }    
+            {
+                if (extension(o.name) == ".js")
+                {
+                    writeln(" load script:", o);
+                    auto str_js        = cast(ubyte[]) read(o.name);
+                    auto str_js_script = script_vm.compile(cast(char *)(cast(char[])str_js ~ "\0"));
+                    if (str_js_script !is null)
+                        scripts ~= str_js_script;
+                }
             }
         }
 
@@ -317,12 +317,12 @@ class PThreadContext : Context
     {
         string key2slot_str = inividuals_storage.find(xapian_metadata_doc_id);
 
-    	if (key2slot_str !is null)
-    	{
-    		int[ string ] key2slot = deserialize_key2slot(key2slot_str);
-    		return key2slot;
+        if (key2slot_str !is null)
+        {
+            int[ string ] key2slot = deserialize_key2slot(key2slot_str);
+            return key2slot;
         }
-    	return (int[ string ]).init;
+        return (int[ string ]).init;
     }
 
     ref string[ string ] get_prefix_map()
@@ -936,7 +936,7 @@ class PThreadContext : Context
 
             //if (trace_msg[ 27 ] == 1)
             //    log.trace("[%s] store_individual 2", name);
-                
+
             Individual tmp_indv;
             if (indv is null && ss_as_cbor !is null)
             {
@@ -944,10 +944,10 @@ class PThreadContext : Context
                 int code = cbor2individual(indv, ss_as_cbor);
                 if (code < 0)
                 {
-                	//cbor2individual(indv, ss_as_cbor);
-                	log.trace("ERR:store_individual:cbor2individual [%s]", ss_as_cbor);
-                	return ResultCode.Unprocessable_Entity;
-                }	
+                    //cbor2individual(indv, ss_as_cbor);
+                    log.trace("ERR:store_individual:cbor2individual [%s]", ss_as_cbor);
+                    return ResultCode.Unprocessable_Entity;
+                }
             }
 
             //if (trace_msg[ 27 ] == 1)
@@ -958,7 +958,7 @@ class PThreadContext : Context
 
             if (trace_msg[ 27 ] == 1)
                 log.trace("[%s] store_individual: %s", name, *indv);
-                
+
             if (indv.resources.length == 0)
                 return ResultCode.No_Content;
 
