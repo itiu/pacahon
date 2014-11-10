@@ -99,6 +99,12 @@ private void printTid(string tag)
 
 void xapian_indexer(string thread_name)
 {
+	 scope (exit)
+     {      
+    	      	 log.trace("ERR! indexer thread dead (exit)"); 
+   	 }
+
+	
     // //////////////////////////////////
     Context context;
     Onto    onto;
@@ -217,6 +223,8 @@ void xapian_indexer(string thread_name)
 
     while (true)
     {
+    	try
+    	{
         receive(
                 (CMD cmd, P_MODULE module_id, Tid tid_response_reciever)
                 {
@@ -237,7 +245,7 @@ void xapian_indexer(string thread_name)
                         {
                             key2slot_accumulator = tid_response_reciever;
                         }
-                        return;
+//                        return;
                     }
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
@@ -406,11 +414,13 @@ void xapian_indexer(string thread_name)
                                 
                                 void prepare_index(ref Individual idx, string link, string ln, int level = 0)
                                 {
+                                	try
+                                	{
                                     // 1. считать индивид по ссылке
                                     Individual inner_indv = inividuals_storage.find_individual(link);
 
-                                    string tab; for (int i = 0; i < level; i++)
-                                        tab ~= "	";
+                                    //string tab; for (int i = 0; i < level; i++)
+                                    //    tab ~= "	";
 
                                     //writeln (tab);
                                     //writeln (tab, "@inner_indv = ", inner_indv);
@@ -472,6 +482,12 @@ void xapian_indexer(string thread_name)
                                                 }
                                             }
                                         }
+                                    }
+                                }
+                                    catch (Exception ex)
+                                    {
+                                       throw new Exception ("prepare index:" ~ ex.msg);
+                                    	
                                     }
                                 }
 
@@ -731,7 +747,14 @@ void xapian_indexer(string thread_name)
                         set_trace(arg, arg2);
                 },
                 (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+        }
+    	catch (Exception ex)
+    	{               	 
+              	 log.trace("^^^^indexer# EX! LINE:[%s], FILE:[%s], MSG:[%s]", ex.line, ex.file,  ex.msg);
+    		
+    	}
     }
+    
 }
 
 private int get_slot_and_set_if_not_found(string field, ref int[ string ] key2slot)
