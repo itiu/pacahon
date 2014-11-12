@@ -121,7 +121,15 @@ private static int read_element(Individual *individual, ubyte[] src, out string 
     {
     	long value = header.v_long;
     	Resources resources = individual.resources.get(predicate_uri, Resources.init);
-   		resources ~= Resource(value);
+    	if (header.tag == TAG.EPOCH_DATE_TIME)
+    	{
+//    		writeln ("@p #read_element TAG.EPOCH_DATE_TIME value=", value);	
+    		resources ~= Resource(DataType.Datetime, value);
+    	}
+    	else
+    	{
+    		resources ~= Resource(value);    		
+    	}
    		individual.resources[ predicate_uri ] = resources;
     }
     else if (header.type == MajorType.UNSIGNED_INTEGER)
