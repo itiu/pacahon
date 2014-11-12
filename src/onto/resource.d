@@ -46,14 +46,14 @@ public bool anyExist(ref Resource[ string ] hrss, string[] objects)
 /// Ресурс
 struct Resource
 {
-	/// Тип 
-    DataType       type   = DataType.Uri;
+    /// Тип
+    DataType       type = DataType.Uri;
 
-	/// Источник 
+    /// Источник
     ResourceOrigin origin = ResourceOrigin.local;
-    
+
     /// Язык
-    LANG           lang   = LANG.NONE;
+    LANG           lang = LANG.NONE;
 
     private {
         void *[ 2 ] m_data;
@@ -105,37 +105,36 @@ struct Resource
     }
     bool opEquals(Resource rv) const
     {
-    	if (type == rv.type)
-    	{
-    		
-        if (type == DataType.Boolean)
+        if (type == rv.type)
         {
-        	return rv.get!bool == m_bool;
-        }   
-        else
-        {
-            if (type == DataType.Decimal)
+            if (type == DataType.Boolean)
             {
-        	return rv.get!decimal == m_decimal;
-             }   
+                return rv.get!bool == m_bool;
+            }
             else
             {
-                if (type == DataType.Integer)
+                if (type == DataType.Decimal)
                 {
-        	return rv.get!long == m_int;
-                   } 
+                    return rv.get!decimal == m_decimal;
+                }
                 else
-                {                
+                {
+                    if (type == DataType.Integer)
+                    {
+                        return rv.get!long == m_int;
+                    }
+                    else
+                    {
                         if (type == DataType.String || type == DataType.Uri)
                         {
-                           return rv.get!string == m_string; 
+                            return rv.get!string == m_string;
                         }
+                    }
                 }
-            } 
-    	}
-    	}
-    	
-    		return false;
+            }
+        }
+
+        return false;
     }
 
     // /////////////////////////////////////////

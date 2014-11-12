@@ -25,7 +25,7 @@ static this()
 class Onto
 {
     private Context context;
-    public int reload_count = 0;
+    public int      reload_count = 0;
 
     Individual[ string ] individuals;
     immutable(Individual)[ string ] i_individuals;
@@ -45,7 +45,7 @@ class Onto
 
     public void load()
     {
-    	reload_count ++;
+        reload_count++;
         Individual[] l_individuals;
 
         if (trace_msg[ 20 ] == 1)
@@ -68,5 +68,4 @@ class Onto
         if (trace_msg[ 20 ] == 1)
             log.trace_log_and_console("[%s] load onto to graph..Ok", context.get_name);
     }
-    
 }

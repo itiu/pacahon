@@ -17,20 +17,20 @@ alias Individual[] Individuals;
 /// Индивидуал
 public struct Individual
 {
-	/// URI
-    string             uri;
-    
-    /// Hashmap массивов ресурсов, где ключем является predicate (P из SPO) 
+    /// URI
+    string uri;
+
+    /// Hashmap массивов ресурсов, где ключем является predicate (P из SPO)
     Resources[ string ]    resources;
-    
+
     private ResultCode rc;
 
     /// Вернуть код ошибки
-    public ResultCode         getStatus()
+    public ResultCode  getStatus()
     {
         return rc;
     }
-   
+
     void setStatus(ResultCode _rc)
     {
         rc = _rc;
@@ -168,19 +168,19 @@ public struct Individual
             Resources exists_rss = resources.get(key, Resources.init);
             foreach (rs; exists_rss)
             {
-            	// проверить, чтоб в new_rss, не было rs
-            	bool rs_found = false;
-            	foreach (rs1; new_rss)
-            	{
-            		if (rs1 == rs)
-            		{
-            			rs_found = true;
-            			break;
-            		}	
-            	}
-            	
-            	if (rs_found == false) 
-            		new_rss ~= rs;
+                // проверить, чтоб в new_rss, не было rs
+                bool rs_found = false;
+                foreach (rs1; new_rss)
+                {
+                    if (rs1 == rs)
+                    {
+                        rs_found = true;
+                        break;
+                    }
+                }
+
+                if (rs_found == false)
+                    new_rss ~= rs;
             }
 
             res.resources[ key ] = new_rss;
