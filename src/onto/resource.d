@@ -256,15 +256,15 @@ struct Resource
     void toString(scope void delegate(const(char)[]) sink) const
     {
         if (type == DataType.Uri || type == DataType.String)
-            sink(get!string());
+            sink("(" ~ text(type) ~ ")" ~ get!string());
         else if (type == DataType.Boolean)
-            sink(text(get!bool()));
+            sink("(" ~ text(type) ~ ")" ~ text(get!bool()));
         else if (type == DataType.Datetime)
-            sink(text(get!long ()));
+            sink("(" ~ text(type) ~ ")" ~ text(get!long ()));
         else if (type == DataType.Decimal)
-            sink(text(get!decimal()));
+            sink("(" ~ text(type) ~ ")" ~ text(get!decimal()));
         else if (type == DataType.Integer)
-            sink(text(get!long ()));
+            sink("(" ~ text(type) ~ ")" ~ text(get!long ()));
     }
 
     @property string data()
