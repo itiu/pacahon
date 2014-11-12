@@ -130,11 +130,22 @@ Element read_element(Individual *individual, const char *src, int b_pos, int e_p
         vector <Resource> resources = individual->resources[ predicate_uri ];
         int64_t           value     = header.v_long;
 
-        Resource          rr;
-        rr.type      = _Integer;
-        rr.long_data = value;
-        resources.push_back(rr);
-        individual->resources[ predicate_uri ] = resources;
+        if (header.tag == EPOCH_DATE_TIME)
+        {
+            Resource rr;
+            rr.type      = _Datetime;
+            rr.long_data = value;
+            resources.push_back(rr);
+            individual->resources[ predicate_uri ] = resources;
+        }
+        else
+        {
+            Resource rr;
+            rr.type      = _Integer;
+            rr.long_data = value;
+            resources.push_back(rr);
+            individual->resources[ predicate_uri ] = resources;
+        }
     }
     else if (header.type == UNSIGNED_INTEGER)
     {
