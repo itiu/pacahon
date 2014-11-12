@@ -1,6 +1,6 @@
 /**
-  * авторизация
-  */
+ * авторизация
+ */
 
 module az.acl;
 
@@ -29,9 +29,9 @@ private
    индекс:
                 permissionObject + permissionSubject
 *********************************************************************/
-protected byte   err;
+protected byte err;
 
-logger log;
+logger         log;
 
 static this()
 {
@@ -158,7 +158,8 @@ class Authorization : LmdbStorage
         }
     }
 
-    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string resource_group, string subject_group, string right) trace = null)
+    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string resource_group, string subject_group,
+                                                                                    string right) trace = null)
     {
         ubyte res = 0;
 
@@ -178,29 +179,47 @@ class Authorization : LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-        	for (int i = 0; i < 10 && rc != 0; i++)
-        	{
-            //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
-            	mdb_txn_abort(txn_r);
+            for (int i = 0; i < 10 && rc != 0; i++)
+            {
+                //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
+                mdb_txn_abort(txn_r);
 
-           	// TODO: sleep ?
-           //	core.thread.Thread.sleep(dur!("msecs")(1));
+                if (i > 3)
+                    core.thread.Thread.sleep(dur!("msecs")(10));
 
-            	rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
             }
-        }	
-
-        if (rc == MDB_MAP_RESIZED)
-        {
-            log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) WARN:%s", path, fromStringz(mdb_strerror(rc)));
-            mdb_env_close(env);
-            open_db();
-
-            rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         }
 
         if (rc != 0)
+        {
+            if (rc == MDB_MAP_RESIZED)
+            {
+                log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) WARN:%s", path, fromStringz(mdb_strerror(rc)));
+                mdb_env_close(env);
+                open_db();
+
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            }
+            else if (rc == MDB_BAD_RSLOT)
+            {
+                log.trace_log_and_console("[%s] warn 2: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
+                mdb_txn_abort(txn_r);
+
+                // TODO: sleep ?
+                //core.thread.Thread.sleep(dur!("msecs")(1));
+                //rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                mdb_env_close(env);
+                open_db();
+                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+            }
+        }
+
+        if (rc != 0)
+        {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", path, fromStringz(mdb_strerror(rc)));
+            return res;
+        }
 
         try
         {
@@ -236,7 +255,6 @@ class Authorization : LmdbStorage
             if (rc == 0)
             {
                 string groups_str = cast(string)(data.mv_data[ 0..data.mv_size ]);
-
                 subject_groups = groups_str.split(";");
             }
             subject_groups ~= ticket.user_uri;
@@ -290,12 +308,12 @@ class Authorization : LmdbStorage
                                             if (set_bit > 0)
                                             {
                                                 if (trace !is null)
-                                                    trace(object_group, subject_group, access_list_predicates[idx]);
-                                                    
+                                                    trace(object_group, subject_group, access_list_predicates[ idx ]);
+
                                                 res = cast(ubyte)(res | set_bit);
 
                                                 if (res == request_access && trace is null)
-                                                	break;
+                                                    break;
                                             }
                                         }
                                     }
@@ -310,7 +328,8 @@ class Authorization : LmdbStorage
         {
             writeln("EX!,", ex.msg);
         }
-        finally
+
+        scope (exit)
         {
             mdb_txn_abort(txn_r);
 
