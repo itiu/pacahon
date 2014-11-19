@@ -507,13 +507,15 @@ void run_WrappedScript(WrappedContext *_context, WrappedScript *ws, _Buff *_res,
 
 //    printf("Script result: %s\n", *utf8);
 
-    while (!V8::IdleNotification())
-    {
-    }
-    ;
+//  bool finished = false;
+//  for (int i = 0; i < 200 && !finished; i++) 
+//  {
+    //finished = 
+isolate->IdleNotification(1000);
+//  }
 }
 
 void InitializeICU()
 {
-    v8::V8::InitializeICU();
+    v8::V8::InitializeICU(NULL);
 }
