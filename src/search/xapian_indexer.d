@@ -120,6 +120,7 @@ void xapian_indexer(string thread_name)
         if (class_property__2__indiviual.length == 0)
         {
             Individual[] l_individuals;
+	        context.vql().reopen_db ();
             context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
 
             foreach (indv; l_individuals)

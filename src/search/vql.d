@@ -63,6 +63,11 @@ class VQL
         xr      = new XapianReader(_context);
     }
 
+    public void reopen_db ()
+    {
+		xr.reopen_db ();
+    }
+
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
                    ref immutable(Individual)[] individuals)
     {

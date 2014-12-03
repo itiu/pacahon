@@ -38,6 +38,8 @@ interface SearchReader
 {
     public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
                    void delegate(string uri) add_out_element);
+
+    public void reopen_db();
 }
 
 /*
@@ -176,7 +178,7 @@ class XapianReader : SearchReader
         return 0;
     }
 
-    private void reopen_db()
+    public void reopen_db()
     {
         byte err;
 
