@@ -295,7 +295,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                             	found_end_triplet_marker = true;
                                 break;
                             }    
-                            if (ch == ' ' || ch == '\r')
+                            if (ch == ' ' || ch == '\r' || ch == '\t')
                                 break;
                             if (ch == '\n' || ch == ',' || ch == '"')
                                 break;
