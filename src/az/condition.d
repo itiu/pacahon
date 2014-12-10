@@ -153,7 +153,7 @@ public void load()
     Individual[] res;
     vql.get(null,
             "return { 'v-s:script'}
-            filter { 'rdf:type' == 'v-s:Mandate'}",
+            filter { 'rdf:type' == 'v-s:Event'}",
             res);
 
     int count = 0;

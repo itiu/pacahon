@@ -40,9 +40,9 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
             context.push_signal("onto", Clock.currStdTime() / 10000);
         }
 
-        if (rdfType.anyExist(veda_schema__Mandate))
+        if (rdfType.anyExist(veda_schema__Event))
         {
-            // изменения в v-s:Mandate, послать модуль Condition сигнал о перезагузке скрипта
+            // изменения в v-s:Event, послать модуль Condition сигнал о перезагузке скрипта
             send(tid_condition, CMD.RELOAD, subject_as_cbor, thisTid);
             receive((bool){});
         }

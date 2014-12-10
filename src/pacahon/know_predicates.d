@@ -64,7 +64,7 @@ public const string veda_schema__permissionSubject = "v-s:permissionSubject";
 /// -
 public const string veda_schema__AllResourcesGroup = "v-s:AllResourcesGroup";
 /// -
-public const string veda_schema__Mandate = "v-s:Mandate";
+public const string veda_schema__Event = "v-s:Event";
 /// -
 public const string veda_schema__resource = "v-s:resource";
 /// -
