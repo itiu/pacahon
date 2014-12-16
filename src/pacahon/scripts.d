@@ -1,7 +1,7 @@
 /**
  * выполнение JS скриптов
  */
-module az.condition;
+module pacahon.scripts;
 
 private
 {
@@ -37,7 +37,7 @@ struct Mandat
 
 private int     count;
 private Context context;
-private         Mandat[ string ] mandats;
+private         Mandat[ string ] scripts;
 private VQL     vql;
 
 public void condition_thread(string thread_name, string props_file_name)
@@ -83,26 +83,31 @@ public void condition_thread(string thread_name, string props_file_name)
                             else
                                 send(to, false);
                         },
-                        (EVENT type, string msg)
-                        {
-                            //writeln ("condition_thread: type:", type, ", msg=[", msg, "]");
+                        (EVENT type, string msg, string individual_id, string event_id)
+                        {                        		
                             if (msg !is null && msg.length > 3 && script_vm !is null)
-                            {
+                            {                            	
                                 //cbor2individual (&g_individual, msg);
                                 g_individual.data = cast(char *)msg;
                                 g_individual.length = cast(int)msg.length;
 
-                                foreach (mandat; mandats.values)
+                                foreach (script_id, script; scripts)
                                 {
-                                    if (mandat.compiled_script !is null)
+                                    if (script.compiled_script !is null)
                                     {
+                                    	if (event_id !is null && event_id.length > 1 && event_id == (individual_id ~ script_id))
+                                    	{
+                                    		writeln ("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
+                                    		continue;
+                                    	}	
+
                                         try
                                         {
                                             if (trace_msg[ 300 ] == 1)
-                                                log.trace("exec script : %s ", mandat.str_script);
+                                                log.trace("exec script : %s ", script.str_script);
 
                                             count++;
-                                            script_vm.run(mandat.compiled_script);
+                                            script_vm.run(script.compiled_script);
 
                                             if (trace_msg[ 300 ] == 1)
                                                 log.trace("end exec script");
@@ -148,7 +153,7 @@ public void load()
         return;
 
     if (trace_msg[ 301 ] == 1)
-        log.trace("start load mandats");
+        log.trace("start load scripts");
 
     Individual[] res;
     vql.get(null,
@@ -165,7 +170,7 @@ public void load()
 
     //writeln ("@2");
     if (trace_msg[ 300 ] == 1)
-        log.trace("end load mandats, count=%d ", res.length);
+        log.trace("end load scripts, count=%d ", res.length);
 }
 
 private void prepare_condition(Individual ss, ScriptVM script_vm)
@@ -182,8 +187,8 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
 
         //writeln("condition_text:", condition_text);
 
-        Mandat mandat = void;
-        mandat.id = ss.uri;
+        Mandat script = void;
+        script.id = ss.uri;
 
         if (condition_text[ 0 ] == '{')
         {
@@ -193,38 +198,38 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
             {
                 JSONValue el = condition_json.object.get("whom", nil);
                 if (el != nil)
-                    mandat.whom = el.str;
+                    script.whom = el.str;
 
                 el = condition_json.object.get("right", nil);
                 if (el != nil)
-                    mandat.right = el.str;
+                    script.right = el.str;
 
                 el = condition_json.object.get("condition", nil);
                 if (el != nil)
                 {
-                    mandat.str_script      = el.str;
-                    mandat.compiled_script = script_vm.compile(cast(char *)(mandat.str_script ~ "\0"));
+                    script.str_script      = el.str;
+                    script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
 
                     if (trace_msg[ 310 ] == 1)
-                        log.trace("#1 mandat.id=%s, text=%s", mandat.id, mandat.str_script);
+                        log.trace("#1 script.id=%s, text=%s", script.id, script.str_script);
 
-                    mandats[ ss.uri ] = mandat;
+                    scripts[ ss.uri ] = script;
                 }
             }
         }
         else
         {
-            mandat.str_script      = condition_text;
-            mandat.compiled_script = script_vm.compile(cast(char *)(mandat.str_script ~ "\0"));
+            script.str_script      = condition_text;
+            script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
             if (trace_msg[ 310 ] == 1)
-                log.trace("#2 mandat.id=%s, text=%s", mandat.id, mandat.str_script);
+                log.trace("#2 script.id=%s, text=%s", script.id, script.str_script);
 
-            mandats[ ss.uri ] = mandat;
+            scripts[ ss.uri ] = script;
         }
     }
     catch (Exception ex)
     {
-        log.trace_log_and_console("error:load mandat :%s", ex.msg);
+        log.trace_log_and_console("error:load script :%s", ex.msg);
     }
     finally
     {

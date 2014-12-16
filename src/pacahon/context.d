@@ -294,12 +294,13 @@ interface Context
                  ticket = указатель на обьект Ticket
                  indv   = указатель на экземпляр Individual, сохраняется если !is null
                  ss_as_cbor = индивидуал в виде строки, сохраняется если $(D indv is null)
+                 event_id = указывается при сохранения индивида из скриптов (если идет обработка вызванная срабатыванием storage event)
 
        Returns:
                 Код результата операции
      */
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true);
-
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true, string event_id = null);
+    
     /**
        Сохранить индивидуал, по указанному uri
        Params:

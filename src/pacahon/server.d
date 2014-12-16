@@ -15,7 +15,6 @@ private
     import io.file_reader;
 
     import az.acl;
-    import az.condition;
     import storage.storage_thread;
 
     import util.logger;
@@ -23,6 +22,7 @@ private
     import util.utils;
     import util.load_info;
 
+    import pacahon.scripts;
     import pacahon.context;
     import pacahon.know_predicates;
     import pacahon.log_msg;

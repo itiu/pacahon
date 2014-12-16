@@ -907,7 +907,7 @@ class PThreadContext : Context
     }
 
 
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true)
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true, string event_id = null)
     {
         StopWatch sw; sw.start;
 
@@ -1014,7 +1014,7 @@ class PThreadContext : Context
 
                 if (prepareEvents == true)
                 {
-                    bus_event_after(indv, rdfType, ss_as_cbor, ev, this);
+                    bus_event_after(indv, rdfType, ss_as_cbor, ev, this, event_id);
                 }
 
                 return ResultCode.OK;

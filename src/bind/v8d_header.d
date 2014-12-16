@@ -39,7 +39,7 @@ extern (C++) char *get_global_prop(const char *prop_name, int prop_name_length)
     return cast(char *)res;
 }
 
-extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length)
+extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length)
 {
     try
     {
@@ -49,10 +49,11 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
         {
             string cbor      = cast(string)_cbor[ 0.._cbor_length ].dup;
             string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
+            string event_id = cast(string)_event_id[ 0.._event_id_length ].dup;
 
             Ticket *ticket = g_context.get_ticket(ticket_id);
 
-            return g_context.store_individual(ticket, null, cbor);
+            return g_context.store_individual(ticket, null, cbor, true, event_id);
         }
         return ResultCode.Service_Unavailable;
     }
@@ -121,18 +122,18 @@ void dump(char *data, int count)
 
 extern (C++)
 {
-interface WrappedContext
-{
-}
+	interface WrappedContext
+	{
+	}
 
-interface WrappedScript
-{
-}
+	interface WrappedScript
+	{
+	}
 
-bool InitializeICU();
-WrappedContext new_WrappedContext();
-WrappedScript new_WrappedScript(WrappedContext _context, char *src);
-void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
+	bool InitializeICU();
+	WrappedContext new_WrappedContext();
+	WrappedScript new_WrappedScript(WrappedContext _context, char *src);
+	void run_WrappedScript(WrappedContext _context, WrappedScript ws, _Buff *_res = null, _Buff *_out = null);
 }
 
 alias new_WrappedContext new_ScriptVM;
