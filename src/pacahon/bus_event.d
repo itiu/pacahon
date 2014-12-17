@@ -63,7 +63,12 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
             try
             {
 //			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
-                send(tid_condition, ev_type, subject_as_cbor, individual.uri, event_id);
+            	immutable (string)[] type;
+            	
+            	foreach (key; rdfType.keys)
+            		type ~= key;
+            
+                send(tid_condition, ev_type, subject_as_cbor, type, individual.uri, event_id);
             }
             catch (Exception ex)
             {
