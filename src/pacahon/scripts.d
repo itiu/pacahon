@@ -26,18 +26,16 @@ static this()
     log = new logger("pacahon", "log", "condition");
 }
 
-struct Mandat
+struct ScriptInfo
 {
     string id;
-    string whom;
-    string right;
     string str_script;
     Script compiled_script;
 }
 
 private int     count;
 private Context context;
-private         Mandat[ string ] scripts;
+private         ScriptInfo[ string ] scripts;
 private VQL     vql;
 
 public void condition_thread(string thread_name, string props_file_name)
@@ -187,45 +185,15 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
 
         //writeln("condition_text:", condition_text);
 
-        Mandat script = void;
+        ScriptInfo script = void;
         script.id = ss.uri;
 
-        if (condition_text[ 0 ] == '{')
-        {
-            JSONValue condition_json = parseJSON(condition_text);
+       	script.str_script  = "var ticket = ''; var document; var _script_id = '" ~ script.id ~ "'; var _event_id = ''; if (document) { document['@'] + _script_id;} " ~ condition_text;
+        script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
+        if (trace_msg[ 310 ] == 1)
+        	log.trace("#compile script.id=%s, text=%s", script.id, script.str_script);
 
-            if (condition_json.type == JSON_TYPE.OBJECT)
-            {
-                JSONValue el = condition_json.object.get("whom", nil);
-                if (el != nil)
-                    script.whom = el.str;
-
-                el = condition_json.object.get("right", nil);
-                if (el != nil)
-                    script.right = el.str;
-
-                el = condition_json.object.get("condition", nil);
-                if (el != nil)
-                {
-                    script.str_script      = el.str;
-                    script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
-
-                    if (trace_msg[ 310 ] == 1)
-                        log.trace("#1 script.id=%s, text=%s", script.id, script.str_script);
-
-                    scripts[ ss.uri ] = script;
-                }
-            }
-        }
-        else
-        {
-            script.str_script      = condition_text;
-            script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
-            if (trace_msg[ 310 ] == 1)
-                log.trace("#2 script.id=%s, text=%s", script.id, script.str_script);
-
-            scripts[ ss.uri ] = script;
-        }
+        scripts[ ss.uri ] = script;
     }
     catch (Exception ex)
     {
