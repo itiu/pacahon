@@ -188,7 +188,7 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
         ScriptInfo script = void;
         script.id = ss.uri;
 
-       	script.str_script  = "var ticket = ''; var document; var _script_id = '" ~ script.id ~ "'; var _event_id = ''; if (document) { document['@'] + _script_id;} " ~ condition_text;
+       	script.str_script  = "var ticket = ''; var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ script.id ~ "'; var _event_id = ''; if (document) { _event_id = document['@'] + _script_id;} " ~ condition_text ~ "}";
         script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
         if (trace_msg[ 310 ] == 1)
         	log.trace("#compile script.id=%s, text=%s", script.id, script.str_script);
