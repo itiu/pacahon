@@ -30,7 +30,7 @@ struct ScriptInfo
 {
     string id;
     string str_script;
-    bool[string] filters;
+    bool[ string ] filters;
     Script compiled_script;
 }
 
@@ -82,10 +82,10 @@ public void condition_thread(string thread_name, string props_file_name)
                             else
                                 send(to, false);
                         },
-                        (EVENT type, string msg, immutable (string)[] indv_types, string individual_id, string event_id)
-                        {                        		
+                        (EVENT type, string msg, immutable(string)[] indv_types, string individual_id, string event_id)
+                        {
                             if (msg !is null && msg.length > 3 && script_vm !is null)
-                            {                            	
+                            {
                                 //cbor2individual (&g_individual, msg);
                                 g_individual.data = cast(char *)msg;
                                 g_individual.length = cast(int)msg.length;
@@ -94,32 +94,34 @@ public void condition_thread(string thread_name, string props_file_name)
                                 {
                                     if (script.compiled_script !is null)
                                     {
-                                    	if (script.filters.length > 0)
-                                    	{
-                                    		bool any_exist = false;
-                                    		foreach (indv_type ; indv_types)
-                                    		{
-                                    			if ((indv_type in script.filters) !is null)
-                                    			{
-                                    				any_exist = true;
-                                    				break;
-                                    			}	 
-                                    		}
-                                    		
-                                    		if (any_exist == false)
-                                    			continue;
-                                    	}
-                                    	
-                                    	if (event_id !is null && event_id.length > 1 && event_id == (individual_id ~ script_id))
-                                    	{
-                                    		writeln ("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
-                                    		continue;
-                                    	}	
+                                        //writeln("#1 exec script:", script_id, ", script.filters=", script.filters);
+                                        if (script.filters.length > 0)
+                                        {
+                                            bool any_exist = false;
+                                            foreach (indv_type; indv_types)
+                                            {
+                                                if ((indv_type in script.filters) !is null)
+                                                {
+                                                    any_exist = true;
+                                                    break;
+                                                }
+                                            }
+
+                                            if (any_exist == false)
+                                                continue;
+                                        }
+                                        //writeln("#2 exec script:", script_id);
+
+                                        if (event_id !is null && event_id.length > 1 && event_id == (individual_id ~ script_id))
+                                        {
+                                            writeln("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
+                                            continue;
+                                        }
 
                                         try
                                         {
                                             if (trace_msg[ 300 ] == 1)
-                                                log.trace("exec script : %s ", script.str_script);
+                                                log.trace("exec script : %s ", script_id);
 
                                             count++;
                                             script_vm.run(script.compiled_script);
@@ -200,23 +202,34 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
         if (condition_text.length <= 0)
             return;
 
-        //writeln("condition_text:", condition_text);
-        ScriptInfo script = void;
-        script.id = ss.uri;
-        
-        Resources filters  = ss.getResources(veda_schema__filter);
-
-        foreach (filter; filters)
+        string str_script =
+            "var ticket = ''; var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ ss.uri ~
+            "'; var _event_id = _event_id = document['@'] + _script_id; " ~ condition_text ~ "}";
+        try
         {
-            script.filters[ filter.uri ] = true;
+            ScriptInfo script = ScriptInfo.init;
+            script.id         = ss.uri;
+            script.str_script = str_script;
+
+            script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
+            if (trace_msg[ 310 ] == 1)
+                log.trace("#compile script.id=%s, text=%s", script.id, script.str_script);
+
+            //writeln("condition_text:", condition_text);
+
+            Resources filters = ss.getResources(veda_schema__filter);
+
+            foreach (filter; filters)
+            {
+                script.filters[ filter.uri ] = true;
+            }
+
+            scripts[ ss.uri ] = script;
         }
-
-       	script.str_script  = "var ticket = ''; var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ script.id ~ "'; var _event_id = ''; if (document) { _event_id = document['@'] + _script_id;} " ~ condition_text ~ "}";
-        script.compiled_script = script_vm.compile(cast(char *)(script.str_script ~ "\0"));
-        if (trace_msg[ 310 ] == 1)
-        	log.trace("#compile script.id=%s, text=%s", script.id, script.str_script);
-
-        scripts[ ss.uri ] = script;
+        catch (Exception ex)
+        {
+            log.trace_log_and_console("error:compile script :%s", ex.msg);
+        }
     }
     catch (Exception ex)
     {
