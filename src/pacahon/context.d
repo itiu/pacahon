@@ -242,7 +242,7 @@ interface Context
        Returns:
                 список авторизованных uri
      */
-    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str);
+    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str);
 
     /**
        Вернуть индивидуала по его uri

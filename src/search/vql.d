@@ -114,7 +114,7 @@ class VQL
         return res_count;
     }
 
-    public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
+    public int get(Ticket *ticket, string filter, string freturn, string sort, int count_authorize,
                    ref immutable (string)[] ids)
     {
         int                       res_count;
@@ -177,15 +177,15 @@ class VQL
         double d_dummy;
         int    res_count;
 
-/*        if (type_source == LMDB)
-        {
-            if (found_sections[ FILTER ] !is null)
-            {
-                TTA tta = parse_expr(found_sections[ FILTER ]);
-                transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
-            }
-        }
-        else */
+//        if (type_source == LMDB)
+//        {
+//            if (found_sections[ FILTER ] !is null)
+//            {
+//                TTA tta = parse_expr(found_sections[ FILTER ]);
+//                transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
+//            }
+//        }
+//        else 
         if (type_source == XAPIAN)
         {
             void delegate(string uri) dg;
