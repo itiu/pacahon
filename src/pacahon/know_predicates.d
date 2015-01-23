@@ -76,6 +76,7 @@ public const string veda_schema__Membership = "v-s:Membership";
 /// -
 public const string veda_schema__owner = "v-s:owner";
 /// -
+public const string veda_schema__fullUrl = "v-s:fullUrl";
 //public const string veda_schema__Appointment        = "v-s:Appointment";
 
 public string[] owl_tags = [ rdf__Property, owl__Restriction, owl__ObjectProperty, owl__DatatypeProperty ];
