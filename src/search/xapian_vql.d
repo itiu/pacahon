@@ -109,7 +109,8 @@ private TokenType get_token_type(string token, out double value)
         bool is_digit = false;
         try
         {
-            value = parse!double (token);
+            string tt = token.dup;
+            value = parse!double (tt);
             return TokenType.NUMBER;
         }
         catch (Exception ex)
@@ -141,7 +142,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 
         double    value;
         TokenType rs_type = get_token_type(rs, value);
-        if (rs_type == TokenType.DATE)
+        if (rs_type == TokenType.DATE || rs_type == TokenType.NUMBER)
         {
             l_token = ls;
             op      = tta.op;
@@ -463,7 +464,9 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
     xapian_enquire.set_query(query, &err);
     if (sorter !is null)
+    {
         xapian_enquire.set_sort_by_key(sorter, true, &err);
+    }
 
     //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);

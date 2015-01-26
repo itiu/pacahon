@@ -120,7 +120,7 @@ void xapian_indexer(string thread_name)
         if (class_property__2__indiviual.length == 0)
         {
             Individual[] l_individuals;
-	        context.vql().reopen_db ();
+            context.vql().reopen_db();
             context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
 
             foreach (indv; l_individuals)
@@ -384,9 +384,41 @@ void xapian_indexer(string thread_name)
                                     string p_text_ru = "";
                                     string p_text_en = "";
 
-                                    void index_literal(string predicate, Resource oo)
+                                    void index_double(string predicate, Resource oo)
                                     {
-                                        string data = escaping_or_uuid2search(oo.literal);
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                        decimal dd = oo.get!decimal ();
+                                        double l_data = dd.toDouble ();
+                                        doc.add_value(slot_L1, l_data, &err);
+                                        prefix = "X" ~ text(slot_L1) ~ "D";
+                                        indexer.index_data(l_data, prefix.ptr, prefix.length, &err);
+
+                                        if (trace_msg[ 220 ] == 1)
+                                            log.trace("index [DataType.Double] :[%s], prefix=%s[%s]", text(l_data), prefix,
+                                                      predicate);
+                                    }
+                                    
+                                    void index_integer(string predicate, Resource oo)
+                                    {
+                                        int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
+                                        prefix = "X" ~ text(slot_L1) ~ "X";
+
+                                        double l_data = cast(double)(oo.get!long ());
+                                        doc.add_value(slot_L1, l_data, &err);
+                                        prefix = "X" ~ text(slot_L1) ~ "D";
+                                        indexer.index_data(l_data, prefix.ptr, prefix.length, &err);
+
+                                        if (trace_msg[ 220 ] == 1)
+                                            log.trace("index [DataType.Integer] :[%s], prefix=%s[%s]", text(l_data), prefix,
+                                                      predicate);
+                                    }
+
+                                    void index_string(string predicate, Resource oo)
+                                    {
+                                        string data;
+                                        data = escaping_or_uuid2search(oo.literal);
 
                                         if (data.length < 1)
                                             return;
@@ -412,6 +444,8 @@ void xapian_indexer(string thread_name)
                                         all_text.write(data);
                                         all_text.write('|');
                                     }
+
+
 
                                     void prepare_index(ref Individual idx, string link, string ln, int level = 0)
                                     {
@@ -476,7 +510,18 @@ void xapian_indexer(string thread_name)
                                                                                 log.trace("index %s = %s ", ln ~ "." ~ indexed_field.uri,
                                                                                           rc);
 
-                                                                            index_literal(ln ~ "." ~ indexed_field.uri, rc);
+                                                                            if (rc.type == DataType.String)
+                                                                            {
+                                                                                index_string(ln ~ "." ~ indexed_field.uri, rc);
+                                                                            }
+                                                                            else if (rc.type == DataType.Integer)
+                                                                            {
+                                                                                index_integer(ln ~ "." ~ indexed_field.uri, rc);
+                                                                            }
+                                                                            else if (rc.type == DataType.Decimal)
+                                                                            {
+                                                                                index_double(ln ~ "." ~ indexed_field.uri, rc);
+                                                                            }
                                                                         }
                                                                     }
                                                                 }
@@ -494,9 +539,17 @@ void xapian_indexer(string thread_name)
 
                                     foreach (oo; resources)
                                     {
-                                        if (oo.type == DataType.String)
+                                        if (oo.type == DataType.Integer)
                                         {
-                                            index_literal(predicate, oo);
+                                            index_integer(predicate, oo);
+                                        }
+                                        else if (oo.type == DataType.Decimal)
+                                        {
+                                            index_double(predicate, oo);
+                                        }
+                                        else if (oo.type == DataType.String)
+                                        {
+                                            index_string(predicate, oo);
                                         }
                                         else if (oo.type == DataType.Uri)
                                         {
