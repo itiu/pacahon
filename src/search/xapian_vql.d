@@ -184,7 +184,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                 {
                     int slot;
                     //writeln("@p slot=", slot, " predicate=", ls);
-                    if (rs[0] == '*')
+                    if (rs !is null && rs.length > 2 && rs[0] == '*')
                     {
                     	slot = key2slot.get(ls ~ "#F", -1);
                     }
