@@ -4,7 +4,7 @@
 
 module search.xapian_vql;
 
-import std.string, std.concurrency, std.stdio, std.datetime, std.conv;
+import std.string, std.concurrency, std.stdio, std.datetime, std.conv, std.algorithm;
 import bind.xapian_d_header;
 import util.utils;
 import util.cbor;
@@ -79,7 +79,12 @@ public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2sl
                     asc_desc = true;
 
                 int slot = key2slot.get(key, -1);
-                sorter.add_value(slot, asc_desc, &err);
+                if (slot >= 0)
+                {
+                	if (trace_msg[ 200 ] == 1)
+                		log.trace("sort key=%s, slot=%d", key, slot);
+                	sorter.add_value(slot, asc_desc, &err);
+                }	
             }
         }
     }
@@ -177,25 +182,37 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                 }
                 else
                 {
-                    int slot = key2slot.get(ls, -1);
+                    int slot;
                     //writeln("@p slot=", slot, " predicate=", ls);
+                    if (rs[0] == '*')
+                    {
+                    	slot = key2slot.get(ls ~ "#F", -1);
+                    }
+                    else
+                    {
+                    	slot = key2slot.get(ls, -1);
+                    }        	
 
                     if (slot > 0)
                     {
-                        if (indexOf(rs, '*') > 0 && rs.length > 3)
+                        if ((tta.R.token_decor == Decor.QUOTED || indexOf(rs, '*') >= 0) && rs.length > 3)
                         {
-//                  xtr = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-                            string query_str = to_lower_and_replace_delimeters(rs);
-                            xtr = "X" ~ text(slot) ~ "X";
+                            char[] query_str = to_lower_and_replace_delimeters(rs).dup;
+                            if (rs[0] == '*')
+                            {
+                            	reverse (query_str);                            	
+                            }
 
-                            feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
+                           	xtr = "X" ~ text(slot) ~ "X";                            	
+//                            string query_str = rs.toLower ();
+                            feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD | feature_flag.FLAG_PHRASE | feature_flag.FLAG_LOVEHATE;
                             if (tta.op == "!=")
                             {
-/*	TODO
- *  вероятно получаются не оптимальнми запросы вида
- *  '*' == 'rdf' && '*' != 'List*'
- *  @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
- */
+                            	/*	TODO
+                            	*  вероятно получаются не оптимальными запросы вида
+                            	*  '*' == 'rdf' && '*' != 'List*'
+                            	*  @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
+                            	*/
                                 flags     = flags | feature_flag.FLAG_PURE_NOT;
                                 query_str = "NOT " ~ query_str;
                             }
@@ -204,7 +221,6 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                                                    xtr.length, &err);
                             if (err != 0)
                                 writeln("XAPIAN:transform_vql_to_xapian:parse_query('x'=*)", err);
-//                  query = qp.parse_query(cast(char *)xtr, xtr.length, feature_flag.FLAG_WILDCARD, &err);
                         }
                         else
                         {
@@ -231,11 +247,11 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                                     }
                                 }
                             }
-                            else if (tta.R.token_decor == Decor.QUOTED)
-                            {
-                                xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
-                                query = new_Query(cast(const char *)xtr, xtr.length, &err);
-                            }
+//                            else if (tta.R.token_decor == Decor.QUOTED)
+//                            {
+//                                xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
+//                                query = new_Query(cast(const char *)xtr, xtr.length, &err);
+//                            }
                             else
                             {
                                 double d_val = parse!double (rs);
@@ -265,7 +281,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 
                 if (indexOf(xtr, '*') > 0 && xtr.length > 3)
                 {
-                    feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
+                    feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD | feature_flag.FLAG_PHRASE;
                     if (tta.op == "!=")
                     {
 /*	TODO
@@ -524,7 +540,9 @@ string get_query_description(XapianQuery query)
         query.get_description(&descr_str, &descr_len, &err);
         if (descr_len !is null && *descr_len > 0)
         {
-            return cast(immutable)descr_str[ 0..(*descr_len) ];
+        	string str = cast(immutable)descr_str[ 0..*descr_len ].dup;
+        	writeln ("QUERY:" , str);
+            return str;
         }
         else
             return "no content";

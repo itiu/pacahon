@@ -434,7 +434,7 @@ string to_lower_and_replace_delimeters(string in_text)
     for (int i = 0; i < in_text.length; i++)
     {
         char cc = in_text[ i ];
-        if (cc == ':' || cc == ' ' || cc == '-')
+        if (cc == ':' || /*cc == ' ' ||*/ cc == '-')
             out_text[ i ] = '_';
         else
             out_text[ i ] = std.ascii.toLower(cc);
