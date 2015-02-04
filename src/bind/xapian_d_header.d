@@ -306,6 +306,7 @@ interface XapianWritableDatabase
     XapianEnquire new_Enquire(byte *err);
     uint add_document(XapianDocument doc, byte *err);
     uint replace_document(const char *_unique_term, ulong _unique_term_len, XapianDocument document, byte *err);
+    void delete_document(const char *_unique_term, ulong _unique_term_len, byte *err);
     void commit(byte *err);
     void close(byte *err);
 }

@@ -400,6 +400,8 @@ class PThreadContext : Context
 
     Signal *[ string ] signals;
 
+    int timeout = 1000;
+
     public void set_reload_signal_to_local_thread(string interthread_signal_id)
     {
         Signal *signal = signals.get(interthread_signal_id, null);
@@ -422,16 +424,18 @@ class PThreadContext : Context
     {
         Signal *signal = signals.get(interthread_signal_id, null);
 
+        long now = Clock.currStdTime() / 10000;
+
         if (signal == null)
         {
             signal                           = new Signal;
             signals[ interthread_signal_id ] = signal;
+            signal.last_time_update = now;
         }
 
-        long now = Clock.currStdTime() / 10000;
 
         if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] CHECK FOR RELOAD [%s], last_time_update=%d, last_time_check=%d", name, interthread_signal_id,
+            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name, interthread_signal_id,
                       now - signal.last_time_update, now - signal.last_time_check);
 
         if (signal.last_time_update > signal.last_time_check)
@@ -444,18 +448,21 @@ class PThreadContext : Context
 
             return true;
         }
-        else if (now - signal.last_time_check > 10000 || now - signal.last_time_check < 0)
+        else if (now - signal.last_time_check > timeout || now - signal.last_time_check < 0)
         {
             signal.last_time_check = now;
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
-
             if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
+            	log.trace("[%s] CHECK FOR RELOAD #2 [%s], now_time_signal=%d, (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
+                      now_time_signal, now_time_signal - signal.last_time_update);
+
+            if (now_time_signal - signal.last_time_update > timeout || now_time_signal - signal.last_time_update <= 0 || now_time_signal == 0)
+            {
+            	if (trace_msg[ 19 ] == 1)
+            		log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
                           now_time_signal - signal.last_time_update);
 
-            if (now_time_signal - signal.last_time_update > 10000 || now_time_signal - signal.last_time_update < 0 || now_time_signal == 0)
-            {
                 signal.last_time_update = now_time_signal;
 
                 if (trace_msg[ 19 ] == 1)
@@ -1010,6 +1017,17 @@ class PThreadContext : Context
 
                         send(tid_search_manager, CMD.STORE, ss_as_cbor);
                     }
+                }
+                else
+                {
+                    Tid tid_search_manager = getTid(P_MODULE.fulltext_indexer);
+
+                    if (tid_search_manager != Tid.init)
+                    {
+                        push_signal("search", Clock.currStdTime() / 10000);
+
+                        send(tid_search_manager, CMD.DELETE, ss_as_cbor);
+                    }                	
                 }
 
                 if (prepareEvents == true)
