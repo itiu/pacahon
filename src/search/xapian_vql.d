@@ -174,8 +174,10 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
             {
                 if (ls == "@")
                 {
+                    feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD;
+                	
                     string uid = "uid_" ~ to_lower_and_replace_delimeters(rs);
-                    query = qp.parse_query(cast(char *)uid, uid.length, &err);
+                    query = qp.parse_query(cast(char *)uid, uid.length, flags, &err);
                     if (err != 0)
                         writeln("XAPIAN:transform_vql_to_xapian:parse_query(@)", err);
                     //writeln ("uid=", uid);
