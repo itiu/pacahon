@@ -435,8 +435,8 @@ class PThreadContext : Context
 
 
         if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name, interthread_signal_id,
-                      now - signal.last_time_update, now - signal.last_time_check);
+            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name, 
+            	interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
 
         if (signal.last_time_update > signal.last_time_check)
         {
@@ -453,20 +453,20 @@ class PThreadContext : Context
             signal.last_time_check = now;
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
+            if (now_time_signal == 0)
+            	return false;
+            
             if (trace_msg[ 19 ] == 1)
-            	log.trace("[%s] CHECK FOR RELOAD #2 [%s], now_time_signal=%d, (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
-                      now_time_signal, now_time_signal - signal.last_time_update);
+            	log.trace("[%s] CHECK FOR RELOAD #2 [%s], now_time_signal=%d, (now_time_signal - signal.last_time_update)=%d", 
+            		name, interthread_signal_id, now_time_signal, now_time_signal - signal.last_time_update);
 
-            if (now_time_signal - signal.last_time_update > timeout || now_time_signal - signal.last_time_update <= 0 || now_time_signal == 0)
+            if (now_time_signal - signal.last_time_update > timeout || now_time_signal - signal.last_time_update < 0)
             {
             	if (trace_msg[ 19 ] == 1)
-            		log.trace("[%s] RELOAD for [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
+            		log.trace("[%s] NOW RELOAD FOR [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
                           now_time_signal - signal.last_time_update);
 
                 signal.last_time_update = now_time_signal;
-
-                if (trace_msg[ 19 ] == 1)
-                    log.trace("[%s] RELOAD FOR [%s]", name, interthread_signal_id);
 
                 load();
 
@@ -545,7 +545,7 @@ class PThreadContext : Context
         }
         finally
         {
-            stat(CMD.GET, sw);
+//            stat(CMD.GET, sw);
         }
     }
 
