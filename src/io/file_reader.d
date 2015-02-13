@@ -221,18 +221,18 @@ private void prepare_file(string file_name, Context context)
 
             foreach (ss; ss_list)
             {
-                if (ss.isExist (veda_schema__login, "veda"))
+                if (ss.isExist(veda_schema__login, "veda"))
                 {
                     writeln("FOUND SYSTEM ACCOUNT = ", ss);
                     context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
                 }
-		if (ss.isExist (rdf__type, owl__Ontology))
-		{
-            	    string prefix = context.get_prefix_map.get(ss.uri, null);
-		    Resources ress = Resources.init;
-		    ress ~= Resource (prefix);
-		    ss.resources[veda_schema__fullUrl] = ress;
-		} 
+                if (ss.isExist(rdf__type, owl__Ontology))
+                {
+                    string    prefix = context.get_prefix_map.get(ss.uri, null);
+                    Resources ress   = Resources.init;
+                    ress ~= Resource(prefix);
+                    ss.resources[ veda_schema__fullUrl ] = ress;
+                }
 
                 long pos_path_delimiter = indexOf(ss.uri, '/');
 
@@ -256,7 +256,7 @@ private void prepare_file(string file_name, Context context)
                             }
                             ResultCode res = context.put_individual(null, ss.uri, ss);
                             if (res != ResultCode.OK)
-                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));                                
+                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
                         }
                     }
                 }
@@ -271,13 +271,13 @@ private void prepare_file(string file_name, Context context)
                 }
             }
 
-            context.wait_thread(P_MODULE.fulltext_indexer);  
+            context.wait_thread(P_MODULE.fulltext_indexer);
 
             Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
-                
-            context.set_reload_signal_to_local_thread("search");                  
+
+            context.set_reload_signal_to_local_thread("search");
         }
 
         //writeln ("file_reader::prepare_file end");
