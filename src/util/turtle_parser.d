@@ -95,16 +95,19 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     if (*(ptr - 1) == '>')
                         ptr--;
 
+                    string url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
+//                  writeln ("# url=", url);
+
+                    prefix_map[ prefix ] = url;
+                    prefix_map[ url ]    = prefix;
+                    
                     if (*(ptr - 1) == '#')
                         ptr--;
 
                     if (*(ptr - 1) == '/')
                         ptr--;
-
-                    string url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
-//                  writeln ("# url=", url);
-
-                    prefix_map[ prefix ] = url;
+                    
+                    url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
                     prefix_map[ url ]    = prefix;
                 }
 

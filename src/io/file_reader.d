@@ -162,11 +162,11 @@ private void prepare_file(string file_name, Context context)
 
             foreach (ss; ss_list)
             {
-                if (ss.uri[ $ - 1 ] == '#')
-                    ss.uri.length = ss.uri.length - 1;
+                //if (ss.uri[ $ - 1 ] == '#')
+                //    ss.uri.length = ss.uri.length - 1;
 
-                if (trace_msg[ 31 ] == 1)
-                    log.trace("prepare uri=%s", ss.uri);
+                //if (trace_msg[ 31 ] == 1)
+                //    log.trace("prepare uri=%s", ss.uri);
 
                 string prefix = context.get_prefix_map.get(ss.uri, null);
 
@@ -217,7 +217,9 @@ private void prepare_file(string file_name, Context context)
             }
 
             if (for_load.length > 0)
-                writeln("Onto for load:", for_load.keys);
+            {
+                log.trace_log_and_console("Onto for load:%s", for_load.keys);
+            }    
 
             foreach (ss; ss_list)
             {
