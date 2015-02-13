@@ -310,7 +310,7 @@ private class ThisContext
                         {
                             foreach (indexed_field_as_fwildcard; indexed_field_as_fwildcardZ)
                             {
-                                writeln("indexed_field_as_fwildcard = ", indexed_field_as_fwildcard, ", rs=", rs.literal);
+                                //writeln("indexed_field_as_fwildcard = ", indexed_field_as_fwildcard, ", rs=", rs.literal);
 
                                 index_string_for_first_wildcard(predicate, rs);
                             }

@@ -197,7 +197,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 
                     if (slot > 0)
                     {
-                        if ((tta.R.token_decor == Decor.QUOTED || indexOf(rs, '*') >= 0) && rs.length > 3)
+                        if (tta.R.token_decor == Decor.QUOTED || (indexOf(rs, '*') >= 0) && rs.length > 3)
                         {
                             char[] query_str = to_lower_and_replace_delimeters(rs).dup;
                             if (rs[0] == '*')
@@ -256,7 +256,17 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 //                            }
                             else
                             {
-                                double d_val = parse!double (rs);
+                                double d_val;
+
+                                try
+                                {
+                                	d_val = parse!double (rs);
+                               	}
+                               	catch (Exception ex)
+                               	{
+                               		writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg ~ " [", rs , "]");
+                               	}
+
 
                                 char   *str_val;
                                 uint   *str_val_length;

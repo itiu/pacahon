@@ -344,7 +344,15 @@ class PThreadContext : Context
         tt.user_uri = ticket.getFirstLiteral(ticket__accessor);
         when        = ticket.getFirstLiteral(ticket__when);
         string dd = ticket.getFirstLiteral(ticket__duration);
-        duration = parse!uint (dd);
+
+	try
+	{
+    	    duration = parse!uint (dd);
+        }
+        catch (Exception ex)
+        {
+            writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+        }
 
 //				writeln ("tt.userId=", tt.userId);
 
