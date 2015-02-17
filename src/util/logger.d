@@ -1,6 +1,6 @@
 /**
-  * logger
-  */
+ * logger
+ */
 module util.logger;
 
 // TODO: ++ module core.sys.posix.syslog;
@@ -48,19 +48,19 @@ private void logger_process()
 
 /** класс logger
 
-Sample:
+   Sample:
 
-...
+   ...
 
-logger log;
+   logger log;
 
-static this()
-{
+   static this()
+   {
     log = new logger("pacahon", "log", "API");
-}
+   }
 
-...
-*/
+   ...
+ */
 public class logger
 {
     private string log_name = "app";
@@ -91,11 +91,11 @@ public class logger
     }
 
     /**
-    	Записать информацию в лог файл.
+        Записать информацию в лог файл.
        Params:
                 fmt = разметка сообщения
                 args = выводимые переменные
-    */
+     */
     public void trace(Char, A ...) (in Char[] fmt, A args)
     {
         init_tid_logger();
@@ -105,11 +105,11 @@ public class logger
     }
 
     /**
-    	Записать информацию в лог файл и на консоль.
+        Записать информацию в лог файл и на консоль.
        Params:
                 fmt = разметка сообщения
                 args = выводимые переменные
-    */
+     */
     public void trace_log_and_console(Char, A ...) (in Char[] fmt, A args)
     {
         init_tid_logger();
@@ -119,12 +119,12 @@ public class logger
     }
 
     /**
-    	Записать информацию о вводе/выводе в лог файл.
+        Записать информацию о вводе/выводе в лог файл.
        Params:
-       			io = указатель направления информации (I/O)
+                        io = указатель направления информации (I/O)
                 data = указатель на данные
-                length = длинна блока данных 
-    */
+                length = длинна блока данных
+     */
     public void trace_io(bool io, byte *data, ulong length)
     {
         init_tid_logger();

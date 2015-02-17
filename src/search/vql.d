@@ -63,9 +63,9 @@ class VQL
         xr      = new XapianReader(_context);
     }
 
-    public void reopen_db ()
+    public void reopen_db()
     {
-		xr.reopen_db ();
+        xr.reopen_db();
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
@@ -185,7 +185,7 @@ class VQL
 //                transform_and_execute_vql_to_lmdb(tta, "", dummy, dummy, d_dummy, 0, res, context);
 //            }
 //        }
-//        else 
+//        else
         if (type_source == XAPIAN)
         {
             void delegate(string uri) dg;

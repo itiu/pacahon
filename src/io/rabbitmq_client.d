@@ -1,6 +1,6 @@
 /**
-  * RabbitMQ Client
-  */
+ * RabbitMQ Client
+ */
 
 module io.rabbitmq_client;
 

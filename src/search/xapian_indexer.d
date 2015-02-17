@@ -164,18 +164,18 @@ private class ThisContext
         string uuid = "uid_" ~ to_lower_and_replace_delimeters(indv.uri);
 
         indexer_db.delete_document(uuid.ptr, uuid.length, &err);
-            
+
         counter++;
-        
+
         if (counter % 5000 == 0)
         {
             if (trace_msg[ 212 ] == 1)
-               log.trace("commit delete..");
+                log.trace("commit delete..");
 
             indexer_db.commit(&err);
-        }        
+        }
     }
-    
+
     void index_msg(string msg)
     {
         get_index_onto();
@@ -830,7 +830,7 @@ void xapian_indexer(string thread_name)
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
                         ictx.indexer_db.commit(&err);
-                           
+
                         ictx.last_counter_after_timed_commit = ictx.counter;
 
                         if (cmd == CMD.NOP)
@@ -872,7 +872,7 @@ void xapian_indexer(string thread_name)
                         }
                         else if (cmd == CMD.DELETE)
                         {
-                        	ictx.delete_msg (msg);
+                            ictx.delete_msg(msg);
                         }
                     },
                     (CMD cmd, int arg, bool arg2)

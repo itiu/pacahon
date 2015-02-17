@@ -1,11 +1,11 @@
 /**
-  * отображение в консоли количества выполненных операций 
-  */
+ * отображение в консоли количества выполненных операций
+ */
 module util.load_info;
 
 private
 {
-    import core.thread, std.format, std.stdio, std.datetime, std.concurrency,std.datetime, std.array : appender;
+    import core.thread, std.format, std.stdio, std.datetime, std.concurrency, std.datetime, std.array : appender;
 
     import type;
     import util.utils;

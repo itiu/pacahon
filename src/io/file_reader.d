@@ -219,7 +219,7 @@ private void prepare_file(string file_name, Context context)
             if (for_load.length > 0)
             {
                 log.trace_log_and_console("Onto for load:%s", for_load.keys);
-            }    
+            }
 
             foreach (ss; ss_list)
             {

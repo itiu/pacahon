@@ -25,7 +25,8 @@ static this()
 
 int count;
 
-void bus_event_after(Individual *individual, Resource[ string ] rdfType, string subject_as_cbor, EVENT ev_type, Context context, string event_id)
+void bus_event_after(Individual *individual, Resource[ string ] rdfType, string subject_as_cbor, EVENT ev_type, Context context,
+                     string event_id)
 {
     //writeln ("@bus_event B subject_as_cbor=[", individual.uri, "]");
     //writeln (rdfType);
@@ -63,11 +64,11 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
             try
             {
 //			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
-            	immutable (string)[] type;
-            	
-            	foreach (key; rdfType.keys)
-            		type ~= key;
-            
+                immutable(string)[] type;
+
+                foreach (key; rdfType.keys)
+                    type ~= key;
+
                 send(tid_condition, ev_type, subject_as_cbor, type, individual.uri, event_id);
             }
             catch (Exception ex)

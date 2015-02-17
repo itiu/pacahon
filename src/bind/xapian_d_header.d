@@ -297,7 +297,7 @@ interface XapianDatabase
     XapianEnquire new_Enquire(byte *err);
     void close(byte *err);
     void reopen(byte *err);
-    XapianTermIterator allterms (const char *prefix_str, ulong prefix_len, byte *err);
+    XapianTermIterator allterms(const char *prefix_str, ulong prefix_len, byte *err);
 }
 
 /// This class provides read/write access to a database

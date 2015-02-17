@@ -1,6 +1,6 @@
 /**
-  * turtle parser
-  */
+ * turtle parser
+ */
 module util.turtle_parser;
 
 private import std.string, std.c.stdlib, std.c.string, std.stdio, std.datetime, std.outbuffer, std.array, std.uuid;
@@ -29,20 +29,20 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
     if (len == 0)
         return null;
 
-    char      *ptr          = src - 1;
-    char      *new_line_ptr = src;
-    char      ch            = *src;
-    char      prev_ch       = 0;
+    char           *ptr          = src - 1;
+    char           *new_line_ptr = src;
+    char           ch            = *src;
+    char           prev_ch       = 0;
 
-    Individual[]  res;
+    Individual[]   res;
 
-    Individual*[] subject_level   = new Individual*[ 4 ];
-    string[]  predicate_level = new string[ 4 ];
-    char      prev_el;
-    Individual   *ss;
-    string    predicate;
-    int       level = 0;
-    byte      state = 0;
+    Individual *[] subject_level   = new Individual *[ 4 ];
+    string[]       predicate_level = new string[ 4 ];
+    char           prev_el;
+    Individual     *ss;
+    string         predicate;
+    int            level = 0;
+    byte           state = 0;
 
     while (ch != 0 && ptr - src < len)
     {
@@ -100,15 +100,15 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
                     prefix_map[ prefix ] = url;
                     prefix_map[ url ]    = prefix;
-                    
+
                     if (*(ptr - 1) == '#')
                         ptr--;
 
                     if (*(ptr - 1) == '/')
                         ptr--;
-                    
-                    url = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
-                    prefix_map[ url ]    = prefix;
+
+                    url               = cast(immutable)s_pos[ 0..ptr - s_pos ].dup;
+                    prefix_map[ url ] = prefix;
                 }
 
                 // пропускаем строку
@@ -135,7 +135,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 
             while (ch != '\n' && ch != '\r' && ch != 0)
             {
-	//			writeln ("1 BEGIN CH:", *ptr, ", pos=", ptr - src, ", len=", len);
+                //			writeln ("1 BEGIN CH:", *ptr, ", pos=", ptr - src, ", len=", len);
 
                 // пропустим пробелы и tab
                 while ((ch == ' ' || ch == '\t') && ptr - src < len)
@@ -145,15 +145,15 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                 }
                 if (ch == '#')
                 {
-                	// это комментарий
+                    // это комментарий
 
-                	// пропускаем строку
-                	while (ch != '\n' && ch != '\r' && ptr - src < len)
-                	{
-                		ptr++;
-                		ch = *ptr;
+                    // пропускаем строку
+                    while (ch != '\n' && ch != '\r' && ptr - src < len)
+                    {
+                        ptr++;
+                        ch = *ptr;
                     }
-                	continue;
+                    continue;
                 }
 
                 // это начало элемента
@@ -161,7 +161,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                 char *end_el   = ptr;
                 //writeln ("2 CH0 [", *start_el, "]");
 
-                DataType resource_type = DataType.String;
+                DataType       resource_type   = DataType.String;
                 ResourceOrigin resource_origin = ResourceOrigin.local;
 
                 // пропускаем термы в кавычках (" или """)
@@ -228,14 +228,14 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     }
                 }
                 else
-                	resource_type = DataType.Uri;
+                    resource_type = DataType.Uri;
 
 //				writeln("CH0:", ch, ", ", cast(int)ch);
 
-				bool found_end_triplet_marker = false;
+                bool found_end_triplet_marker = false;
 
-                int length_el;
-                int depth = 0;
+                int  length_el;
+                int  depth = 0;
                 if (state != 2 && *start_el == '(')
                 {
                     // пропускаем термы: (( )))
@@ -267,7 +267,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                     {
                         if (ch == '>')
                         {
-                            resource_type = DataType.Uri;
+                            resource_type   = DataType.Uri;
                             resource_origin = ResourceOrigin.external;
                             break;
                         }
@@ -295,9 +295,9 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 //							writeln("CH3:", ch, ", ", cast(int)ch);
                             if (ch == ';')
                             {
-                            	found_end_triplet_marker = true;
+                                found_end_triplet_marker = true;
                                 break;
-                            }    
+                            }
                             if (ch == ' ' || ch == '\r' || ch == '\t')
                                 break;
                             if (ch == '\n' || ch == ',' || ch == '"')
@@ -323,14 +323,14 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                         ss = new Individual();
 
                     string out_predicate;
-                    
+
                     try
                     {
-                    	prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, resource_type, prefix_map);
+                        prev_el = next_element(start_el, length_el, ss, predicate, out_predicate, &state, resource_type, prefix_map);
                     }
                     catch (Exception ex)
                     {
-                    	writeln ("EX!", __FUNCTION__, ":", __LINE__, ex.msg);
+                        writeln("EX!", __FUNCTION__, ":", __LINE__, ex.msg);
                     }
 //					writeln ("@ ++ predicate=", predicate, ", out_predicate=", out_predicate);
 
@@ -353,16 +353,16 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
                         //ss.subject = "_:_";
                         UUID new_id = randomUUID();
                         ss.uri = new_id.toString();
-                        state      = 1;
+                        state  = 1;
                     }
                     else if (prev_el == ']')
                     {
                         level--;
                         predicate = predicate_level[ level ];
 //                      writeln ("@ ++ 1], predicate=", predicate, "=>", ss);
-                        Individual* inner_subject = ss;
+                        Individual *inner_subject = ss;
                         ss = subject_level[ level ];
-                        ss.resources[predicate] ~= Resource (inner_subject.uri, ResourceOrigin.local);
+                        ss.resources[ predicate ] ~= Resource(inner_subject.uri, ResourceOrigin.local);
                         // ss.addPredicate(predicate, inner_subject);
 //						writeln ("@ -- 2 level !!!:", level, ", ss=", ss);
                     }
@@ -383,8 +383,8 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
 //				writeln ("0 END CH:", *ptr);
 
                 if (found_end_triplet_marker == false)
-                	ptr++;
-                	
+                    ptr++;
+
                 if (ptr - src > len - 2)
                     break;
                 ch = *ptr;
@@ -403,7 +403,7 @@ public Individual[] parse_turtle_string(char *src, int len, ref string[ string ]
     return res;
 }
 
-private char next_element(char *element, int el_length, Individual* ss, string in_predicate, out string out_predicate, byte *state,
+private char next_element(char *element, int el_length, Individual *ss, string in_predicate, out string out_predicate, byte *state,
                           DataType resource_type, ref string[ string ] prefix_map)
 {
     if (element is null)
@@ -445,7 +445,7 @@ private char next_element(char *element, int el_length, Individual* ss, string i
                 uri = tmp_uri;
         }
 
-        ss.uri = uri;
+        ss.uri        = uri;
         *state        = 1;
         out_predicate = in_predicate;
         return 0;
@@ -458,13 +458,13 @@ private char next_element(char *element, int el_length, Individual* ss, string i
         if (cur_predicate == "a")
             cur_predicate = rdf__type;
 
-  //      Resources pp = ss.resources.get(cur_predicate, Resources.init);
-  //      if (pp != Resources.init)
-  //      {
-  //          pp           = new Predicate();
-  //          pp.predicate = cur_predicate;
-  //          ss.addPredicate(pp);
-  //      }
+        //      Resources pp = ss.resources.get(cur_predicate, Resources.init);
+        //      if (pp != Resources.init)
+        //      {
+        //          pp           = new Predicate();
+        //          pp.predicate = cur_predicate;
+        //          ss.addPredicate(pp);
+        //      }
         out_predicate = cur_predicate;
 //	    writeln ("@ add predicate=,", pp.predicate);
         return 0;
@@ -473,14 +473,14 @@ private char next_element(char *element, int el_length, Individual* ss, string i
     if (*state == 2)
     {
         //Predicate pp   = ss.getPredicate(in_predicate);
-        string    data = cast(immutable)element[ 0..el_length ];
+        string data = cast(immutable)element[ 0..el_length ];
         if (data.indexOf("\\\"") >= 0)
         {
             data = data.replace("\\\"", "\"");
 //              writeln ("@data=", data);
         }
-        
-        Resources pp = ss.resources.get (in_predicate, Resources.init);        
+
+        Resources pp = ss.resources.get(in_predicate, Resources.init);
 
         if (resource_type == DataType.String)
         {
@@ -496,10 +496,10 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 
                 pp ~= Resource(data[ 0..$ - 4 ], lang);
             }
-            else if (data[ $ - 1] != '"')
+            else if (data[ $ - 1 ] != '"')
             {
                 int end_pos_str = el_length - 1;
- //   writeln ("$8.0 end_pos_str=", end_pos_str);
+                //   writeln ("$8.0 end_pos_str=", end_pos_str);
                 while (data[ end_pos_str ] != '"' && end_pos_str > 0)
                     end_pos_str--;
 
@@ -538,7 +538,7 @@ private char next_element(char *element, int el_length, Individual* ss, string i
                     }
                     else
                     {
-                       pp ~= Resource(data);
+                        pp ~= Resource(data);
                     }
                 }
                 else
@@ -562,10 +562,10 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 
             pp ~= Resource(DataType.Uri, data);
         }
-        
+
         //writeln ("@ pp =", pp);
-        ss.resources[in_predicate] = pp;
-        
+        ss.resources[ in_predicate ] = pp;
+
 //	    writeln ("@ set object=", cast(immutable)element[ 0..el_length]);
         out_predicate = in_predicate;
         return 0;
@@ -579,8 +579,8 @@ private char next_element(char *element, int el_length, Individual* ss, string i
 }
 
 /*
-void toTurtle(Individual ss, ref OutBuffer outbuff, int level = 0, bool asCluster = false)
-{
+   void toTurtle(Individual ss, ref OutBuffer outbuff, int level = 0, bool asCluster = false)
+   {
     for (int i = 0; i < level; i++)
         outbuff.write(cast(char[])"  ");
 
@@ -700,10 +700,10 @@ void toTurtle(Individual ss, ref OutBuffer outbuff, int level = 0, bool asCluste
     }
 
     return;
-}
+   }
 
-void toTurtle(ref Individual[] results, ref OutBuffer outbuff, int level = 0)
-{
+   void toTurtle(ref Individual[] results, ref OutBuffer outbuff, int level = 0)
+   {
     for (int ii = 0; ii < results.length; ii++)
     {
         Subject out_message = results[ ii ];
@@ -713,8 +713,8 @@ void toTurtle(ref Individual[] results, ref OutBuffer outbuff, int level = 0)
             toTurtle(out_message, outbuff);
         }
     }
-}
-*/
+   }
+ */
 /*
    char* toTurtle(GraphCluster gcl)
    {

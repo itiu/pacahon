@@ -145,7 +145,7 @@ class XapianReader : SearchReader
 
             XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
 
-            int state = -1;
+            int                      state = -1;
             while (state == -1)
             {
                 state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, fields,
@@ -183,8 +183,8 @@ class XapianReader : SearchReader
         byte err;
 
         if (trace_msg[ 322 ] == 1)
-        	log.trace("[%s] xapian reader: reopen db", context.get_name());
-        	
+            log.trace("[%s] xapian reader: reopen db", context.get_name());
+
 //      xapian_db.close(&err);
 //      destroy_Database (xapian_db);
 //      xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
@@ -220,12 +220,11 @@ class XapianReader : SearchReader
         if (err != 0)
             writeln("VQL:set_stemmer:err", err);
 
-		//xapian_qp.set_stemming_strategy(stem_strategy.STEM_NONE, &err);
+        //xapian_qp.set_stemming_strategy(stem_strategy.STEM_NONE, &err);
 
         xapian_qp.set_database(xapian_db, &err);
         if (err != 0)
             writeln("VQL:set_database:err", err);
-            
     }
 
     private void close_db()

@@ -345,9 +345,9 @@ class PThreadContext : Context
         when        = ticket.getFirstLiteral(ticket__when);
         string dd = ticket.getFirstLiteral(ticket__duration);
 
-	try
-	{
-    	    duration = parse!uint (dd);
+        try
+        {
+            duration = parse!uint (dd);
         }
         catch (Exception ex)
         {
@@ -432,19 +432,19 @@ class PThreadContext : Context
     {
         Signal *signal = signals.get(interthread_signal_id, null);
 
-        long now = Clock.currStdTime() / 10000;
+        long   now = Clock.currStdTime() / 10000;
 
         if (signal == null)
         {
             signal                           = new Signal;
             signals[ interthread_signal_id ] = signal;
-            signal.last_time_update = now;
+            signal.last_time_update          = now;
         }
 
 
         if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name, 
-            	interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
+            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name,
+                      interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
 
         if (signal.last_time_update > signal.last_time_check)
         {
@@ -462,17 +462,17 @@ class PThreadContext : Context
 
             long now_time_signal = look_integer_signal(interthread_signal_id);
             if (now_time_signal == 0)
-            	return false;
-            
+                return false;
+
             if (trace_msg[ 19 ] == 1)
-            	log.trace("[%s] CHECK FOR RELOAD #2 [%s], now_time_signal=%d, (now_time_signal - signal.last_time_update)=%d", 
-            		name, interthread_signal_id, now_time_signal, now_time_signal - signal.last_time_update);
+                log.trace("[%s] CHECK FOR RELOAD #2 [%s], now_time_signal=%d, (now_time_signal - signal.last_time_update)=%d",
+                          name, interthread_signal_id, now_time_signal, now_time_signal - signal.last_time_update);
 
             if (now_time_signal - signal.last_time_update > timeout || now_time_signal - signal.last_time_update < 0)
             {
-            	if (trace_msg[ 19 ] == 1)
-            		log.trace("[%s] NOW RELOAD FOR [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
-                          now_time_signal - signal.last_time_update);
+                if (trace_msg[ 19 ] == 1)
+                    log.trace("[%s] NOW RELOAD FOR [%s], (now_time_signal - signal.last_time_update)=%d", name, interthread_signal_id,
+                              now_time_signal - signal.last_time_update);
 
                 signal.last_time_update = now_time_signal;
 
@@ -922,7 +922,8 @@ class PThreadContext : Context
     }
 
 
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true, string event_id = null)
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true,
+                                       string event_id = null)
     {
         StopWatch sw; sw.start;
 
@@ -1035,7 +1036,7 @@ class PThreadContext : Context
                         push_signal("search", Clock.currStdTime() / 10000);
 
                         send(tid_search_manager, CMD.DELETE, ss_as_cbor);
-                    }                	
+                    }
                 }
 
                 if (prepareEvents == true)

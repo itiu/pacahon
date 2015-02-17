@@ -299,8 +299,9 @@ interface Context
        Returns:
                 Код результата операции
      */
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true, string event_id = null);
-    
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true,
+                                       string event_id = null);
+
     /**
        Сохранить индивидуал, по указанному uri
        Params:

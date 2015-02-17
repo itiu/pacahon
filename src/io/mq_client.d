@@ -1,6 +1,6 @@
 /**
-  * MQ Client
-  */
+ * MQ Client
+ */
 
 // TODO переделать на абстрактную модель, отправитель <---> получатель (socket --> uid)
 module io.mq_client;
