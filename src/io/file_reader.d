@@ -225,7 +225,7 @@ private void prepare_file(string file_name, Context context)
             {
                 if (ss.isExist(veda_schema__login, "veda"))
                 {
-                    writeln("FOUND SYSTEM ACCOUNT = ", ss);
+                    //writeln("FOUND SYSTEM ACCOUNT = ", ss);
                     context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
                 }
                 if (ss.isExist(rdf__type, owl__Ontology))

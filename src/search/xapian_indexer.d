@@ -149,7 +149,7 @@ private class ThisContext
                     {
                         string key = forClass.uri ~ forProperty.uri;
                         class_property__2__indiviual[ key ] = indv;
-                        writeln("@@@search indexes, key=", key, ", uri=", indv.uri);
+                        log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
                     }
                 }
             }

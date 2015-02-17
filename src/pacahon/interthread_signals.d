@@ -55,7 +55,7 @@ public void interthread_signals_thread(string thread_name)
                     if (cmd == CMD.PUT)
                     {
                         str_signals[ key ] = value;
-                        writeln("@set signal ", key, "=", value);
+                        //writeln("@set signal ", key, "=", value);
                     }
                 }, (Variant v) { writeln(thread_name, "::Received some other type.", v); }
                 );

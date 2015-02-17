@@ -155,7 +155,7 @@ public void individuals_manager(string thread_name, string db_path)
                             else if (cmd == CMD.FIND)
                             {
                                 string res = storage.find(msg);
-                                writeln("@FIND msg=", msg, ", $res = ", res);
+                                //writeln("@FIND msg=", msg, ", $res = ", res);
                                 send(tid_response_reciever, msg, res, thisTid);
                             }
                             else

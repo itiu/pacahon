@@ -131,7 +131,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 {
     if (key2slot.length == 0)
     {
-        writeln("!!! Err: key2slot is EMPTY");
+        log.trace("!!! WARN: key2slot is EMPTY, tta=%s", tta);
         return null;
     }
 
