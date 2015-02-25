@@ -15,7 +15,7 @@ import pacahon.define;
 
 string[ string ] prefixes;
 Individual *[ string ] individuals;
-raptor_world  *world      = null;
+raptor_world *world = null;
 
 extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
 {
@@ -114,16 +114,15 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 
     if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
     {
-        //writeln ("###1=", oo);
         oo = replace_prefix(oo[ 1..$ - 1 ]).dup;
         ii.addResource(pp, Resource(DataType.Uri, oo));
     }
     else if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_LITERAL)
     {
-	oo = uxxxx2utf8(oo).dup;
+        oo = uxxxx2utf8(oo).dup;
         long   end_pos_value = oo.lastIndexOf('"');
 
-        string type = "";
+        string type = "xsd:string";
         long   aa   = oo.lastIndexOf("^^<");
         if (aa > 2)
         {
@@ -135,13 +134,8 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
         if (aa > 2 && aa > end_pos_value)
         {
             _lang = oo[ aa + 1..aa + 3 ];
-            //writeln("LANG=", _lang);
         }
-        //writeln("@0 oo=", oo);
         oo = oo[ 1..end_pos_value ];
-
-//        writeln ("@0 oo=", oo);
-//        writeln("TYPE=", type);
 
         if (type == "xsd:dateTime")
         {
@@ -172,9 +166,9 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
             if (_lang !is null)
             {
                 LANG lang = LANG.NONE;
-                if (oo[ $ - 2 ] == 'r' && oo[ $ - 1 ] == 'u')
+                if (_lang[ 0 ] == 'r' && _lang[ 1 ] == 'u')
                     lang = LANG.RU;
-                else if (oo[ $ - 2 ] == 'e' && oo[ $ - 1 ] == 'n')
+                else if (_lang[ 0 ] == 'e' && _lang[ 1 ] == 'n')
                     lang = LANG.EN;
 
                 ii.addResource(pp, Resource(oo, lang));
@@ -205,7 +199,7 @@ public void ttl2individuals(string file_name, Context context)
     raptor_uri    *base_uri;
 
     if (world is null)
-	world = raptor_new_world_internal();
+        world = raptor_new_world_internal();
 
     rdf_parser = raptor_new_parser(world, "turtle".ptr);
 
