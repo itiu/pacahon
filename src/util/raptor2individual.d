@@ -34,7 +34,7 @@ extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
         {
             url                = url[ 0..$ - 1 ].dup;
             prefixes[ url ]    = prefix;
-            prefixes[ prefix ] = url;
+//            prefixes[ prefix ] = url;
         }
     }
     else
