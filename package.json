@@ -6,6 +6,9 @@
 	"authors": ["Bushenev Valeriy"],
 	"-ddoxFilterArgs": ["--unittest-examples", "--min-protection=Public", "--only-documented", "--ex", "vibe."],
 	"dependencies": {"zeromq":"~master", "pacahon_third_party": ">=1.0.5", "backtrace-d": "~master"},
+        "libs": [
+                "raptor2"
+        ],
 	"license": "LGPL v3",
      "sourceFiles":["lib64/libv8d.a", "lib64/libxapiand.a"]
 

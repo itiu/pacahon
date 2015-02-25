@@ -569,5 +569,65 @@ template cacheize(alias fun, uint maxSize = uint.max)
 
 ////////////
 
+string uxxxx2utf8(string so)
+{
+    string new_s;
+    bool   susecs = false;
 
-
+    for (int i = 0; i < so.length; i++)
+    {
+        char c = so[ i ];
+        if (c == '\\')
+        {
+            if (so[ i + 1 ] == 'u')
+            {
+                string qqq = so[ i + 2..i + 6 ];
+                try
+                {
+                    int jjj = qqq.to!uint (16);
+                    if (susecs == false)
+                        new_s ~= so[ 0..i ];
+                    i += 5;
+                    new_s ~= cast(dchar)jjj;
+                    susecs = true;
+                }
+                catch (Exception ex)
+                {
+                }
+            }
+            else if (so[ i + 1 ] == 'n')
+            {
+                if (susecs == false)
+                    new_s ~= so[ 0..i ];
+                i += 1;
+                new_s ~= '\n';
+                susecs = true;
+            }
+            else if (so[ i + 1 ] == 't')
+            {
+                if (susecs == false)
+                    new_s ~= so[ 0..i ];
+                i += 1;
+                new_s ~= '\t';
+                susecs = true;
+            }
+            else if (so[ i + 1 ] == '"')
+            {
+                if (susecs == false)
+                    new_s ~= so[ 0..i ];
+                i += 1;
+                new_s ~= '"';
+                susecs = true;
+            }
+        }
+        else
+        {
+            if (susecs == true)
+                new_s ~= c;
+        }
+    }
+    if (susecs == true)
+        return new_s;
+    else
+        return so;
+}

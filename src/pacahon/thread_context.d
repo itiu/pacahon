@@ -330,6 +330,14 @@ class PThreadContext : Context
         return prefix_map;
     }
 
+    void add_prefix_map(ref string[ string ] arg)
+    {
+    	foreach (key, value; arg)
+    	{
+    		prefix_map[key] = value;	
+    	}
+    }
+
     @property search.vql.VQL vql()
     {
         return _vql;

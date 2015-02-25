@@ -193,6 +193,7 @@ interface Context
 
     // *************************************************** external API ? *********************************** //
     ref string[ string ] get_prefix_map();
+    void add_prefix_map(ref string[ string ] arg);
     long get_last_update_time();
 
     // *************************************************** external API *********************************** //

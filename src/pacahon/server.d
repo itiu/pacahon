@@ -18,7 +18,6 @@ private
     import storage.storage_thread;
 
     import util.logger;
-    import util.turtle_parser;
     import util.utils;
     import util.load_info;
 

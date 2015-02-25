@@ -27,6 +27,8 @@ NB: Описание сборки / установки приведено для
 - Digital mars D2 compiler dmd 2.065 ( http://dlang.org )
 - DUB package manager 0.9.21 ( https://github.com/rejectedsoftware/dub )
 
+sudo apt-get install libraptor2-dev
+
 используемые библиотеки, (статические библиотеки находятся в ./lib64):
 
 JS V8 D2 binding:
