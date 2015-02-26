@@ -15,7 +15,6 @@ import pacahon.know_predicates;
 import pacahon.context;
 import pacahon.log_msg;
 
-//import storage.subject;
 import search.vel;
 import search.xapian_vql;
 
@@ -128,17 +127,17 @@ class XapianReader : SearchReader
         TTA         tta = parse_expr(str_query);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%s][%X] query [%s]", context.get_name(), cast(void *)str_query, str_query);
+            log.trace("[%s][DB:%X][Q:%X] query [%s]", context.get_name(), cast(void *)xapian_db, cast(void *)str_query, str_query);
 
-        if (trace_msg[ 321 ] == 1)
-            log.trace("[%s][%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
+        if (trace_msg[ 322 ] == 1)
+            log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
 
         if (query !is null)
         {
-            if (trace_msg[ 321 ] == 1)
-                log.trace("[%s][%X] xapian query [%s]", context.get_name(), cast(void *)str_query, get_query_description(query));
+            if (trace_msg[ 323 ] == 1)
+                log.trace("[%s][Q:%X] xapian query [%s]", context.get_name(), cast(void *)str_query, get_query_description(query));
 
             int count = 0;
             xapian_enquire = xapian_db.new_Enquire(&err);
@@ -182,8 +181,8 @@ class XapianReader : SearchReader
     {
         byte err;
 
-        if (trace_msg[ 322 ] == 1)
-            log.trace("[%s] xapian reader: reopen db", context.get_name());
+        if (trace_msg[ 324 ] == 1)
+            log.trace("[%s] xapian reader: reopen [DB:%X]", context.get_name(), cast(void *)xapian_db);
 
 //      xapian_db.close(&err);
 //      destroy_Database (xapian_db);

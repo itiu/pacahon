@@ -149,7 +149,9 @@ private class ThisContext
                     {
                         string key = forClass.uri ~ forProperty.uri;
                         class_property__2__indiviual[ key ] = indv;
-                        log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
+
+                        if (trace_msg[ 214 ] == 1)
+                            log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
                     }
                 }
             }

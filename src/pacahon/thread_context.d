@@ -332,10 +332,10 @@ class PThreadContext : Context
 
     void add_prefix_map(ref string[ string ] arg)
     {
-    	foreach (key, value; arg)
-    	{
-    		prefix_map[key] = value;	
-    	}
+        foreach (key, value; arg)
+        {
+            prefix_map[ key ] = value;
+        }
     }
 
     @property search.vql.VQL vql()
@@ -410,13 +410,13 @@ class PThreadContext : Context
     // ////////////////////////////////////////////////////////////////////////////////
     struct Signal
     {
-        long last_time_update = 0;
-        long last_time_check  = 0;
+        long time_update = 0;
+        long time_check  = 0;
     }
 
     Signal *[ string ] signals;
 
-    int timeout = 1000;
+    int timeout = 10;
 
     public void set_reload_signal_to_local_thread(string interthread_signal_id)
     {
@@ -428,67 +428,75 @@ class PThreadContext : Context
             signals[ interthread_signal_id ] = signal;
         }
 
-        long now = Clock.currStdTime() / 10000;
-        signal.last_time_update = now;
+        long now = Clock.currStdTime() / 10000000;
+        signal.time_update = now;
 
         if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.last_time_update=%d", name, interthread_signal_id,
-                      signal.last_time_update);
+            log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.time_update=%d", name, interthread_signal_id,
+                      signal.time_update);
     }
 
     public bool check_for_reload(string interthread_signal_id, void delegate() load)
     {
-        Signal *signal = signals.get(interthread_signal_id, null);
+        Signal *local = signals.get(interthread_signal_id, null);
 
-        long   now = Clock.currStdTime() / 10000;
+        long   now = Clock.currStdTime() / 10000000;
 
-        if (signal == null)
+        if (local == null)
         {
-        	if (trace_msg[ 19 ] == 1)
-        		log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
-        		
-            signal                           = new Signal;
-            signal.last_time_update          = now + 1;
-            signals[ interthread_signal_id ] = signal;
+            if (trace_msg[ 19 ] == 1)
+                log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
+
+            local                            = new Signal;
+            local.time_update                = now;
+            local.time_check                 = now - timeout - 1;
+            signals[ interthread_signal_id ] = local;
         }
 
 
-        if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-last_time_update)=%d, (now-last_time_check)=%d", name,
-                      interthread_signal_id, now - signal.last_time_update, now - signal.last_time_check);
-
-        if (signal.last_time_update > signal.last_time_check)
+        if (now - local.time_check > timeout)
         {
-            signal.last_time_check = now;
             if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] NOW RELOAD FOR [%s], last_time_update > last_time_check", name, interthread_signal_id);
+                log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-local.time_update)=%d, (now-local.time_check)=%d", name,
+                          interthread_signal_id, now - local.time_update, now - local.time_check);
 
-            load();
-
-            return true;
-        }
-        else if (now - signal.last_time_check > timeout || now - signal.last_time_check < 0)
-        {
-            signal.last_time_check = now;
-
-            long stored_time_signal = look_integer_signal(interthread_signal_id);
-            if (stored_time_signal == 0)
-                return false;
-
-            if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, signal.last_time_update=%d, delta=%d",
-                          name, interthread_signal_id, stored_time_signal, signal.last_time_update, stored_time_signal - signal.last_time_update);
-
-            if (signal.last_time_update < stored_time_signal)
+            if (local.time_update > local.time_check)
             {
                 if (trace_msg[ 19 ] == 1)
-                    log.trace("[%s] NOW RELOAD FOR [%s], signal.last_time_update < stored_time_signal", name, interthread_signal_id);
+                    log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d > local.time_check=%d", name, interthread_signal_id,
+                              local.time_update, local.time_check);
 
-                signal.last_time_update = stored_time_signal;
+                local.time_check  = now;
+                local.time_update = now;
 
                 load();
 
                 return true;
+            }
+            else
+            {
+                local.time_check = now;
+
+                long stored_time_signal = look_integer_signal(interthread_signal_id) / 1000;
+                if (stored_time_signal == 0)
+                    return false;
+
+                if (trace_msg[ 19 ] == 1)
+                    log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, local.time_update=%d, delta=%d",
+                              name, interthread_signal_id, stored_time_signal, local.time_update, stored_time_signal - local.time_update);
+
+                if (local.time_update < stored_time_signal)
+                {
+                    if (trace_msg[ 19 ] == 1)
+                        log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d < stored_time_signal=%d", name, interthread_signal_id,
+                                  local.time_update, stored_time_signal);
+
+                    local.time_update = stored_time_signal;
+
+                    load();
+
+                    return true;
+                }
             }
         }
         return false;
