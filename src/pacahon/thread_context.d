@@ -743,6 +743,11 @@ class PThreadContext : Context
         }
     }
 
+    public void reopen_ro_fulltext_indexer_db ()
+    {
+    	vql.reopen_db ();
+    }
+
     // ////////// external ////////////
 
     public ubyte get_rights(Ticket *ticket, string uri)
