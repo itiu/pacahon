@@ -144,16 +144,23 @@ class XapianReader : SearchReader
 
             XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
 
-            int                      state = -1;
+            int                      state         = -1;
+            int                      attempt_count = 1;
             while (state == -1)
             {
                 state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, fields,
                                                               add_out_element, context);
                 if (state == -1)
                 {
-                    close_db();
-                    open_db();
-                    xapian_enquire = xapian_db.new_Enquire(&err);
+                    attempt_count++;
+                    reopen_db();
+                    log.trace("[%s][Q:%X] exec_xapian_query_and_queue_authorize, attempt=%d",
+                              context.get_name(), cast(void *)str_query,
+                              attempt_count);
+
+                    //close_db();
+                    //open_db();
+                    //xapian_enquire = xapian_db.new_Enquire(&err);
                 }
             }
 

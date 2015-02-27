@@ -511,9 +511,15 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
         while (it.is_next(&err) == true)
         {
-            char   *data_str;
-            uint   *data_len;
+            if (err < 0)
+                return err;
+
+            char *data_str;
+            uint *data_len;
             it.get_document_data(&data_str, &data_len, &err);
+            if (err < 0)
+                return err;
+
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
 
 
