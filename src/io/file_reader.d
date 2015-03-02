@@ -56,103 +56,79 @@ void file_reader_thread(P_MODULE name, string props_file_name)
     {
         Set!string files_to_load;
 
-        if (exists(path ~ "/.load_sequence") == false)
+        auto oFiles = dirEntries(path, SpanMode.depth);
+
+        if (trace_msg[ 29 ] == 1)
+            log.trace("load directory sequence");
+
+        foreach (o; oFiles)
         {
-            auto oFiles = dirEntries(path, SpanMode.depth);
-
-            if (trace_msg[ 29 ] == 1)
-                log.trace("load directory sequence");
-
-            foreach (o; oFiles)
+            if (extension(o.name) == ".ttl")
             {
-                if (extension(o.name) == ".ttl")
+                if ((o.name in file_modification_time) !is null)
                 {
-                    if ((o.name in file_modification_time) !is null)
+                    if (o.timeLastModified != file_modification_time[ o.name ])
                     {
-                        if (o.timeLastModified != file_modification_time[ o.name ])
-                        {
-                            if (trace_msg[ 29 ] == 1)
-                                log.trace("look modifed file=%s", o.name);
+                        if (trace_msg[ 29 ] == 1)
+                            log.trace("look modifed file=%s", o.name);
 
-                            file_modification_time[ o.name ] = o.timeLastModified;
-                            files_to_load ~= o.name;
-                        }
-                    }
-                    else
-                    {
                         file_modification_time[ o.name ] = o.timeLastModified;
                         files_to_load ~= o.name;
-
-                        if (trace_msg[ 29 ] == 1)
-                            log.trace("look new file=%s", o.name);
                     }
                 }
-            }
-        }
-        else
-        {
-            if (trace_msg[ 29 ] == 1)
-                log.trace("[%s] load custom sequence", name);
-
-            auto     load_sequence = cast(char[]) read(path ~ "/.load_sequence");
-            string[] els           = cast(string[])load_sequence.split('\n');
-            foreach (el; els)
-            {
-                auto fn = el.strip();
-                if (fn.length > 4)
+                else
                 {
-                    string file_name = path ~ "/" ~ fn;
-                    //writeln ("@1 file_name=", file_name);
+                    file_modification_time[ o.name ] = o.timeLastModified;
+                    files_to_load ~= o.name;
 
-                    if ((file_name in file_modification_time) !is null)
-                    {
-                        //writeln ("@1.1 file_name=", file_name);
-                        SysTime lst_mdf = timeLastModified(file_name);
-                        if (lst_mdf != file_modification_time[ file_name ])
-                        {
-                            file_modification_time[ file_name ] = lst_mdf;
-                            files_to_load ~= file_name;
-                        }
-                    }
-                    else
-                    {
-                        //writeln ("@1.2 file_name=", file_name);
-                        SysTime lst_mdf = timeLastModified(file_name);
-                        file_modification_time[ file_name ] = lst_mdf;
-                        files_to_load ~= file_name;
-                    }
+                    if (trace_msg[ 29 ] == 1)
+                        log.trace("look new file=%s", o.name);
                 }
             }
         }
+
+        Individual *[ string ][ string ] list_of_fn;
 
         foreach (fn; files_to_load)
         {
             if (trace_msg[ 29 ] == 1)
                 log.trace("load file=%s", fn);
 
-            prepare_file(fn, context);
+            log.trace("prepare_file %s", fn);
+
+            list_of_fn[ fn ] = ttl2individuals(fn, context);
         }
+
+        // load admin onto
+        foreach (key, value; list_of_fn)
+        {
+            Individual *[ string ] individuals = value;
+
+            if (individuals.get("v-a:", null) !is null)
+                prepare_list(individuals.values, context);
+        }
+
+        // load other onto
+        foreach (key, value; list_of_fn)
+        {
+            Individual *[ string ] individuals = value;
+
+            if (individuals.get("v-a:", null) is null)
+                prepare_list(individuals.values, context);
+        }
+
 
         core.thread.Thread.sleep(dur!("seconds")(30));
     }
 }
 
-
-private void prepare_file(string file_name, Context context)
+private void prepare_list(Individual *[] ss_list, Context context)
 {
-    // 1. читает файл, парсит индивидов, сравнивает owl:versionInfo с версией в хранилище, для всех rdf:type == owl:Ontology,
+    // 1. сравнивает owl:versionInfo с версией в хранилище, для всех rdf:type == owl:Ontology,
     //    запоминает несуществующие или отличающиеся версией, для последующей загрузки
     // 2. попутно находит системный аккаунт (veda)
     try
     {
-        //if (trace_msg[ 30 ] == 1)
-        log.trace("prepare_file %s", file_name);
-
-        individuals = (Individual *[ string ]).init;
-        ttl2individuals(file_name, context);
-
-        Individual *[] ss_list = individuals.values;
-
         if (trace_msg[ 30 ] == 1)
             log.trace("ss_list.count=%d", ss_list.length);
 

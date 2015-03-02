@@ -14,7 +14,7 @@ import pacahon.context;
 import pacahon.define;
 
 string[ string ] prefixes;
-Individual *[ string ] individuals;
+Individual *[ string ] _individuals;
 raptor_world *world = null;
 
 extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
@@ -97,12 +97,12 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
         ss = replace_prefix(ss[ 1..$ - 1 ]);
     }
 
-    Individual *ii = individuals.get(ss, null);
+    Individual *ii = _individuals.get(ss, null);
     if (ii is null)
     {
         ii                = new Individual();
         ii.uri            = ss;
-        individuals[ ss ] = ii;
+        _individuals[ ss ] = ii;
     }
 
     string pp;
@@ -188,8 +188,10 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 }
 
 
-public void ttl2individuals(string file_name, Context context)
+public Individual *[ string ] ttl2individuals(string file_name, Context context)
 {
+	Individual *[ string ] res;
+	
     file_name ~= "\0";
     prefixes = context.get_prefix_map();
 
@@ -221,6 +223,10 @@ public void ttl2individuals(string file_name, Context context)
     raptor_free_uri(uri);
     raptor_free_memory(uri_string);
 
+    res = _individuals.dup;
+	_individuals = (Individual *[ string ]).init;
+	
     //raptor_free_world(world);
+    return res;
 }
 
