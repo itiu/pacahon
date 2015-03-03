@@ -158,6 +158,8 @@ class Authorization : LmdbStorage
         }
     }
 
+    string[][ string ] subject_groups_cache;
+
     ubyte authorize(string uri, Ticket *ticket, ubyte request_access, void delegate(string resource_group, string subject_group,
                                                                                     string right) trace = null)
     {
@@ -181,14 +183,17 @@ class Authorization : LmdbStorage
         {
             for (int i = 0; i < 10 && rc != 0; i++)
             {
+                log.trace_log_and_console("[%s] warn 1: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
                 //log.trace_log_and_console("[%s] warn: find:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", parent_thread_name, _path);
                 mdb_txn_abort(txn_r);
+
 
                 if (i > 3)
                     core.thread.Thread.sleep(dur!("msecs")(10));
 
                 rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
             }
+            subject_groups_cache[ ticket.user_uri ] = string[].init;
         }
 
         if (rc != 0)
@@ -199,7 +204,8 @@ class Authorization : LmdbStorage
                 mdb_env_close(env);
                 open_db();
 
-                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                rc                                      = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                subject_groups_cache[ ticket.user_uri ] = string[].init;
             }
             else if (rc == MDB_BAD_RSLOT)
             {
@@ -211,7 +217,8 @@ class Authorization : LmdbStorage
                 //rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
                 mdb_env_close(env);
                 open_db();
-                rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                rc                                      = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
+                subject_groups_cache[ ticket.user_uri ] = string[].init;
             }
         }
 
@@ -248,16 +255,23 @@ class Authorization : LmdbStorage
 
 
             // 2. читаем группы subject (ticket.user_uri)
-            key.mv_size = ticket.user_uri.length;
-            key.mv_data = cast(char *)ticket.user_uri;
 
-            rc = mdb_get(txn_r, dbi, &key, &data);
-            if (rc == 0)
+            subject_groups = subject_groups_cache.get(ticket.user_uri, string[].init);
+
+            if (subject_groups == string[].init)
             {
-                string groups_str = cast(string)(data.mv_data[ 0..data.mv_size ]);
-                subject_groups = groups_str.split(";");
+                key.mv_size = ticket.user_uri.length;
+                key.mv_data = cast(char *)ticket.user_uri;
+
+                rc = mdb_get(txn_r, dbi, &key, &data);
+                if (rc == 0)
+                {
+                    string groups_str = cast(string)(data.mv_data[ 0..data.mv_size ]);
+                    subject_groups = groups_str.split(";");
+                }
+                subject_groups ~= ticket.user_uri;
+                subject_groups_cache[ ticket.user_uri ] = subject_groups;
             }
-            subject_groups ~= ticket.user_uri;
 
             if (trace_msg[ 113 ] == 1)
             {
