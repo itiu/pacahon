@@ -214,7 +214,7 @@ class PThreadContext : Context
     bool authorize(string uri, Ticket *ticket, ubyte request_acess)
     {
         //writeln ("@p ### uri=", uri, " ", request_acess);
-        ubyte res = acl_indexes.authorize(uri, ticket, request_acess);
+        ubyte res = acl_indexes.authorize(uri, ticket, request_acess, this);
 
         //writeln ("@p ### uri=", uri, " ", request_acess, " ", request_acess == res);
         return request_acess == res;
@@ -752,13 +752,13 @@ class PThreadContext : Context
 
     public ubyte get_rights(Ticket *ticket, string uri)
     {
-        return acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete);
+        return acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, this);
     }
 
     public void get_rights_origin(Ticket *ticket, string uri,
                                   void delegate(string resource_group, string subject_group, string right) trace)
     {
-        acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, trace);
+        acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, this, trace);
     }
 
     public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str)
@@ -801,7 +801,7 @@ class PThreadContext : Context
         {
             Individual individual = Individual.init;
 
-            if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+            if (acl_indexes.authorize(uri, ticket, Access.can_read, this) == Access.can_read)
             {
                 string individual_as_cbor = get_individual_from_storage(uri);
 
@@ -842,7 +842,7 @@ class PThreadContext : Context
 
             foreach (uri; uris)
             {
-                if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+                if (acl_indexes.authorize(uri, ticket, Access.can_read, this) == Access.can_read)
                 {
                     Individual individual         = Individual.init;
                     string     individual_as_cbor = get_individual_from_storage(uri);
