@@ -221,7 +221,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 if (pos >= 0)
                 {
                     string prefix = ss.uri[ 0..pos + 1 ];
-                    if (for_load.get(prefix, false) == true)
+                    //if (for_load.get(prefix, false) == true)
                     {
                         Individual indv_in_storage = context.get_individual(null, ss.uri);
 
@@ -235,7 +235,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
 
                             ResultCode res = context.put_individual(null, ss.uri, ss1);
                             if (trace_msg[ 33 ] == 1)
-                                log.trace("file_reader:store, uri=%s %s", ss.uri, ss1);
+                                log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
                             if (res != ResultCode.OK)
                                 log.trace("individual =%s, not store, errcode =%s", ss1.uri, text(res));
                         }
@@ -252,7 +252,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
             }
             else
             {
-                if (for_load.get(ss.uri, false) == true)
+                //if (for_load.get(ss.uri, false) == true)
                 {
                     if (trace_msg[ 33 ] == 1)
                         log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
