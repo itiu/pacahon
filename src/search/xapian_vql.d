@@ -480,7 +480,6 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
                                                  Context context)
 {
     int       read_count = 0;
-
     StopWatch sw;
 
     if (trace_msg[ 200 ] == 1)
@@ -505,6 +504,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     if (trace_msg[ 200 ] == 1)
         log.trace("[%X] found =%d, @matches =%d", cast(void *)query, matches.get_matches_estimated(&err), matches.size(&err));
 
+    //writeln ("@b1 ", context.get_name);
     if (matches !is null)
     {
         XapianMSetIterator it = matches.iterator(&err);
@@ -545,6 +545,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         destroy_MSetIterator(it);
         destroy_MSet(matches);
     }
+    //writeln ("@e1 ", context.get_name);
 
 //    writeln ("@ read_count=", read_count);
     return read_count;

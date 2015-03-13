@@ -551,7 +551,7 @@ class PThreadContext : Context
 
     public bool is_ticket_valid(string ticket_id)
     {
-        StopWatch sw; sw.start;
+        //StopWatch sw; sw.start;
 
         try
         {
@@ -650,7 +650,7 @@ class PThreadContext : Context
 
     public Ticket *get_ticket(string ticket_id)
     {
-        StopWatch sw; sw.start;
+        //StopWatch sw; sw.start;
 
         try
         {
@@ -702,7 +702,7 @@ class PThreadContext : Context
         }
         finally
         {
-            stat(CMD.GET, sw);
+            //stat(CMD.GET, sw);
         }
     }
 
@@ -945,8 +945,8 @@ class PThreadContext : Context
     }
 
 
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true,
-                                       string event_id = null)
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing, bool prepareEvents = true,
+    	                                        string event_id = null)
     {
         StopWatch sw; sw.start;
 
@@ -1067,6 +1067,12 @@ class PThreadContext : Context
                     bus_event_after(indv, rdfType, ss_as_cbor, ev, this, event_id);
                 }
 
+               if (wait_for_indexing)
+               {  
+                	//writeln ("wait-for-indexing");
+               		wait_thread(P_MODULE.fulltext_indexer);
+               }	
+
                 return ResultCode.OK;
             }
             else
@@ -1081,15 +1087,15 @@ class PThreadContext : Context
         }
     }
 
-    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual)
+    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
     {
         individual.uri = uri;
-        return store_individual(ticket, &individual, null);
+        return store_individual(ticket, &individual, null, wait_for_indexing);
     }
 
-    public ResultCode post_individual(Ticket *ticket, Individual individual)
+    public ResultCode post_individual(Ticket *ticket, Individual individual, bool wait_for_indexing)
     {
-        return store_individual(ticket, &individual, null);
+        return store_individual(ticket, &individual, null, wait_for_indexing);
     }
 
     public void wait_thread(P_MODULE thread_id)

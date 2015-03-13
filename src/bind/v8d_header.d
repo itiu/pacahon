@@ -54,7 +54,7 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
 
             Ticket *ticket = g_context.get_ticket(ticket_id);
 
-            return g_context.store_individual(ticket, null, cbor, true, event_id);
+            return g_context.store_individual(ticket, null, cbor, false, true, event_id);
         }
         return ResultCode.Service_Unavailable;
     }

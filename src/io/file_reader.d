@@ -199,7 +199,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
         }
 
         foreach (ss; ss_list)
-        {
+        {        	
             if (ss.isExist(veda_schema__login, "veda"))
             {
                 //writeln("FOUND SYSTEM ACCOUNT = ", ss);
@@ -221,7 +221,8 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 if (pos >= 0)
                 {
                     string prefix = ss.uri[ 0..pos + 1 ];
-                    //if (for_load.get(prefix, false) == true)
+                    
+                    if (for_load.get(prefix, false) == true)
                     {
                         Individual indv_in_storage = context.get_individual(null, ss.uri);
 
@@ -233,7 +234,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                             auto ss1 = ss.apply(indv_in_storage);
                             //writeln("#3 file_reader:store, ss=\n", ss);
 
-                            ResultCode res = context.put_individual(null, ss.uri, ss1);
+                            ResultCode res = context.put_individual(null, ss.uri, ss1, false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
                             if (res != ResultCode.OK)
@@ -241,7 +242,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                         }
                         else
                         {
-                            ResultCode res = context.put_individual(null, ss.uri, *ss);
+                            ResultCode res = context.put_individual(null, ss.uri, *ss, false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
                             if (res != ResultCode.OK)
@@ -256,7 +257,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 {
                     if (trace_msg[ 33 ] == 1)
                         log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
-                    context.put_individual(null, ss.uri, *ss);
+                    context.put_individual(null, ss.uri, *ss, false);
                 }
             }
         }

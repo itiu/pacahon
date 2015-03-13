@@ -278,7 +278,7 @@ interface Context
        Returns:
                 авторизованный индивид в виде строки CBOR
      */
-    public string                        get_individual_as_cbor(Ticket *ticket, string uri);
+    public string get_individual_as_cbor(Ticket *ticket, string uri);
 
     /**
      * Вернуть список индивидуалов(CBOR) по списку uri
@@ -297,12 +297,13 @@ interface Context
                  ticket = указатель на обьект Ticket
                  indv   = указатель на экземпляр Individual, сохраняется если !is null
                  ss_as_cbor = индивидуал в виде строки, сохраняется если $(D indv is null)
+                 wait_for_indexing = ожидать окончания полнотекстовой индексации
                  event_id = указывается при сохранения индивида из скриптов (если идет обработка вызванная срабатыванием storage event)
 
        Returns:
                 Код результата операции
      */
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool prepareEvents = true,
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing, bool prepareEvents = true,
                                        string event_id = null);
 
     /**
@@ -311,13 +312,14 @@ interface Context
                  ticket = указатель на обьект Ticket
                  indv   = указатель на экземпляр Individual, сохраняется если !is null
                  uri    = uri, по которому сохраняется индивидула
+                 wait_for_indexing = ожидать окончания полнотекстовой индексации
 
        Returns:
                 Код результата операции
      */
-    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual);
+    public ResultCode put_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
 
-    public ResultCode post_individual(Ticket *ticket, Individual individual);
+    public ResultCode post_individual(Ticket *ticket, Individual individual, bool wait_for_indexing);
 
     // ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
     /**
