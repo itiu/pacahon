@@ -243,10 +243,13 @@ class PThreadContext : Context
 
 
     public string get_individual_from_storage(string uri)
-    {
+    {    	
         //writeln ("@ get_individual_as_cbor, uri=", uri);
         string res = inividuals_storage.find(uri);
 
+//                	if (res.length != 266)                	
+//                		writeln ("@@@#### in_str.length=", res.length, ", uri=", uri);
+                		
         return res;
     }
 // /////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
@@ -862,12 +865,13 @@ class PThreadContext : Context
         }
     }
 
-    public string get_individual_as_cbor(Ticket *ticket, string uri)
+    public string get_individual_as_cbor(Ticket *ticket, string uri, out ResultCode rs)
     {
-        string    res = "E";
+        string    res;
         StopWatch sw; sw.start;
+        rs = ResultCode.Unprocessable_Entity;
 
-/*
+
         if (trace_msg[ 25 ] == 1)
         {
             if (ticket !is null)
@@ -878,24 +882,21 @@ class PThreadContext : Context
 
         try
         {
-            if (acl_indexes.authorize(uri, ticket, Access.can_read) == Access.can_read)
+            if (acl_indexes.authorize(uri, ticket, Access.can_read, this) == Access.can_read)
             {
                 string individual_as_cbor = get_individual_from_storage(uri);
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {
                     res = individual_as_cbor;
-                }
-                else
-                {
-                    res[0] = ResultCode.Unprocessable_Entity;
+                    rs = ResultCode.OK;
                 }
             }
             else
             {
                 if (trace_msg[ 25 ] == 1)
                     log.trace("get_individual as cbor, not authorized, uri=%s", uri);
-                res[0] = ResultCode.ResultCode.Not_Authorized;
+                rs = ResultCode.Not_Authorized;
             }
 
             return res;
@@ -906,8 +907,6 @@ class PThreadContext : Context
             if (trace_msg[ 25 ] == 1)
                 log.trace("get_individual as cbor: end, uri=%s", uri);
         }
- */
-        return res;
     }
 
     public immutable(string)[] get_individuals_as_cbor(Ticket * ticket, string[] uris)

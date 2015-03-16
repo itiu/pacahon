@@ -189,6 +189,7 @@ class Authorization : LmdbStorage
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
+                	log.trace_log_and_console("warn: find 1:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
             for (int i = 0; i < 10 && rc != 0; i++)
             {
                 mdb_txn_abort(txn_r);

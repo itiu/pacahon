@@ -278,7 +278,7 @@ interface Context
        Returns:
                 авторизованный индивид в виде строки CBOR
      */
-    public string get_individual_as_cbor(Ticket *ticket, string uri);
+    public string get_individual_as_cbor(Ticket *ticket, string uri, out ResultCode rs);
 
     /**
      * Вернуть список индивидуалов(CBOR) по списку uri
