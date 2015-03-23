@@ -226,15 +226,15 @@ private void prepare_list(Individual *[] ss_list, Context context)
                     {
                         Individual indv_in_storage = context.get_individual(null, ss.uri);
 
-                        //writeln("#1 file_reader:store, ss=\n", ss);
+                        //writeln("#1 file_reader:store, ss=\n", *ss);
                         if (indv_in_storage.getStatus() == ResultCode.OK)
                         {
                             //writeln("#2 file_reader:store, indv_in_storage=\n", indv_in_storage);
                             // обьеденить данные: ss = ss + indv_in_storage
                             auto ss1 = ss.apply(indv_in_storage);
                             //writeln("#3 file_reader:store, ss=\n", ss);
-
-                            ResultCode res = context.put_individual(null, ss.uri, ss1, false);
+                            
+                            ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique ("rdf:type"), false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
                             if (res != ResultCode.OK)
@@ -242,7 +242,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                         }
                         else
                         {
-                            ResultCode res = context.put_individual(null, ss.uri, *ss, false);
+                            ResultCode res = context.put_individual(null, ss.uri, (*ss).repare_unique ("rdf:type"), false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
                             if (res != ResultCode.OK)
@@ -257,7 +257,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 {
                     if (trace_msg[ 33 ] == 1)
                         log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
-                    context.put_individual(null, ss.uri, *ss, false);
+                    context.put_individual(null, ss.uri, (*ss).repare_unique ("rdf:type"), false);
                 }
             }
         }
@@ -269,7 +269,6 @@ private void prepare_list(Individual *[] ss_list, Context context)
             send(tid_search_manager, CMD.COMMIT, "");
 
         context.set_reload_signal_to_local_thread("search");
-
 
         //writeln ("file_reader::prepare_file end");
     }

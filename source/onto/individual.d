@@ -188,4 +188,26 @@ public struct Individual
 
         return res;
     }
+
+    Individual repare_unique(string predicate)
+    {
+        Individual res      = this.dup();
+
+        Resources  rdf_type = resources.get(predicate, Resources.init);
+        Resources  new_rss  = Resources.init;
+        
+        auto uniq_rdf_type = std.algorithm.uniq (rdf_type);
+        
+        Resource rc;
+        while (uniq_rdf_type.empty == false)
+        {
+        	rc = uniq_rdf_type.front;
+        	new_rss ~= rc;
+        	uniq_rdf_type.popFront;
+        } 
+
+        res.resources[ predicate ] = new_rss;
+
+        return res;
+    }
 }
