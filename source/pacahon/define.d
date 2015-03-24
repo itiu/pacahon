@@ -50,7 +50,7 @@ const string        acl_indexes_db_path    = "./data/acl-indexes";
 
 public const string xapian_search_db_path  = "data/xapian-search";
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
-
+public const int xapian_db_type = 1;
 
 void create_folder_struct()
 {

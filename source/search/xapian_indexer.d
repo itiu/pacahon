@@ -711,7 +711,7 @@ void xapian_indexer(string thread_name)
     bool       is_exist_db = exists(xapian_search_db_path);
 
     // Open the database for update, creating a new database if necessary.
-    ictx.indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
+    ictx.indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
 //    indexer_db = new_InMemoryWritableDatabase(&err);
     if (err != 0)
     {

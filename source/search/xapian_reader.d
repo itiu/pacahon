@@ -213,7 +213,7 @@ class XapianReader : SearchReader
     {
         byte err;
 
-        xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
+        xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, xapian_db_type, &err);
         if (err != 0)
             writeln("VQL:new_Database:err", err);
 
