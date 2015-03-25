@@ -359,7 +359,9 @@ class Authorization : LmdbStorage
                 log.trace("authorize %s, request=%s, answer=%s", uri, text(request_access), text(res));
         }
 
-        //writeln ("@p acl:return res=", res);
+        if (trace_msg[ 111 ] == 1)
+        	log.trace("acl:res=%d", res);
+
         return res;
     }
 }
