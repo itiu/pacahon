@@ -299,13 +299,13 @@ public class LmdbStorage
         if (rc != 0)
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
         rc = mdb_dbi_open(txn, null, MDB_CREATE, &dbi);
         if (rc != 0)
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
 
         EVENT   ev = EVENT.NONE;
@@ -331,7 +331,7 @@ public class LmdbStorage
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn);
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
 
         if (summ_hash_this_db != BigInt.init)
@@ -355,7 +355,7 @@ public class LmdbStorage
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", put summ_hash (%s) ERR:%s", _path,
                                           fromStringz(mdb_strerror(rc)));
                 mdb_txn_abort(txn);
-                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
             }
         }
 
@@ -373,7 +373,7 @@ public class LmdbStorage
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn);
-            throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+            throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
 //                                sw.stop;
 //                               long t = sw.peek.usecs;
@@ -427,7 +427,7 @@ public class LmdbStorage
             if (rc != 0)
             {
                 log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ "(%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
-                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
             }
 
             MDB_stat stat;
