@@ -245,8 +245,8 @@ interface Context
      */
     public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str);
 
-    public void reopen_ro_fulltext_indexer_db ();
-    
+    public void reopen_ro_fulltext_indexer_db();
+
     /**
        Вернуть индивидуала по его uri
        Params:

@@ -191,15 +191,6 @@ class XapianReader : SearchReader
         if (trace_msg[ 324 ] == 1)
             log.trace("[%s] xapian reader: reopen [DB:%X]", context.get_name(), cast(void *)xapian_db);
 
-//      xapian_db.close(&err);
-//      destroy_Database (xapian_db);
-//      xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, &err);
-//      if (err != 0)
-//          writeln("VQL:reopen_db:err", err);
-
-//      close_db();
-//      open_db();
-
         xapian_db.reopen(&err);
         if (err != 0)
             writeln("VQL:reopen_db:err", err);
@@ -214,6 +205,9 @@ class XapianReader : SearchReader
         byte err;
 
         xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, xapian_db_type, &err);
+        XapianDatabase xapian_system_db = new_Database(xapian_search_system_db_path.ptr, xapian_search_system_db_path.length, xapian_db_type, &err);
+        //xapian_db.add_database (xapian_system_db, &err);
+
         if (err != 0)
             writeln("VQL:new_Database:err", err);
 

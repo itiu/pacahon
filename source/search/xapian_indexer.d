@@ -101,9 +101,11 @@ private class ThisContext
     Context context;
     // Onto    onto;
     Individual[ string ] class_property__2__indiviual;
+    bool[ string ] class__2__system;
     Individual[ string ] uri__2__indiviual;
 
     XapianWritableDatabase indexer_db;
+    XapianWritableDatabase indexer_system_db;
     XapianTermGenerator    indexer;
     string                 lang = "russian";
     LmdbStorage            inividuals_storage;
@@ -137,6 +139,8 @@ private class ThisContext
                 Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
                 Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
 
+                Resources indexed_as_system = indv.resources.get("vdi:indexed_as_system", Resources.init);
+
                 if (forClasses.length == 0)
                     forClasses ~= Resource.init;
 
@@ -145,6 +149,12 @@ private class ThisContext
 
                 foreach (forClass; forClasses)
                 {
+                    if (indexed_as_system.length > 0 && indexed_as_system[ 0 ] == true)
+                    {
+//                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
+                        class__2__system[ forClass.uri ] = true;
+                    }
+
                     foreach (forProperty; forProperties)
                     {
                         string key = forClass.uri ~ forProperty.uri;
@@ -631,8 +641,10 @@ private class ThisContext
                     //writeln ("not type for:", pp.predicate);
                 }
             }
+
             string data = all_text.toString;
             //writeln("@index = ", data);
+
             indexer.index_text(data.ptr, data.length, &err);
             if (trace_msg[ 221 ] == 1)
                 log.trace("index all text [%s]", data);
@@ -641,7 +653,23 @@ private class ThisContext
             doc.add_boolean_term(uuid.ptr, uuid.length, &err);
             doc.set_data(indv.uri.ptr, indv.uri.length, &err);
 
-            indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
+            // используем информацию о типе
+            bool as_system = false;
+            foreach (_type; types)
+            {
+                if (class__2__system.get(_type.uri, false) == true)
+                    as_system = true;
+            }
+
+            if (as_system == true)
+            {
+                indexer_system_db.replace_document(uuid.ptr, uuid.length, doc, &err);
+                //writeln ("as system ",  uuid);
+            }
+            else
+            {
+                indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
+            }
 
             if (counter % 100 == 0)
             {
@@ -658,6 +686,7 @@ private class ThisContext
                     store__key2slot(key2slot, tid_subject_manager);
 
                 indexer_db.commit(&err);
+                indexer_system_db.commit(&err);
             }
 
             destroy_Document(doc);
@@ -686,6 +715,7 @@ void xapian_indexer(string thread_name)
 
     core.thread.Thread.getThis().name = thread_name;
 
+    // attempt to create a path
     try
     {
         mkdir("data");
@@ -702,32 +732,44 @@ void xapian_indexer(string thread_name)
     {
     }
 
+    try
+    {
+        mkdir(xapian_search_system_db_path);
+    }
+    catch (Exception ex)
+    {
+    }
+
     // /////////// XAPIAN INDEXER ///////////////////////////
     XapianStem stemmer = new_Stem(cast(char *)ictx.lang, ictx.lang.length, &err);
 
     string     dummy;
     double     d_dummy;
 
-    bool       is_exist_db = exists(xapian_search_db_path);
+    //bool       is_exist_db = exists(xapian_search_db_path);
 
-    // Open the database for update, creating a new database if necessary.
     ictx.indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
-//    indexer_db = new_InMemoryWritableDatabase(&err);
-    if (err != 0)
+    if (err == 0)
     {
-        writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
+        ictx.indexer_system_db = new_WritableDatabase(xapian_search_system_db_path.ptr, xapian_search_system_db_path.length, DB_CREATE_OR_OPEN,
+                                                      xapian_db_type, &err);
+        if (err != 0)
+        {
+            writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
 
-        receive((Tid tid_response_reciever)
-                {
-                    send(tid_response_reciever, false);
-                });
-        return;
+            receive((Tid tid_response_reciever)
+                    {
+                        send(tid_response_reciever, false);
+                    });
+            return;
+        }
     }
 
     ictx.indexer = new_TermGenerator(&err);
     ictx.indexer.set_stemmer(stemmer, &err);
 
     ictx.indexer_db.commit(&err);
+    ictx.indexer_system_db.commit(&err);
 
     //ictx.xapian_enquire = ictx.indexer_db.new_Enquire(&err);
     //ictx.xapian_qp      = new_QueryParser(&err);
@@ -777,7 +819,9 @@ void xapian_indexer(string thread_name)
                                 log.trace("store__key2slot #1");
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
+
                         ictx.indexer_db.commit(&err);
+                        ictx.indexer_system_db.commit(&err);
 
                         if (cmd == CMD.BACKUP)
                         {
@@ -832,6 +876,7 @@ void xapian_indexer(string thread_name)
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
                         ictx.indexer_db.commit(&err);
+                        ictx.indexer_system_db.commit(&err);
 
                         ictx.last_counter_after_timed_commit = ictx.counter;
 
@@ -860,6 +905,7 @@ void xapian_indexer(string thread_name)
                                 }
 
                                 ictx.indexer_db.commit(&err);
+                                ictx.indexer_system_db.commit(&err);
 //                            printf("ok\n");
 
                                 //indexer_db.close (&err);

@@ -42,15 +42,16 @@ enum EVENT : byte
     NOT_READY = 6
 }
 
-const string        dbs_backup             = "./backup";
-const string        dbs_data               = "./data";
-const string        individuals_db_path    = "./data/lmdb-individuals";
-const string        tickets_db_path        = "./data/lmdb-tickets";
-const string        acl_indexes_db_path    = "./data/acl-indexes";
+const string        dbs_backup                   = "./backup";
+const string        dbs_data                     = "./data";
+const string        individuals_db_path          = "./data/lmdb-individuals";
+const string        tickets_db_path              = "./data/lmdb-tickets";
+const string        acl_indexes_db_path          = "./data/acl-indexes";
 
-public const string xapian_search_db_path  = "data/xapian-search";
-public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
-public const int xapian_db_type = 1;
+public const string xapian_search_db_path        = "data/xapian-search";
+public const string xapian_search_system_db_path = "data/xapian-search-system";
+public const string xapian_metadata_doc_id       = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";
+public const int    xapian_db_type               = 1;
 
 void create_folder_struct()
 {
