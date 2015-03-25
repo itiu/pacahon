@@ -243,13 +243,13 @@ class PThreadContext : Context
 
 
     public string get_individual_from_storage(string uri)
-    {    	
+    {
         //writeln ("@ get_individual_as_cbor, uri=", uri);
         string res = inividuals_storage.find(uri);
 
-//                	if (res.length != 266)                	
-//                		writeln ("@@@#### in_str.length=", res.length, ", uri=", uri);
-                		
+//                  if (res.length != 266)
+//                      writeln ("@@@#### in_str.length=", res.length, ", uri=", uri);
+
         return res;
     }
 // /////////////////////////////////////////// oykumena ///////////////////////////////////////////////////
@@ -746,9 +746,9 @@ class PThreadContext : Context
         }
     }
 
-    public void reopen_ro_fulltext_indexer_db ()
+    public void reopen_ro_fulltext_indexer_db()
     {
-    	vql.reopen_db ();
+        vql.reopen_db();
     }
 
     // ////////// external ////////////
@@ -869,6 +869,7 @@ class PThreadContext : Context
     {
         string    res;
         StopWatch sw; sw.start;
+
         rs = ResultCode.Unprocessable_Entity;
 
 
@@ -889,7 +890,7 @@ class PThreadContext : Context
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {
                     res = individual_as_cbor;
-                    rs = ResultCode.OK;
+                    rs  = ResultCode.OK;
                 }
             }
             else
@@ -945,7 +946,7 @@ class PThreadContext : Context
 
 
     public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing, bool prepareEvents = true,
-    	                                        string event_id = null)
+                                       string event_id = null)
     {
         StopWatch sw; sw.start;
 
@@ -1066,11 +1067,11 @@ class PThreadContext : Context
                     bus_event_after(indv, rdfType, ss_as_cbor, ev, this, event_id);
                 }
 
-               if (wait_for_indexing)
-               {  
-                	//writeln ("wait-for-indexing");
-               		wait_thread(P_MODULE.fulltext_indexer);
-               }	
+                if (wait_for_indexing)
+                {
+                    //writeln ("wait-for-indexing");
+                    wait_thread(P_MODULE.fulltext_indexer);
+                }
 
                 return ResultCode.OK;
             }
