@@ -230,15 +230,15 @@ class PThreadContext : Context
         return name;
     }
 
-    public immutable(Individual)[ string ] get_onto_as_map_individuals()
+    public Individual[ string ] get_onto_as_map_individuals()
     {
         if (onto !is null)
         {
             check_for_reload("onto", &onto.load);
-            return onto.iget_individuals;
+            return onto.get_individuals;
         }
         else
-            return (immutable(Individual)[ string ]).init;
+            return (Individual[ string ]).init;
     }
 
 

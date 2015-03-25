@@ -6,7 +6,7 @@ module az.acl;
 
 private
 {
-    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.array, std.outbuffer;
+    import core.thread, std.stdio, std.conv, std.concurrency, std.file, std.datetime, std.array, std.outbuffer, std.string;
 
     import onto.individual, onto.resource;
 
@@ -240,7 +240,7 @@ class Authorization : LmdbStorage
         {
             rc = mdb_dbi_open(txn_r, null, MDB_CREATE, &dbi);
             if (rc != 0)
-                throw new Exception("Fail:" ~  fromStringz(mdb_strerror(rc)));
+                throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
 
             string[] object_groups;
             string[] subject_groups;

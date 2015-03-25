@@ -107,10 +107,10 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 
     string pp;
     if (triple.predicate.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
-        pp = replace_prefix(fromStringz(_pp)[ 1..$ - 1 ]).dup;
+        pp = replace_prefix(cast(string)(fromStringz(_pp)[ 1..$ - 1 ])).dup;
 
 
-    string oo = fromStringz(_oo);
+    string oo = cast(string)fromStringz(_oo);
 
     if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
     {

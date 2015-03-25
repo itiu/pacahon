@@ -842,7 +842,7 @@ void xapian_indexer(string thread_name)
                                 foreach (o; oFiles)
                                 {
                                     string new_path;
-                                    string tt[] = o.name.split("/");
+                                    string[] tt = o.name.split("/");
                                     if (tt.length > 1)
                                         new_path = tt[ $ - 1 ];
                                     else

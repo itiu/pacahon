@@ -27,8 +27,7 @@ class Onto
     private Context context;
     public int      reload_count = 0;
 
-    Individual[ string ] individuals;
-    immutable(Individual)[ string ] i_individuals;
+    private Individual[ string ] individuals;
 
     public this(Context _context)
     {
@@ -36,11 +35,11 @@ class Onto
         context = _context;
     }
 
-    immutable(Individual)[ string ] iget_individuals()
+    Individual[ string ] get_individuals()
     {
         //writeln ("@$1");
 
-        return i_individuals;
+        return individuals;
     }
 
     public void load()
@@ -62,7 +61,6 @@ class Onto
         foreach (indv; l_individuals)
         {
             individuals[ indv.uri ]   = indv;
-            i_individuals[ indv.uri ] = indv.idup;
         }
 
         if (trace_msg[ 20 ] == 1)
