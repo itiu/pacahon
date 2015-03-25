@@ -741,7 +741,7 @@ void xapian_indexer(string thread_name)
     }
 
     // /////////// XAPIAN INDEXER ///////////////////////////
-    XapianStem stemmer = new_Stem(cast(char *)ictx.lang, ictx.lang.length, &err);
+    XapianStem stemmer = new_Stem(cast(char *)ictx.lang, cast(uint)ictx.lang.length, &err);
 
     string     dummy;
     double     d_dummy;

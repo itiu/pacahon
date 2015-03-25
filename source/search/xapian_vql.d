@@ -278,7 +278,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                                 string tt = cast(string)str_val[ 0..len ];
                                 //writeln("@ length=", len, ", tt=", tt, ", d_val=", d_val);
                                 xtr   = "X" ~ text(slot) ~ "X" ~ tt;
-                                query = new_Query(cast(char *)xtr, xtr.length, &err);
+                                query = new_Query(cast(char *)xtr, cast(uint)xtr.length, &err);
                             }
 
                             if (err != 0)

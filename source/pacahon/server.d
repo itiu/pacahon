@@ -39,9 +39,9 @@ logger log;
 logger io_msg;
 
 // Called upon a signal from Linux
-extern (C) public void sighandler0(int sig) nothrow @nogc @system
+extern (C) public void sighandler0(int sig) nothrow @system
 {
-/*	
+	
     try
     {
         log.trace_log_and_console("signal %d caught...\n", sig);
@@ -51,12 +51,11 @@ extern (C) public void sighandler0(int sig) nothrow @nogc @system
     catch (Exception ex)
     {
     }
-*/
 }
 
-extern (C) public void sighandler1(int sig) nothrow @nogc @system
+extern (C) public void sighandler1(int sig) nothrow @system
 {
-/*	
+	
     try
     {
         printPrettyTrace(stderr);
@@ -74,7 +73,7 @@ extern (C) public void sighandler1(int sig) nothrow @nogc @system
     catch (Exception ex)
     {
     }
-*/
+
 }
 
 static this()
@@ -142,7 +141,7 @@ void init_core()
     log    = new logger("pacahon", "log", "server");
     io_msg = new logger("pacahon", "io", "server");
     Tid[ P_MODULE ] tids;
-/*
+
     version (linux)
     {
         // установим обработчик сигналов прерывания процесса
@@ -153,7 +152,7 @@ void init_core()
         signal(SIGSEGV, &sighandler1);
         signal(SIGBUS, &sighandler1);
     }
-*/
+
     try
     {
 //        log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,

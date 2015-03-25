@@ -393,10 +393,10 @@ interface XapianMultiValueKeyMaker
 }
 
 /// -
-XapianDatabase new_Database(const char *path, ulong path_len, int db_type, byte *err);
+XapianDatabase new_Database(const char *path, uint path_len, int db_type, byte *err);
 
 /// -
-XapianWritableDatabase new_WritableDatabase(const char *path, ulong path_len, int action, int db_type, byte *err);
+XapianWritableDatabase new_WritableDatabase(const char *path, uint path_len, int action, int db_type, byte *err);
 
 /// -
 XapianDocument new_Document(byte *err);
@@ -408,7 +408,7 @@ XapianMultiValueKeyMaker new_MultiValueKeyMaker(byte *err);
 XapianQueryParser new_QueryParser(byte *err);
 
 /// -
-XapianStem new_Stem(char *language, ulong language_len, byte *err);
+XapianStem new_Stem(char *language, uint language_len, byte *err);
 
 /// -
 XapianTermGenerator new_TermGenerator(byte *err);
@@ -420,7 +420,7 @@ XapianNumberValueRangeProcessor new_NumberValueRangeProcessor(int slot, const ch
 XapianQuery new_Query(byte *err);
 
 /// -
-XapianQuery new_Query(const char *_str, ulong _str_len, byte *err);
+XapianQuery new_Query(const char *_str, uint _str_len, byte *err);
 //    XapianQuery new_Query_add (XapianQuery _left, XapianQuery _right);//, int op_);
 /// -
 XapianQuery new_Query_range(int op_, int slot, double _begin, double _end, byte *err);

@@ -215,7 +215,7 @@ class XapianReader : SearchReader
         if (err != 0)
             writeln("VQL:new_QueryParser:err", err);
 
-        xapian_stemmer = new_Stem(cast(char *)xapian_lang, xapian_lang.length, &err);
+        xapian_stemmer = new_Stem(cast(char *)xapian_lang, cast(uint)xapian_lang.length, &err);
         xapian_qp.set_stemmer(xapian_stemmer, &err);
         if (err != 0)
             writeln("VQL:set_stemmer:err", err);
