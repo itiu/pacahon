@@ -99,6 +99,15 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             list_of_fn[ fn ] = ttl2individuals(fn, context);
         }
 
+        // load index onto
+        foreach (key, value; list_of_fn)
+        {
+            Individual *[ string ] individuals = value;
+
+            if (individuals.get("vdi:", null) !is null)
+                prepare_list(individuals.values, context);
+        }
+
         // load admin onto
         foreach (key, value; list_of_fn)
         {
@@ -113,7 +122,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
         {
             Individual *[ string ] individuals = value;
 
-            if (individuals.get("v-a:", null) is null)
+            if (individuals.get("v-a:", null) is null && individuals.get("vdi:", null) is null)
                 prepare_list(individuals.values, context);
         }
 
@@ -199,7 +208,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
         }
 
         foreach (ss; ss_list)
-        {        	
+        {
             if (ss.isExist(veda_schema__login, "veda"))
             {
                 //writeln("FOUND SYSTEM ACCOUNT = ", ss);
@@ -221,7 +230,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 if (pos >= 0)
                 {
                     string prefix = ss.uri[ 0..pos + 1 ];
-                    
+
                     if (for_load.get(prefix, false) == true)
                     {
                         Individual indv_in_storage = context.get_individual(null, ss.uri);
@@ -233,8 +242,8 @@ private void prepare_list(Individual *[] ss_list, Context context)
                             // обьеденить данные: ss = ss + indv_in_storage
                             auto ss1 = ss.apply(indv_in_storage);
                             //writeln("#3 file_reader:store, ss=\n", ss);
-                            
-                            ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique ("rdf:type"), false);
+
+                            ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique("rdf:type"), false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
                             if (res != ResultCode.OK)
@@ -242,7 +251,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                         }
                         else
                         {
-                            ResultCode res = context.put_individual(null, ss.uri, (*ss).repare_unique ("rdf:type"), false);
+                            ResultCode res = context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
                             if (trace_msg[ 33 ] == 1)
                                 log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
                             if (res != ResultCode.OK)
@@ -257,7 +266,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 {
                     if (trace_msg[ 33 ] == 1)
                         log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
-                    context.put_individual(null, ss.uri, (*ss).repare_unique ("rdf:type"), false);
+                    context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
                 }
             }
         }
