@@ -159,16 +159,16 @@ class Authorization : LmdbStorage
     }
 
     string[][ string ] subject_groups_cache;
-    
-    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, Context context, void delegate(string resource_group, string subject_group,
-                                                                                    string right) trace = null)
-    {
 
-    void reopen_db()
+    ubyte authorize(string uri, Ticket *ticket, ubyte request_access, Context context, void delegate(string resource_group,
+                                                                                                     string subject_group,
+                                                                                                     string right) trace = null)
     {
-    	subject_groups_cache[ ticket.user_uri ] = string[].init;
-    }
-    
+        void reopen_db()
+        {
+            subject_groups_cache[ ticket.user_uri ] = string[].init;
+        }
+
         ubyte res = 0;
 
         if (ticket is null)
@@ -183,22 +183,22 @@ class Authorization : LmdbStorage
         MDB_dbi dbi;
         string  str;
         int     rc;
-        
+
         context.check_for_reload("search", &reopen_db);
-        
+
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
         {
-                	log.trace_log_and_console("warn: find 1:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
+            log.trace_log_and_console("warn: find 1:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
             for (int i = 0; i < 10 && rc != 0; i++)
             {
                 mdb_txn_abort(txn_r);
 
                 if (i > 3)
                 {
-                	log.trace_log_and_console("warn: find 1:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
+                    log.trace_log_and_console("warn: find 1:" ~ text(__LINE__) ~ "(%s) MDB_BAD_RSLOT", path);
                     core.thread.Thread.sleep(dur!("msecs")(10));
-                }    
+                }
 
                 rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
             }
@@ -360,7 +360,7 @@ class Authorization : LmdbStorage
         }
 
         if (trace_msg[ 111 ] == 1)
-        	log.trace("acl:res=%d", res);
+            log.trace("acl:res=%d", res);
 
         return res;
     }
