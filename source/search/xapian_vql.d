@@ -109,6 +109,11 @@ private TokenType get_token_type(string token, out double value)
         value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
         return TokenType.DATE;
     }
+    else if (token.length == 24 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] == ':' && token[ 19 ] == '.')
+    {
+        value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
+        return TokenType.DATE;
+    }
     else
     {
         bool is_digit = false;
