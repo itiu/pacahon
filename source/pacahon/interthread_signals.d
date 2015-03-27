@@ -4,6 +4,7 @@
 module pacahon.interthread_signals;
 
 import core.thread, std.conv, std.concurrency, std.stdio, std.datetime;
+version (linux) import core.stdc.stdlib;
 private import type;
 import pacahon.context;
 import pacahon.define;
@@ -57,7 +58,13 @@ public void interthread_signals_thread(string thread_name)
                         str_signals[ key ] = value;
                         //writeln("@set signal ", key, "=", value);
                     }
-                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); }
+                }, 
+                (type.std.concurrency.OwnerTerminated ot)
+                {
+                	writeln (thread_name, ": OWNER THREAD TERMINATED, APOPTOSIS !");
+           	        system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
+                },
+                (Variant v) { writeln(thread_name, "::Received some other type.", v); }
                 );
     }
 }
