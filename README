@@ -24,7 +24,7 @@ NB: Описание сборки / установки приведено для
 2.1. Требуемое ПО:
 
 - Клиент системы контроля версий GIT.
-- Digital mars D2 compiler dmd 2.065 ( http://dlang.org )
+- Digital mars D2 compiler dmd 2.066.1 ( http://dlang.org )
 - DUB package manager 0.9.21 ( https://github.com/rejectedsoftware/dub )
 
 sudo apt-get install libraptor2-dev
