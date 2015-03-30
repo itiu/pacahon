@@ -233,29 +233,6 @@ void init_core()
                 {
                     spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, "pacahon-properties.json");
                 }
-                else if (params.get("transport", "") == "zmq")
-                {
-                    mq_client zmq_connection = null;
-
-                    string    zmq_connect_type = params.get("zmq_connect_type", "server");
-//						log.trace_log_and_console("LISTENER: connect to zmq:" ~ text (params), "");
-
-                    if (zmq_connect_type == "server")
-                    {
-                        try
-                        {
-                            spawn(&io.zmq_listener.zmq_thread, text(
-                                                                    P_MODULE.zmq_listener), "pacahon-properties.json",
-                                  listener_section_count);
-                            log.trace_log_and_console("LISTENER: connect to zmq:" ~ text(params), "");
-
-//								zmq_connection = new zmq_point_to_poin_client();
-//								zmq_connection.connect_as_listener(params);
-                        } catch (Exception ex)
-                        {
-                        }
-                    }
-                }
                 else if (params.get("transport", "") == "rabbitmq")
                 {
                     mq_client rabbitmq_connection = null;
