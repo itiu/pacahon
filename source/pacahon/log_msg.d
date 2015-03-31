@@ -5,7 +5,7 @@ module pacahon.log_msg;
 
 private import util.logger;
 
-byte [ 1000 ] trace_msg;
+byte[ 1000 ] trace_msg;
 
 // last id = 400
 

@@ -58,11 +58,11 @@ public void interthread_signals_thread(string thread_name)
                         str_signals[ key ] = value;
                         //writeln("@set signal ", key, "=", value);
                     }
-                }, 
+                },
                 (type.std.concurrency.OwnerTerminated ot)
                 {
-                	writeln (thread_name, ": OWNER THREAD TERMINATED, APOPTOSIS !");
-           	        system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
+                    writeln(thread_name, ": OWNER THREAD TERMINATED, APOPTOSIS !");
+                    system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
                 },
                 (Variant v) { writeln(thread_name, "::Received some other type.", v); }
                 );
