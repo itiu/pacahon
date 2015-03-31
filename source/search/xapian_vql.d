@@ -28,32 +28,6 @@ logger log()
 
 protected byte err;
 
-public         string[ string ] get_fields(string str_fields)
-{
-    string[ string ] fields;
-
-    if (str_fields !is null)
-    {
-        string[] returns = split(str_fields, ",");
-
-        foreach (field; returns)
-        {
-            long bp = indexOf(field, '\'');
-            long ep = lastIndexOf(field, '\'');
-            long rp = lastIndexOf(field, " reif");
-            if (ep > bp && ep - bp > 0)
-            {
-                string key = field[ bp + 1 .. ep ];
-                if (rp > ep)
-                    fields[ key ] = "reif";
-                else
-                    fields[ key ] = "1";
-            }
-        }
-    }
-    return fields;
-}
-
 public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2slot)
 {
     XapianMultiValueKeyMaker sorter;
@@ -109,7 +83,8 @@ private TokenType get_token_type(string token, out double value)
         value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
         return TokenType.DATE;
     }
-    else if (token.length == 24 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] == ':' && token[ 19 ] == '.')
+    else if (token.length == 24 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] ==
+             ':' && token[ 19 ] == '.')
     {
         value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
         return TokenType.DATE;
@@ -229,6 +204,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                                                    xtr.length, &err);
                             if (err != 0)
                                 writeln("XAPIAN:transform_vql_to_xapian:parse_query2('x'=*) query='", query_str, "', xtr='", xtr, "'", err);
+
                         }
                         else
                         {
@@ -481,7 +457,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
-                                                 ref string[ string ] fields, void delegate(string uri) add_out_element,
+                                                 void delegate(string uri) add_out_element,
                                                  Context context)
 {
     int       read_count = 0;
@@ -504,7 +480,10 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
     if (err < 0)
+    {
+        log.trace("exec_xapian_query_and_queue_authorize:get_mset, err=(%d)", err);
         return err;
+    }
 
     if (trace_msg[ 200 ] == 1)
         log.trace("[%X] found =%d, @matches =%d", cast(void *)query, matches.get_matches_estimated(&err), matches.size(&err));
@@ -523,7 +502,10 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
             uint *data_len;
             it.get_document_data(&data_str, &data_len, &err);
             if (err < 0)
+            {
+                log.trace("exec_xapian_query_and_queue_authorize:get_document_data, err=(%d)", err);
                 return err;
+            }
 
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
 

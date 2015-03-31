@@ -243,7 +243,7 @@ interface Context
        Returns:
                 список авторизованных uri
      */
-    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str);
+    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str, string db_str = null);
 
     public void reopen_ro_fulltext_indexer_db();
 
@@ -303,7 +303,8 @@ interface Context
        Returns:
                 Код результата операции
      */
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing, bool prepareEvents = true,
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
+                                       bool prepareEvents = true,
                                        string event_id = null);
 
     /**

@@ -724,9 +724,12 @@ void xapian_indexer(string thread_name)
     {
     }
 
+    string db_path_base   = xapian_search_db_path[ "base" ];
+    string db_path_system = xapian_search_db_path[ "system" ];
+
     try
     {
-        mkdir(xapian_search_db_path);
+        mkdir(db_path_base);
     }
     catch (Exception ex)
     {
@@ -734,7 +737,7 @@ void xapian_indexer(string thread_name)
 
     try
     {
-        mkdir(xapian_search_system_db_path);
+        mkdir(db_path_system);
     }
     catch (Exception ex)
     {
@@ -748,10 +751,10 @@ void xapian_indexer(string thread_name)
 
     //bool       is_exist_db = exists(xapian_search_db_path);
 
-    ictx.indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
+    ictx.indexer_db = new_WritableDatabase(db_path_base.ptr, cast(uint)db_path_base.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
     if (err == 0)
     {
-        ictx.indexer_system_db = new_WritableDatabase(xapian_search_system_db_path.ptr, xapian_search_system_db_path.length, DB_CREATE_OR_OPEN,
+        ictx.indexer_system_db = new_WritableDatabase(db_path_system.ptr, cast(uint)db_path_system.length, DB_CREATE_OR_OPEN,
                                                       xapian_db_type, &err);
         if (err != 0)
         {
@@ -838,7 +841,7 @@ void xapian_indexer(string thread_name)
 
                             try
                             {
-                                auto oFiles = dirEntries(xapian_search_db_path, "*.*", SpanMode.depth);
+                                auto oFiles = dirEntries(xapian_search_db_path[ "base" ], "*.*", SpanMode.depth);
                                 foreach (o; oFiles)
                                 {
                                     string new_path;

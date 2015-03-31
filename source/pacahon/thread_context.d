@@ -764,7 +764,7 @@ class PThreadContext : Context
         acl_indexes.authorize(uri, ticket, Access.can_create | Access.can_read | Access.can_update | Access.can_delete, this, trace);
     }
 
-    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str)
+    public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str, string db_str = null)
     {
         StopWatch sw; sw.start;
 
@@ -779,7 +779,7 @@ class PThreadContext : Context
             }
 
             immutable(string)[] res;
-            vql.get(ticket, query_str, null, sort_str, 100000, res);
+            vql.get(ticket, query_str, sort_str, db_str, 100000, res);
             return res;
         }
         finally
@@ -945,7 +945,8 @@ class PThreadContext : Context
     }
 
 
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing, bool prepareEvents = true,
+    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
+                                       bool prepareEvents = true,
                                        string event_id = null)
     {
         StopWatch sw; sw.start;

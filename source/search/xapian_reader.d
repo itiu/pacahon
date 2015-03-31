@@ -35,7 +35,7 @@ protected byte err;
 // /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 interface SearchReader
 {
-    public int get(Ticket *ticket, string str_query, string fields, string sort, int count_authorize,
+    public int get(Ticket *ticket, string str_query, string str_sort, string db_names, int count_authorize,
                    void delegate(string uri) add_out_element);
 
     public void reopen_db();
@@ -93,27 +93,35 @@ interface SearchReader
     }
    }
  */
+class Database_QueryParser
+{
+    XapianDatabase    db;
+    XapianQueryParser qp;
+}
+
 
 class XapianReader : SearchReader
 {
-    private XapianDatabase    xapian_db;
-    private XapianStem        xapian_stemmer;
-    private string            xapian_lang = "russian";
-    private XapianEnquire     xapian_enquire;
-    private XapianQueryParser xapian_qp;
+    private               Database_QueryParser[ string[] ]      using_dbqp;
 
-    private Context           context;
+    private               XapianDatabase[ string ]              opened_db;
+
+    private XapianStem    xapian_stemmer;
+    private string        xapian_lang = "russian";
+    private XapianEnquire xapian_enquire;
+
+    private Context       context;
 
     this(Context _context)
     {
         context = _context;
-        open_db();
+        //open_db();
     }
 
     private string dummy;
     private double d_dummy;
 
-    public int get(Ticket *ticket, string str_query, string str_fields, string sort, int count_authorize,
+    public int get(Ticket *ticket, string str_query, string str_sort, string db_names, int count_authorize,
                    void delegate(string uri) add_out_element)
     {
         context.check_for_reload("search", &reopen_db);
@@ -121,35 +129,34 @@ class XapianReader : SearchReader
         int[ string ] key2slot = context.get_key2slot();
         //writeln ("@key2slot=", key2slot);
 
-        auto        fields = get_fields(str_fields);
+        Database_QueryParser db_qp = get_dbqp(db_names);
 
-        XapianQuery query;
-        TTA         tta = parse_expr(str_query);
+        XapianQuery          query;
+        TTA                  tta = parse_expr(str_query);
 
         if (trace_msg[ 321 ] == 1)
-            log.trace("[%s][DB:%X][Q:%X] query [%s]", context.get_name(), cast(void *)xapian_db, cast(void *)str_query, str_query);
+            log.trace("[%s][Q:%X] query [%s]", context.get_name(), cast(void *)str_query, str_query);
 
         if (trace_msg[ 322 ] == 1)
             log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
-        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, xapian_qp);
+        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
 
         if (query !is null)
         {
             if (trace_msg[ 323 ] == 1)
                 log.trace("[%s][Q:%X] xapian query [%s]", context.get_name(), cast(void *)str_query, get_query_description(query));
 
-            int count = 0;
-            xapian_enquire = xapian_db.new_Enquire(&err);
+            xapian_enquire = db_qp.db.new_Enquire(&err);
 
-            XapianMultiValueKeyMaker sorter = get_sorter(sort, key2slot);
+            XapianMultiValueKeyMaker sorter = get_sorter(str_sort, key2slot);
 
             int                      state         = -1;
             int                      attempt_count = 1;
             while (state == -1)
             {
-                state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, fields,
-                                                              add_out_element, context);
+                state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, add_out_element,
+                                                              context);
                 if (state == -1)
                 {
                     attempt_count++;
@@ -158,9 +165,12 @@ class XapianReader : SearchReader
                               context.get_name(), cast(void *)str_query,
                               attempt_count);
 
+                    if (attempt_count > 10)
+                        break;
+
                     //close_db();
                     //open_db();
-                    //xapian_enquire = xapian_db.new_Enquire(&err);
+                    //xapian_enquire = xapian_base_db.new_Enquire(&err);
                 }
             }
 
@@ -173,7 +183,6 @@ class XapianReader : SearchReader
             destroy_Query(query);
             destroy_MultiValueKeyMaker(sorter);
 
-            //writeln ("read count:", read_count, ", count:", count);
             return read_count;
         }
         else
@@ -184,52 +193,110 @@ class XapianReader : SearchReader
         return 0;
     }
 
-    public void reopen_db()
+////////////////////////////////////////////////////////
+
+    Database_QueryParser get_dbqp(string _db_names)
     {
-        byte err;
+        string[] db_names;
+        if (_db_names !is null)
+        {
+            db_names = split(_db_names, ',');
+            int idx = 0;
+            foreach (el; db_names)
+            {
+                if (el[ 0 ] == ' ' || el[ $ ] == ' ')
+                    db_names[ idx ] = strip(el);
+                idx++;
+            }
+        }
+        else
+            db_names = [ "base" ];
 
-        if (trace_msg[ 324 ] == 1)
-            log.trace("[%s] xapian reader: reopen [DB:%X]", context.get_name(), cast(void *)xapian_db);
+        Database_QueryParser dbqp = using_dbqp.get(db_names, null);
 
-        xapian_db.reopen(&err);
-        if (err != 0)
-            writeln("VQL:reopen_db:err", err);
+        if (dbqp is null)
+        {
+            dbqp    = new Database_QueryParser();
+            dbqp.db = new_Database(&err);
 
-        xapian_qp.set_database(xapian_db, &err);
-        if (err != 0)
-            writeln("VQL:set_database:err", err);
+            foreach (el; db_names)
+            {
+                XapianDatabase _db = open_db(el);
+                dbqp.db.add_database(_db, &err);
+                if (err != 0)
+                    writeln("xapian_reader:add_database:err", err);
+            }
+
+            dbqp.qp = new_QueryParser(&err);
+            if (err != 0)
+                writeln("xapian_reader:new_QueryParser:err", err);
+
+            xapian_stemmer = new_Stem(cast(char *)xapian_lang, cast(uint)xapian_lang.length, &err);
+            dbqp.qp.set_stemmer(xapian_stemmer, &err);
+            if (err != 0)
+                writeln("xapian_reader:set_stemmer:err", err);
+
+            dbqp.qp.set_database(dbqp.db, &err);
+            if (err != 0)
+                writeln("xapian_reader:set_database:err", err);
+
+            using_dbqp[ db_names.idup ] = dbqp;
+        }
+
+        return dbqp;
     }
 
-    private void open_db()
+    private XapianDatabase open_db(string db_name)
     {
-        byte err;
+        byte           err;
+        XapianDatabase db;
 
-        xapian_db = new_Database(xapian_search_db_path.ptr, xapian_search_db_path.length, xapian_db_type, &err);
-        XapianDatabase xapian_system_db = new_Database(xapian_search_system_db_path.ptr, xapian_search_system_db_path.length, xapian_db_type, &err);
-        //xapian_db.add_database (xapian_system_db, &err);
+        db = opened_db.get(db_name, null);
 
-        if (err != 0)
-            writeln("VQL:new_Database:err", err);
+        if (db is null)
+        {
+            string path = xapian_search_db_path.get(db_name, null);
 
-        xapian_qp = new_QueryParser(&err);
-        if (err != 0)
-            writeln("VQL:new_QueryParser:err", err);
+            if (path !is null)
+                db = new_Database(path.ptr, cast(uint)path.length, xapian_db_type, &err);
 
-        xapian_stemmer = new_Stem(cast(char *)xapian_lang, cast(uint)xapian_lang.length, &err);
-        xapian_qp.set_stemmer(xapian_stemmer, &err);
-        if (err != 0)
-            writeln("VQL:set_stemmer:err", err);
+            if (err != 0)
+                writeln("xapian_reader:new_Database:err", err);
+            else
+                opened_db[ db_name ] = db;
+        }
 
-        //xapian_qp.set_stemming_strategy(stem_strategy.STEM_NONE, &err);
+        return db;
+    }
 
-        xapian_qp.set_database(xapian_db, &err);
-        if (err != 0)
-            writeln("VQL:set_database:err", err);
+    public void reopen_db()
+    {
+        foreach (el; using_dbqp.values)
+        {
+            el.db.reopen(&err);
+            if (err != 0)
+                writeln("xapian_reader:reopen_db:err", err);
+
+            el.qp.set_database(el.db, &err);
+            if (err != 0)
+                writeln("xapian_reader:set_database:err", err);
+        }
     }
 
     private void close_db()
     {
-        xapian_db.close(&err);
+        foreach (el; using_dbqp.values)
+        {
+            el.db.close(&err);
+            if (err != 0)
+                writeln("xapian_reader:close database:err", err);
+        }
+        foreach (db; opened_db.values)
+        {
+            db.close(&err);
+            if (err != 0)
+                writeln("xapian_reader:close database:err", err);
+        }
     }
 }
 
