@@ -104,8 +104,9 @@ private class ThisContext
     bool[ string ] class__2__system;
     Individual[ string ] uri__2__indiviual;
 
-    XapianWritableDatabase indexer_db;
+    XapianWritableDatabase indexer_base_db;
     XapianWritableDatabase indexer_system_db;
+    XapianWritableDatabase indexer_deleted_db;
     XapianTermGenerator    indexer;
     string                 lang = "russian";
     LmdbStorage            inividuals_storage;
@@ -175,7 +176,7 @@ private class ThisContext
         cbor2individual(&indv, msg);
         string uuid = "uid_" ~ to_lower_and_replace_delimeters(indv.uri);
 
-        indexer_db.delete_document(uuid.ptr, uuid.length, &err);
+        indexer_base_db.delete_document(uuid.ptr, uuid.length, &err);
 
         counter++;
 
@@ -184,7 +185,7 @@ private class ThisContext
             if (trace_msg[ 212 ] == 1)
                 log.trace("commit delete..");
 
-            indexer_db.commit(&err);
+            indexer_base_db.commit(&err);
         }
     }
 
@@ -668,7 +669,7 @@ private class ThisContext
             }
             else
             {
-                indexer_db.replace_document(uuid.ptr, uuid.length, doc, &err);
+                indexer_base_db.replace_document(uuid.ptr, uuid.length, doc, &err);
             }
 
             if (counter % 100 == 0)
@@ -685,7 +686,7 @@ private class ThisContext
                 if (key2slot.length > 0)
                     store__key2slot(key2slot, tid_subject_manager);
 
-                indexer_db.commit(&err);
+                indexer_base_db.commit(&err);
                 indexer_system_db.commit(&err);
             }
 
@@ -726,6 +727,7 @@ void xapian_indexer(string thread_name)
 
     string db_path_base   = xapian_search_db_path[ "base" ];
     string db_path_system = xapian_search_db_path[ "system" ];
+    string db_path_deleted   = xapian_search_db_path[ "deleted" ];
 
     try
     {
@@ -743,6 +745,13 @@ void xapian_indexer(string thread_name)
     {
     }
 
+    try
+    {
+        mkdir(db_path_deleted);
+    }
+    catch (Exception ex)
+    {
+    }
     // /////////// XAPIAN INDEXER ///////////////////////////
     XapianStem stemmer = new_Stem(cast(char *)ictx.lang, cast(uint)ictx.lang.length, &err);
 
@@ -751,10 +760,23 @@ void xapian_indexer(string thread_name)
 
     //bool       is_exist_db = exists(xapian_search_db_path);
 
-    ictx.indexer_db = new_WritableDatabase(db_path_base.ptr, cast(uint)db_path_base.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
+    ictx.indexer_base_db = new_WritableDatabase(db_path_base.ptr, cast(uint)db_path_base.length, DB_CREATE_OR_OPEN, xapian_db_type, &err);
     if (err == 0)
     {
         ictx.indexer_system_db = new_WritableDatabase(db_path_system.ptr, cast(uint)db_path_system.length, DB_CREATE_OR_OPEN,
+                                                      xapian_db_type, &err);
+        if (err != 0)
+        {
+            writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
+
+            receive((Tid tid_response_reciever)
+                    {
+                        send(tid_response_reciever, false);
+                    });
+            return;
+        }
+
+        ictx.indexer_deleted_db = new_WritableDatabase(db_path_deleted.ptr, cast(uint)db_path_deleted.length, DB_CREATE_OR_OPEN,
                                                       xapian_db_type, &err);
         if (err != 0)
         {
@@ -771,13 +793,13 @@ void xapian_indexer(string thread_name)
     ictx.indexer = new_TermGenerator(&err);
     ictx.indexer.set_stemmer(stemmer, &err);
 
-    ictx.indexer_db.commit(&err);
+    ictx.indexer_base_db.commit(&err);
     ictx.indexer_system_db.commit(&err);
 
-    //ictx.xapian_enquire = ictx.indexer_db.new_Enquire(&err);
+    //ictx.xapian_enquire = ictx.indexer_base_db.new_Enquire(&err);
     //ictx.xapian_qp      = new_QueryParser(&err);
     //ictx.xapian_qp.set_stemmer(stemmer, &err);
-    //ictx.xapian_qp.set_database(ictx.indexer_db, &err);
+    //ictx.xapian_qp.set_database(ictx.indexer_base_db, &err);
 
 
     // SEND ready
@@ -823,12 +845,12 @@ void xapian_indexer(string thread_name)
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
 
-                        ictx.indexer_db.commit(&err);
+                        ictx.indexer_base_db.commit(&err);
                         ictx.indexer_system_db.commit(&err);
 
                         if (cmd == CMD.BACKUP)
                         {
-                            string new_path_backup_xapian = dbs_backup ~ "/" ~ msg ~ "/" ~ "xapian-search";
+                            string new_path_backup_xapian = dbs_backup ~ "/" ~ msg ~ "/" ~ xapian_search_db_path[ "base" ];
 
                             try
                             {
@@ -878,7 +900,7 @@ void xapian_indexer(string thread_name)
                                 log.trace("store__key2slot #2");
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
-                        ictx.indexer_db.commit(&err);
+                        ictx.indexer_base_db.commit(&err);
                         ictx.indexer_system_db.commit(&err);
 
                         ictx.last_counter_after_timed_commit = ictx.counter;
@@ -890,7 +912,7 @@ void xapian_indexer(string thread_name)
                     },
                     (CMD cmd, string msg)
                     {
-                        //writeln (cast(void*)indexer_db, " @1 cmd=", cmd, ", msg: ", msg);
+                        //writeln (cast(void*)indexer_base_db, " @1 cmd=", cmd, ", msg: ", msg);
                         if (cmd == CMD.COMMIT)
                         {
                             //writeln ("@@ COMMIT");
@@ -907,12 +929,12 @@ void xapian_indexer(string thread_name)
                                     ictx.last_size_key2slot = ictx.key2slot.length;
                                 }
 
-                                ictx.indexer_db.commit(&err);
+                                ictx.indexer_base_db.commit(&err);
                                 ictx.indexer_system_db.commit(&err);
 //                            printf("ok\n");
 
-                                //indexer_db.close (&err);
-                                //indexer_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
+                                //indexer_base_db.close (&err);
+                                //indexer_base_db = new_WritableDatabase(xapian_search_db_path.ptr, xapian_search_db_path.length, DB_CREATE_OR_OPEN, &err);
                                 ictx.last_counter_after_timed_commit = ictx.counter;
                                 send(ictx.key2slot_accumulator, CMD.PUT, CNAME.LAST_UPDATE_TIME, "");
                             }

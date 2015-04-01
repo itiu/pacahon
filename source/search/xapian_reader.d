@@ -115,7 +115,6 @@ class XapianReader : SearchReader
     this(Context _context)
     {
         context = _context;
-        //open_db();
     }
 
     private string dummy;
