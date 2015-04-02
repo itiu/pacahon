@@ -263,10 +263,10 @@ extern (C)raptor_iostream * raptor_new_iostream_to_string(raptor_world * world, 
                                                                                                                                    size_t size));
 extern (C) int raptor_term_escaped_write(raptor_term *term, uint flags, raptor_iostream *iostr);
 extern (C) void raptor_free_iostream(raptor_iostream *iostr);
-extern (C) void raptor_free_parser(raptor_parser* parser);
+extern (C) void raptor_free_parser(raptor_parser *parser);
 extern (C) void raptor_free_uri(raptor_uri *uri);
 extern (C) void raptor_free_memory(void *ptr);
-extern (C) void raptor_free_world(raptor_world* world);
+extern (C) void raptor_free_world(raptor_world *world);
 
 
 
