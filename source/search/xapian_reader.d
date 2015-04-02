@@ -4,7 +4,7 @@
 
 module search.xapian_reader;
 
-import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
+import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file, std.container.slist;
 
 import bind.xapian_d_header;
 import util.utils, util.cbor;
@@ -28,7 +28,7 @@ protected byte err;
 interface SearchReader
 {
     public int get(Ticket *ticket, string str_query, string str_sort, string db_names, int count_authorize,
-                   void delegate(string uri) add_out_element);
+                   void delegate(string uri) add_out_element, bool inner_get);
 
     public void reopen_db();
 }
@@ -94,36 +94,94 @@ class Database_QueryParser
 
 class XapianReader : SearchReader
 {
-    private               Database_QueryParser[ string[] ]      using_dbqp;
+    private                 Database_QueryParser[ string[] ]      using_dbqp;
 
-    private               XapianDatabase[ string ]              opened_db;
+    private                 XapianDatabase[ string ]              opened_db;
 
-    private XapianStem    xapian_stemmer;
-    private string        xapian_lang = "russian";
-    private XapianEnquire xapian_enquire;
+    private XapianStem      xapian_stemmer;
+    private string          xapian_lang = "russian";
+    private XapianEnquire   xapian_enquire;
 
-    private Context       context;
+    private Context         context;
+    private IndexerProperty iproperty;
 
     this(Context _context)
     {
-        context = _context;
+        context   = _context;
+        iproperty = new IndexerProperty(context);
     }
 
     private string dummy;
     private double d_dummy;
 
-    public int get(Ticket *ticket, string str_query, string str_sort, string db_names, int count_authorize,
-                   void delegate(string uri) add_out_element)
+    string getDatabasesOfClass(TTA tta, ref bool[ string ] databasenames, IndexerProperty iproperty)
+    {
+        if (tta is null)
+            return null;
+
+        string ll = getDatabasesOfClass(tta.L, databasenames, iproperty);
+        string rr = getDatabasesOfClass(tta.R, databasenames, iproperty);
+
+        if (ll !is null && rr !is null)
+        {
+            if (ll == "rdf:type")
+            {
+                string dbn = iproperty.get_dbname_of_class(rr);
+                databasenames[ dbn ] = false;
+            }
+        }
+
+        return tta.op;
+    }
+
+
+    public int get(Ticket *ticket, string str_query, string str_sort, string _db_names, int count_authorize,
+                   void delegate(string uri) add_out_element, bool inner_get)
     {
         context.check_for_reload("search", &reopen_db);
 
         int[ string ] key2slot = context.get_key2slot();
         //writeln ("@key2slot=", key2slot);
 
-        Database_QueryParser db_qp = get_dbqp(db_names);
+        XapianQuery query;
+        TTA         tta = parse_expr(str_query);
 
-        XapianQuery          query;
-        TTA                  tta = parse_expr(str_query);
+        string[]    db_names;
+
+        if (_db_names is null)
+        {
+            // если не указанны базы данных, то попробуем определить их из текста запроса
+
+            if (inner_get == false)
+                iproperty.load();
+
+            {
+                bool[ string ] databasenames = iproperty.get_dbnames();
+
+                getDatabasesOfClass(tta, databasenames, iproperty);
+
+                foreach (key, value; databasenames)
+                {
+                    if (value == false)
+                        db_names ~= key;
+                }
+            }
+        }
+        else
+        {
+            db_names = split(_db_names, ',');
+            int idx = 0;
+            foreach (el; db_names)
+            {
+                if (el[ 0 ] == ' ' || el[ $ ] == ' ')
+                    db_names[ idx ] = strip(el);
+                idx++;
+            }
+        }
+
+        if (db_names.length == 0)
+            db_names = [ "base" ];
+
 
         if (trace_msg[ 321 ] == 1)
             log.trace("[%s][Q:%X] query [%s]", context.get_name(), cast(void *)str_query, str_query);
@@ -131,6 +189,7 @@ class XapianReader : SearchReader
         if (trace_msg[ 322 ] == 1)
             log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
+        Database_QueryParser db_qp = get_dbqp(db_names);
         transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
 
         if (query !is null)
@@ -186,23 +245,8 @@ class XapianReader : SearchReader
 
 ////////////////////////////////////////////////////////
 
-    Database_QueryParser get_dbqp(string _db_names)
+    Database_QueryParser get_dbqp(string[] db_names)
     {
-        string[] db_names;
-        if (_db_names !is null)
-        {
-            db_names = split(_db_names, ',');
-            int idx = 0;
-            foreach (el; db_names)
-            {
-                if (el[ 0 ] == ' ' || el[ $ ] == ' ')
-                    db_names[ idx ] = strip(el);
-                idx++;
-            }
-        }
-        else
-            db_names = [ "base" ];
-
         Database_QueryParser dbqp = using_dbqp.get(db_names, null);
 
         if (dbqp is null)

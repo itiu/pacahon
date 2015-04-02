@@ -69,7 +69,7 @@ class VQL
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
-                   ref immutable(Individual)[] individuals)
+                   ref immutable(Individual)[] individuals, bool inner_get = false)
     {
         int                       res_count;
 
@@ -86,13 +86,13 @@ class VQL
         }
         dg = &collect_subject;
 
-        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
+        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg, inner_get);
 
         return res_count;
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int render, int count_authorize,
-                   ref Individual[] individuals)
+                   ref Individual[] individuals, bool inner_get = false)
     {
         int                       res_count;
 
@@ -109,13 +109,13 @@ class VQL
         }
         dg = &collect_subject;
 
-        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
+        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg, inner_get);
 
         return res_count;
     }
 
     public int get(Ticket *ticket, string filter, string freturn, string sort, int count_authorize,
-                   ref immutable (string)[] ids)
+                   ref immutable (string)[] ids, bool inner_get = false)
     {
         int                       res_count;
 
@@ -126,12 +126,12 @@ class VQL
         }
         dg = &collect_subject;
 
-        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg);
+        res_count = xr.get(ticket, filter, freturn, sort, count_authorize, dg, inner_get);
 
         return res_count;
     }
 
-    public int get(Ticket *ticket, string query_str, ref Individual[] res)
+    public int get(Ticket *ticket, string query_str, ref Individual[] res, bool inner_get = false)
     {
         //		if (ticket !is null)
         //		writeln ("userId=", ticket.userId);
@@ -200,7 +200,7 @@ class VQL
             }
             dg = &collect_subject;
 
-            res_count = xr.get(ticket, found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg);
+            res_count = xr.get(ticket, found_sections[ FILTER ], found_sections[ RETURN ], sort, count_authorize, dg, inner_get);
         }
 
 //          sw.stop();
@@ -227,6 +227,7 @@ class VQL
         }
     }
  */
+
     private void split_on_section(string query)
     {
         section_is_found[] = false;

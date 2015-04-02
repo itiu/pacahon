@@ -5,7 +5,7 @@
 module search.indexer_property;
 
 private import pacahon.context, pacahon.log_msg;
-private import onto.onto, onto.resource, onto.lang, onto.individual;
+private import onto.resource, onto.lang, onto.individual;
 
 // ////// logger ///////////////////////////////////////////
 private import util.logger;
@@ -25,10 +25,16 @@ class IndexerProperty
     private         Individual[ string ] class_property__2__indiviual;
     private         string[ string ] class__2__database;
     private         Individual[ string ] uri__2__indiviual;
+    private         bool[ string ]  database__2__true;
 
     this(Context _context)
     {
         context = _context;
+    }
+
+    bool[ string ] get_dbnames()
+    {
+        return database__2__true.dup;
     }
 
     string get_dbname_of_class(string uri)
@@ -57,7 +63,7 @@ class IndexerProperty
         {
             Individual[] l_individuals;
             context.vql().reopen_db();
-            context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
+            context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals, true);
 
             foreach (indv; l_individuals)
             {
@@ -78,7 +84,8 @@ class IndexerProperty
                     if (indexed_to.length > 0)
                     {
 //                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
-                        class__2__database[ forClass.uri ] = indexed_to[ 0 ].get!string;
+                        class__2__database[ forClass.uri ]              = indexed_to[ 0 ].get!string;
+                        database__2__true[ indexed_to[ 0 ].get!string ] = true;
                     }
 
                     foreach (forProperty; forProperties)
@@ -91,6 +98,7 @@ class IndexerProperty
                     }
                 }
             }
+            database__2__true[ "base" ] = true;
         }
     }
 }
