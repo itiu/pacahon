@@ -204,7 +204,6 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                                                    xtr.length, &err);
                             if (err != 0)
                                 writeln("XAPIAN:transform_vql_to_xapian:parse_query2('x'=*) query='", query_str, "', xtr='", xtr, "'", err);
-
                         }
                         else
                         {

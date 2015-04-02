@@ -96,17 +96,93 @@ private void printTid(string tag)
     writefln("%s: %s, address: %s", tag, thisTid, &thisTid);
 }
 
-private class ThisContext
+class IndexerProperty
 {
-    Context context;
-    // Onto    onto;
-    Individual[ string ] class_property__2__indiviual;
-    bool[ string ] class__2__system;
-    Individual[ string ] uri__2__indiviual;
+    private Context context;
+
+    private         Individual[ string ] class_property__2__indiviual;
+    private         string[ string ] class__2__database;
+    private         Individual[ string ] uri__2__indiviual;
+
+    this(Context _context)
+    {
+        context = _context;
+    }
+
+    string get_dbname_of_class(string uri)
+    {
+        return class__2__database.get(uri, "base");
+    }
+
+    Individual get_index(string uri)
+    {
+        return uri__2__indiviual.get(uri, Individual.init);
+    }
+
+    Individual get_index(string uri, string predicate)
+    {
+        return class_property__2__indiviual.get(uri ~ predicate, Individual.init);
+    }
+
+    Individual get_index_of_property(string predicate)
+    {
+        return class_property__2__indiviual.get(predicate, Individual.init);
+    }
+
+    void load()
+    {
+        if (class_property__2__indiviual.length == 0)
+        {
+            Individual[] l_individuals;
+            context.vql().reopen_db();
+            context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
+
+            foreach (indv; l_individuals)
+            {
+                uri__2__indiviual[ indv.uri ] = indv;
+                Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
+                Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
+
+                Resources indexed_to = indv.resources.get("vdi:indexed_to", Resources.init);
+
+                if (forClasses.length == 0)
+                    forClasses ~= Resource.init;
+
+                if (forProperties.length == 0)
+                    forProperties ~= Resource.init;
+
+                foreach (forClass; forClasses)
+                {
+                    if (indexed_to.length > 0)
+                    {
+//                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
+                        class__2__database[ forClass.uri ] = indexed_to[ 0 ].get!string;
+                    }
+
+                    foreach (forProperty; forProperties)
+                    {
+                        string key = forClass.uri ~ forProperty.uri;
+                        class_property__2__indiviual[ key ] = indv;
+
+                        if (trace_msg[ 214 ] == 1)
+                            log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
+                    }
+                }
+            }
+        }
+    }
+}
+
+private class IndexerContext
+{
+    Context                context;
+
+    IndexerProperty        iproperty;
 
     XapianWritableDatabase indexer_base_db;
     XapianWritableDatabase indexer_system_db;
     XapianWritableDatabase indexer_deleted_db;
+
     XapianTermGenerator    indexer;
     string                 lang = "russian";
     LmdbStorage            inividuals_storage;
@@ -123,51 +199,6 @@ private class ThisContext
     Tid    key2slot_accumulator;
     string thread_name;
 
-    void get_index_onto()
-    {
-        if (context is null)
-            context = new PThreadContext(null, thread_name);
-
-        if (class_property__2__indiviual.length == 0)
-        {
-            Individual[] l_individuals;
-            context.vql().reopen_db();
-            context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals);
-
-            foreach (indv; l_individuals)
-            {
-                uri__2__indiviual[ indv.uri ] = indv;
-                Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
-                Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
-
-                Resources indexed_as_system = indv.resources.get("vdi:indexed_as_system", Resources.init);
-
-                if (forClasses.length == 0)
-                    forClasses ~= Resource.init;
-
-                if (forProperties.length == 0)
-                    forProperties ~= Resource.init;
-
-                foreach (forClass; forClasses)
-                {
-                    if (indexed_as_system.length > 0 && indexed_as_system[ 0 ] == true)
-                    {
-//                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
-                        class__2__system[ forClass.uri ] = true;
-                    }
-
-                    foreach (forProperty; forProperties)
-                    {
-                        string key = forClass.uri ~ forProperty.uri;
-                        class_property__2__indiviual[ key ] = indv;
-
-                        if (trace_msg[ 214 ] == 1)
-                            log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
-                    }
-                }
-            }
-        }
-    }
 
     void delete_msg(string msg)
     {
@@ -191,7 +222,14 @@ private class ThisContext
 
     void index_msg(string msg)
     {
-        get_index_onto();
+        if (iproperty is null)
+        {
+            if (context is null)
+                context = new PThreadContext(null, thread_name);
+            iproperty = new IndexerProperty(context);
+        }
+
+        iproperty.load();
 
         counter++;
 
@@ -351,8 +389,7 @@ private class ThisContext
                                     {
                                         //writeln (tab, "@@@5.0 value = ", value);
                                         // ссылка на наследуемый индекс, переходим вниз
-                                        Individual inhr_idx =
-                                            uri__2__indiviual.get(value.uri, Individual.init);
+                                        Individual inhr_idx = iproperty.get_index(value.uri);
                                         //writeln (tab, "@@@5.1 inhr_idx = ", inhr_idx);
                                         if (inhr_idx != Individual.init)
                                         {
@@ -433,8 +470,7 @@ private class ThisContext
                             {
                                 // в онтологии найти для данного класса и для данного предиката
                                 // информацию об индексировании
-                                Individual idx = class_property__2__indiviual.get(_type.uri ~ predicate,
-                                                                                  Individual.init);
+                                Individual idx = iproperty.get_index(_type.uri, predicate);
                                 if (idx != Individual.init)
                                 {
                                     //writeln("@@@A class= ", _type.uri, ", predicate=", predicate);
@@ -445,7 +481,7 @@ private class ThisContext
                                 }
                                 else
                                 {
-                                    idx = class_property__2__indiviual.get(predicate, Individual.init);
+                                    idx = iproperty.get_index_of_property(predicate);
 
                                     if (idx != Individual.init)
                                     {
@@ -655,14 +691,15 @@ private class ThisContext
             doc.set_data(indv.uri.ptr, indv.uri.length, &err);
 
             // используем информацию о типе
-            bool as_system = false;
+            string dbname = "base";
             foreach (_type; types)
             {
-                if (class__2__system.get(_type.uri, false) == true)
-                    as_system = true;
+                dbname = iproperty.get_dbname_of_class(_type.uri);
+                if (dbname != "base")
+                    break;
             }
 
-            if (as_system == true)
+            if (dbname == "system")
             {
                 indexer_system_db.replace_document(uuid.ptr, uuid.length, doc, &err);
                 //writeln ("as system ",  uuid);
@@ -705,7 +742,7 @@ void xapian_indexer(string thread_name)
         log.trace("ERR! indexer thread dead (exit)");
     }
 
-    ThisContext ictx = new ThisContext;
+    IndexerContext ictx = new IndexerContext;
     ictx.thread_name = thread_name;
     // //////////////////////////////////
 
@@ -725,9 +762,9 @@ void xapian_indexer(string thread_name)
     {
     }
 
-    string db_path_base   = xapian_search_db_path[ "base" ];
-    string db_path_system = xapian_search_db_path[ "system" ];
-    string db_path_deleted   = xapian_search_db_path[ "deleted" ];
+    string db_path_base    = xapian_search_db_path[ "base" ];
+    string db_path_system  = xapian_search_db_path[ "system" ];
+    string db_path_deleted = xapian_search_db_path[ "deleted" ];
 
     try
     {
@@ -777,7 +814,7 @@ void xapian_indexer(string thread_name)
         }
 
         ictx.indexer_deleted_db = new_WritableDatabase(db_path_deleted.ptr, cast(uint)db_path_deleted.length, DB_CREATE_OR_OPEN,
-                                                      xapian_db_type, &err);
+                                                       xapian_db_type, &err);
         if (err != 0)
         {
             writeln("!!!!!!! Err in new_WritableDatabase, err=", err);
