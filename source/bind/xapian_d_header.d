@@ -460,3 +460,69 @@ void destroy_MultiValueKeyMaker(XapianMultiValueKeyMaker sorter);
 /// -
 void destroy_Database(XapianDatabase db);
 }
+
+class XapianError : Exception
+{
+    byte code = 0;
+
+    this(byte _code, string msg, string file = __FILE__, size_t line = __LINE__, Throwable next = null)
+    {
+        super(msg, file, line, next);
+        code = _code;
+    }
+
+    string get_xapian_msg()
+    {
+        return xapian_msg_code.get(code, "Unknown");
+    }
+}
+
+private string[ byte ] xapian_msg_code;
+
+static this()
+{
+    xapian_msg_code =
+    [
+        -1:"DatabaseModifiedError",
+        -2:"DatabaseLockError"
+        ,
+        -3:"LogicError"
+        ,
+        -4:"AssertionError"
+        ,
+        -5:"InvalidArgumentError"
+        ,
+        -6:"InvalidOperationError"
+        ,
+        -7:"UnimplementedError"
+        ,
+        -8:"RuntimeError"
+        ,
+        -9:"DatabaseError"
+        ,
+        -10:"DatabaseCorruptError"
+        ,
+        -11:"DatabaseCreateError"
+        ,
+        -12:"DatabaseOpeningError"
+        ,
+        -13:"DatabaseVersionError"
+        ,
+        -14:"DocNotFoundError"
+        ,
+        -15:"FeatureUnavailableError"
+        ,
+        -16:"InternalError"
+        ,
+        -17:"NetworkError"
+        ,
+        -18:"NetworkTimeoutError"
+        ,
+        -19:"QueryParserError"
+        ,
+        -20:"RangeError"
+        ,
+        -21:"SerialisationError"
+    ];
+}
+

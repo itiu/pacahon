@@ -190,7 +190,14 @@ class XapianReader : SearchReader
             log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
         Database_QueryParser db_qp = get_dbqp(db_names);
-        transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
+        try
+        {
+            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
+        }
+        catch (XapianError ex)
+        {
+            writeln("ERR:", ex.msg, ", ", ex.get_xapian_msg());
+        }
 
         if (query !is null)
         {

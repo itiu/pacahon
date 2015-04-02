@@ -159,8 +159,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                     string       uid = "uid_" ~ to_lower_and_replace_delimeters(rs);
                     query = qp.parse_query(cast(char *)uid, uid.length, flags, &err);
                     if (err != 0)
-                        writeln("XAPIAN:transform_vql_to_xapian:parse_query1(@)", err);
-                    //writeln ("uid=", uid);
+                        throw new XapianError(err, "parse_query1 query=" ~ uid);
                 }
                 else
                 {
@@ -203,7 +202,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                             query = qp.parse_query(cast(char *)query_str, query_str.length, flags, cast(char *)xtr,
                                                    xtr.length, &err);
                             if (err != 0)
-                                writeln("XAPIAN:transform_vql_to_xapian:parse_query2('x'=*) query='", query_str, "', xtr='", xtr, "'", err);
+                                throw new XapianError(err, cast(string)("parse_query2('x'=*) query='" ~ query_str ~ "', xtr='" ~ xtr ~ "'"));
                         }
                         else
                         {
@@ -262,7 +261,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                             }
 
                             if (err != 0)
-                                writeln("XAPIAN:transform_vql_to_xapian:parse_query3('x'=x) '", xtr, "'", err);
+                                writeln("XAPIAN:transform_vql_to_xapian:parse_query3('x'=x) '", xtr, "'");
                         }
                     }
                 }
@@ -288,14 +287,15 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                     }
 
                     query = qp.parse_query(cast(char *)xtr, xtr.length, flags, &err);
+
                     if (err != 0)
-                        writeln("XAPIAN:transform_vql_to_xapian:parse_query4('*'=*) '", xtr, "'", err);
+                        throw new XapianError(err, "parse_query4('*'=*) '" ~ xtr ~ "'");
                 }
                 else
                 {
                     query = qp.parse_query(cast(char *)xtr, xtr.length, &err);
                     if (err != 0)
-                        writeln("XAPIAN:transform_vql_to_xapian:parse_query5('*'=x) '", xtr, "'", err);
+                        throw new XapianError(err, "parse_query5('*'=x) '" ~ xtr ~ "'");
                 }
             }
         }
