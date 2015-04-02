@@ -7,16 +7,9 @@ module search.xapian_reader;
 import std.concurrency, std.outbuffer, std.datetime, std.conv, std.typecons, std.stdio, std.string, std.file;
 
 import bind.xapian_d_header;
-import util.utils;
-import util.cbor;
-
-import pacahon.define;
-import pacahon.know_predicates;
-import pacahon.context;
-import pacahon.log_msg;
-
-import search.vel;
-import search.xapian_vql;
+import util.utils, util.cbor;
+import pacahon.define, pacahon.know_predicates, pacahon.context, pacahon.log_msg;
+import search.vel, search.xapian_vql, search.indexer_property;
 
 // ////// logger ///////////////////////////////////////////
 import util.logger;
@@ -28,7 +21,6 @@ logger log()
     return _log;
 }
 // ////// ////// ///////////////////////////////////////////
-
 
 protected byte err;
 
