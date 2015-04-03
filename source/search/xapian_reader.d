@@ -189,45 +189,69 @@ class XapianReader : SearchReader
         if (trace_msg[ 322 ] == 1)
             log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
-        Database_QueryParser db_qp = get_dbqp(db_names);
-        try
+        Database_QueryParser db_qp         = get_dbqp(db_names);
+        
+        int                  state         = -1;
+        int                  attempt_count = 1;
+
+        while (state < 0)
         {
-            transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
+            try
+            {
+                transform_vql_to_xapian(tta, "", dummy, dummy, query, key2slot, d_dummy, 0, db_qp.qp);
+                state = 0;
+            }
+            catch (XapianError ex)
+            {
+                state = ex.code;
+            }
+
+            if (state < 0)
+            {
+                attempt_count++;
+                if (attempt_count > 10)
+                {
+                    query = null;
+                    break;
+                }
+
+                reopen_db();
+                log.trace("[%s][Q:%X] transform_vql_to_xapian, attempt=%d",
+                          context.get_name(), cast(void *)str_query,
+                          attempt_count);
+            }
         }
-        catch (XapianError ex)
-        {
-            writeln("ERR:", ex.msg, ", ", ex.get_xapian_msg());
-        }
+
+        if (trace_msg[ 323 ] == 1)
+            log.trace("[%s][Q:%X] xapian query [%s]", context.get_name(), cast(void *)str_query, get_query_description(query));
 
         if (query !is null)
         {
-            if (trace_msg[ 323 ] == 1)
-                log.trace("[%s][Q:%X] xapian query [%s]", context.get_name(), cast(void *)str_query, get_query_description(query));
-
             xapian_enquire = db_qp.db.new_Enquire(&err);
 
             XapianMultiValueKeyMaker sorter = get_sorter(str_sort, key2slot);
 
-            int                      state         = -1;
-            int                      attempt_count = 1;
-            while (state == -1)
+            xapian_enquire.set_query(query, &err);
+            if (sorter !is null)
             {
-                state = exec_xapian_query_and_queue_authorize(ticket, query, sorter, xapian_enquire, count_authorize, add_out_element,
+                xapian_enquire.set_sort_by_key(sorter, true, &err);
+            }
+
+            state = -1;
+            while (state < 0)
+            {
+                state = exec_xapian_query_and_queue_authorize(ticket, xapian_enquire, count_authorize, add_out_element,
                                                               context);
-                if (state == -1)
+                if (state < 0)
                 {
                     attempt_count++;
+                    if (attempt_count > 10)
+                        break;
+
                     reopen_db();
                     log.trace("[%s][Q:%X] exec_xapian_query_and_queue_authorize, attempt=%d",
                               context.get_name(), cast(void *)str_query,
                               attempt_count);
-
-                    if (attempt_count > 10)
-                        break;
-
-                    //close_db();
-                    //open_db();
-                    //xapian_enquire = xapian_base_db.new_Enquire(&err);
                 }
             }
 

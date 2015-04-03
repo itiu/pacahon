@@ -453,7 +453,7 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
     return null;
 }
 
-public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery query, XapianMultiValueKeyMaker sorter,
+public int exec_xapian_query_and_queue_authorize(Ticket *ticket,
                                                  XapianEnquire xapian_enquire,
                                                  int count_authorize,
                                                  void delegate(string uri) add_out_element,
@@ -463,18 +463,9 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     StopWatch sw;
 
     if (trace_msg[ 200 ] == 1)
-    {
-        log.trace("[%X] query=%s", cast(void *)query, get_query_description(query));
-        sw.start();
-    }
+        sw.start;
 
     byte err;
-
-    xapian_enquire.set_query(query, &err);
-    if (sorter !is null)
-    {
-        xapian_enquire.set_sort_by_key(sorter, true, &err);
-    }
 
     //writeln (cast(void*)xapian_enquire, " count_authorize=", count_authorize);
     XapianMSet matches = xapian_enquire.get_mset(0, count_authorize, &err);
@@ -485,7 +476,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
     }
 
     if (trace_msg[ 200 ] == 1)
-        log.trace("[%X] found =%d, @matches =%d", cast(void *)query, matches.get_matches_estimated(&err), matches.size(&err));
+        log.trace("found =%d, @matches =%d", matches.get_matches_estimated(&err), matches.size(&err));
 
     //writeln ("@b1 ", context.get_name);
     if (matches !is null)
@@ -508,7 +499,6 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
 
             string subject_id = cast(immutable)data_str[ 0..*data_len ].dup;
 
-
             if (trace_msg[ 201 ] == 1)
                 log.trace("subject_id:%s", subject_id);
 
@@ -525,15 +515,13 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket, XapianQuery que
         {
             sw.stop();
             long t = cast(long)sw.peek().usecs;
-            log.trace("[%X] authorized:%d, total time execute query: %s µs", cast(void *)query, read_count, text(t));
+            log.trace("authorized:%d, total time execute query: %s µs", read_count, text(t));
         }
 
         destroy_MSetIterator(it);
         destroy_MSet(matches);
     }
-    //writeln ("@e1 ", context.get_name);
-
-//    writeln ("@ read_count=", read_count);
+    
     return read_count;
 }
 
