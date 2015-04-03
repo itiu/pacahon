@@ -148,24 +148,23 @@ class XapianReader : SearchReader
 
         string[]    db_names;
 
-        if (_db_names is null)
+        if (_db_names is null || _db_names.length == 0)
         {
             // если не указанны базы данных, то попробуем определить их из текста запроса
 
             if (inner_get == false)
                 iproperty.load();
+            
+            bool[ string ] databasenames = iproperty.get_dbnames();
 
+            getDatabasesOfClass(tta, databasenames, iproperty);
+
+            foreach (key, value; databasenames)
             {
-                bool[ string ] databasenames = iproperty.get_dbnames();
-
-                getDatabasesOfClass(tta, databasenames, iproperty);
-
-                foreach (key, value; databasenames)
-                {
-                    if (value == false)
-                        db_names ~= key;
-                }
+            	if (value == false)
+                	db_names ~= key;
             }
+            
         }
         else
         {

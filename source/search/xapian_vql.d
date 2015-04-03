@@ -32,7 +32,7 @@ public XapianMultiValueKeyMaker get_sorter(string sort, ref int[ string ] key2sl
 {
     XapianMultiValueKeyMaker sorter;
 
-    if (sort != null)
+    if (sort !is null && sort.length > 0)
     {
         sorter = new_MultiValueKeyMaker(&err);
         foreach (field; split(sort, ","))
