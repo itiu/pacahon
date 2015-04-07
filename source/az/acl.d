@@ -184,7 +184,8 @@ class Authorization : LmdbStorage
         string  str;
         int     rc;
 
-        context.check_for_reload("search", &reopen_db);
+//        context.check_for_reload("search", &reopen_db);
+        context.ft_check_for_reload(&reopen_db);
 
         rc = mdb_txn_begin(env, null, MDB_RDONLY, &txn_r);
         if (rc == MDB_BAD_RSLOT)
