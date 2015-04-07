@@ -138,7 +138,9 @@ class XapianReader : SearchReader
     public int get(Ticket *ticket, string str_query, string str_sort, string _db_names, int count_authorize,
                    void delegate(string uri) add_out_element, bool inner_get)
     {
-        context.check_for_reload("search", &reopen_db);
+//        context.check_for_reload("search", &reopen_db);
+
+        context.ft_check_for_reload(&reopen_db);
 
         int[ string ] key2slot = context.get_key2slot();
         //writeln ("@key2slot=", key2slot);
@@ -154,17 +156,16 @@ class XapianReader : SearchReader
 
             if (inner_get == false)
                 iproperty.load();
-            
+
             bool[ string ] databasenames = iproperty.get_dbnames();
 
             getDatabasesOfClass(tta, databasenames, iproperty);
 
             foreach (key, value; databasenames)
             {
-            	if (value == false)
-                	db_names ~= key;
+                if (value == false)
+                    db_names ~= key;
             }
-            
         }
         else
         {
@@ -188,8 +189,8 @@ class XapianReader : SearchReader
         if (trace_msg[ 322 ] == 1)
             log.trace("[%s][Q:%X] TTA [%s]", context.get_name(), cast(void *)str_query, tta.toString());
 
-        Database_QueryParser db_qp         = get_dbqp(db_names);
-        
+        Database_QueryParser db_qp = get_dbqp(db_names);
+
         int                  state         = -1;
         int                  attempt_count = 1;
 
@@ -336,6 +337,7 @@ class XapianReader : SearchReader
 
     public void reopen_db()
     {
+        //writeln ("@REOPEN");
         foreach (el; using_dbqp.values)
         {
             el.db.reopen(&err);

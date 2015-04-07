@@ -140,7 +140,7 @@ private class IndexerContext
             if (trace_msg[ 212 ] == 1)
                 log.trace("commit delete..");
 
-            indexer_base_db.commit(&err);
+            commit_all_db();
         }
     }
 
@@ -647,8 +647,7 @@ private class IndexerContext
                 if (key2slot.length > 0)
                     store__key2slot(key2slot, tid_subject_manager);
 
-                indexer_base_db.commit(&err);
-                indexer_system_db.commit(&err);
+                commit_all_db();
             }
 
             destroy_Document(doc);
@@ -656,6 +655,16 @@ private class IndexerContext
 
         if (trace_msg[ 221 ] == 1)
             log.trace("index end");
+    }
+
+    private int prev_counter = 0;
+    void commit_all_db()
+    {
+        indexer_base_db.commit(&err);
+        indexer_system_db.commit(&err);
+
+        inc_count_indexed(counter - prev_counter);
+        prev_counter = counter;
     }
 }
 
@@ -754,8 +763,7 @@ void xapian_indexer(string thread_name)
     ictx.indexer = new_TermGenerator(&err);
     ictx.indexer.set_stemmer(stemmer, &err);
 
-    ictx.indexer_base_db.commit(&err);
-    ictx.indexer_system_db.commit(&err);
+    ictx.commit_all_db();
 
     //ictx.xapian_enquire = ictx.indexer_base_db.new_Enquire(&err);
     //ictx.xapian_qp      = new_QueryParser(&err);
@@ -806,8 +814,7 @@ void xapian_indexer(string thread_name)
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
 
-                        ictx.indexer_base_db.commit(&err);
-                        ictx.indexer_system_db.commit(&err);
+                        ictx.commit_all_db();
 
                         if (cmd == CMD.BACKUP)
                         {
@@ -861,8 +868,7 @@ void xapian_indexer(string thread_name)
                                 log.trace("store__key2slot #2");
                             ictx.last_size_key2slot = ictx.key2slot.length;
                         }
-                        ictx.indexer_base_db.commit(&err);
-                        ictx.indexer_system_db.commit(&err);
+                        ictx.commit_all_db();
 
                         ictx.last_counter_after_timed_commit = ictx.counter;
 
@@ -890,8 +896,7 @@ void xapian_indexer(string thread_name)
                                     ictx.last_size_key2slot = ictx.key2slot.length;
                                 }
 
-                                ictx.indexer_base_db.commit(&err);
-                                ictx.indexer_system_db.commit(&err);
+                                ictx.commit_all_db();
 //                            printf("ok\n");
 
                                 //indexer_base_db.close (&err);

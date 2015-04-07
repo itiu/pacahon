@@ -521,7 +521,7 @@ public int exec_xapian_query_and_queue_authorize(Ticket *ticket,
         destroy_MSetIterator(it);
         destroy_MSet(matches);
     }
-    
+
     return read_count;
 }
 

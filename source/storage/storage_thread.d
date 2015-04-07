@@ -129,6 +129,8 @@ public void individuals_manager(string thread_name, string db_path)
                                         string new_hash;
                                         EVENT ev = storage.update_or_create(msg, new_hash);
 
+                                        inc_count_put();
+
                                         send(tid_response_reciever, ev, thisTid);
                                         long now = Clock.currTime().stdTime();
                                         OutBuffer oub = new OutBuffer();

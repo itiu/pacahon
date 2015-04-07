@@ -51,8 +51,8 @@ const string acl_indexes_db_path = "./data/acl-indexes";
 public const string[ string ] xapian_search_db_path;
 static this()
 {
-    xapian_search_db_path = 
-    	[ "base":"data/xapian-search-base", "system":"data/xapian-search-system", "deleted":"data/xapian-search-deleted" ];
+    xapian_search_db_path =
+    [ "base":"data/xapian-search-base", "system":"data/xapian-search-system", "deleted":"data/xapian-search-deleted" ];
 }
 
 public const string xapian_metadata_doc_id = "ItIsADocumentContainingTheNameOfTheFieldTtheNumberOfSlots";

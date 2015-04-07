@@ -36,6 +36,9 @@ string g_str_script_out;
 /// реализация интерфейса Context
 class PThreadContext : Context
 {
+    int local_count_put;
+    int local_count_indexed;
+
     bool[ P_MODULE ] is_traced_module;
 
     private Ticket *[ string ] user_of_ticket;
@@ -102,6 +105,9 @@ class PThreadContext : Context
 
         onto = new Onto(this);
         onto.load();
+
+        local_count_put     = get_count_put();
+        local_count_indexed = get_count_indexed();
     }
 
     public Onto get_onto()
@@ -437,6 +443,28 @@ class PThreadContext : Context
         if (trace_msg[ 19 ] == 1)
             log.trace("[%s] SET RELOAD LOCAL SIGNAL [%s], signal.time_update=%d", name, interthread_signal_id,
                       signal.time_update);
+    }
+
+    long local_time_check_indexed = 0;
+    public bool ft_check_for_reload(void delegate() load)
+    {
+        long now = Clock.currStdTime() / 10000000;
+
+        if (now - local_time_check_indexed > timeout)
+        {
+            int count_indexed = get_count_indexed();
+            //writeln ("@count_indexed=", count_indexed);
+            //writeln ("@local_count_indexed=", local_count_indexed);
+
+            if (count_indexed - local_count_indexed > 0)
+            {
+                local_time_check_indexed = now;
+                local_count_indexed      = count_indexed;
+                load();
+                return true;
+            }
+        }
+        return false;
     }
 
     public bool check_for_reload(string interthread_signal_id, void delegate() load)

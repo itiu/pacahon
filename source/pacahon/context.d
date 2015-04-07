@@ -178,6 +178,7 @@ interface Context
 
 //    void store_subject(Subject ss, bool prepareEvents = true);
     public bool check_for_reload(string interthread_signal_id, void delegate() load);
+    public bool ft_check_for_reload(void delegate() load);
 
 //    /////////////////////////////////////////// <- oykumena -> ///////////////////////////////////////////////
 
@@ -381,4 +382,30 @@ interface Context
        Возобновить прием операций записи на выполнение
      */
     public void unfreeze();
+}
+
+import core.atomic;
+
+private shared int count_put = 0;
+
+public void inc_count_put(int delta = 1)
+{
+    atomicOp !"+=" (count_put, delta);
+}
+
+public int get_count_put()
+{
+    return atomicOp !"+" (count_put, 0);
+}
+
+private shared int count_indexed = 0;
+
+public void inc_count_indexed(int delta = 1)
+{
+    atomicOp !"+=" (count_indexed, delta);
+}
+
+public int get_count_indexed()
+{
+    return atomicOp !"+" (count_indexed, 0);
 }
