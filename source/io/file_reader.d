@@ -7,20 +7,9 @@ import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
 import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.path, std.utf, std.stdio : writeln;
 
 import type;
-import util.container;
-import util.cbor;
-import util.utils;
-import util.logger;
-import util.raptor2individual;
-
-import onto.individual;
-import onto.resource;
-
-import pacahon.context;
-import pacahon.thread_context;
-import pacahon.define;
-import pacahon.know_predicates;
-import pacahon.log_msg;
+import util.container, util.cbor, util.utils, util.logger, util.raptor2individual;
+import onto.individual, onto.resource;
+import pacahon.context, pacahon.thread_context, pacahon.define, pacahon.know_predicates, pacahon.log_msg;
 
 logger log;
 
@@ -87,45 +76,45 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             }
         }
 
-        Individual *[ string ][ string ] list_of_fn;
+        Individual *[ string ][ string ] list_of_fln;
 
-        foreach (fn; files_to_load)
+        foreach (fln; files_to_load)
         {
             if (trace_msg[ 29 ] == 1)
-                log.trace("load file=%s", fn);
+                log.trace("load file=%s", fln);
 
-            log.trace("prepare_file %s", fn);
+            log.trace("prepare_file %s", fln);
 
-            list_of_fn[ fn ] = ttl2individuals(fn, context);
+            list_of_fln[ fln ] = ttl2individuals(fln, context);
         }
+
+        // set order
+        Individual *[][] ordered_list = (Individual *[][]).init;
 
         // load index onto
-        foreach (key, value; list_of_fn)
-        {
-            Individual *[ string ] individuals = value;
-
+        foreach (key, individuals; list_of_fln)
             if (individuals.get("vdi:", null) !is null)
-                prepare_list(individuals.values, context);
-        }
+                ordered_list ~= individuals.values;
 
         // load admin onto
-        foreach (key, value; list_of_fn)
-        {
-            Individual *[ string ] individuals = value;
-
+        foreach (key, individuals; list_of_fln)
             if (individuals.get("v-a:", null) !is null)
-                prepare_list(individuals.values, context);
-        }
+                ordered_list ~= individuals.values;
 
         // load other onto
-        foreach (key, value; list_of_fn)
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("v-a:", null) is null && individuals.get("vdi:", null) is null && individuals.get("td:", null) is null)
+                ordered_list ~= individuals.values;
+
+        // load other test-data
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("td:", null) !is null)
+                ordered_list ~= individuals.values;
+
+        foreach (value; ordered_list)
         {
-            Individual *[ string ] individuals = value;
-
-            if (individuals.get("v-a:", null) is null && individuals.get("vdi:", null) is null)
-                prepare_list(individuals.values, context);
+            prepare_list(value, context);
         }
-
 
         core.thread.Thread.sleep(dur!("seconds")(30));
     }
