@@ -397,7 +397,11 @@ void acl_manager(string thread_name, string db_path)
                     if (cmd == CMD.STORE)
                     {
                         Individual ind;
-                        cbor2individual(&ind, msg);
+                        if (cbor2individual(&ind, msg) < 0)
+                        {
+                            log.trace("!ERR:invalid individual: [%s]", msg);
+                            return;
+                        }
 
                         Resources rdfType = ind.resources[ rdf__type ];
 
@@ -537,14 +541,6 @@ void acl_manager(string thread_name, string db_path)
                         {
                             send(tid_response_reciever, "");
                         }
-                    }
-                    else if (cmd == CMD.AUTHORIZE)
-                    {
-//                            writeln ("is AUTHORIZE msg=[", msg, "]");
-                        Individual ind;
-                        cbor2individual(&ind, msg);
-
-                        send(tid_response_reciever, msg, thisTid);
                     }
                     else
                     {

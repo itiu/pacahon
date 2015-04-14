@@ -179,8 +179,11 @@ public class LmdbStorage
         // TODO не оптимально!
         Individual ind;
 
-        cbor2individual(&ind, cbor);
-        return update_or_create(ind.uri, cbor, new_hash);
+        if (cbor2individual(&ind, cbor) > 0)
+            return update_or_create(ind.uri, cbor, new_hash);
+        else
+            log.trace("!ERR:invalid individual=%s", cbor);
+        return EVENT.ERROR;
     }
 
     public EVENT update_or_create(Individual *ind, out string new_hash)
@@ -541,7 +544,12 @@ public class LmdbStorage
         string     str = find(uri);
 
         if (str !is null)
-            cbor2individual(&ind, str);
+        {
+            if (cbor2individual(&ind, str) < 0)
+            {
+                log.trace("!ERR:invalid individual=", uri);
+            }
+        }
         return ind;
     }
 }

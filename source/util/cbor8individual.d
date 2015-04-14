@@ -281,7 +281,7 @@ public int cbor2individual(Individual *individual, string in_str)
     }
     catch (Exception ex)
     {
-    	writeln ("@@@ ex=", ex.msg);
+        writeln("!ERR:cbor2individual ex=", ex.msg);
         return -1;
     }
 }

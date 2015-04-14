@@ -697,13 +697,21 @@ class PThreadContext : Context
                 {
                     tt = new Ticket;
                     Individual ticket;
-                    cbor2individual(&ticket, ticket_str);
-                    subject2Ticket(ticket, tt);
-                    tt.result               = ResultCode.OK;
-                    user_of_ticket[ tt.id ] = tt;
 
-                    if (trace_msg[ 17 ] == 1)
-                        log.trace("тикет найден в базе, id=%s", ticket_id);
+                    if (cbor2individual(&ticket, ticket_str) > 0)
+                    {
+                        subject2Ticket(ticket, tt);
+                        tt.result               = ResultCode.OK;
+                        user_of_ticket[ tt.id ] = tt;
+
+                        if (trace_msg[ 17 ] == 1)
+                            log.trace("тикет найден в базе, id=%s", ticket_id);
+                    }
+                    else
+                    {
+                        tt.result = ResultCode.Unprocessable_Entity;
+                        log.trace("!ERR:invalid individual=%s", ticket_str);
+                    }
                 }
                 else
                 {
@@ -838,8 +846,10 @@ class PThreadContext : Context
 
                 if (individual_as_cbor !is null && individual_as_cbor.length > 1)
                 {
-                    cbor2individual(&individual, individual_as_cbor);
-                    individual.setStatus(ResultCode.OK);
+                    if (cbor2individual(&individual, individual_as_cbor) > 0)
+                        individual.setStatus(ResultCode.OK);
+                    else
+                        individual.setStatus(ResultCode.Unprocessable_Entity);
                 }
                 else
                 {
@@ -879,9 +889,17 @@ class PThreadContext : Context
                     string     individual_as_cbor = get_individual_from_storage(uri);
 
                     if (individual_as_cbor !is null && individual_as_cbor.length > 1)
-                        cbor2individual(&individual, individual_as_cbor);
-
-                    res ~= individual;
+                    {
+                        if (cbor2individual(&individual, individual_as_cbor) > 0)
+                            res ~= individual;
+                        else
+                        {
+                            Individual indv;
+                            indv.uri = uri;
+                            indv.setStatus(ResultCode.Unprocessable_Entity);
+                            res ~= indv;
+                        }
+                    }
                 }
             }
 

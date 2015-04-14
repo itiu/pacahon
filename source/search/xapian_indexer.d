@@ -128,7 +128,12 @@ private class IndexerContext
     {
         Individual indv;
 
-        cbor2individual(&indv, msg);
+        if (cbor2individual(&indv, msg) < 0)
+        {
+            log.trace("!ERR:invalid individual:[%s]", msg);
+            return;
+        }
+
         string uuid = "uid_" ~ to_lower_and_replace_delimeters(indv.uri);
 
         indexer_base_db.delete_document(uuid.ptr, uuid.length, &err);
@@ -146,6 +151,14 @@ private class IndexerContext
 
     void index_msg(string msg)
     {
+        Individual indv;
+
+        if (cbor2individual(&indv, msg) < 0)
+        {
+            log.trace("!ERR:invalid individual:[%s]", msg);
+            return;
+        }
+
         if (iproperty is null)
         {
             if (context is null)
@@ -156,10 +169,6 @@ private class IndexerContext
         iproperty.load();
 
         counter++;
-
-        Individual indv;
-
-        cbor2individual(&indv, msg);
 
         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 

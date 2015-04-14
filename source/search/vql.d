@@ -80,9 +80,14 @@ class VQL
 
             string     data = context.get_individual_from_storage(uri);
 
-            cbor2individual(&individual, data);
-
-            individuals ~= individual.idup;
+            if (cbor2individual(&individual, data) > 0)
+            {
+                individuals ~= individual.idup;
+            }
+            else
+            {
+                writeln("!ERR:invalid individual=", uri);
+            }
         }
         dg = &collect_subject;
 
@@ -103,9 +108,14 @@ class VQL
 
             string     data = context.get_individual_from_storage(uri);
 
-            cbor2individual(&individual, data);
-
-            individuals ~= individual;
+            if (cbor2individual(&individual, data) > 0)
+            {
+                individuals ~= individual;
+            }
+            else
+            {
+                writeln("!ERR:invalid individual=", uri);
+            }
         }
         dg = &collect_subject;
 
@@ -195,8 +205,14 @@ class VQL
 
                 Individual ind;
 
-                cbor2individual(&ind, data);
-                res ~= ind;
+                if (cbor2individual(&ind, data) > 0)
+                {
+                    res ~= ind;
+                }
+                else
+                {
+                    writeln("!ERR:invalid individual=", uri);
+                }
             }
             dg = &collect_subject;
 

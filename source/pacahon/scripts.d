@@ -69,9 +69,11 @@ public void condition_thread(string thread_name, string props_file_name)
                             if (cmd == CMD.RELOAD)
                             {
                                 Individual ss;
-                                cbor2individual(&ss, arg);
-                                prepare_condition(ss, script_vm);
-                                send(to, true);
+                                if (cbor2individual(&ss, arg) > 0)
+                                {
+                                    prepare_condition(ss, script_vm);
+                                    send(to, true);
+                                }
                             }
                             send(to, false);
                         },
