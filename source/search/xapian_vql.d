@@ -202,7 +202,8 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
                             query = qp.parse_query(cast(char *)query_str, query_str.length, flags, cast(char *)xtr,
                                                    xtr.length, &err);
                             if (err != 0)
-                                throw new XapianError(err, cast(string)("parse_query2('x'=*) query='" ~ query_str ~ "', xtr='" ~ xtr ~ "'"));
+                                throw new XapianError(err,
+                                                      cast(string)("parse_query2('x'=*) query='" ~ query_str ~ "', xtr='" ~ xtr ~ "'"));
                         }
                         else
                         {

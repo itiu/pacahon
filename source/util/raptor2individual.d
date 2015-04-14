@@ -32,8 +32,8 @@ extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
 
         if (url.length > 3 && (url[ $ - 1 ] == '#' || url[ $ - 1 ] == '/'))
         {
-            url                = url[ 0..$ - 1 ].dup;
-            prefixes[ url ]    = prefix;
+            url             = url[ 0..$ - 1 ].dup;
+            prefixes[ url ] = prefix;
 //            prefixes[ prefix ] = url;
         }
     }
@@ -100,8 +100,8 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
     Individual *ii = _individuals.get(ss, null);
     if (ii is null)
     {
-        ii                = new Individual();
-        ii.uri            = ss;
+        ii                 = new Individual();
+        ii.uri             = ss;
         _individuals[ ss ] = ii;
     }
 
@@ -110,7 +110,7 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
         pp = replace_prefix(cast(string)(fromStringz(_pp)[ 1..$ - 1 ])).dup;
 
 
-    string oo = cast(string)fromStringz(_oo);
+    string oo = cast(string) fromStringz(_oo);
 
     if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
     {
@@ -190,8 +190,8 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 
 public Individual *[ string ] ttl2individuals(string file_name, Context context)
 {
-	Individual *[ string ] res;
-	
+    Individual *[ string ] res;
+
     file_name ~= "\0";
     prefixes = context.get_prefix_map();
 
@@ -223,9 +223,9 @@ public Individual *[ string ] ttl2individuals(string file_name, Context context)
     raptor_free_uri(uri);
     raptor_free_memory(uri_string);
 
-    res = _individuals.dup;
-	_individuals = (Individual *[ string ]).init;
-	
+    res          = _individuals.dup;
+    _individuals = (Individual *[ string ]).init;
+
     //raptor_free_world(world);
     return res;
 }
