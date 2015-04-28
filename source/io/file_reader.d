@@ -19,7 +19,7 @@ static this()
 }
 
 /// процесс отслеживающий появление новых файлов и добавление их содержимого в базу данных
-void file_reader_thread(P_MODULE name, string props_file_name)
+void file_reader_thread(P_MODULE name, string props_file_name, int checktime)
 {
     core.thread.Thread tr = core.thread.Thread.getThis();
     tr.name = std.conv.text(name);
@@ -136,7 +136,7 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             prepare_list(value, context);
         }
 
-        core.thread.Thread.sleep(dur!("seconds")(30));
+        core.thread.Thread.sleep(dur!("seconds")(checktime));
     }
 }
 

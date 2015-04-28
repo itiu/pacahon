@@ -131,7 +131,7 @@ bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     return res;
 }
 
-void init_core()
+void init_core(int checktime_onto_files)
 {
     Backtrace.install(stderr);
 
@@ -228,7 +228,7 @@ void init_core()
 
                 if (params.get("transport", "") == "file_reader")
                 {
-                    spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, "pacahon-properties.json");
+                    spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, "pacahon-properties.json", checktime_onto_files);
                 }
                 else if (params.get("transport", "") == "rabbitmq")
                 {
