@@ -786,6 +786,11 @@ class PThreadContext : Context
     {
         vql.reopen_db();
     }
+	
+	public void reopen_ro_subject_storage_db ()
+	{
+		inividuals_storage.reopen_db();
+	}
 
     // ////////// external ////////////
 

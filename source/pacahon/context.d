@@ -247,6 +247,7 @@ interface Context
     public immutable(string)[] get_individuals_ids_via_query(Ticket * ticket, string query_str, string sort_str, string db_str = null);
 
     public void reopen_ro_fulltext_indexer_db();
+    public void reopen_ro_subject_storage_db();
 
     /**
        Вернуть индивидуала по его uri

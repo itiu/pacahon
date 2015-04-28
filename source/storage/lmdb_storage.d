@@ -119,6 +119,12 @@ public class LmdbStorage
         return Result.Ok;
     }
 
+    public void reopen_db()
+    {
+    	mdb_env_close(env);
+    	open_db();
+	}
+
     public void open_db()
     {
         int rc;
@@ -535,7 +541,10 @@ public class LmdbStorage
             mdb_txn_abort(txn_r);
         }
 
-        return str.dup;
+		if (str !is null)
+        	return str.dup;
+        else
+        	return str;	
     }
 
     public Individual find_individual(string uri)
