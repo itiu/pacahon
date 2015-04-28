@@ -101,9 +101,29 @@ void file_reader_thread(P_MODULE name, string props_file_name)
             if (individuals.get("v-a:", null) !is null)
                 ordered_list ~= individuals.values;
 
+        // load rdf onto
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("rdf:", null) !is null)
+                ordered_list ~= individuals.values;
+
+        // load rdfs onto
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("rdfs:", null) !is null)
+                ordered_list ~= individuals.values;
+
+        // load owl onto
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("owl:", null) !is null)
+                ordered_list ~= individuals.values;
+                
         // load other onto
         foreach (key, individuals; list_of_fln)
-            if (individuals.get("v-a:", null) is null && individuals.get("vdi:", null) is null && individuals.get("td:", null) is null)
+            if (individuals.get("v-a:", null) is null && 
+            	individuals.get("owl:", null) is null && 
+            	individuals.get("rdf:", null) is null && 
+            	individuals.get("rdfs:", null) is null && 
+            	individuals.get("vdi:", null) is null && 
+            	individuals.get("td:", null) is null)
                 ordered_list ~= individuals.values;
 
         // load other test-data
@@ -220,17 +240,24 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 {
                     string prefix = ss.uri[ 0..pos + 1 ];
 
-                    if (for_load.get(prefix, false) == true)
+                    //if (for_load.get(prefix, false) == true)
                     {
                         Individual indv_in_storage = context.get_individual(null, ss.uri);
-
-                        //writeln("#1 file_reader:store, ss=\n", *ss);
-                        if (indv_in_storage.getStatus() == ResultCode.OK)
+						bool apply = false;
+						if (indv_in_storage.getStatus() == ResultCode.OK)
+						{
+							bool is_type_indv_in_storage = ("rdf:type" in indv_in_storage.resources) is null;
+							bool is_type_ss = ("rdf:type" in ss.resources) is null;
+							
+							if ((is_type_indv_in_storage == true && is_type_ss == false) || 
+								(is_type_indv_in_storage == false && is_type_ss == true))														
+								apply = true;
+						}
+						
+                        if (apply)
                         {
-                            //writeln("#2 file_reader:store, indv_in_storage=\n", indv_in_storage);
                             // обьеденить данные: ss = ss + indv_in_storage
                             auto ss1 = ss.apply(indv_in_storage);
-                            //writeln("#3 file_reader:store, ss=\n", ss);
 
                             ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique("rdf:type"), false);
                             if (trace_msg[ 33 ] == 1)
@@ -260,14 +287,15 @@ private void prepare_list(Individual *[] ss_list, Context context)
             }
         }
 
-        context.wait_thread(P_MODULE.fulltext_indexer);
-
         Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
         if (tid_search_manager != Tid.init)
             send(tid_search_manager, CMD.COMMIT, "");
+                        
+        context.wait_thread(P_MODULE.fulltext_indexer);
 
         context.set_reload_signal_to_local_thread("search");
 
+		//context.reopen_ro_subject_storage_db ();
         //writeln ("file_reader::prepare_file end");
     }
     catch (Exception ex)
