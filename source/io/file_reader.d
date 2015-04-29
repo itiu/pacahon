@@ -247,11 +247,12 @@ private void prepare_list(Individual *[] ss_list, Context context)
                             bool       apply           = false;
                             if (indv_in_storage.getStatus() == ResultCode.OK)
                             {
-                                bool is_type_indv_in_storage = ("rdf:type" in indv_in_storage.resources) is null;
-                                bool is_type_ss              = ("rdf:type" in ss.resources) is null;
+                                bool is_type_indv_in_storage = ("rdf:type" in indv_in_storage.resources) !is null;
+                                bool is_type_ss              = ("rdf:type" in ss.resources) !is null;
 
                                 if ((is_type_indv_in_storage == true && is_type_ss == false) ||
-                                    (is_type_indv_in_storage == false && is_type_ss == true))
+                                    (is_type_indv_in_storage == false && is_type_ss == true) || 
+                                    (is_type_indv_in_storage == false && is_type_ss == false))
                                     apply = true;
                             }
 
