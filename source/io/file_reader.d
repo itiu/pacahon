@@ -115,15 +115,15 @@ void file_reader_thread(P_MODULE name, string props_file_name, int checktime)
         foreach (key, individuals; list_of_fln)
             if (individuals.get("owl:", null) !is null)
                 ordered_list ~= individuals.values;
-                
+
         // load other onto
         foreach (key, individuals; list_of_fln)
-            if (individuals.get("v-a:", null) is null && 
-            	individuals.get("owl:", null) is null && 
-            	individuals.get("rdf:", null) is null && 
-            	individuals.get("rdfs:", null) is null && 
-            	individuals.get("vdi:", null) is null && 
-            	individuals.get("td:", null) is null)
+            if (individuals.get("v-a:", null) is null &&
+                individuals.get("owl:", null) is null &&
+                individuals.get("rdf:", null) is null &&
+                individuals.get("rdfs:", null) is null &&
+                individuals.get("vdi:", null) is null &&
+                individuals.get("td:", null) is null)
                 ordered_list ~= individuals.values;
 
         // load other test-data
@@ -153,7 +153,9 @@ private void prepare_list(Individual *[] ss_list, Context context)
         if (trace_msg[ 30 ] == 1)
             log.trace("prefix_map=%s", context.get_prefix_map);
 
-        bool[ string ] for_load;
+        bool   is_load = false;
+
+        string prefix;
 
         foreach (ss; ss_list)
         {
@@ -164,7 +166,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
             //if (trace_msg[ 31 ] == 1)
 //                log.trace("prepare uri=%s", ss.uri);
 
-            string prefix = context.get_prefix_map.get(ss.uri, null);
+            prefix = context.get_prefix_map.get(ss.uri, null);
 
             if (prefix !is null)
             {
@@ -197,105 +199,104 @@ private void prepare_list(Individual *[] ss_list, Context context)
                             else
                             {
                                 //writeln("@ 1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
-                                for_load[ prefix ] = true;
-                                for_load[ ss.uri ] = true;
+                                is_load = true;
+                                break;
                             }
                         }
                     }
                     else
                     {
+                        is_load = true;
                         //writeln("@ 2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
-                        for_load[ prefix ] = true;
-                        for_load[ ss.uri ] = true;
+                        break;
                     }
                 }
             }
         }
-        if (for_load.length > 0)
+        if (is_load)
         {
-            log.trace_log_and_console("Onto for load:%s", for_load.keys);
-        }
+            log.trace_log_and_console("Onto for load:%s", prefix);
 
-        foreach (ss; ss_list)
-        {
-            if (ss.isExist(veda_schema__login, "veda"))
+            foreach (ss; ss_list)
             {
-                //writeln("FOUND SYSTEM ACCOUNT = ", ss);
-                context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
-            }
-            if (ss.isExist(rdf__type, owl__Ontology))
-            {
-                string    prefix = context.get_prefix_map.get(ss.uri, null);
-                Resources ress   = Resources.init;
-                ress ~= Resource(prefix);
-                ss.resources[ veda_schema__fullUrl ] = ress;
-            }
-
-            long pos_path_delimiter = indexOf(ss.uri, '/');
-
-            if (pos_path_delimiter < 0)
-            {
-                long pos = indexOf(ss.uri, ':');
-                if (pos >= 0)
+                if (ss.isExist(veda_schema__login, "veda"))
                 {
-                    string prefix = ss.uri[ 0..pos + 1 ];
+                    //writeln("FOUND SYSTEM ACCOUNT = ", ss);
+                    context.push_signal("43", ss.getFirstLiteral(veda_schema__password));
+                }
+                if (ss.isExist(rdf__type, owl__Ontology))
+                {
+                    prefix = context.get_prefix_map.get(ss.uri, null);
+                    Resources ress = Resources.init;
+                    ress ~= Resource(prefix);
+                    ss.resources[ veda_schema__fullUrl ] = ress;
+                }
 
-                    //if (for_load.get(prefix, false) == true)
+                long pos_path_delimiter = indexOf(ss.uri, '/');
+
+                if (pos_path_delimiter < 0)
+                {
+                    long pos = indexOf(ss.uri, ':');
+                    if (pos >= 0)
                     {
-                        Individual indv_in_storage = context.get_individual(null, ss.uri);
-						bool apply = false;
-						if (indv_in_storage.getStatus() == ResultCode.OK)
-						{
-							bool is_type_indv_in_storage = ("rdf:type" in indv_in_storage.resources) is null;
-							bool is_type_ss = ("rdf:type" in ss.resources) is null;
-							
-							if ((is_type_indv_in_storage == true && is_type_ss == false) || 
-								(is_type_indv_in_storage == false && is_type_ss == true))														
-								apply = true;
-						}
-						
-                        if (apply)
-                        {
-                            // обьеденить данные: ss = ss + indv_in_storage
-                            auto ss1 = ss.apply(indv_in_storage);
+                        prefix = ss.uri[ 0..pos + 1 ];
 
-                            ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique("rdf:type"), false);
-                            if (trace_msg[ 33 ] == 1)
-                                log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
-                            if (res != ResultCode.OK)
-                                log.trace("individual =%s, not store, errcode =%s", ss1.uri, text(res));
-                        }
-                        else
+                        //if (for_load.get(prefix, false) == true)
                         {
-                            ResultCode res = context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
-                            if (trace_msg[ 33 ] == 1)
-                                log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
-                            if (res != ResultCode.OK)
-                                log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
+                            Individual indv_in_storage = context.get_individual(null, ss.uri);
+                            bool       apply           = false;
+                            if (indv_in_storage.getStatus() == ResultCode.OK)
+                            {
+                                bool is_type_indv_in_storage = ("rdf:type" in indv_in_storage.resources) is null;
+                                bool is_type_ss              = ("rdf:type" in ss.resources) is null;
+
+                                if ((is_type_indv_in_storage == true && is_type_ss == false) ||
+                                    (is_type_indv_in_storage == false && is_type_ss == true))
+                                    apply = true;
+                            }
+
+                            if (apply)
+                            {
+                                // обьеденить данные: ss = ss + indv_in_storage
+                                auto       ss1 = ss.apply(indv_in_storage);
+
+                                ResultCode res = context.put_individual(null, ss.uri, ss1.repare_unique("rdf:type"), false);
+                                if (trace_msg[ 33 ] == 1)
+                                    log.trace("file_reader:apply, uri=%s %s", ss.uri, ss1);
+                                if (res != ResultCode.OK)
+                                    log.trace("individual =%s, not store, errcode =%s", ss1.uri, text(res));
+                            }
+                            else
+                            {
+                                ResultCode res = context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
+                                if (trace_msg[ 33 ] == 1)
+                                    log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
+                                if (res != ResultCode.OK)
+                                    log.trace("individual =%s, not store, errcode =%s", ss.uri, text(res));
+                            }
                         }
                     }
                 }
-            }
-            else
-            {
-                //if (for_load.get(ss.uri, false) == true)
+                else
                 {
-                    if (trace_msg[ 33 ] == 1)
-                        log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
-                    context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
+                    //if (for_load.get(ss.uri, false) == true)
+                    {
+                        if (trace_msg[ 33 ] == 1)
+                            log.trace("file_reader:store, uri=%s %s", ss.uri, *ss);
+                        context.put_individual(null, ss.uri, (*ss).repare_unique("rdf:type"), false);
+                    }
                 }
             }
+
+            Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
+            if (tid_search_manager != Tid.init)
+                send(tid_search_manager, CMD.COMMIT, "");
+
+            context.wait_thread(P_MODULE.fulltext_indexer);
+
+            context.set_reload_signal_to_local_thread("search");
         }
-
-        Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
-        if (tid_search_manager != Tid.init)
-            send(tid_search_manager, CMD.COMMIT, "");
-                        
-        context.wait_thread(P_MODULE.fulltext_indexer);
-
-        context.set_reload_signal_to_local_thread("search");
-
-		//context.reopen_ro_subject_storage_db ();
+        //context.reopen_ro_subject_storage_db ();
         //writeln ("file_reader::prepare_file end");
     }
     catch (Exception ex)
