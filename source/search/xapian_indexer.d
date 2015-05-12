@@ -213,6 +213,25 @@ private class IndexerContext
                                   predicate);
                 }
 
+                void index_boolean(string predicate, Resource oo)
+                {
+                    int    slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
+
+                    string data = "F";
+
+                    prefix = "X" ~ text(slot_L1) ~ "D";
+
+                    if (oo.get!bool() == true)
+                        data = "T";
+
+                    indexer.index_text(data.ptr, data.length, prefix.ptr, prefix.length, &err);
+                    doc.add_value(slot_L1, data.ptr, data.length, &err);
+
+                    if (trace_msg[ 220 ] == 1)
+                        log.trace("index [DataType.Boolean] :[%s], prefix=%s[%s]", data, prefix,
+                                  predicate);
+                }
+
                 void index_integer(string predicate, Resource oo)
                 {
                     int slot_L1 = get_slot_and_set_if_not_found(predicate, key2slot);
@@ -370,6 +389,10 @@ private class IndexerContext
                                                             {
                                                                 index_integer(ln ~ "." ~ indexed_field.uri, rc);
                                                             }
+                                                            else if (rc.type == DataType.Boolean)
+                                                            {
+                                                                index_boolean(ln ~ "." ~ indexed_field.uri, rc);
+                                                            }
                                                             else if (rc.type == DataType.Decimal)
                                                             {
                                                                 index_double(ln ~ "." ~ indexed_field.uri, rc);
@@ -432,7 +455,11 @@ private class IndexerContext
                         }
                     }
 
-                    if (oo.type == DataType.Integer)
+                    if (oo.type == DataType.Boolean)
+                    {
+                        index_boolean(predicate, oo);
+                    }
+                    else if (oo.type == DataType.Integer)
                     {
                         index_integer(predicate, oo);
                     }

@@ -69,7 +69,8 @@ enum TokenType
 {
     TEXT,
     NUMBER,
-    DATE
+    DATE,
+    BOOLEAN
 }
 
 private TokenType get_token_type(string token, out double value)
@@ -78,7 +79,17 @@ private TokenType get_token_type(string token, out double value)
 
     token = token.strip();
 
-    if (token.length == 19 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] == ':')
+    if (token == "true")
+    {
+        value = 1;
+        return TokenType.BOOLEAN;
+    }
+    else if (token == "false")
+    {
+        value = 0;
+        return TokenType.BOOLEAN;
+    }
+    else if (token.length == 19 && token[ 4 ] == '-' && token[ 7 ] == '-' && token[ 10 ] == 'T' && token[ 13 ] == ':' && token[ 16 ] == ':')
     {
         value = stdTimeToUnixTime(SysTime.fromISOExtString(token).stdTime);
         return TokenType.DATE;
@@ -176,93 +187,110 @@ public string transform_vql_to_xapian(TTA tta, string p_op, out string l_token, 
 
                     if (slot > 0)
                     {
-                        if (tta.R.token_decor == Decor.QUOTED || (indexOf(rs, '*') >= 0) && rs.length > 3)
+                        double    value;
+                        TokenType rs_type = get_token_type(rs, value);
+                        if (rs_type == TokenType.BOOLEAN)
                         {
-                            char[] query_str = to_lower_and_replace_delimeters(rs).dup;
-                            if (rs[ 0 ] == '*')
-                            {
-                                reverse(query_str);
-                            }
-
-                            xtr = "X" ~ text(slot) ~ "X";
-//                            string query_str = rs.toLower ();
-                            feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD | feature_flag.FLAG_PHRASE |
+                            xtr = "X" ~ text(slot) ~ "D";
+                            string query_str = "F";
+                            if (value == 1)
+                                query_str = "T";
+                            feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_PHRASE |
                                                  feature_flag.FLAG_LOVEHATE;
-                            if (tta.op == "!=")
-                            {
-                                /*	TODO
-                                 *  вероятно получаются не оптимальными запросы вида
-                                 *  '*' == 'rdf' && '*' != 'List*'
-                                 *  @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
-                                 */
-                                flags     = flags | feature_flag.FLAG_PURE_NOT;
-                                query_str = "NOT " ~ query_str;
-                            }
 
                             query = qp.parse_query(cast(char *)query_str, query_str.length, flags, cast(char *)xtr,
                                                    xtr.length, &err);
-                            if (err != 0)
-                                throw new XapianError(err,
-                                                      cast(string)("parse_query2('x'=*) query='" ~ query_str ~ "', xtr='" ~ xtr ~ "'"));
                         }
                         else
                         {
-                            if (tta.R.token_decor == Decor.RANGE)
+                            if (tta.R.token_decor == Decor.QUOTED || (indexOf(rs, '*') >= 0) && rs.length > 3)
                             {
-                                string[] vals = rs.split(",");
-                                if (vals.length == 2)
+                                char[] query_str = to_lower_and_replace_delimeters(rs).dup;
+                                if (rs[ 0 ] == '*')
                                 {
-                                    double c_from, c_to;
+                                    reverse(query_str);
+                                }
+
+                                xtr = "X" ~ text(slot) ~ "X";
+//                            string query_str = rs.toLower ();
+                                feature_flag flags = feature_flag.FLAG_DEFAULT | feature_flag.FLAG_WILDCARD | feature_flag.FLAG_PHRASE |
+                                                     feature_flag.FLAG_LOVEHATE;
+                                if (tta.op == "!=")
+                                {
+                                    /*	TODO
+                                     *  вероятно получаются не оптимальными запросы вида
+                                     *  '*' == 'rdf' && '*' != 'List*'
+                                     *  @query=Xapian::Query((rdf:(pos=1) AND (<alldocuments> AND_NOT (list:(pos=1) SYNONYM lists:(pos=1)))))
+                                     */
+                                    flags     = flags | feature_flag.FLAG_PURE_NOT;
+                                    query_str = "NOT " ~ query_str;
+                                }
+
+                                query = qp.parse_query(cast(char *)query_str, query_str.length, flags, cast(char *)xtr,
+                                                       xtr.length, &err);
+                                if (err != 0)
+                                    throw new XapianError(err,
+                                                          cast(string)("parse_query2('x'=*) query='" ~ query_str ~ "', xtr='" ~ xtr ~ "'"));
+                            }
+                            else
+                            {
+                                if (tta.R.token_decor == Decor.RANGE)
+                                {
+                                    string[] vals = rs.split(",");
+                                    if (vals.length == 2)
+                                    {
+                                        double c_from, c_to;
 //                              writeln ("@p vals=", vals);
 
-                                    TokenType tt = get_token_type(vals[ 0 ], c_from);
-                                    if (tt == TokenType.DATE || tt == TokenType.NUMBER)
-                                    {
-                                        tt = get_token_type(vals[ 1 ], c_to);
+                                        TokenType tt = get_token_type(vals[ 0 ], c_from);
                                         if (tt == TokenType.DATE || tt == TokenType.NUMBER)
                                         {
-                                            //writeln("@p c_from=", c_from);
-                                            //writeln("@p c_to=", c_to);
+                                            tt = get_token_type(vals[ 1 ], c_to);
+                                            if (tt == TokenType.DATE || tt == TokenType.NUMBER)
+                                            {
+                                                //writeln("@p c_from=", c_from);
+                                                //writeln("@p c_to=", c_to);
 
 
-                                            query = new_Query_range(xapian_op.OP_VALUE_RANGE, slot, c_from, c_to, &err);
+                                                query = new_Query_range(xapian_op.OP_VALUE_RANGE, slot, c_from, c_to, &err);
+                                            }
                                         }
                                     }
                                 }
-                            }
 //                            else if (tta.R.token_decor == Decor.QUOTED)
 //                            {
 //                                xtr   = "X" ~ text(slot) ~ "X" ~ to_lower_and_replace_delimeters(rs);
 //                                query = new_Query(cast(const char *)xtr, xtr.length, &err);
 //                            }
-                            else
-                            {
-                                double d_val;
-
-                                try
+                                else
                                 {
-                                    d_val = parse!double (rs);
+                                    double d_val;
+
+                                    try
+                                    {
+                                        d_val = parse!double (rs);
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg ~ " [", rs, "]");
+                                    }
+
+
+                                    char *str_val;
+                                    uint *str_val_length;
+                                    sortable_serialise(d_val, &str_val, &str_val_length, &err);
+
+                                    uint   len = *str_val_length;
+
+                                    string tt = cast(string)str_val[ 0..len ];
+                                    //writeln("@ length=", len, ", tt=", tt, ", d_val=", d_val);
+                                    xtr   = "X" ~ text(slot) ~ "X" ~ tt;
+                                    query = new_Query(cast(char *)xtr, cast(uint)xtr.length, &err);
                                 }
-                                catch (Exception ex)
-                                {
-                                    writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg ~ " [", rs, "]");
-                                }
 
-
-                                char *str_val;
-                                uint *str_val_length;
-                                sortable_serialise(d_val, &str_val, &str_val_length, &err);
-
-                                uint   len = *str_val_length;
-
-                                string tt = cast(string)str_val[ 0..len ];
-                                //writeln("@ length=", len, ", tt=", tt, ", d_val=", d_val);
-                                xtr   = "X" ~ text(slot) ~ "X" ~ tt;
-                                query = new_Query(cast(char *)xtr, cast(uint)xtr.length, &err);
+                                if (err != 0)
+                                    writeln("XAPIAN:transform_vql_to_xapian:parse_query3('x'=x) '", xtr, "'");
                             }
-
-                            if (err != 0)
-                                writeln("XAPIAN:transform_vql_to_xapian:parse_query3('x'=x) '", xtr, "'");
                         }
                     }
                 }
