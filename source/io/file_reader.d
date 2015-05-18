@@ -176,39 +176,46 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 if (ss.isExist(rdf__type, owl__Ontology))
                 {
                     string version_onto = ss.getFirstLiteral(owl__versionInfo);
-
-                    if (trace_msg[ 32 ] == 1)
-                        log.trace("%s, readed version=%s", prefix, version_onto);
-
-                    // проверить какая версия данной онтологии в хранилище
-                    //writeln("look in storage[", ss.uri, "]");
-                    Individual sss = context.get_individual(null, ss.uri);
-
-                    if (trace_msg[ 33 ] == 1)
-                        log.trace("look in storage=%s, found=%s", ss.uri, sss);
-
-                    if (sss.getStatus() == ResultCode.OK)
+                    if (version_onto is null)
                     {
-                        Resources aaa = sss.resources.get(owl__versionInfo, Resources.init);
-                        if (aaa != Resources.init)
-                        {
-                            if (aaa.anyExist(version_onto))
-                            {
-                                //writeln("@ This version [", version_onto, "] onto[", prefix, "] already exist");
-                            }
-                            else
-                            {
-                                //writeln("@ 1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
-                                is_load = true;
-                                break;
-                            }
-                        }
+                        log.trace("%s, owl: versionInfo is not found, the file will be reloaded with every update.", prefix);
+                        is_load = true;
                     }
                     else
                     {
-                        is_load = true;
-                        //writeln("@ 2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
-                        break;
+                        if (trace_msg[ 32 ] == 1)
+                            log.trace("%s, readed version=%s", prefix, version_onto);
+
+                        // проверить какая версия данной онтологии в хранилище
+                        //writeln("look in storage[", ss.uri, "]");
+                        Individual sss = context.get_individual(null, ss.uri);
+
+                        if (trace_msg[ 33 ] == 1)
+                            log.trace("look in storage=%s, found=%s", ss.uri, sss);
+
+                        if (sss.getStatus() == ResultCode.OK)
+                        {
+                            Resources aaa = sss.resources.get(owl__versionInfo, Resources.init);
+                            if (aaa != Resources.init)
+                            {
+                                if (aaa.anyExist(version_onto))
+                                {
+                                    //writeln("@ This version [", version_onto, "] onto[", prefix, "] already exist");
+                                }
+                                else
+                                {
+                                    //writeln("@ 1 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+                                    is_load = true;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            is_load = true;
+                            //writeln("@ 2 This version [", version_onto, "] onto[", prefix, "] not exist in store");
+                            break;
+                        }
                     }
                 }
             }
@@ -251,7 +258,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                                 bool is_type_ss              = ("rdf:type" in ss.resources) !is null;
 
                                 if ((is_type_indv_in_storage == true && is_type_ss == false) ||
-                                    (is_type_indv_in_storage == false && is_type_ss == true) || 
+                                    (is_type_indv_in_storage == false && is_type_ss == true) ||
                                     (is_type_indv_in_storage == false && is_type_ss == false))
                                     apply = true;
                             }
