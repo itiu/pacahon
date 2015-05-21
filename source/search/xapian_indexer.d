@@ -168,8 +168,6 @@ private class IndexerContext
 
         iproperty.load();
 
-        counter++;
-
         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
         if (indv.uri !is null && indv.resources.length > 0)
@@ -182,6 +180,20 @@ private class IndexerContext
                 log.trace("index document:[%s]", indv.uri);
 
             Resources types = indv.getResources(rdf__type);
+
+            // используем информацию о типе, для определения, в какой базе следует проводить индексацию
+            string dbname = "base";
+            foreach (_type; types)
+            {
+                dbname = iproperty.get_dbname_of_class(_type.uri);
+                if (dbname != "base")
+                    break;
+            }
+
+			if (dbname == "not-indexed")
+				return;
+
+        	counter++;
 
             foreach (predicate, resources; indv.resources)
             {
@@ -650,14 +662,6 @@ private class IndexerContext
             doc.add_boolean_term(uuid.ptr, uuid.length, &err);
             doc.set_data(indv.uri.ptr, indv.uri.length, &err);
 
-            // используем информацию о типе
-            string dbname = "base";
-            foreach (_type; types)
-            {
-                dbname = iproperty.get_dbname_of_class(_type.uri);
-                if (dbname != "base")
-                    break;
-            }
 
             if (dbname == "system")
             {
@@ -668,7 +672,7 @@ private class IndexerContext
             {
                 indexer_base_db.replace_document(uuid.ptr, uuid.length, doc, &err);
             }
-
+			
             if (counter % 100 == 0)
             {
                 if (trace_msg[ 211 ] == 1)

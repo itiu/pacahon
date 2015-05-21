@@ -116,7 +116,7 @@ public void condition_thread(string thread_name, string props_file_name)
 
                                         if (event_id !is null && event_id.length > 1 && event_id == (individual_id ~ script_id))
                                         {
-                                            writeln("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
+                                            //writeln("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
                                             continue;
                                         }
 
