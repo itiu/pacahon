@@ -121,9 +121,9 @@ public class LmdbStorage
 
     public void reopen_db()
     {
-    	mdb_env_close(env);
-    	open_db();
-	}
+        mdb_env_close(env);
+        open_db();
+    }
 
     public void open_db()
     {
@@ -180,23 +180,23 @@ public class LmdbStorage
         return rc;
     }
 
-    public EVENT update_or_create(string cbor, out string new_hash)
+    public EVENT update_or_create(string cbor, out string new_hash, EVENT ev = EVENT.NONE)
     {
         // TODO не оптимально!
         Individual ind;
 
         if (cbor2individual(&ind, cbor) > 0)
-            return update_or_create(ind.uri, cbor, new_hash);
+            return update_or_create(ind.uri, cbor, new_hash, ev);
         else
             log.trace("!ERR:invalid individual=%s", cbor);
         return EVENT.ERROR;
     }
 
-    public EVENT update_or_create(Individual *ind, out string new_hash)
+    public EVENT update_or_create(Individual *ind, out string new_hash, EVENT ev = EVENT.NONE)
     {
         string content = individual2cbor(ind);
 
-        return update_or_create(ind.uri, content, new_hash);
+        return update_or_create(ind.uri, content, new_hash, ev);
     }
 
     public ResultCode put(string _key, string value)
@@ -295,7 +295,7 @@ public class LmdbStorage
         return toHex(summ_hash_this_db);
     }
 
-    private EVENT update_or_create(string uri, string content, out string new_hash)
+    private EVENT update_or_create(string uri, string content, out string new_hash, EVENT ev = EVENT.NONE)
     {
 //                                      StopWatch sw; sw.start;
         new_hash = get_new_hash(content);
@@ -317,7 +317,6 @@ public class LmdbStorage
             throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
 
-        EVENT   ev = EVENT.NONE;
         MDB_val key;
 
         key.mv_data = cast(char *)uri;
@@ -325,12 +324,15 @@ public class LmdbStorage
 
         MDB_val data;
 
-        // проверим был есть ли такой субьект в базе
-        rc = mdb_get(txn, dbi, &key, &data);
-        if (rc == 0)
-            ev = EVENT.UPDATE;
-        else
-            ev = EVENT.CREATE;
+        if (ev == EVENT.NONE)
+        {
+            // проверим был есть ли такой субьект в базе
+            rc = mdb_get(txn, dbi, &key, &data);
+            if (rc == 0)
+                ev = EVENT.UPDATE;
+            else
+                ev = EVENT.CREATE;
+        }
 
         data.mv_data = cast(char *)content;
         data.mv_size = content.length;
@@ -356,7 +358,7 @@ public class LmdbStorage
                 growth_db(env, txn);
 
                 // retry
-                return update_or_create(uri, content, new_hash);
+                return update_or_create(uri, content, new_hash, ev);
             }
 
             if (rc != 0)
@@ -375,7 +377,7 @@ public class LmdbStorage
             growth_db(env, null);
 
             // retry
-            return update_or_create(uri, content, new_hash);
+            return update_or_create(uri, content, new_hash, ev);
         }
 
         if (rc != 0)
@@ -541,10 +543,10 @@ public class LmdbStorage
             mdb_txn_abort(txn_r);
         }
 
-		if (str !is null)
-        	return str.dup;
+        if (str !is null)
+            return str.dup;
         else
-        	return str;	
+            return str;
     }
 
     public Individual find_individual(string uri)

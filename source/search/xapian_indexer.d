@@ -945,7 +945,7 @@ void xapian_indexer(string thread_name)
                                 send(ictx.key2slot_accumulator, CMD.PUT, CNAME.LAST_UPDATE_TIME, "");
                             }
                         }
-                        else if (cmd == CMD.STORE)
+                        else if (cmd == CMD.PUT)
                         {
                             ictx.index_msg(msg);
                         }

@@ -650,7 +650,7 @@ class PThreadContext : Context
 
                     if (tid_ticket_manager != Tid.init)
                     {
-                        send(tid_ticket_manager, CMD.STORE, ss_as_cbor, thisTid);
+                        send(tid_ticket_manager, CMD.PUT, ss_as_cbor, thisTid);
                         receive((EVENT ev, Tid from)
                                 {
                                     if (from == getTid(P_MODULE.ticket_manager))
@@ -786,11 +786,11 @@ class PThreadContext : Context
     {
         vql.reopen_db();
     }
-	
-	public void reopen_ro_subject_storage_db ()
-	{
-		inividuals_storage.reopen_db();
-	}
+
+    public void reopen_ro_subject_storage_db()
+    {
+        inividuals_storage.reopen_db();
+    }
 
     // ////////// external ////////////
 
@@ -996,7 +996,7 @@ class PThreadContext : Context
     }
 
 
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
+    public ResultCode store_individual(CMD cmd, Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
                                        bool prepareEvents = true,
                                        string event_id = null)
     {
@@ -1078,7 +1078,14 @@ class PThreadContext : Context
 
             if (tid_subject_manager != Tid.init)
             {
-                send(tid_subject_manager, CMD.STORE, ss_as_cbor, thisTid);
+                if (cmd == CMD.PUT)
+                {
+                    send(tid_subject_manager, cmd, ss_as_cbor, thisTid);
+                }
+                else if (cmd == CMD.ADD)
+                {
+                }
+
                 receive((EVENT _ev, Tid from)
                         {
                             if (from == getTid(P_MODULE.subject_manager))
@@ -1088,6 +1095,9 @@ class PThreadContext : Context
 
             if (ev == EVENT.NOT_READY)
                 return ResultCode.Not_Ready;
+
+            if (ev == EVENT.ERROR)
+                return ResultCode.Fail_Store;
 
             if (ev == EVENT.CREATE || ev == EVENT.UPDATE)
             {
@@ -1099,7 +1109,7 @@ class PThreadContext : Context
                     {
                         push_signal("search", Clock.currStdTime() / 10000);
 
-                        send(tid_search_manager, CMD.STORE, ss_as_cbor);
+                        send(tid_search_manager, CMD.PUT, ss_as_cbor);
                     }
                 }
                 else
@@ -1142,13 +1152,28 @@ class PThreadContext : Context
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
     {
         individual.uri = uri;
-        return store_individual(ticket, &individual, null, wait_for_indexing);
+        return store_individual(CMD.PUT, ticket, &individual, null, wait_for_indexing);
+    }
+    
+    public ResultCode add_to_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
+    {
+        individual.uri = uri;
+        return store_individual(CMD.ADD, ticket, &individual, null, wait_for_indexing);
+    }
+    
+    public ResultCode set_in_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
+    {
+        individual.uri = uri;
+        return store_individual(CMD.SET, ticket, &individual, null, wait_for_indexing);
+    }
+    
+    public ResultCode remove_from_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
+    {
+        individual.uri = uri;
+        return store_individual(CMD.REMOVE, ticket, &individual, null, wait_for_indexing);
     }
 
-    public ResultCode post_individual(Ticket *ticket, Individual individual, bool wait_for_indexing)
-    {
-        return store_individual(ticket, &individual, null, wait_for_indexing);
-    }
+
 
     public void wait_thread(P_MODULE thread_id)
     {

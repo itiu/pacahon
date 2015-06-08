@@ -13,8 +13,7 @@ private import std.concurrency, std.datetime, std.json;
 private import type;
 private import util.container;
 private import search.vel;
-private import onto.onto;
-private import onto.individual;
+private import onto.onto, onto.individual, onto.resource;
 private import pacahon.define;
 
 private import bind.v8d_header;
@@ -305,7 +304,7 @@ interface Context
        Returns:
                 Код результата операции
      */
-    public ResultCode store_individual(Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
+    public ResultCode store_individual(CMD cmd, Ticket *ticket, Individual *indv, string ss_as_cbor, bool wait_for_indexing,
                                        bool prepareEvents = true,
                                        string event_id = null);
 
@@ -321,8 +320,10 @@ interface Context
                 Код результата операции
      */
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
-
-    public ResultCode post_individual(Ticket *ticket, Individual individual, bool wait_for_indexing);
+    
+    public ResultCode add_to_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
+    public ResultCode set_in_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
+    public ResultCode remove_from_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
 
     // ////////////////////////////////////////////// AUTHORIZATION ////////////////////////////////////////////
     /**

@@ -4,9 +4,8 @@
 module bind.v8d_header;
 
 import std.stdio, std.conv;
-import onto.individual;
-import onto.resource;
-import onto.lang;
+import type;
+import onto.individual, onto.resource, onto.lang;
 import pacahon.context;
 import util.cbor8individual;
 
@@ -54,7 +53,7 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
 
             Ticket *ticket = g_context.get_ticket(ticket_id);
 
-            return g_context.store_individual(ticket, null, cbor, false, true, event_id);
+            return g_context.store_individual(CMD.PUT, ticket, null, cbor, false, true, event_id);
         }
         return ResultCode.Service_Unavailable;
     }

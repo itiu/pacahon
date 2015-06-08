@@ -53,7 +53,7 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
             Tid tid_acl = context.getTid(P_MODULE.acl_manager);
             if (tid_acl != Tid.init)
             {
-                send(tid_acl, CMD.STORE, ev_type, subject_as_cbor);
+                send(tid_acl, CMD.PUT, ev_type, subject_as_cbor);
             }
         }
 

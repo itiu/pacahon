@@ -394,7 +394,7 @@ void acl_manager(string thread_name, string db_path)
                 },
                 (CMD cmd, EVENT type, string msg)
                 {
-                    if (cmd == CMD.STORE)
+                    if (cmd == CMD.PUT)
                     {
                         Individual ind;
                         if (cbor2individual(&ind, msg) < 0)

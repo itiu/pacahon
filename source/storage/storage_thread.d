@@ -9,13 +9,9 @@ private
 
     import bind.lmdb_header;
     import type;
-    import util.logger;
-    import util.utils;
-    import util.cbor;
-
-    import pacahon.context;
-    import pacahon.define;
-    import pacahon.log_msg;
+    import util.logger, util.utils, util.cbor, util.cbor8individual;
+    import pacahon.context, pacahon.define, pacahon.log_msg;
+    import onto.individual, onto.resource;
     import search.vel;
     import storage.lmdb_storage;
 }
@@ -80,6 +76,83 @@ public void individuals_manager(string thread_name, string db_path)
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
+                    if (is_freeze == true && (cmd == CMD.PUT || cmd == CMD.ADD || cmd == CMD.SET || cmd == CMD.REMOVE))
+                        send(tid_response_reciever, EVENT.NOT_READY, thisTid);
+
+
+                    try
+                    {
+                        if (cmd == CMD.FIND)
+                        {
+                            string res = storage.find(msg);
+                            //writeln("@FIND msg=", msg, ", $res = ", res);
+                            send(tid_response_reciever, msg, res, thisTid);
+                            return;
+                        }
+                        else if (cmd == CMD.PUT)
+                        {
+                            string new_hash;
+                            EVENT ev = storage.update_or_create(msg, new_hash, EVENT.NONE);
+
+                            send(tid_response_reciever, ev, thisTid);
+
+                            bin_log_name = write_in_binlog(msg, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
+                            return;
+                        }
+                        else if (cmd == CMD.ADD || cmd == CMD.SET || cmd == CMD.REMOVE)
+                        {
+                            Individual arg;
+                            int code = cbor2individual(&arg, msg);
+                            if (code < 0)
+                            {
+                                log.trace("ERR:store_individual(ADD|SET|REMOVE):cbor2individual [%s]", msg);
+                                send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                return;
+                            }
+
+                            string predicate = arg.resources.keys[ 0 ];
+
+                            string ss_as_cbor = storage.find(arg.uri);
+                            Individual indv;
+                            code = cbor2individual(&indv, ss_as_cbor);
+                            if (code < 0)
+                            {
+                                log.trace("ERR:store_individual(ADD|SET|REMOVE):cbor2individual [%s]", ss_as_cbor);
+                                send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                return;
+                            }
+
+                            if (cmd == CMD.ADD)
+                            {
+                                // add value to set or ignore if exists
+                                indv.add_unique_Resources(arg.uri, arg.getResources(predicate));
+                            }
+                            else if (cmd == CMD.SET)
+                            {
+                                // set value to predicate
+                                indv.set_Resources(arg.uri, arg.getResources(predicate));
+                            }
+                            else if (cmd == CMD.REMOVE)
+                            {
+                                // remove predicate or value in set
+                                // !!! not implemented
+                            }
+
+                            ss_as_cbor = individual2cbor(&indv);
+                            string new_hash;
+                            storage.update_or_create(ss_as_cbor, new_hash, EVENT.UPDATE);
+
+                            send(tid_response_reciever, EVENT.UPDATE, thisTid);
+
+                            bin_log_name = write_in_binlog(ss_as_cbor, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        send(tid_response_reciever, EVENT.ERROR, thisTid);
+                    }
+
+
                     if (cmd == CMD.BACKUP)
                     {
                         try
@@ -116,60 +189,8 @@ public void individuals_manager(string thread_name, string db_path)
                     }
                     else
                     {
-                        try
-                        {
-                            if (cmd == CMD.STORE)
-                            {
-                                if (is_freeze == true)
-                                    send(tid_response_reciever, EVENT.NOT_READY, thisTid);
-                                else
-                                {
-                                    try
-                                    {
-                                        string new_hash;
-                                        EVENT ev = storage.update_or_create(msg, new_hash);
-
-                                        inc_count_put();
-
-                                        send(tid_response_reciever, ev, thisTid);
-                                        long now = Clock.currTime().stdTime();
-                                        OutBuffer oub = new OutBuffer();
-                                        oub.write('\n');
-                                        oub.write(now);
-                                        oub.write(msg.length);
-                                        oub.write(new_hash);
-                                        oub.write(msg);
-                                        append(bin_log_name, oub.toString);
-                                        size_bin_log += msg.length + 30;
-
-                                        if (size_bin_log > max_size_bin_log)
-                                        {
-                                            size_bin_log = 0;
-                                            bin_log_name = get_new_binlog_name(db_path);
-                                        }
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        send(tid_response_reciever, EVENT.ERROR, thisTid);
-                                    }
-                                }
-                            }
-                            else if (cmd == CMD.FIND)
-                            {
-                                string res = storage.find(msg);
-                                //writeln("@FIND msg=", msg, ", $res = ", res);
-                                send(tid_response_reciever, msg, res, thisTid);
-                            }
-                            else
-                            {
-                                //writeln("%3 ", msg);
-                                send(tid_response_reciever, msg, "", thisTid);
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            writeln(thread_name, ":EX!", ex.msg);
-                        }
+                        //writeln("%3 ", msg);
+                        send(tid_response_reciever, msg, "", thisTid);
                     }
                 },
                 (CMD cmd, int arg, bool arg2)
@@ -179,6 +200,28 @@ public void individuals_manager(string thread_name, string db_path)
                 },
                 (Variant v) { writeln(thread_name, "::Received some other type.", v); });
     }
+}
+
+private string write_in_binlog(string msg, string new_hash, string bin_log_name, out int size_bin_log, int max_size_bin_log, string db_path)
+{
+    inc_count_put();
+
+    long      now = Clock.currTime().stdTime();
+    OutBuffer oub = new OutBuffer();
+    oub.write('\n');
+    oub.write(now);
+    oub.write(msg.length);
+    oub.write(new_hash);
+    oub.write(msg);
+    append(bin_log_name, oub.toString);
+    size_bin_log += msg.length + 30;
+
+    if (size_bin_log > max_size_bin_log)
+    {
+        size_bin_log = 0;
+        bin_log_name = get_new_binlog_name(db_path);
+    }
+    return bin_log_name;
 }
 
 /*

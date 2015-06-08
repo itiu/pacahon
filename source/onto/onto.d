@@ -27,7 +27,7 @@ class Onto
     private Context context;
     public int      reload_count = 0;
 
-    private Individual[ string ] individuals;
+    private         Individual[ string ] individuals;
 
     public this(Context _context)
     {
@@ -60,7 +60,7 @@ class Onto
 
         foreach (indv; l_individuals)
         {
-            individuals[ indv.uri ]   = indv;
+            individuals[ indv.uri ] = indv;
         }
 
         if (trace_msg[ 20 ] == 1)

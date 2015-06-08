@@ -95,6 +95,46 @@ public struct Individual
         rss ~= rs;
         resources[ uri ] = rss;
     }
+
+    void set_Resources(string uri, Resources in_rss)
+    {
+        Resources new_rss;
+
+        foreach (in_rs; in_rss)
+        {
+            new_rss ~= in_rs;
+        }
+
+        resources[ uri ] = new_rss;
+    }
+
+    void add_unique_Resources(string uri, Resources in_rss)
+    {
+        Resources new_rss;
+        Resources rss = resources.get(uri, Resources.init);
+
+        foreach (in_rs; in_rss)
+        {
+            bool find = false;
+            foreach (rs; rss)
+            {
+                if (in_rs == rs)
+                {
+                    find = true;
+                    break;
+                }
+            }
+            if (find == false)
+                new_rss ~= in_rs;
+        }
+
+        foreach (rs; rss)
+        {
+            new_rss ~= rs;
+        }
+
+        resources[ uri ] = new_rss;
+    }
 /*
     Resource getFirstIResource(string predicate)
     {
@@ -191,27 +231,27 @@ public struct Individual
 
     Individual repare_unique(string predicate)
     {
-        Resources  rdf_type = resources.get(predicate, Resources.init);
-        
+        Resources rdf_type = resources.get(predicate, Resources.init);
+
         if (rdf_type != Resources.init)
         {
-        	Individual res      = this.dup();
+            Individual res = this.dup();
 
-        	Resources  new_rss  = Resources.init;
-        
-        	auto uniq_rdf_type = std.algorithm.uniq (rdf_type);
-        
-        	Resource rc;
-        	while (uniq_rdf_type.empty == false)
-        	{
-        		rc = uniq_rdf_type.front;
-        		new_rss ~= rc;
-        		uniq_rdf_type.popFront;
-        	} 
+            Resources  new_rss = Resources.init;
 
-        	res.resources[ predicate ] = new_rss;
-        	return res;
-		}
+            auto       uniq_rdf_type = std.algorithm.uniq(rdf_type);
+
+            Resource   rc;
+            while (uniq_rdf_type.empty == false)
+            {
+                rc = uniq_rdf_type.front;
+                new_rss ~= rc;
+                uniq_rdf_type.popFront;
+            }
+
+            res.resources[ predicate ] = new_rss;
+            return res;
+        }
         return this;
     }
 }

@@ -72,9 +72,6 @@ public enum DataType : ubyte
 enum CMD : byte
 {
     /// Сохранить
-    STORE        = 1,
-
-    /// Сохранить
     PUT          = 1,
 
     /// Найти
@@ -88,7 +85,7 @@ enum CMD : byte
 
     /// Авторизовать
     AUTHORIZE    = 8,
-
+        
     /// Коммит
     COMMIT       = 16,
 
@@ -118,6 +115,12 @@ enum CMD : byte
 
     /// Удалить
     DELETE       = 46,
+
+    /// Добавить
+    ADD          = 47,
+
+    /// Убрать
+    REMOVE       = 48,
 
     /// Пустая комманда
     NOP          = 64
