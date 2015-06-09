@@ -110,10 +110,8 @@ public void individuals_manager(string thread_name, string db_path)
                                 return;
                             }
 
-                            string predicate = arg.resources.keys[ 0 ];
-
-                            string ss_as_cbor = storage.find(arg.uri);
                             Individual indv;
+                            string ss_as_cbor = storage.find(arg.uri);
                             code = cbor2individual(&indv, ss_as_cbor);
                             if (code < 0)
                             {
@@ -122,20 +120,23 @@ public void individuals_manager(string thread_name, string db_path)
                                 return;
                             }
 
-                            if (cmd == CMD.ADD)
+                            foreach (predicate; arg.resources.keys)
                             {
-                                // add value to set or ignore if exists
-                                indv.add_unique_Resources(arg.uri, arg.getResources(predicate));
-                            }
-                            else if (cmd == CMD.SET)
-                            {
-                                // set value to predicate
-                                indv.set_Resources(arg.uri, arg.getResources(predicate));
-                            }
-                            else if (cmd == CMD.REMOVE)
-                            {
-                                // remove predicate or value in set
-                                // !!! not implemented
+                                if (cmd == CMD.ADD)
+                                {
+                                    // add value to set or ignore if exists
+                                    indv.add_unique_Resources(predicate, arg.getResources(predicate));
+                                }
+                                else if (cmd == CMD.SET)
+                                {
+                                    // set value to predicate
+                                    indv.set_Resources(predicate, arg.getResources(predicate));
+                                }
+                                else if (cmd == CMD.REMOVE)
+                                {
+                                    // remove predicate or value in set
+                                    // !!! not implemented
+                                }
                             }
 
                             ss_as_cbor = individual2cbor(&indv);

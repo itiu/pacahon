@@ -1078,13 +1078,7 @@ class PThreadContext : Context
 
             if (tid_subject_manager != Tid.init)
             {
-                if (cmd == CMD.PUT)
-                {
-                    send(tid_subject_manager, cmd, ss_as_cbor, thisTid);
-                }
-                else if (cmd == CMD.ADD)
-                {
-                }
+                send(tid_subject_manager, cmd, ss_as_cbor, thisTid);
 
                 receive((EVENT _ev, Tid from)
                         {

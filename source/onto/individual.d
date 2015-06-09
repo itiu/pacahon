@@ -113,6 +113,11 @@ public struct Individual
         Resources new_rss;
         Resources rss = resources.get(uri, Resources.init);
 
+        foreach (rs; rss)
+        {
+            new_rss ~= rs;
+        }
+
         foreach (in_rs; in_rss)
         {
             bool find = false;
@@ -128,27 +133,9 @@ public struct Individual
                 new_rss ~= in_rs;
         }
 
-        foreach (rs; rss)
-        {
-            new_rss ~= rs;
-        }
-
         resources[ uri ] = new_rss;
     }
-/*
-    Resource getFirstIResource(string predicate)
-    {
-        Resources rss = resources.get(predicate, Resources.init);
 
-        if (rss.length > 0)
-        {
-                Resource ir = rss[ 0 ];
-            return ir;
-        }
-
-        return Resource.init;
-    }
- */
     Resources getResources(string predicate)
     {
         Resources rss;
