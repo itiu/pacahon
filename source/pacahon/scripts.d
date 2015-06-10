@@ -148,7 +148,7 @@ public void condition_thread(string thread_name, string props_file_name)
                             if (cmd == CMD.SET_TRACE)
                                 set_trace(arg, arg2);
                         },
-                        (Variant v) { log.trace_log_and_console(thread_name ~ "::Received some other type." ~ text(v)); });
+                        (Variant v) { log.trace_log_and_console(thread_name ~ "::condition_thread::Received some other type." ~ text(v)); });
             }
             catch (Exception ex)
             {

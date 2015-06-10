@@ -258,6 +258,9 @@ char *get_global_prop(const char *prop_name, int prop_name_length);
 
 _Buff *read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length);
 int put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
+int add_to_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
+int set_in_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
+int remove_from_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
 //char *get_resource (int individual_idx, const char* _uri, int _uri_length, int* count_resources, int resource_idx);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -351,12 +354,7 @@ void PutIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
     if (args[ 1 ]->IsObject())
     {
         Individual individual;
-        //std::cout << "@c:put #1" << std::endl;
         jsobject2individual(args[ 1 ], &individual, NULL, "");
-
-	//std::cout << "@c-js:put uri=" << individual.uri << std::endl;
-
-        //std::cout << "@c:put #2" << std::endl;
 
         v8::String::Utf8Value str_ticket(args[ 0 ]);
         const char            *ticket = ToCString(str_ticket);
@@ -364,26 +362,117 @@ void PutIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
         v8::String::Utf8Value str_event_id(args[ 2 ]);
         const char            *event_id = ToCString(str_event_id);
 
-        std::vector<char> buff;
-        
+        std::vector<char> buff;        
         individual2cbor(&individual, buff);
-
         char *ptr = buff.data ();
-
         res = put_individual(ticket, str_ticket.length(), ptr, buff.size(), event_id, str_event_id.length());
 
-//	if (res != 200 && res != 1022)
-//	{
-//    	    buff.clear();
-//    	    individual2cbor(&individual, buff, true);
-//	}
-
         buff.clear();
-        //std::cout << "@c:put #4" << std::endl;
     }
 
     args.GetReturnValue().Set(res);
-    //std::cout << "@c:put #e" << std::endl;
+}
+
+void AddToIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    int res = 500;
+    Isolate *isolate = args.GetIsolate();
+
+    if (args.Length() != 3)
+    {
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "PutIndividual::Bad count parameters"));
+
+        return;
+    }
+
+    if (args[ 1 ]->IsObject())
+    {
+        Individual individual;
+        jsobject2individual(args[ 1 ], &individual, NULL, "");
+
+        v8::String::Utf8Value str_ticket(args[ 0 ]);
+        const char            *ticket = ToCString(str_ticket);
+
+        v8::String::Utf8Value str_event_id(args[ 2 ]);
+        const char            *event_id = ToCString(str_event_id);
+
+        std::vector<char> buff;        
+        individual2cbor(&individual, buff);
+        char *ptr = buff.data ();
+        res = add_to_individual(ticket, str_ticket.length(), ptr, buff.size(), event_id, str_event_id.length());
+
+        buff.clear();
+    }
+
+    args.GetReturnValue().Set(res);
+}
+
+void SetInIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    int res = 500;
+    Isolate *isolate = args.GetIsolate();
+
+    if (args.Length() != 3)
+    {
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "PutIndividual::Bad count parameters"));
+
+        return;
+    }
+
+    if (args[ 1 ]->IsObject())
+    {
+        Individual individual;
+        jsobject2individual(args[ 1 ], &individual, NULL, "");
+
+        v8::String::Utf8Value str_ticket(args[ 0 ]);
+        const char            *ticket = ToCString(str_ticket);
+
+        v8::String::Utf8Value str_event_id(args[ 2 ]);
+        const char            *event_id = ToCString(str_event_id);
+
+        std::vector<char> buff;        
+        individual2cbor(&individual, buff);
+        char *ptr = buff.data ();
+        res = set_in_individual(ticket, str_ticket.length(), ptr, buff.size(), event_id, str_event_id.length());
+
+        buff.clear();
+    }
+
+    args.GetReturnValue().Set(res);
+}
+
+void RemoveFromIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    int res = 500;
+    Isolate *isolate = args.GetIsolate();
+
+    if (args.Length() != 3)
+    {
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "PutIndividual::Bad count parameters"));
+
+        return;
+    }
+
+    if (args[ 1 ]->IsObject())
+    {
+        Individual individual;
+        jsobject2individual(args[ 1 ], &individual, NULL, "");
+
+        v8::String::Utf8Value str_ticket(args[ 0 ]);
+        const char            *ticket = ToCString(str_ticket);
+
+        v8::String::Utf8Value str_event_id(args[ 2 ]);
+        const char            *event_id = ToCString(str_event_id);
+
+        std::vector<char> buff;        
+        individual2cbor(&individual, buff);
+        char *ptr = buff.data ();
+        res = remove_from_individual(ticket, str_ticket.length(), ptr, buff.size(), event_id, str_event_id.length());
+
+        buff.clear();
+    }
+
+    args.GetReturnValue().Set(res);
 }
 
 
@@ -430,6 +519,9 @@ WrappedContext::WrappedContext()
 
     global->Set(v8::String::NewFromUtf8(isolate_, "get_individual"), v8::FunctionTemplate::New(isolate_, GetIndividual));
     global->Set(v8::String::NewFromUtf8(isolate_, "put_individual"), v8::FunctionTemplate::New(isolate_, PutIndividual));
+    global->Set(v8::String::NewFromUtf8(isolate_, "add_to_individual"), v8::FunctionTemplate::New(isolate_, AddToIndividual));
+    global->Set(v8::String::NewFromUtf8(isolate_, "set_in_individual"), v8::FunctionTemplate::New(isolate_, SetInIndividual));
+    global->Set(v8::String::NewFromUtf8(isolate_, "remove_from_individual"), v8::FunctionTemplate::New(isolate_, RemoveFromIndividual));
 
     v8::Handle<v8::Context> context = v8::Context::New(isolate_, NULL, global);
     context_.Reset(isolate_, context);

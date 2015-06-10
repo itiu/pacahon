@@ -142,10 +142,10 @@ public void individuals_manager(string thread_name, string db_path)
                             ss_as_cbor = individual2cbor(&indv);
                             string new_hash;
                             storage.update_or_create(ss_as_cbor, new_hash, EVENT.UPDATE);
-
                             send(tid_response_reciever, EVENT.UPDATE, thisTid);
 
                             bin_log_name = write_in_binlog(ss_as_cbor, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
+                            return;                            
                         }
                     }
                     catch (Exception ex)
@@ -190,8 +190,7 @@ public void individuals_manager(string thread_name, string db_path)
                     }
                     else
                     {
-                        //writeln("%3 ", msg);
-                        send(tid_response_reciever, msg, "", thisTid);
+                        send(tid_response_reciever, msg, "err in individuals_manager", thisTid);
                     }
                 },
                 (CMD cmd, int arg, bool arg2)
@@ -199,7 +198,7 @@ public void individuals_manager(string thread_name, string db_path)
                     if (cmd == CMD.SET_TRACE)
                         set_trace(arg, arg2);
                 },
-                (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+                (Variant v) { writeln(thread_name, "::individuals_manager::Received some other type.", v); });
     }
 }
 

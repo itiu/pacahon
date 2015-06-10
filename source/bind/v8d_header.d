@@ -62,6 +62,80 @@ extern (C++) ResultCode put_individual(const char *_ticket, int _ticket_length, 
         //writeln ("@p:v8d end put_individual");
     }
 }
+extern (C++) ResultCode add_to_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id,
+                                       int _event_id_length)
+{
+    try
+    {
+        //writeln ("@p:v8d put_individual");
+
+        if (g_context !is null)
+        {
+            string cbor      = cast(string)_cbor[ 0.._cbor_length ].dup;
+            string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
+            string event_id  = cast(string)_event_id[ 0.._event_id_length ].dup;
+
+            Ticket *ticket = g_context.get_ticket(ticket_id);
+
+            return g_context.store_individual(CMD.ADD, ticket, null, cbor, false, true, event_id);
+        }
+        return ResultCode.Service_Unavailable;
+    }
+    finally
+    {
+        //writeln ("@p:v8d end put_individual");
+    }
+}
+
+extern (C++) ResultCode set_in_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id,
+                                       int _event_id_length)
+{
+    try
+    {
+        //writeln ("@p:v8d put_individual");
+
+        if (g_context !is null)
+        {
+            string cbor      = cast(string)_cbor[ 0.._cbor_length ].dup;
+            string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
+            string event_id  = cast(string)_event_id[ 0.._event_id_length ].dup;
+
+            Ticket *ticket = g_context.get_ticket(ticket_id);
+
+            return g_context.store_individual(CMD.SET, ticket, null, cbor, false, true, event_id);
+        }
+        return ResultCode.Service_Unavailable;
+    }
+    finally
+    {
+        //writeln ("@p:v8d end put_individual");
+    }
+}
+
+extern (C++) ResultCode remove_from_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id,
+                                       int _event_id_length)
+{
+    try
+    {
+        //writeln ("@p:v8d put_individual");
+
+        if (g_context !is null)
+        {
+            string cbor      = cast(string)_cbor[ 0.._cbor_length ].dup;
+            string ticket_id = cast(string)_ticket[ 0.._ticket_length ].dup;
+            string event_id  = cast(string)_event_id[ 0.._event_id_length ].dup;
+
+            Ticket *ticket = g_context.get_ticket(ticket_id);
+
+            return g_context.store_individual(CMD.REMOVE, ticket, null, cbor, false, true, event_id);
+        }
+        return ResultCode.Service_Unavailable;
+    }
+    finally
+    {
+        //writeln ("@p:v8d end put_individual");
+    }
+}
 
 extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length)
 {

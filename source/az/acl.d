@@ -552,6 +552,6 @@ void acl_manager(string thread_name, string db_path)
                     if (cmd == CMD.SET_TRACE)
                         set_trace(arg, arg2);
                 },
-                (Variant v) { writeln(thread_name, "::Received some other type: [", v, "]"); });
+                (Variant v) { writeln(thread_name, "::acl_manager::Received some other type: [", v, "]"); });
     }
 }

@@ -63,7 +63,7 @@ void statistic_data_accumulator(string thread_name)
                     {
                         send(tid_sender, cast(immutable)stat.dup);
                     }
-                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+                }, (Variant v) { writeln(thread_name, "::statistic_data_accumulator::Received some other type.", v); });
     }
 }
 

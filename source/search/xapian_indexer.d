@@ -64,7 +64,7 @@ public void xapian_thread_context(string thread_name)
                             send(tid_sender, last_update_time);
                         }
                     }
-                }, (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+                }, (Variant v) { writeln(thread_name, "::xapian_thread_context::Received some other type.", v); });
     }
 }
 
@@ -959,7 +959,7 @@ void xapian_indexer(string thread_name)
                         if (cmd == CMD.SET_TRACE)
                             set_trace(arg, arg2);
                     },
-                    (Variant v) { writeln(thread_name, "::Received some other type.", v); });
+                    (Variant v) { writeln(thread_name, "::xapian_indexer::Received some other type.", v); });
         }
         catch (Exception ex)
         {

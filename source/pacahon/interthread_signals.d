@@ -64,7 +64,7 @@ public void interthread_signals_thread(string thread_name)
                     writeln(thread_name, ": OWNER THREAD TERMINATED, APOPTOSIS !");
                     system(cast(char *)("kill -kill " ~ text(getpid()) ~ "\0"));
                 },
-                (Variant v) { writeln(thread_name, "::Received some other type.", v); }
+                (Variant v) { writeln(thread_name, "::interthread_signals_thread::Received some other type.", v); }
                 );
     }
 }
