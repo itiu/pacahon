@@ -107,6 +107,16 @@ public void condition_thread(string thread_name, string props_file_name)
                                                     any_exist = true;
                                                     break;
                                                 }
+                                                
+                                                foreach (filter; script.filters.keys)
+                                                {
+                                                	if (context.get_onto().isSubClass (cast(string)indv_type, filter) == true)
+                                                	{
+                                                    	any_exist = true;
+                                                    	break;
+                                                	}
+                                                }	
+                                                
                                             }
 
                                             if (any_exist == false)
@@ -206,7 +216,7 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
 
         string str_script =
             "var ticket = ''; var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ ss.uri ~
-            "'; var _event_id = _event_id = document['@'] + _script_id; " ~ condition_text ~ "}";
+            "'; var _event_id = document['@'] + _script_id; " ~ condition_text ~ "}";
         try
         {
             ScriptInfo script = ScriptInfo.init;

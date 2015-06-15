@@ -22,12 +22,18 @@ static this()
     log = new logger("pacahon", "log", "onto");
 }
 
+private class OfSubClasses
+{
+	bool[string] data;
+}	
+
 class Onto
 {
     private Context context;
     public int      reload_count = 0;
 
     private         Individual[ string ] individuals;
+    private         OfSubClasses[ string ] ofClass;
 
     public this(Context _context)
     {
@@ -41,6 +47,16 @@ class Onto
 
         return individuals;
     }
+
+	public bool isSubClass (string _class_uri, string _subclass_uri)
+	{
+		OfSubClasses  subclasses = ofClass.get (_class_uri, null);
+		if (subclasses !is null)
+		{
+			return subclasses.data.get (_subclass_uri, false);
+		}
+		return false;
+	}
 
     public void load()
     {
@@ -61,9 +77,34 @@ class Onto
         foreach (indv; l_individuals)
         {
             individuals[ indv.uri ] = indv;
+			if (indv.anyExist ("rdf:type", ["owl:Class", "rdfs:Class"]))
+			{
+            	string type_uri = indv.uri;
+//				writeln ("# class=", type_uri);            
+       			OfSubClasses icl = ofClass.get(type_uri, null);
+        		if (icl is null)
+        		{
+        			OfSubClasses sc = new OfSubClasses (); 
+        			ofClass[type_uri] = sc;            	
+            		prepare_subclasses(sc, individuals, type_uri);
+//   		            writeln ("# subClasses for class ", type_uri, ", = ", sc.data);
+            	}	            
+            }
         }
 
         if (trace_msg[ 20 ] == 1)
             log.trace_log_and_console("[%s] load onto to graph..Ok", context.get_name);
+    }
+    
+    private void prepare_subclasses(ref OfSubClasses subclasses, ref Individual[ string ] classes, string look_cl, int level = 0)
+    {
+        Individual ii = classes.get(look_cl, Individual.init);
+
+        Resource[] list_subClassOf = ii.getResources(rdfs__subClassOf);
+        foreach (subClassOf; list_subClassOf)
+        {
+            subclasses.data[subClassOf.uri] = true;
+            prepare_subclasses(subclasses, classes, subClassOf.uri, level + 1);
+        }
     }
 }
