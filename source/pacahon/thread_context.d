@@ -626,6 +626,11 @@ class PThreadContext : Context
 
             Ticket       *sys_ticket;
 
+        	if (this.getTid(P_MODULE.subject_manager) != Tid.init)
+            	this.wait_thread(P_MODULE.subject_manager);
+        	if (this.getTid(P_MODULE.fulltext_indexer) != Tid.init)
+            	this.wait_thread(P_MODULE.fulltext_indexer);
+
             Individual[] candidate_users = get_individuals_via_query(sys_ticket, "'" ~ veda_schema__login ~ "' == '" ~ login ~ "'");
             foreach (user; candidate_users)
             {
@@ -1126,7 +1131,7 @@ class PThreadContext : Context
 
                 if (prepareEvents == true)
                 {
-                    bus_event_after(indv, rdfType, ss_as_cbor, ev, this, event_id);
+                    bus_event_after(ticket, indv, rdfType, ss_as_cbor, ev, this, event_id);
                 }
 
                 if (wait_for_indexing)
