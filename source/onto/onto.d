@@ -69,10 +69,10 @@ class Onto
 
         if (context.getTid(P_MODULE.subject_manager) != Tid.init)
             context.wait_thread(P_MODULE.subject_manager);
-        context.reopen_ro_subject_storage_db();
         if (context.getTid(P_MODULE.fulltext_indexer) != Tid.init)
             context.wait_thread(P_MODULE.fulltext_indexer);
 
+        context.reopen_ro_subject_storage_db();
         context.reopen_ro_fulltext_indexer_db();
 
         context.vql().get(null,
