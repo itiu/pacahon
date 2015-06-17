@@ -481,8 +481,8 @@ class PThreadContext : Context
 
         if (local == null)
         {
-            //if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
+            if (trace_msg[ 19 ] == 1)
+            	log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
 
             local                            = new Signal;
             local.time_update                = now;
@@ -493,14 +493,14 @@ class PThreadContext : Context
 
         if (now - local.time_check > timeout)
         {
-            //if (trace_msg[ 19 ] == 1)
-            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-local.time_update)=%d, (now-local.time_check)=%d", name,
+            if (trace_msg[ 19 ] == 1)
+            	log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-local.time_update)=%d, (now-local.time_check)=%d", name,
                       interthread_signal_id, now - local.time_update, now - local.time_check);
 
             if (local.time_update > local.time_check)
             {
-                //if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d > local.time_check=%d", name, interthread_signal_id,
+                if (trace_msg[ 19 ] == 1)
+                	log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d > local.time_check=%d", name, interthread_signal_id,
                           local.time_update, local.time_check);
 
                 local.time_check  = now;
@@ -518,14 +518,14 @@ class PThreadContext : Context
                 if (stored_time_signal == 0)
                     return false;
 
-                //if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, local.time_update=%d, delta=%d",
+                if (trace_msg[ 19 ] == 1)
+                	log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, local.time_update=%d, delta=%d",
                           name, interthread_signal_id, stored_time_signal, local.time_update, stored_time_signal - local.time_update);
 
                 if (local.time_update < stored_time_signal)
                 {
-                    //if (trace_msg[ 19 ] == 1)
-                    log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d < stored_time_signal=%d", name, interthread_signal_id,
+                    if (trace_msg[ 19 ] == 1)
+                    	log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d < stored_time_signal=%d", name, interthread_signal_id,
                               local.time_update, stored_time_signal);
 
                     local.time_update = stored_time_signal;
@@ -1178,10 +1178,7 @@ class PThreadContext : Context
     public void wait_thread(P_MODULE thread_id)
     {
         if (thread_id == id)
-        {
-            writeln("сам себя не ждем!!!");
             return;
-        }
 
         StopWatch sw; sw.start;
 
