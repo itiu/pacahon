@@ -162,7 +162,7 @@ private class IndexerContext
         if (iproperty is null)
         {
             if (context is null)
-                context = new PThreadContext(null, thread_name);
+                context = new PThreadContext(null, thread_name, P_MODULE.fulltext_indexer);
             iproperty = new IndexerProperty(context);
         }
 
@@ -190,10 +190,10 @@ private class IndexerContext
                     break;
             }
 
-			if (dbname == "not-indexed")
-				return;
+            if (dbname == "not-indexed")
+                return;
 
-        	counter++;
+            counter++;
 
             foreach (predicate, resources; indv.resources)
             {
@@ -672,7 +672,7 @@ private class IndexerContext
             {
                 indexer_base_db.replace_document(uuid.ptr, uuid.length, doc, &err);
             }
-			
+
             if (counter % 100 == 0)
             {
                 if (trace_msg[ 211 ] == 1)

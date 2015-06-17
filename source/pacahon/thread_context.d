@@ -52,6 +52,7 @@ class PThreadContext : Context
     private JSONValue     props;
 
     private string        name;
+    private P_MODULE      id;
 
     private string        old_msg_key2slot;
     private int[ string ] old_key2slot;
@@ -63,9 +64,10 @@ class PThreadContext : Context
     private search.vql.VQL _vql;
 
     private                Tid[ P_MODULE ] name_2_tids;
+
     private long           local_last_update_time;
 
-    this(string property_file_path, string context_name)
+    this(string property_file_path, string context_name, P_MODULE _id)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R, context_name ~ ":inividuals");
         tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R, context_name ~ ":tickets");
@@ -77,7 +79,11 @@ class PThreadContext : Context
             log.trace("CREATE NEW CONTEXT:", context_name);
 
         foreach (id; P_MODULE.min .. P_MODULE.max)
+        {
             name_2_tids[ id ] = locate(text(id));
+        }
+
+        id = _id;
 
         is_traced_module[ P_MODULE.ticket_manager ]   = true;
         is_traced_module[ P_MODULE.subject_manager ]  = true;
@@ -475,8 +481,8 @@ class PThreadContext : Context
 
         if (local == null)
         {
-            if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
+            //if (trace_msg[ 19 ] == 1)
+            log.trace("[%s] NEW SIGNAL OBJ for [%s] ", name, interthread_signal_id);
 
             local                            = new Signal;
             local.time_update                = now;
@@ -487,15 +493,15 @@ class PThreadContext : Context
 
         if (now - local.time_check > timeout)
         {
-            if (trace_msg[ 19 ] == 1)
-                log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-local.time_update)=%d, (now-local.time_check)=%d", name,
-                          interthread_signal_id, now - local.time_update, now - local.time_check);
+            //if (trace_msg[ 19 ] == 1)
+            log.trace("[%s] CHECK FOR RELOAD #1 [%s], (now-local.time_update)=%d, (now-local.time_check)=%d", name,
+                      interthread_signal_id, now - local.time_update, now - local.time_check);
 
             if (local.time_update > local.time_check)
             {
-                if (trace_msg[ 19 ] == 1)
-                    log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d > local.time_check=%d", name, interthread_signal_id,
-                              local.time_update, local.time_check);
+                //if (trace_msg[ 19 ] == 1)
+                log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d > local.time_check=%d", name, interthread_signal_id,
+                          local.time_update, local.time_check);
 
                 local.time_check  = now;
                 local.time_update = now;
@@ -512,15 +518,15 @@ class PThreadContext : Context
                 if (stored_time_signal == 0)
                     return false;
 
-                if (trace_msg[ 19 ] == 1)
-                    log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, local.time_update=%d, delta=%d",
-                              name, interthread_signal_id, stored_time_signal, local.time_update, stored_time_signal - local.time_update);
+                //if (trace_msg[ 19 ] == 1)
+                log.trace("[%s] CHECK FOR RELOAD #2 [%s], stored_time_signal=%d, local.time_update=%d, delta=%d",
+                          name, interthread_signal_id, stored_time_signal, local.time_update, stored_time_signal - local.time_update);
 
                 if (local.time_update < stored_time_signal)
                 {
-                    if (trace_msg[ 19 ] == 1)
-                        log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d < stored_time_signal=%d", name, interthread_signal_id,
-                                  local.time_update, stored_time_signal);
+                    //if (trace_msg[ 19 ] == 1)
+                    log.trace("[%s] NOW RELOAD FOR [%s], local.time_update=%d < stored_time_signal=%d", name, interthread_signal_id,
+                              local.time_update, stored_time_signal);
 
                     local.time_update = stored_time_signal;
 
@@ -1148,19 +1154,19 @@ class PThreadContext : Context
         individual.uri = uri;
         return store_individual(CMD.PUT, ticket, &individual, null, wait_for_indexing);
     }
-    
+
     public ResultCode add_to_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
     {
         individual.uri = uri;
         return store_individual(CMD.ADD, ticket, &individual, null, wait_for_indexing);
     }
-    
+
     public ResultCode set_in_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
     {
         individual.uri = uri;
         return store_individual(CMD.SET, ticket, &individual, null, wait_for_indexing);
     }
-    
+
     public ResultCode remove_from_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing)
     {
         individual.uri = uri;
@@ -1171,6 +1177,12 @@ class PThreadContext : Context
 
     public void wait_thread(P_MODULE thread_id)
     {
+        if (thread_id == id)
+        {
+            writeln("сам себя не ждем!!!");
+            return;
+        }
+
         StopWatch sw; sw.start;
 
         try
@@ -1179,10 +1191,10 @@ class PThreadContext : Context
 
             if (tid != Tid.init)
             {
-//            writeln("WAIT READY THREAD ", thread_id);
+                //writeln(name, " WAIT READY THREAD ", thread_id);
                 send(tid, CMD.NOP, thisTid);
                 receive((bool res) {});
-//            writeln("OK");
+                //writeln("OK");
             }
         }
         finally

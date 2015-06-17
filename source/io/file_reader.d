@@ -19,10 +19,10 @@ static this()
 }
 
 /// процесс отслеживающий появление новых файлов и добавление их содержимого в базу данных
-void file_reader_thread(P_MODULE name, string props_file_name, int checktime)
+void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
 {
     core.thread.Thread tr = core.thread.Thread.getThis();
-    tr.name = std.conv.text(name);
+    tr.name = std.conv.text(id);
 
     try
     {
@@ -36,7 +36,7 @@ void file_reader_thread(P_MODULE name, string props_file_name, int checktime)
 
     ubyte[] out_data;
 
-    Context context = new PThreadContext(props_file_name, "file_reader");
+    Context context = new PThreadContext(props_file_name, "file_reader", id);
 
     SysTime[ string ] file_modification_time;
     string path = "./ontology";
@@ -126,15 +126,22 @@ void file_reader_thread(P_MODULE name, string props_file_name, int checktime)
                 individuals.get("td:", null) is null)
                 ordered_list ~= individuals.values;
 
-        // load other test-data
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("td:", null) !is null)
-                ordered_list ~= individuals.values;
-
         foreach (value; ordered_list)
         {
             prepare_list(value, context);
         }
+
+//core.thread.Thread.sleep(dur!("seconds")(1));
+        Tid tid_condition_manager = context.getTid(P_MODULE.condition);
+        if (tid_condition_manager != Tid.init)
+        {
+            send(tid_condition_manager, CMD.RELOAD, thisTid);
+            receive((bool res) {});
+        }
+        // load other test-data
+        foreach (key, individuals; list_of_fln)
+            if (individuals.get("td:", null) !is null)
+                prepare_list(individuals.values, context);
 
         core.thread.Thread.sleep(dur!("seconds")(checktime));
     }
@@ -156,6 +163,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
         bool   is_load = false;
 
         string prefix;
+        string i_uri;
 
         foreach (ss; ss_list)
         {
@@ -166,6 +174,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
             //if (trace_msg[ 31 ] == 1)
 //                log.trace("prepare uri=%s", ss.uri);
 
+            i_uri  = ss.uri;
             prefix = context.get_prefix_map.get(ss.uri, null);
 
             if (prefix !is null)
@@ -180,6 +189,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
                     {
                         log.trace("%s, owl: versionInfo is not found, the file will be reloaded with every update.", prefix);
                         is_load = true;
+                        break;
                     }
                     else
                     {
@@ -220,9 +230,16 @@ private void prepare_list(Individual *[] ss_list, Context context)
                 }
             }
         }
+
+        if (is_load == true && (prefix is null || prefix.length < 2))
+        {
+            log.trace_log_and_console("prefix is empty:%s", i_uri);
+            log.trace_log_and_console("prefix map:%s", context.get_prefix_map);
+        }
+
         if (is_load)
         {
-            log.trace_log_and_console("Onto for load:%s", prefix);
+            log.trace_log_and_console("Onto for load:[%s]", prefix);
 
             foreach (ss; ss_list)
             {
@@ -299,7 +316,6 @@ private void prepare_list(Individual *[] ss_list, Context context)
             Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
             if (tid_search_manager != Tid.init)
                 send(tid_search_manager, CMD.COMMIT, "");
-
             context.wait_thread(P_MODULE.fulltext_indexer);
 
             context.set_reload_signal_to_local_thread("search");

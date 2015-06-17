@@ -286,7 +286,7 @@ class ServerThread : core.thread.Thread
     this(void delegate() _dd, string props_file_path, string context_name)
     {
         super(_dd);
-        resource = new PThreadContext(props_file_path, context_name);
+        resource = new PThreadContext(props_file_path, context_name, P_MODULE.nop);
 
 //		resource.sw.start();
     }

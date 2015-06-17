@@ -268,7 +268,7 @@ class XapianReader : SearchReader
         }
         else
         {
-            log.trace("[%s]invalid query [%s]", context.get_name(), str_query);
+            //log.trace("[%s]invalid query [%s]", context.get_name(), str_query);
         }
 
         return 0;

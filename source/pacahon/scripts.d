@@ -11,7 +11,7 @@ private
     import util.container, util.utils, util.logger, util.cbor, util.cbor8individual;
 
     import type;
-    import onto.individual, onto.resource;
+    import onto.individual, onto.resource, onto.onto;
     import pacahon.know_predicates, pacahon.context, pacahon.define, pacahon.thread_context, pacahon.log_msg;
 
     import search.vel, search.vql;
@@ -43,7 +43,7 @@ public void condition_thread(string thread_name, string props_file_name)
 {
     core.thread.Thread.getThis().name = thread_name;
 
-    context   = new PThreadContext(null, thread_name);
+    context   = new PThreadContext(null, thread_name, P_MODULE.condition);
     g_context = context;
 
     vql = new VQL(context);
@@ -56,6 +56,8 @@ public void condition_thread(string thread_name, string props_file_name)
                 {
                     send(tid_response_receiver, true);
                 });
+
+        Onto onto;
 
         while (true)
         {
@@ -79,7 +81,15 @@ public void condition_thread(string thread_name, string props_file_name)
                         },
                         (CMD cmd, Tid to)
                         {
-                            if (cmd == CMD.NOP)
+                            if (cmd == CMD.RELOAD)
+                            {
+                                if (onto is null)
+                                    onto = context.get_onto();
+                                onto.load();
+                                log.trace("onto reloaded");
+                                send(to, true);
+                            }
+                            else if (cmd == CMD.NOP)
                                 send(to, true);
                             else
                                 send(to, false);
@@ -88,6 +98,9 @@ public void condition_thread(string thread_name, string props_file_name)
                         {
                             if (msg !is null && msg.length > 3 && script_vm !is null)
                             {
+                                if (onto is null)
+                                    onto = context.get_onto();
+
                                 //cbor2individual (&g_individual, msg);
                                 g_individual.data = cast(char *)msg;
                                 g_individual.length = cast(int)msg.length;
@@ -107,16 +120,15 @@ public void condition_thread(string thread_name, string props_file_name)
                                                     any_exist = true;
                                                     break;
                                                 }
-                                                
+
                                                 foreach (filter; script.filters.keys)
                                                 {
-                                                	if (context.get_onto().isSubClass (cast(string)indv_type, filter) == true)
-                                                	{
-                                                    	any_exist = true;
-                                                    	break;
-                                                	}
-                                                }	
-                                                
+                                                    if (onto.isSubClass(cast(string)indv_type, filter) == true)
+                                                    {
+                                                        any_exist = true;
+                                                        break;
+                                                    }
+                                                }
                                             }
 
                                             if (any_exist == false)
@@ -129,6 +141,7 @@ public void condition_thread(string thread_name, string props_file_name)
                                             //writeln("skip script [", script_id, "], type:", type, ", indiv.:[", individual_id, "]");
                                             continue;
                                         }
+
 
                                         try
                                         {
@@ -181,8 +194,8 @@ public void load()
     if (script_vm is null)
         return;
 
-    if (trace_msg[ 301 ] == 1)
-        log.trace("start load scripts");
+    //if (trace_msg[ 301 ] == 1)
+    log.trace("start load scripts");
 
     Individual[] res;
     vql.get(null,
@@ -198,8 +211,8 @@ public void load()
     }
 
     //writeln ("@2");
-    if (trace_msg[ 300 ] == 1)
-        log.trace("end load scripts, count=%d ", res.length);
+    //if (trace_msg[ 300 ] == 1)
+    log.trace("end load scripts, count=%d ", res.length);
 }
 
 private void prepare_condition(Individual ss, ScriptVM script_vm)

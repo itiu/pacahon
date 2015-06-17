@@ -320,7 +320,7 @@ interface Context
                 Код результата операции
      */
     public ResultCode put_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
-    
+
     public ResultCode add_to_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
     public ResultCode set_in_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
     public ResultCode remove_from_individual(Ticket *ticket, string uri, Individual individual, bool wait_for_indexing);
