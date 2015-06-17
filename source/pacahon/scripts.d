@@ -94,16 +94,26 @@ public void condition_thread(string thread_name, string props_file_name)
                             else
                                 send(to, false);
                         },
-                        (EVENT type, string msg, immutable(string)[] indv_types, string individual_id, string event_id)
+                        (string user_uri, EVENT type, string msg, immutable(string)[] indv_types, string individual_id, string event_id)
                         {
                             if (msg !is null && msg.length > 3 && script_vm !is null)
                             {
                                 if (onto is null)
                                     onto = context.get_onto();
 
-                                //cbor2individual (&g_individual, msg);
-                                g_individual.data = cast(char *)msg;
-                                g_individual.length = cast(int)msg.length;
+                                g_document.data = cast(char *)msg;
+                                g_document.length = cast(int)msg.length;
+
+								if (user_uri !is null)
+								{
+									g_user.data = cast(char *)user_uri;
+                                	g_user.length = cast(int)user_uri.length;
+                                }
+								else
+								{
+									g_user.data = cast(char *)"v-a:VedaSystem";
+                                	g_user.length = "v-a:VedaSystem".length;									
+								}	
 
                                 foreach (script_id, script; scripts)
                                 {
@@ -228,7 +238,7 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
             return;
 
         string str_script =
-            "var ticket = ''; var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ ss.uri ~
+            "var ticket = ''; var user_uri = get_env_str_var ('$user'); var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ ss.uri ~
             "'; var _event_id = document['@'] + _script_id; " ~ condition_text ~ "}";
         try
         {

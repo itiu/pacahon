@@ -25,7 +25,7 @@ static this()
 
 int count;
 
-void bus_event_after(Individual *individual, Resource[ string ] rdfType, string subject_as_cbor, EVENT ev_type, Context context,
+void bus_event_after(Ticket *ticket, Individual *individual, Resource[ string ] rdfType, string subject_as_cbor, EVENT ev_type, Context context,
                      string event_id)
 {
     //writeln ("@bus_event B subject_as_cbor=[", individual.uri, "]");
@@ -60,16 +60,18 @@ void bus_event_after(Individual *individual, Resource[ string ] rdfType, string 
 
         if (tid_condition != Tid.init)
         {
-//		writeln ("#bus_event #1, conditin_name=", P_MODULE.condition, ", tid_condition=", tid_condition);
             try
             {
-//			 core.P_MODULE.P_MODULE.sleep(dur!("seconds")(10));
                 immutable(string)[] type;
 
                 foreach (key; rdfType.keys)
                     type ~= key;
-
-                send(tid_condition, ev_type, subject_as_cbor, type, individual.uri, event_id);
+                    
+                string user_uri;
+                
+                if (ticket !is null)
+                	user_uri = ticket.user_uri;	    
+                send(tid_condition, user_uri, ev_type, subject_as_cbor, type, individual.uri, event_id);
             }
             catch (Exception ex)
             {

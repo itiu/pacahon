@@ -256,6 +256,8 @@ struct _Buff
 
 char *get_global_prop(const char *prop_name, int prop_name_length);
 
+_Buff *get_env_str_var(const char *_var_name, int _var_name_length);
+
 _Buff *read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length);
 int put_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
 int add_to_individual(const char *_ticket, int _ticket_length, const char *_cbor, int _cbor_length, const char *_event_id, int _event_id_length);
@@ -298,14 +300,39 @@ const char *ToCString(const v8::String::Utf8Value& value)
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+void GetEnvStrVariable(const v8::FunctionCallbackInfo<v8::Value>& args)
+{
+    Isolate *isolate = args.GetIsolate();
+
+    if (args.Length() != 1)
+    {
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "Bad parameters"));
+        return;
+    }
+
+    v8::String::Utf8Value str(args[ 0 ]);
+    const char            *var_name = ToCString(str);
+    _Buff                 *res = get_env_str_var(var_name, str.length());
+
+    if (res != NULL)
+    {
+        std::string data(res->data, res->length);
+
+        //std::cout << "@c:get #3 " << std::endl;
+//        std::cout << "@c:get #3 [" << vv << "]" << std::endl;
+	Handle<Value> oo = String::NewFromUtf8(isolate, data.c_str());
+        args.GetReturnValue().Set(oo);
+    }
+}
+
+
 void GetIndividual(const v8::FunctionCallbackInfo<v8::Value>& args)
 {
     Isolate *isolate = args.GetIsolate();
 
     if (args.Length() != 2)
     {
-        isolate->ThrowException(
-                                v8::String::NewFromUtf8(isolate, "Bad parameters"));
+        isolate->ThrowException(v8::String::NewFromUtf8(isolate, "Bad parameters"));
         return;
     }
 
@@ -516,6 +543,8 @@ WrappedContext::WrappedContext()
     v8::Handle<v8::ObjectTemplate> global = v8::ObjectTemplate::New(isolate_);
     // Bind the global 'print' function to the C++ Print callback.
     global->Set(v8::String::NewFromUtf8(isolate_, "print"), v8::FunctionTemplate::New(isolate_, Print));
+
+    global->Set(v8::String::NewFromUtf8(isolate_, "get_env_str_var"), v8::FunctionTemplate::New(isolate_, GetEnvStrVariable));
 
     global->Set(v8::String::NewFromUtf8(isolate_, "get_individual"), v8::FunctionTemplate::New(isolate_, GetIndividual));
     global->Set(v8::String::NewFromUtf8(isolate_, "put_individual"), v8::FunctionTemplate::New(isolate_, PutIndividual));

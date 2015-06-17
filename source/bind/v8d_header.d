@@ -14,7 +14,9 @@ import util.cbor8individual;
 string[ string ] g_prop;
 Context g_context;
 
-_Buff   g_individual;
+_Buff   g_document;
+_Buff   g_user;
+
 _Buff   tmp_individual;
 
 _Buff   g_script_result;
@@ -137,6 +139,25 @@ extern (C++) ResultCode remove_from_individual(const char *_ticket, int _ticket_
     }
 }
 
+extern (C++)_Buff * get_env_str_var(const char *_var_name, int _var_name_length)
+{
+    try
+    {
+        string var_name    = cast(string)_var_name[ 0.._var_name_length ];
+    	
+    	if (var_name == "$user")
+    	{
+            return &g_user;    		
+    	}
+    	else
+    		return null;
+    }
+    finally
+    {
+        //writeln ("@p:v8d end read_individual");
+    }
+}
+
 extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, const char *_uri, int _uri_length)
 {
     try
@@ -146,8 +167,12 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
 
         //writeln ("@p:v8d read_individual, uri=[", uri, "],  ticket=[", ticket, "]");
 
-        if (uri != "$document")
+        if (uri == "$document")
         {
+            return &g_document;        	
+        }
+        else
+        {    
             if (g_context !is null)
             {
                 string icb = g_context.get_individual_from_storage(uri);
@@ -161,19 +186,6 @@ extern (C++)_Buff * read_individual(const char *_ticket, int _ticket_length, con
                     return null;
             }
             return null;
-        }
-        else
-        {
-/*      if (g_individual.data !is null)
-        {
-                Individual indv;
-                cbor2individual (&indv, cast(string)g_individual.data[0..g_individual.length]);
-                writeln ("@ read_individual, g_individual=", indv);
-        }
-        else
-                writeln ("@ read_individual, g_individual= is null");*/
-            //dump (g_individual.data, 8);
-            return &g_individual;
         }
     }
     finally
