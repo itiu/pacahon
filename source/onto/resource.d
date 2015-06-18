@@ -209,6 +209,17 @@ struct Resource
                 writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
             }
         }
+        else if (_type == DataType.Decimal)
+        {
+            try
+            {
+                this = decimal(str);
+            }
+            catch (Exception ex)
+            {
+                writeln("Ex!: ", __FUNCTION__, ":", text(__LINE__), ", ", ex.msg);
+            }
+        }
         else
         {
             this = str;
