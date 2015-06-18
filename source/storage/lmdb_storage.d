@@ -6,13 +6,9 @@ module storage.lmdb_storage;
 private
 {
     import std.stdio, std.file, std.datetime, std.conv, std.digest.ripemd, std.bigint, std.string;
-
     import bind.lmdb_header;
-
     import onto.individual;
-
     import util.logger, util.utils, util.cbor, util.cbor8individual;
-
     import pacahon.context, pacahon.define;
 }
 

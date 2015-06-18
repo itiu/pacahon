@@ -77,7 +77,10 @@ public void condition_thread(string thread_name, string props_file_name)
                                     send(to, true);
                                 }
                             }
-                            send(to, false);
+                            else
+                            {
+                                send(to, false);
+                            }
                         },
                         (CMD cmd, Tid to)
                         {
@@ -104,16 +107,16 @@ public void condition_thread(string thread_name, string props_file_name)
                                 g_document.data = cast(char *)msg;
                                 g_document.length = cast(int)msg.length;
 
-								if (user_uri !is null)
-								{
-									g_user.data = cast(char *)user_uri;
-                                	g_user.length = cast(int)user_uri.length;
+                                if (user_uri !is null)
+                                {
+                                    g_user.data = cast(char *)user_uri;
+                                    g_user.length = cast(int)user_uri.length;
                                 }
-								else
-								{
-									g_user.data = cast(char *)"v-a:VedaSystem";
-                                	g_user.length = "v-a:VedaSystem".length;									
-								}	
+                                else
+                                {
+                                    g_user.data = cast(char *)"v-a:VedaSystem";
+                                    g_user.length = "v-a:VedaSystem".length;
+                                }
 
                                 foreach (script_id, script; scripts)
                                 {
@@ -238,7 +241,8 @@ private void prepare_condition(Individual ss, ScriptVM script_vm)
             return;
 
         string str_script =
-            "var ticket = ''; var user_uri = get_env_str_var ('$user'); var document = get_individual (ticket, '$document'); if (document) { var _script_id = '" ~ ss.uri ~
+            "var ticket = ''; var user_uri = get_env_str_var ('$user'); var document = get_individual (ticket, '$document'); if (document) { var _script_id = '"
+            ~ ss.uri ~
             "'; var _event_id = document['@'] + _script_id; " ~ condition_text ~ "}";
         try
         {

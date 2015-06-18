@@ -4,7 +4,7 @@
 
 module onto.onto;
 
-// TODO сделать перезагрузку онтологии в случае ее изменения (проверять CRC?)
+// TODO сделать перезагрузку онтологии только в случае ее изменения (проверять CRC?)
 
 private
 {
@@ -61,18 +61,24 @@ class Onto
 
     public void load()
     {
+        if (log is null)
+            log = new logger("pacahon", "log", "onto");
+
         reload_count++;
         Individual[] l_individuals;
 
-        if (trace_msg[ 20 ] == 1)
-            log.trace_log_and_console("[%s] load onto to graph..", context.get_name);
+        //if (trace_msg[ 20 ] == 1)
+        log.trace_log_and_console("[%s] load onto to context..", context.get_name);
+
+        if (context.getTid(P_MODULE.acl_manager) != Tid.init)
+            context.wait_thread(P_MODULE.acl_manager);
 
         if (context.getTid(P_MODULE.subject_manager) != Tid.init)
             context.wait_thread(P_MODULE.subject_manager);
+        context.reopen_ro_subject_storage_db();
+
         if (context.getTid(P_MODULE.fulltext_indexer) != Tid.init)
             context.wait_thread(P_MODULE.fulltext_indexer);
-
-        context.reopen_ro_subject_storage_db();
         context.reopen_ro_fulltext_indexer_db();
 
         context.vql().get(null,
@@ -80,8 +86,8 @@ class Onto
             filter { 'rdf:type' == 'rdfs:Class' || 'rdf:type' == 'rdf:Property' || 'rdf:type' == 'owl:Class' || 'rdf:type' == 'owl:ObjectProperty' || 'rdf:type' == 'owl:DatatypeProperty' }",
                           l_individuals);
 
-        if (trace_msg[ 20 ] == 1)
-            log.trace_log_and_console("[%s] count individuals: %d", context.get_name, l_individuals.length);
+        //if (trace_msg[ 20 ] == 1)
+        log.trace_log_and_console("[%s] count individuals: %d", context.get_name, l_individuals.length);
 
         foreach (indv; l_individuals)
         {

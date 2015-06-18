@@ -4,10 +4,10 @@
 module io.file_reader;
 
 import core.stdc.stdio, core.stdc.errno, core.stdc.string, core.stdc.stdlib;
-import std.conv, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.path, std.utf, std.stdio : writeln;
-
+import std.conv, std.digest.ripemd, std.bigint, std.datetime, std.concurrency, std.json, std.file, std.outbuffer, std.string, std.path, std.utf,
+       std.stdio : writeln;
 import type;
-import util.container, util.cbor, util.utils, util.logger, util.raptor2individual;
+import util.container, util.cbor, util.utils, util.logger, util.raptor2individual, util.cbor8individual;
 import onto.individual, onto.resource;
 import pacahon.context, pacahon.thread_context, pacahon.define, pacahon.know_predicates, pacahon.log_msg;
 
@@ -16,6 +16,19 @@ logger log;
 static this()
 {
     log = new logger("pacahon", "log", "file_reader");
+}
+
+BigInt[ string ] ontohashes_2_filename;
+
+private void add_to_onto_hash(Individual *indv, string name, ref BigInt[ string ] accum)
+{
+    string content = individual2cbor(indv);
+
+    ubyte[ 20 ] hash = ripemd160Of(content);
+    BigInt msg_hash  = "0x" ~ toHexString(hash);
+    BigInt prev_summ = accum.get(name, BigInt.init);
+    accum[ name ] = prev_summ + msg_hash;
+//    return toHex(summ_hash_this_db);
 }
 
 /// процесс отслеживающий появление новых файлов и добавление их содержимого в базу данных
@@ -76,72 +89,100 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
             }
         }
 
-        Individual *[ string ][ string ] list_of_fln;
+        string[ string ] filename_2_prefix;
+        string[] order_in_load = [ "vdi:", "v-a:", "rdf:", "rdfs:", "owl:", "*", "td:" ];
+        Individual *[ string ][ string ] individuals_2_filename;
+        BigInt[ string ] cur_ontohashes_2_filename;
+        bool[ string ] modifed_2_file;
 
-        foreach (fln; files_to_load)
+        foreach (filename; files_to_load)
         {
-            if (trace_msg[ 29 ] == 1)
-                log.trace("load file=%s", fln);
+            log.trace("prepare_file %s", filename);
 
-            log.trace("prepare_file %s", fln);
+            auto individuals = ttl2individuals(filename, context);
 
-            list_of_fln[ fln ] = ttl2individuals(fln, context);
+            foreach (indv; individuals)
+            {
+                add_to_onto_hash(indv, filename, cur_ontohashes_2_filename);
+                if (indv.isExist(rdf__type, owl__Ontology))
+                {
+                    filename_2_prefix[ indv.uri ] = filename;
+                }
+            }
+
+            individuals_2_filename[ filename ] = individuals;
         }
 
-        // set order
-        Individual *[][] ordered_list = (Individual *[][]).init;
+
+        foreach (key, value; cur_ontohashes_2_filename)
+        {
+            BigInt prev_hash = ontohashes_2_filename.get(key, BigInt.init);
+            if (prev_hash != value)
+            {
+                //writeln("onto changed=", key);
+                ontohashes_2_filename[ key ] = value;
+                modifed_2_file[ key ]        = true;
+            }
+        }
+
+        //writeln("@@1 ontohashes_2_filename=", ontohashes_2_filename);
+        //writeln("@@2 filename_2_prefix=", filename_2_prefix);
+        //writeln("@@3 modifed_2_file=", modifed_2_file);
 
         // load index onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("vdi:", null) !is null)
-                ordered_list ~= individuals.values;
-
-        // load admin onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("v-a:", null) !is null)
-                ordered_list ~= individuals.values;
-
-        // load rdf onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("rdf:", null) !is null)
-                ordered_list ~= individuals.values;
-
-        // load rdfs onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("rdfs:", null) !is null)
-                ordered_list ~= individuals.values;
-
-        // load owl onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("owl:", null) !is null)
-                ordered_list ~= individuals.values;
-
-        // load other onto
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("v-a:", null) is null &&
-                individuals.get("owl:", null) is null &&
-                individuals.get("rdf:", null) is null &&
-                individuals.get("rdfs:", null) is null &&
-                individuals.get("vdi:", null) is null &&
-                individuals.get("td:", null) is null)
-                ordered_list ~= individuals.values;
-
-        foreach (value; ordered_list)
+        foreach (pos; order_in_load)
         {
-            prepare_list(value, context);
-        }
+            if (pos == "*")
+            {
+                foreach (ont; filename_2_prefix.keys)
+                {
+                    bool ff = false;
+                    foreach (pos1; order_in_load)
+                    {
+                        if (ont == pos1)
+                        {
+                            ff = true;
+                            break;
+                        }
+                    }
+                    if (ff == false)
+                    {
+                        string filename = filename_2_prefix.get(ont, null);
+                        if (filename !is null)
+                        {
+                            if (modifed_2_file.get(filename, false) == true)
+                            {
+                                auto rr = individuals_2_filename.get(filename, null);
+                                prepare_list(rr.values, context);
+                            }
+                        }
+                    }
+                }
+            }
+            else
+            {
+                string filename = filename_2_prefix.get(pos, null);
+                if (filename !is null)
+                {
+                    if (modifed_2_file.get(filename, false) == true)
+                    {
+                        if (pos == "td:")
+                        {
+                            Tid tid_condition_manager = context.getTid(P_MODULE.condition);
+                            if (tid_condition_manager != Tid.init)
+                            {
+                                core.thread.Thread.sleep(dur!("seconds")(1));
+                                send(tid_condition_manager, CMD.RELOAD, thisTid);
+                                receive((bool res) {});
+                            }
+                        }
 
-//core.thread.Thread.sleep(dur!("seconds")(1));
-        Tid tid_condition_manager = context.getTid(P_MODULE.condition);
-        if (tid_condition_manager != Tid.init)
-        {
-            send(tid_condition_manager, CMD.RELOAD, thisTid);
-            receive((bool res) {});
+                        auto rr = individuals_2_filename.get(filename, null);
+                        prepare_list(rr.values, context);
+                    }
+                }
+            }
         }
-        // load other test-data
-        foreach (key, individuals; list_of_fln)
-            if (individuals.get("td:", null) !is null)
-                prepare_list(individuals.values, context);
 
         core.thread.Thread.sleep(dur!("seconds")(checktime));
     }
