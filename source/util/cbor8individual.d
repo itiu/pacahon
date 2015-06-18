@@ -5,10 +5,10 @@ module util.cbor8individual;
 
 private import std.outbuffer, std.stdio, std.string;
 private import type;
-private import onto.resource;
-private import onto.individual;
-private import onto.lang;
+private import onto.resource, onto.individual, onto.lang;
 private import util.cbor;
+import backtrace.backtrace;
+import Backtrace = backtrace.backtrace;
 
 string dummy;
 
@@ -282,6 +282,7 @@ public int cbor2individual(Individual *individual, string in_str)
     catch (Exception ex)
     {
         writeln("!ERR:cbor2individual ex=", ex.msg, ", in_str=", in_str);
+    	printPrettyTrace(stderr);
         return -1;
     }
 }
