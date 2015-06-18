@@ -45,7 +45,7 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
     {
     }
 
-    core.thread.Thread.sleep(dur!("msecs")(100));
+    core.thread.Thread.sleep(dur!("msecs")(500));
 
     ubyte[] out_data;
 
