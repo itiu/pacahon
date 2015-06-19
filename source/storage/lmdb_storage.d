@@ -64,6 +64,7 @@ public class LmdbStorage
 
         create_folder_struct();
         open_db();
+        reopen_db();
     }
 
     @property
