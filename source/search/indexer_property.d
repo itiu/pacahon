@@ -61,8 +61,11 @@ class IndexerProperty
     {
         if (class_property__2__indiviual.length == 0)
         {
+   	        context.reopen_ro_subject_storage_db();
+        	context.reopen_ro_fulltext_indexer_db();
+
             Individual[] l_individuals;
-            context.vql().reopen_db();
+//            context.vql().reopen_db();
             context.vql().get(null, "return { '*' } filter { 'rdf:type' == 'vdi:ClassIndex' }", l_individuals, true);
 
             foreach (indv; l_individuals)
@@ -99,6 +102,7 @@ class IndexerProperty
                 }
             }
             database__2__true[ "base" ] = true;
+            std.stdio.writeln ("@@1 class__2__database=", class__2__database);
         }
     }
 }

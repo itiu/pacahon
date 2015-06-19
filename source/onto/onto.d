@@ -70,15 +70,10 @@ class Onto
         //if (trace_msg[ 20 ] == 1)
         log.trace_log_and_console("[%s] load onto to context..", context.get_name);
 
-        if (context.getTid(P_MODULE.acl_manager) != Tid.init)
-            context.wait_thread(P_MODULE.acl_manager);
+//        if (context.getTid(P_MODULE.acl_manager) != Tid.init)
+//            context.wait_thread(P_MODULE.acl_manager);
 
-        if (context.getTid(P_MODULE.subject_manager) != Tid.init)
-            context.wait_thread(P_MODULE.subject_manager);
         context.reopen_ro_subject_storage_db();
-
-        if (context.getTid(P_MODULE.fulltext_indexer) != Tid.init)
-            context.wait_thread(P_MODULE.fulltext_indexer);
         context.reopen_ro_fulltext_indexer_db();
 
         context.vql().get(null,

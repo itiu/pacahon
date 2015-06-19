@@ -795,11 +795,15 @@ class PThreadContext : Context
 
     public void reopen_ro_fulltext_indexer_db()
     {
+        if (this.getTid(P_MODULE.fulltext_indexer) != Tid.init)
+            this.wait_thread(P_MODULE.fulltext_indexer);
         vql.reopen_db();
     }
 
     public void reopen_ro_subject_storage_db()
     {
+        if (this.getTid(P_MODULE.subject_manager) != Tid.init)
+            this.wait_thread(P_MODULE.subject_manager);
         inividuals_storage.reopen_db();
     }
 

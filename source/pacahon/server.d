@@ -119,12 +119,13 @@ bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
     if (tid == Tid.init)
         throw new Exception("wait_starting_thread: Tid=" ~ text(tid_idx) ~ " not found", __FILE__, __LINE__);
 
+    log.trace("START THREAD... : %s", text(tid_idx));
     send(tid, thisTid);
     receive((bool isReady)
             {
                 res = isReady;
-                if (trace_msg[ 50 ] == 1)
-                    log.trace("STARTED THREAD: %s", text(tid_idx));
+                //if (trace_msg[ 50 ] == 1)
+                    log.trace("START THREAD IS SUCCESS: %s", text(tid_idx));
                 if (res == false)
                     log.trace("FAIL START THREAD: %s", text(tid_idx));
             });
