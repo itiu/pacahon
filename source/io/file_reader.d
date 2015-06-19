@@ -190,6 +190,10 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
 
 private void prepare_list(Individual *[] ss_list, Context context)
 {
+    context.reopen_ro_subject_storage_db();
+    context.reopen_ro_fulltext_indexer_db();
+
+
     // 1. сравнивает owl:versionInfo с версией в хранилище, для всех rdf:type == owl:Ontology,
     //    запоминает несуществующие или отличающиеся версией, для последующей загрузки
     // 2. попутно находит системный аккаунт (veda)
@@ -353,11 +357,6 @@ private void prepare_list(Individual *[] ss_list, Context context)
                     }
                 }
             }
-
-            Tid tid_search_manager = context.getTid(P_MODULE.fulltext_indexer);
-            if (tid_search_manager != Tid.init)
-                send(tid_search_manager, CMD.COMMIT, "");
-            context.wait_thread(P_MODULE.fulltext_indexer);
 
             context.set_reload_signal_to_local_thread("search");
         }

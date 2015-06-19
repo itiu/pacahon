@@ -123,6 +123,15 @@ private class IndexerContext
     Tid    key2slot_accumulator;
     string thread_name;
 
+    void reload_index_schema()
+    {
+        if (iproperty !is null)
+        {
+            //writeln ("@@@1 RELOAD INDEX PROPERIES");
+            iproperty.load(true);
+            //writeln ("@@@2 iproperty=", iproperty);
+        }
+    }
 
     void delete_msg(string msg)
     {
@@ -166,7 +175,7 @@ private class IndexerContext
             iproperty = new IndexerProperty(context);
         }
 
-        iproperty.load();
+        iproperty.load(false);
 
         //writeln("prepare msg counter:", counter, ", subject:", ss.subject);
 
@@ -185,6 +194,11 @@ private class IndexerContext
             string dbname = "base";
             foreach (_type; types)
             {
+                if (_type.uri == "vdi:ClassIndex")
+                {
+                    iproperty.add_schema_data(indv);
+                }
+
                 dbname = iproperty.get_dbname_of_class(_type.uri);
                 if (dbname != "base")
                     break;
@@ -899,23 +913,31 @@ void xapian_indexer(string thread_name)
                     },
                     (CMD cmd, Tid tid_response_reciever)
                     {
-                        // если ожидают окончания операции для indexer, то вероятнее всего собираются сразу-же читать из поиска
-                        // следовательно нужно сделать коммит
-                        if (ictx.key2slot.length - ictx.last_size_key2slot > 0)
+                        if (cmd == CMD.RELOAD)
                         {
-                            store__key2slot(ictx.key2slot, ictx.tid_subject_manager);
-                            if (trace_msg[ 210 ] == 1)
-                                log.trace("store__key2slot #2");
-                            ictx.last_size_key2slot = ictx.key2slot.length;
-                        }
-                        ictx.commit_all_db();
-
-                        ictx.last_counter_after_timed_commit = ictx.counter;
-
-                        if (cmd == CMD.NOP)
+                            ictx.reload_index_schema();
                             send(tid_response_reciever, true);
+                        }
                         else
-                            send(tid_response_reciever, false);
+                        {
+                            // если ожидают окончания операции для indexer, то вероятнее всего собираются сразу-же читать из поиска
+                            // следовательно нужно сделать коммит
+                            if (ictx.key2slot.length - ictx.last_size_key2slot > 0)
+                            {
+                                store__key2slot(ictx.key2slot, ictx.tid_subject_manager);
+                                if (trace_msg[ 210 ] == 1)
+                                    log.trace("store__key2slot #2");
+                                ictx.last_size_key2slot = ictx.key2slot.length;
+                            }
+                            ictx.commit_all_db();
+
+                            ictx.last_counter_after_timed_commit = ictx.counter;
+
+                            if (cmd == CMD.NOP)
+                                send(tid_response_reciever, true);
+                            else
+                                send(tid_response_reciever, false);
+                        }
                     },
                     (CMD cmd, string msg)
                     {

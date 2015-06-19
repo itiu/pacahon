@@ -4,6 +4,7 @@
 
 module search.indexer_property;
 
+private import std.conv, std.stdio;
 private import pacahon.context, pacahon.log_msg;
 private import onto.resource, onto.lang, onto.individual;
 
@@ -57,12 +58,46 @@ class IndexerProperty
         return class_property__2__indiviual.get(predicate, Individual.init);
     }
 
-    void load()
+    void add_schema_data(Individual indv)
     {
-        if (class_property__2__indiviual.length == 0)
+        uri__2__indiviual[ indv.uri ] = indv;
+        Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
+        Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
+
+        Resources indexed_to = indv.resources.get("vdi:indexed_to", Resources.init);
+
+        if (forClasses.length == 0)
+            forClasses ~= Resource.init;
+
+        if (forProperties.length == 0)
+            forProperties ~= Resource.init;
+
+        foreach (forClass; forClasses)
         {
-   	        context.reopen_ro_subject_storage_db();
-        	context.reopen_ro_fulltext_indexer_db();
+            if (indexed_to.length > 0)
+            {
+//                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
+                class__2__database[ forClass.uri ]              = indexed_to[ 0 ].get!string;
+                database__2__true[ indexed_to[ 0 ].get!string ] = true;
+            }
+
+            foreach (forProperty; forProperties)
+            {
+                string key = forClass.uri ~ forProperty.uri;
+                class_property__2__indiviual[ key ] = indv;
+
+                if (trace_msg[ 214 ] == 1)
+                    log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
+            }
+        }
+    }
+
+    void load(bool force = false)
+    {
+        if (class_property__2__indiviual.length == 0 || force)
+        {
+            context.reopen_ro_subject_storage_db();
+            context.reopen_ro_fulltext_indexer_db();
 
             Individual[] l_individuals;
 //            context.vql().reopen_db();
@@ -70,40 +105,17 @@ class IndexerProperty
 
             foreach (indv; l_individuals)
             {
-                uri__2__indiviual[ indv.uri ] = indv;
-                Resources forClasses    = indv.resources.get("vdi:forClass", Resources.init);
-                Resources forProperties = indv.resources.get("vdi:forProperty", Resources.init);
-
-                Resources indexed_to = indv.resources.get("vdi:indexed_to", Resources.init);
-
-                if (forClasses.length == 0)
-                    forClasses ~= Resource.init;
-
-                if (forProperties.length == 0)
-                    forProperties ~= Resource.init;
-
-                foreach (forClass; forClasses)
-                {
-                    if (indexed_to.length > 0)
-                    {
-//                      writeln ("@1 indexed_as_system=", indexed_as_system, ", indexed_as_system[0]=", indexed_as_system[0]);
-                        class__2__database[ forClass.uri ]              = indexed_to[ 0 ].get!string;
-                        database__2__true[ indexed_to[ 0 ].get!string ] = true;
-                    }
-
-                    foreach (forProperty; forProperties)
-                    {
-                        string key = forClass.uri ~ forProperty.uri;
-                        class_property__2__indiviual[ key ] = indv;
-
-                        if (trace_msg[ 214 ] == 1)
-                            log.trace("search indexes, key=%s, uri=%s", key, indv.uri);
-                    }
-                }
+                add_schema_data(indv);
             }
             database__2__true[ "base" ] = true;
-            std.stdio.writeln ("@@1 class__2__database=", class__2__database);
+            //writeln ("@@1 class__2__database=", class__2__database);
         }
+    }
+
+
+    override public string toString()
+    {
+        return text(class__2__database);
     }
 }
 
