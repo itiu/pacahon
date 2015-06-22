@@ -22,10 +22,7 @@ static this()
     log = new logger("pacahon", "log", "onto");
 }
 
-private class OfSubClasses
-{
-    bool[ string ] data;
-}
+alias bool[ string ] OfSubClasses;
 
 class Onto
 {
@@ -54,7 +51,7 @@ class Onto
 
         if (subclasses !is null)
         {
-            return subclasses.data.get(_subclass_uri, false);
+            return subclasses.get(_subclass_uri, false);
         }
         return false;
     }
@@ -94,7 +91,7 @@ class Onto
                 OfSubClasses icl = ofClass.get(type_uri, null);
                 if (icl is null)
                 {
-                    OfSubClasses sc = new OfSubClasses();
+                    OfSubClasses sc = OfSubClasses.init;
                     ofClass[ type_uri ] = sc;
                     prepare_subclasses(sc, individuals, type_uri);
 //                      writeln ("# subClasses for class ", type_uri, ", = ", sc.data);
@@ -113,7 +110,7 @@ class Onto
         Resource[] list_subClassOf = ii.getResources(rdfs__subClassOf);
         foreach (subClassOf; list_subClassOf)
         {
-            subclasses.data[ subClassOf.uri ] = true;
+            subclasses[ subClassOf.uri ] = true;
             prepare_subclasses(subclasses, classes, subClassOf.uri, level + 1);
         }
     }
