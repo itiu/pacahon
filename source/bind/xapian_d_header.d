@@ -314,6 +314,7 @@ interface XapianWritableDatabase
     void delete_document(const char *_unique_term, ulong _unique_term_len, byte *err);
     void commit(byte *err);
     void close(byte *err);
+    void reopen(byte *err);
 }
 
 /// Class representing a query
