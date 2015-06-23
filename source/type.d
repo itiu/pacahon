@@ -178,8 +178,7 @@ struct decimal
             x *= 10;
             ++count;
         }
-        mantissa = cast(long)(num * pow(10, count)) * sign;
-
+        mantissa = cast(long)(num * pow(10L, count)) * sign;
         exponent = -count;
     }
 
