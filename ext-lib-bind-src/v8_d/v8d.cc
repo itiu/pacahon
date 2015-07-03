@@ -120,7 +120,11 @@ void jsobject2individual(Local<Value> value, Individual *indv, Resource *resourc
     }
     else if (value->IsDate())
     {
-        //std::cout << "@json->cbor #10" << std::endl;
+//        std::cout << "@json->cbor #10" << std::endl;
+        resource->type      = _Datetime;
+        resource->long_data = value->ToInteger()->Value();
+
+        return;
     }
     else if (value->IsNumber())
     {
@@ -203,6 +207,21 @@ void jsobject2individual(Local<Value> value, Individual *indv, Resource *resourc
                 indv->resources[ predicate ] = values;
                 return;
             }
+            else if (type == _Datetime)
+	    {
+//                v8::String::Utf8Value s1_1(v_data);
+//                std::string           std_s1_1 = std::string(*s1_1);
+
+                int64_t value = (int64_t)(v_data->ToInteger()->Value()/1000);
+//                std::cout << "@json->cbor #5, " << std_s1_1 << ", " << v_data->ToInteger()->Value() << ", " << value << std::endl;
+                vector <Resource> values    = indv->resources[ predicate ];
+                Resource          rc;
+                rc.type      = type;
+                rc.long_data = value;
+                values.push_back(rc);
+                indv->resources[ predicate ] = values;
+                return;
+	    }	
             else if (type == _Integer)
             {
                 int intValue = v_data->ToInteger()->Value();
