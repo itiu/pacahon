@@ -45,11 +45,11 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
     {
     }
 
-    core.thread.Thread.sleep(dur!("msecs")(500));
-
     ubyte[] out_data;
 
     Context context = new PThreadContext(props_file_name, "file_reader", id);
+
+    core.thread.Thread.sleep(dur!("msecs")(500));
 
     SysTime[ string ] file_modification_time;
     string path = "./ontology";
@@ -193,6 +193,8 @@ private void prepare_list(Individual *[] ss_list, Context context)
     context.reopen_ro_subject_storage_db();
     context.reopen_ro_fulltext_indexer_db();
 
+    long count_individuals = context.count_individuals();
+
 
     // 1. сравнивает owl:versionInfo с версией в хранилище, для всех rdf:type == owl:Ontology,
     //    запоминает несуществующие или отличающиеся версией, для последующей загрузки
@@ -243,7 +245,10 @@ private void prepare_list(Individual *[] ss_list, Context context)
 
                         // проверить какая версия данной онтологии в хранилище
                         //writeln("look in storage[", ss.uri, "]");
-                        Individual sss = context.get_individual(null, ss.uri);
+                        Individual sss;
+                        
+                        if (count_individuals > 0)
+                        	sss = context.get_individual(null, ss.uri);
 
                         if (trace_msg[ 33 ] == 1)
                             log.trace("look in storage=%s, found=%s", ss.uri, sss);
