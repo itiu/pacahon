@@ -211,7 +211,17 @@ class VQL
                 }
                 else
                 {
-                    writeln("!ERR:invalid individual=", uri);
+                    //writeln("!ERR:invalid individual=", uri);
+                    context.reopen_ro_subject_storage_db();
+                    data = context.get_individual_from_storage(uri);
+                    if (cbor2individual(&ind, data) > 0)
+                    {
+                        res ~= ind;
+                    }
+                    else
+                    {
+                        writeln("!ERR:vql.get attempt 2, invalid individual=", uri);
+                    }
                 }
             }
             dg = &collect_subject;

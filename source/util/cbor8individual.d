@@ -282,7 +282,7 @@ public int cbor2individual(Individual *individual, string in_str)
     catch (Exception ex)
     {
         writeln("!ERR:cbor2individual ex=", ex.msg, ", in_str=", in_str);
-    	printPrettyTrace(stderr);
+        //printPrettyTrace(stderr);
         return -1;
     }
 }
