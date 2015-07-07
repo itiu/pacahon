@@ -5,7 +5,7 @@
 	"homepage": "http://github.com/itiu/pacahon",
 	"authors": ["Bushenev Valeriy"],
 	"-ddoxFilterArgs": ["--unittest-examples", "--min-protection=Public", "--only-documented", "--ex", "vibe."],
-	"dependencies": {"pacahon_third_party": "1.0.6", "backtrace-d": "0.1.0"},
+	"dependencies": {"pacahon_third_party": "1.0.7", "backtrace-d": "0.1.0"},
         "libs": [
                 "raptor2"
         ],
