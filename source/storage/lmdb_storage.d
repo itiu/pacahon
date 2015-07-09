@@ -116,12 +116,18 @@ public class LmdbStorage
         return Result.Ok;
     }
 
+
     public void reopen_db()
     {
-        mdb_env_close(env);
-        open_db();
+       	flush (1);
+    	if (mode == DBMode.RW)
+    	{    	
+        	mdb_env_close(env);
+        	log.trace_log_and_console("%s(%s) INFO: close db %s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, text (mode));    	
+        	open_db();
+        }
     }
-
+    
     public void open_db()
     {
         int rc;
