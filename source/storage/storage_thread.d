@@ -25,11 +25,11 @@ static this()
 
 public void individuals_manager(string thread_name, string db_path)
 {
-    core.thread.Thread.getThis().name = thread_name;
-    LmdbStorage storage               = new LmdbStorage(db_path, DBMode.RW, "individuals_manager");
-    int         size_bin_log          = 0;
-    int         max_size_bin_log      = 10_000_000;
-    string      bin_log_name          = get_new_binlog_name(db_path);
+    core.thread.Thread.getThis().name             = thread_name;
+    LmdbStorage                  storage          = new LmdbStorage(db_path, DBMode.RW, "individuals_manager");
+    int                          size_bin_log     = 0;
+    int                          max_size_bin_log = 10_000_000;
+    string                       bin_log_name     = get_new_binlog_name(db_path);
 
     // SEND ready
     receive((Tid tid_response_reciever)
@@ -145,7 +145,7 @@ public void individuals_manager(string thread_name, string db_path)
                             send(tid_response_reciever, EVENT.UPDATE, thisTid);
 
                             bin_log_name = write_in_binlog(ss_as_cbor, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
-                            return;                            
+                            return;
                         }
                     }
                     catch (Exception ex)
@@ -214,7 +214,7 @@ private string write_in_binlog(string msg, string new_hash, string bin_log_name,
     oub.write(cast(ubyte)0xff);
     oub.write(cast(ubyte)0x21);
     oub.write(cast(ubyte)0);
-    
+
     oub.write(now);
     oub.write(cast(int)new_hash.length);
     oub.write(cast(int)msg.length);
