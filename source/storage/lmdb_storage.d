@@ -42,10 +42,12 @@ public enum Result
     Nothing
 }
 
+bool[string] db_is_rw;
+
 /// key-value хранилище на lmdb
 public class LmdbStorage
 {
-    MDB_env             *env;
+    MDB_env*             env;
     public const string summ_hash_this_db_id;
     private BigInt      summ_hash_this_db;
     private DBMode      mode;
@@ -61,6 +63,9 @@ public class LmdbStorage
         summ_hash_this_db_id = "summ_hash_this_db";
         mode                 = _mode;
         parent_thread_name   = _parent_thread_name;
+
+		if (log is null)
+       		log = new logger("pacahon", "log", "lmdb");        
 
         create_folder_struct();
         open_db();
@@ -120,10 +125,17 @@ public class LmdbStorage
     public void reopen_db()
     {
        	flush (1);
-    	if (mode == DBMode.RW)
+       	
+       	bool is_cooperative = db_is_rw.get (_path, false);
+        //log.trace_log_and_console("%s(%s) INFO: is_cooperative=%s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, text (is_cooperative));
+       	
+    	if (is_cooperative == true && mode == DBMode.RW || is_cooperative == false)
     	{    	
         	mdb_env_close(env);
-        	log.trace_log_and_console("%s(%s) INFO: close db %s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, text (mode));    	
+        	
+        	if (mode == DBMode.RW)
+        		log.trace_log_and_console("%s(%s) INFO: reopen rw db %s", __FUNCTION__ ~ ":" ~ text(__LINE__), _path, text (mode));
+        		    	
         	open_db();
         }
     }
@@ -143,6 +155,8 @@ public class LmdbStorage
 
             if (rc == 0 && mode == DBMode.RW)
             {
+            	db_is_rw[_path] = true;
+            	
                 string hash_str = find(summ_hash_this_db_id);
 
                 if (hash_str is null || hash_str.length < 1)
@@ -298,6 +312,10 @@ public class LmdbStorage
         return toHex(summ_hash_this_db);
     }
 
+
+
+long count_update;
+
     private EVENT update_or_create(string uri, string content, out string new_hash, EVENT ev = EVENT.NONE)
     {
 //                                      StopWatch sw; sw.start;
@@ -341,12 +359,22 @@ public class LmdbStorage
         data.mv_size = content.length;
 
         rc = mdb_put(txn, dbi, &key, &data, 0);
+        if (rc == MDB_MAP_FULL)
+        {
+            growth_db(env, txn);
+
+            // retry
+            return update_or_create(uri, content, new_hash, ev);
+        }
+        
         if (rc != 0)
         {
             log.trace_log_and_console(__FUNCTION__ ~ ":" ~ text(__LINE__) ~ ", (%s) ERR:%s", _path, fromStringz(mdb_strerror(rc)));
             mdb_txn_abort(txn);
             throw new Exception(cast(string)("Fail:" ~  fromStringz(mdb_strerror(rc))));
         }
+
+        count_update ++;
 
         if (summ_hash_this_db != BigInt.init)
         {   // put current db summ hash
@@ -394,6 +422,9 @@ public class LmdbStorage
 //                                writeln ("@1 store : t=", t);
 
         mdb_dbi_close(env, dbi);
+
+        if (count_update % 2_000 == 0)
+        	reopen_db ();
 
         return ev;
     }
