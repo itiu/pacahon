@@ -348,6 +348,12 @@ class XapianReader : SearchReader
             if (err != 0)
                 writeln("xapian_reader:set_database:err", err);
         }
+//        foreach (db; opened_db.values)
+//        {
+//        	db.reopen(&err);
+//            if (err != 0)
+//                writeln("xapian_reader:reopen_db:err", err);
+//        }
     }
 
     private void close_db()
