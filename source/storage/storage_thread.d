@@ -76,25 +76,25 @@ public void individuals_manager(string thread_name, string db_path)
                 },
                 (CMD cmd, string msg, Tid tid_response_reciever)
                 {
-                    if (is_freeze == true && (cmd == CMD.PUT || cmd == CMD.ADD || cmd == CMD.SET || cmd == CMD.REMOVE))
-                        send(tid_response_reciever, EVENT.NOT_READY, thisTid);
+                    if (cmd == CMD.FIND)
+                    {
+                        string res = storage.find(msg);
+                        //writeln("@FIND msg=", msg, ", $res = ", res);
+                        send(tid_response_reciever, msg, res, thisTid);
+                        return;
+                    }
 
+                    if (is_freeze == true && (cmd == CMD.PUT || cmd == CMD.ADD || cmd == CMD.SET || cmd == CMD.REMOVE))
+                        send(tid_response_reciever, EVENT.NOT_READY, null, thisTid);
 
                     try
                     {
-                        if (cmd == CMD.FIND)
-                        {
-                            string res = storage.find(msg);
-                            //writeln("@FIND msg=", msg, ", $res = ", res);
-                            send(tid_response_reciever, msg, res, thisTid);
-                            return;
-                        }
-                        else if (cmd == CMD.PUT)
+                        if (cmd == CMD.PUT)
                         {
                             string new_hash;
                             EVENT ev = storage.update_or_create(msg, new_hash, EVENT.NONE);
 
-                            send(tid_response_reciever, ev, thisTid);
+                            send(tid_response_reciever, ev, msg, thisTid);
 
                             bin_log_name = write_in_binlog(msg, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
                             return;
@@ -106,7 +106,7 @@ public void individuals_manager(string thread_name, string db_path)
                             if (code < 0)
                             {
                                 log.trace("ERR:store_individual(ADD|SET|REMOVE):cbor2individual [%s]", msg);
-                                send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                send(tid_response_reciever, EVENT.ERROR, msg, thisTid);
                                 return;
                             }
 
@@ -116,7 +116,7 @@ public void individuals_manager(string thread_name, string db_path)
                             if (code < 0)
                             {
                                 log.trace("ERR:store_individual(ADD|SET|REMOVE):cbor2individual [%s]", ss_as_cbor);
-                                send(tid_response_reciever, EVENT.ERROR, thisTid);
+                                send(tid_response_reciever, EVENT.ERROR, msg, thisTid);
                                 return;
                             }
 
@@ -142,7 +142,7 @@ public void individuals_manager(string thread_name, string db_path)
                             ss_as_cbor = individual2cbor(&indv);
                             string new_hash;
                             storage.update_or_create(ss_as_cbor, new_hash, EVENT.UPDATE);
-                            send(tid_response_reciever, EVENT.UPDATE, thisTid);
+                            send(tid_response_reciever, EVENT.UPDATE, ss_as_cbor, thisTid);
 
                             bin_log_name = write_in_binlog(ss_as_cbor, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
                             return;
@@ -150,7 +150,7 @@ public void individuals_manager(string thread_name, string db_path)
                     }
                     catch (Exception ex)
                     {
-                        send(tid_response_reciever, EVENT.ERROR, thisTid);
+                        send(tid_response_reciever, EVENT.ERROR, null, thisTid);
                     }
 
 

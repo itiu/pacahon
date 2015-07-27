@@ -662,7 +662,7 @@ class PThreadContext : Context
                     if (tid_ticket_manager != Tid.init)
                     {
                         send(tid_ticket_manager, CMD.PUT, ss_as_cbor, thisTid);
-                        receive((EVENT ev, Tid from)
+                        receive((EVENT ev, string msg, Tid from)
                                 {
                                     if (from == getTid(P_MODULE.ticket_manager))
                                     {
@@ -1094,11 +1094,11 @@ class PThreadContext : Context
             if (tid_subject_manager != Tid.init)
             {
                 send(tid_subject_manager, cmd, ss_as_cbor, thisTid);
-
-                receive((EVENT _ev, Tid from)
+                receive((EVENT _ev, string res, Tid from)
                         {
                             if (from == getTid(P_MODULE.subject_manager))
                                 ev = _ev;
+                                ss_as_cbor = res;
                         });
             }
 
