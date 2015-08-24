@@ -14,6 +14,10 @@ struct raptor_parser
 {
 }
 
+struct raptor_serializer
+{
+}
+
 struct raptor_uri
 {
 }
@@ -269,5 +273,17 @@ extern (C) void raptor_free_memory(void *ptr);
 extern (C) void raptor_free_world(raptor_world *world);
 
 
+/* Serializer Class */
+extern (C) raptor_serializer* raptor_new_serializer(raptor_world* world, const char *name);
+extern (C) void raptor_free_serializer(raptor_serializer* rdf_serializer);
 
+/* methods */
+extern (C) int raptor_serializer_start_to_iostream(raptor_serializer *rdf_serializer, raptor_uri *uri, raptor_iostream *iostream);
+extern (C) int raptor_serializer_start_to_filename(raptor_serializer *rdf_serializer, immutable(char *)filename);
+extern (C) int raptor_serializer_start_to_string(raptor_serializer *rdf_serializer, raptor_uri *uri, void **string_p, size_t *length_p);
+
+extern (C) int raptor_serializer_serialize_statement(raptor_serializer* rdf_serializer, raptor_statement *statement);
+extern (C)int raptor_serializer_set_namespace(raptor_serializer* rdf_serializer, raptor_uri *uri, char *prefix);
+
+extern (C) int raptor_serializer_serialize_end(raptor_serializer *rdf_serializer);
 
