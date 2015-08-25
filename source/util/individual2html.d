@@ -19,11 +19,13 @@ private void write_individual(Individual *ii, ref OutBuffer ou)
     ou.write("<b>\n");
 
     Resources type = ii.resources.get("rdf:type", Resources.init);
+    Resources label = ii.resources.get("rdfs:label", Resources.init);
 
     write_resources("rdf:type", type, ou);
+    write_resources("rdfs:label", label, ou);
     foreach (key, pp; ii.resources)
     {
-        if (key != "rdf:type")
+        if (key != "rdf:type" && key != "rdfs:label")
             write_resources(key, pp, ou);
     }
     ou.write("<br>.<br><br>");
@@ -116,9 +118,22 @@ private void write_resources(string uri, ref Resources vv, ref OutBuffer ou)
 
             if (svalue !is null && svalue.length > 0)
             {
-                ou.write("<font color=\"#DAA520\">");
-                ou.write("&quot;");
-                ou.write(svalue);
+                if ((svalue.indexOf ('{') > 0 && svalue.indexOf ('}') > 0) || (svalue.indexOf ('<') > 0 && svalue.indexOf (">") > 0 && svalue.indexOf ("</") > 0))
+                {                
+                	ou.write("<font color=\"#2A35A0\">");
+                	ou.write("&quot;");
+                	ou.write("<pre>");
+                	svalue = svalue.replace ("<", "&lt;").replace(">", "&gt;");
+                	ou.write(svalue);
+                	ou.write("</pre>");
+                }
+                else
+                {	
+                	ou.write("<font color=\"#DAA520\">");
+                	ou.write("&quot;");
+                	ou.write(svalue);
+                }	
+                	
                 ou.write("&quot;");
                 ou.write("</font>");
 
