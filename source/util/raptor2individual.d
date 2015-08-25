@@ -41,7 +41,7 @@ extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
         writeln("raptor2individual.prepare_prefixes, ns.prefix is null: " ~ fromStringz(uri_string));
 }
 
-string replace_prefix(string url)
+private string replace_full_prefix(string url)
 {
     string full_prefix;
 
@@ -94,7 +94,7 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 
     if (triple.subject.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
     {
-        ss = replace_prefix(ss[ 1..$ - 1 ]);
+        ss = replace_full_prefix(ss[ 1..$ - 1 ]);
     }
 
     Individual *ii = _individuals.get(ss, null);
@@ -107,14 +107,14 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
 
     string pp;
     if (triple.predicate.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
-        pp = replace_prefix(cast(string)(fromStringz(_pp)[ 1..$ - 1 ])).dup;
+        pp = replace_full_prefix(cast(string)(fromStringz(_pp)[ 1..$ - 1 ])).dup;
 
 
     string oo = cast(string) fromStringz(_oo);
 
     if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_URI)
     {
-        oo = replace_prefix(oo[ 1..$ - 1 ]).dup;
+        oo = replace_full_prefix(oo[ 1..$ - 1 ]).dup;
         ii.addResource(pp, Resource(DataType.Uri, oo));
     }
     else if (triple.object.type == raptor_term_type.RAPTOR_TERM_TYPE_LITERAL)
@@ -126,7 +126,7 @@ extern (C) void prepare_triple(void *user_data, raptor_statement *triple)
         long   aa   = oo.lastIndexOf("^^<");
         if (aa > 2)
         {
-            type = replace_prefix(oo[ aa + 3..$ - 1 ]);
+            type = replace_full_prefix(oo[ aa + 3..$ - 1 ]);
         }
 
         string _lang;
