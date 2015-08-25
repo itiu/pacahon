@@ -4,7 +4,7 @@
 
 module onto.resource;
 
-import std.conv, std.stdio, std.datetime;
+import std.conv, std.stdio, std.datetime, std.string;
 import onto.lang;
 import type;
 
@@ -305,6 +305,17 @@ struct Resource
         else
             return null;
     }
+
+	string prefix ()
+	{
+        if (type == DataType.Uri)
+        {
+        	long pos = m_string.indexOf (':');
+            return m_string[0..pos];
+        }    
+        else
+            return null;		
+	}
 
     void set_uri(string uri)
     {
