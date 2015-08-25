@@ -281,9 +281,23 @@ extern (C) void raptor_free_serializer(raptor_serializer* rdf_serializer);
 extern (C) int raptor_serializer_start_to_iostream(raptor_serializer *rdf_serializer, raptor_uri *uri, raptor_iostream *iostream);
 extern (C) int raptor_serializer_start_to_filename(raptor_serializer *rdf_serializer, immutable(char *)filename);
 extern (C) int raptor_serializer_start_to_string(raptor_serializer *rdf_serializer, raptor_uri *uri, void **string_p, size_t *length_p);
-
 extern (C) int raptor_serializer_serialize_statement(raptor_serializer* rdf_serializer, raptor_statement *statement);
 extern (C)int raptor_serializer_set_namespace(raptor_serializer* rdf_serializer, raptor_uri *uri, char *prefix);
-
 extern (C) int raptor_serializer_serialize_end(raptor_serializer *rdf_serializer);
+
+/* Term */
+extern (C) raptor_term* raptor_new_term_from_uri(raptor_world* world, raptor_uri* uri);
+extern (C) raptor_term* raptor_new_term_from_counted_uri_string(raptor_world* world,  char *uri_string, size_t length);
+extern (C) raptor_term* raptor_new_term_from_uri_string(raptor_world* world, char *uri_string);
+extern (C) raptor_term* raptor_new_term_from_literal(raptor_world* world, char* literal, raptor_uri* datatype, char* language);
+extern (C) raptor_term* raptor_new_term_from_blank(raptor_world* world, char* blank);
+extern (C) raptor_term* raptor_new_term_from_counted_blank(raptor_world* world, char* blank, size_t length);
+extern (C) raptor_term* raptor_new_term_from_counted_string(raptor_world* world, char* string, size_t length);
+extern (C) raptor_term* raptor_term_copy(raptor_term* term);
+extern (C) int raptor_term_compare(raptor_term *t1, raptor_term *t2);
+extern (C) int raptor_term_equals(raptor_term* t1, raptor_term* t2);
+extern (C) void raptor_free_term(raptor_term *term);
+
+/* Statement */
+extern (C) raptor_statement* raptor_new_statement_from_nodes(raptor_world* world, raptor_term *subject, raptor_term *predicate, raptor_term *object, raptor_term *graph);
 
