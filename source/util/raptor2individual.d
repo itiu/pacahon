@@ -38,7 +38,7 @@ extern (C) void prepare_prefixes(void *user_data, raptor_namespace *ns)
         }
     }
     else
-        writeln(fromStringz(uri_string));
+        writeln("raptor2individual.prepare_prefixes, ns.prefix is null: " ~ fromStringz(uri_string));
 }
 
 string replace_prefix(string url)
@@ -210,7 +210,7 @@ public Individual *[ string ] ttl2individuals(string file_name, Context context)
     raptor_parser_set_statement_handler(rdf_parser, user_data, &prepare_triple);
     raptor_parser_set_namespace_handler(rdf_parser, user_data, &prepare_prefixes);
 
-    uri_string = raptor_uri_filename_to_uri_string(file_name.ptr);
+    uri_string = raptor_uri_filename_to_uri_string((file_name ~ "\0").ptr);
     uri        = raptor_new_uri(world, uri_string);
     base_uri   = raptor_uri_copy(uri);
 
