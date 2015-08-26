@@ -295,7 +295,7 @@ private void prepare_list(Individual *[] ss_list, Context context, string file_n
 
         if (is_load)
         {
-            string doc_filename = "doc/onto/" ~ onto_info.uri[ 0..$ - 1 ] ~ ".html";
+            string doc_filename = docs_onto_path ~ "/" ~ onto_info.uri[ 0..$ - 1 ] ~ ".html";
             
             try
             {
