@@ -1,5 +1,6 @@
 /**
  * загрузка индивидов в базу данных из *.ttl
+ * генерация doc/onto
  */
 module io.file_reader;
 
@@ -153,7 +154,7 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
                             if (modifed_2_file.get(filename, false) == true)
                             {
                                 auto rr = individuals_2_filename.get(filename, null);
-                                prepare_list(rr.values, context);
+                                prepare_list(rr.values, context, filename);
                             }
                         }
                     }
@@ -178,7 +179,7 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
                         }
 
                         auto rr = individuals_2_filename.get(filename, null);
-                        prepare_list(rr.values, context);
+                        prepare_list(rr.values, context, filename);
                     }
                 }
             }
@@ -188,7 +189,9 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
     }
 }
 
-private void prepare_list(Individual *[] ss_list, Context context)
+import util.individual2html;
+
+private void prepare_list(Individual *[] ss_list, Context context, string file_name)
 {
     context.reopen_ro_subject_storage_db();
     context.reopen_ro_fulltext_indexer_db();
@@ -207,10 +210,12 @@ private void prepare_list(Individual *[] ss_list, Context context)
         if (trace_msg[ 30 ] == 1)
             log.trace("prefix_map=%s", context.get_prefix_map);
 
-        bool   is_load = false;
+        bool       is_load = false;
 
-        string prefix;
-        string i_uri;
+        string     prefix;
+        string     i_uri;
+
+        Individual *onto_info;
 
         foreach (ss; ss_list)
         {
@@ -231,6 +236,7 @@ private void prepare_list(Individual *[] ss_list, Context context)
 
                 if (ss.isExist(rdf__type, owl__Ontology))
                 {
+                    onto_info = ss;
                     string version_onto = ss.getFirstLiteral(owl__versionInfo);
                     if (version_onto is null)
                     {
@@ -246,9 +252,9 @@ private void prepare_list(Individual *[] ss_list, Context context)
                         // проверить какая версия данной онтологии в хранилище
                         //writeln("look in storage[", ss.uri, "]");
                         Individual sss;
-                        
+
                         if (count_individuals > 0)
-                        	sss = context.get_individual(null, ss.uri);
+                            sss = context.get_individual(null, ss.uri);
 
                         if (trace_msg[ 33 ] == 1)
                             log.trace("look in storage=%s, found=%s", ss.uri, sss);
@@ -289,6 +295,21 @@ private void prepare_list(Individual *[] ss_list, Context context)
 
         if (is_load)
         {
+            string doc_filename = "doc/onto/" ~ onto_info.uri[ 0..$ - 1 ] ~ ".html";
+            
+            try
+            {
+            remove(doc_filename);
+            }
+            catch (Exception ex)
+            {           	            	
+            }
+            
+            append(
+                   doc_filename,
+                   "<html><body><head><meta charset=\"utf-8\"/><link href=\"css/bootstrap.min.css\" rel=\"stylesheet\"/><style=\"padding: 0px 0px 30px;\"></head>\n");
+
+
             log.trace_log_and_console("Onto for load:[%s]", prefix);
 
             foreach (ss; ss_list)
@@ -305,6 +326,8 @@ private void prepare_list(Individual *[] ss_list, Context context)
                     ress ~= Resource(prefix);
                     ss.resources[ veda_schema__fullUrl ] = ress;
                 }
+
+                append(doc_filename, individual2html(ss));
 
                 long pos_path_delimiter = indexOf(ss.uri, '/');
 
@@ -362,6 +385,8 @@ private void prepare_list(Individual *[] ss_list, Context context)
                     }
                 }
             }
+
+            append(doc_filename, "\n</body></html>");
 
             context.set_reload_signal_to_local_thread("search");
         }

@@ -42,6 +42,7 @@ enum EVENT : byte
     NOT_READY = 6
 }
 
+const string doc_onto			 = "./doc/onto";
 const string dbs_backup          = "./backup";
 const string dbs_data            = "./data";
 const string individuals_db_path = "./data/lmdb-individuals";
@@ -96,6 +97,14 @@ void create_folder_struct()
     {
         mkdir(dbs_backup);
     }
+    catch (Exception ex)
+    {
+    }
+    
+    try
+    {
+    	mkdir(doc_onto);
+    }	
     catch (Exception ex)
     {
     }
