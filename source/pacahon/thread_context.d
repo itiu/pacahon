@@ -113,7 +113,7 @@ class PThreadContext : Context
         onto.load();
 
         local_count_put     = get_count_put();
-        local_count_indexed = get_count_indexed();
+        local_count_indexed = get_count_indexed();        
     }
 
     public Onto get_onto()
@@ -1022,7 +1022,7 @@ class PThreadContext : Context
             Tid tid_subject_manager;
             Tid tid_acl;
 
-            if (indv !is null && (indv.uri is null || indv.uri.length < 3))
+            if (indv !is null && (indv.uri is null || indv.uri.length < 2))
             {
                 log.trace("Ex! store_subject:%s", indv);
                 return ResultCode.Unprocessable_Entity;

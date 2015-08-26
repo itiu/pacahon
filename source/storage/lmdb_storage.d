@@ -493,7 +493,7 @@ public class LmdbStorage
 
     public string find(string uri)
     {
-        if (uri is null || uri.length < 3)
+        if (uri is null || uri.length < 2)
             return null;
 
         string  str;
