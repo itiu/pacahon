@@ -5,7 +5,7 @@
 module pacahon.define;
 
 import util.container;
-import std.concurrency, std.file;
+import std.concurrency, std.file, std.stdio;
 import pacahon.know_predicates;
 
 string[] access_list_predicates = [ veda_schema__canCreate, veda_schema__canRead, veda_schema__canUpdate, veda_schema__canDelete ];
@@ -42,7 +42,7 @@ enum EVENT : byte
     NOT_READY = 6
 }
 
-const string docs_onto_path		 = "./docs/onto";
+const string docs_onto_path		 = "./public/docs/onto";
 const string dbs_backup          = "./backup";
 const string dbs_data            = "./data";
 const string individuals_db_path = "./data/lmdb-individuals";
@@ -64,6 +64,7 @@ void create_folder_struct()
     try
     {
         mkdir(dbs_data);
+        writeln ("create folder: ", dbs_data);
     }
     catch (Exception ex)
     {
@@ -72,6 +73,7 @@ void create_folder_struct()
     try
     {
         mkdir(individuals_db_path);
+        writeln ("create folder: ", individuals_db_path);
     }
     catch (Exception ex)
     {
@@ -80,6 +82,7 @@ void create_folder_struct()
     try
     {
         mkdir(tickets_db_path);
+        writeln ("create folder: ", tickets_db_path);
     }
     catch (Exception ex)
     {
@@ -88,6 +91,7 @@ void create_folder_struct()
     try
     {
         mkdir(acl_indexes_db_path);
+        writeln ("create folder: ", acl_indexes_db_path);
     }
     catch (Exception ex)
     {
@@ -96,6 +100,7 @@ void create_folder_struct()
     try
     {
         mkdir(dbs_backup);
+        writeln ("create folder: ", dbs_backup);
     }
     catch (Exception ex)
     {
@@ -104,6 +109,7 @@ void create_folder_struct()
     try
     {
     	mkdir(docs_onto_path);
+        writeln ("create folder: ", docs_onto_path);
     }	
     catch (Exception ex)
     {

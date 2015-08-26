@@ -326,6 +326,8 @@ private void prepare_list(Individual *[] ss_list, Context context, string file_n
                     ress ~= Resource(prefix);
                     ss.resources[ veda_schema__fullUrl ] = ress;
                 }
+                
+                ss.addResource ("rdfs:isDefinedBy", Resource (DataType.Uri, onto_info.uri));
 
                 append(doc_filename, individual2html(ss));
 
