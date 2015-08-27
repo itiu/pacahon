@@ -615,15 +615,18 @@ class PThreadContext : Context
     public Ticket authenticate(string login, string password)
     {
         StopWatch sw; sw.start;
-
+        
         try
         {
             if (trace_msg[ 18 ] == 1)
-                log.trace("authenticate, login=[%s] password=[%s]", login, password);
+                log.trace("authenticate, login=[%s] password=[%s]", login, password);			
 
             Ticket ticket;
             ticket.result = ResultCode.Authentication_Failed;
-
+            
+            if (login == null || login.length < 1 || password == null || password.length < 6)
+				return ticket;
+			
             Ticket       *sys_ticket;
 
         	if (this.getTid(P_MODULE.subject_manager) != Tid.init)
