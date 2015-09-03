@@ -4,14 +4,7 @@
 
 module io.rabbitmq_client;
 
-private import core.thread;
-private import std.stdio;
-private import std.c.string;
-private import std.c.stdlib;
-private import std.datetime;
-private import std.outbuffer;
-private import std.uuid;
-private import std.conv;
+private import core.thread, std.stdio, std.c.string, std.c.stdlib, std.datetime, std.outbuffer, std.uuid, std.conv;
 
 private import bind.librabbitmq_headers;
 private import io.mq_client;
@@ -64,6 +57,9 @@ class rabbitmq_client : mq_client
 
     int connect_as_listener(string[ string ] params)
     {
+    	if (log is null)
+    		log = new logger("rabbitmq", "log", null);
+    		
         //		string[] need_params = ["port", "hostname", "queuename", "vhost", "login", "credentional"];
         //		if(check_params(need_params, params) == false)
         //		{
@@ -71,23 +67,24 @@ class rabbitmq_client : mq_client
         //			return -1;
         //		} else
         //		{
-        log.trace_log_and_console("connect to rabbit:" ~ text(params), "");
+        writeln ("###1 params=", params);
+        log.trace_log_and_console("connect to rabbit:[%s]", text(params));
 
         conn = amqp_new_connection();
 
         int port = to!(int)(params.get("port", "5672"));
         die_on_error(sockfd =
-                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
-                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+                         amqp_open_socket(cast(char *)(params[ "host" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "host" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
-        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
+        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "amqp_vhost" ] ~ "\0"), 0, 131072, 0,
                                      amqp_sasl_method_enum.AMQP_SASL_METHOD_PLAIN, cast(char *)(params[ "login" ] ~ "\0"),
                                      cast(char *)(params[ "credentional" ] ~ "\0")), "Logging in");
         amqp_channel_open(&conn, 1);
         die_on_amqp_error(amqp_get_rpc_reply(&conn), "Opening channel");
 
-        queuename = amqp_cstring_bytes(cast(char[])params[ "queuename" ]);
+        queuename = amqp_cstring_bytes(cast(char[])params[ "queue" ]);
 //		amqp_queue_declare(&conn, 1, queuename, 0, 0, 0, 0, amqp_empty_table);
 
         amqp_basic_consume_ok_t *state = amqp_basic_consume(&conn, 1, queuename, amqp_empty_bytes, 0, 0, 0, amqp_empty_table);
@@ -109,6 +106,9 @@ class rabbitmq_client : mq_client
 
     int connect_as_req(string[ string ] params)
     {
+    	if (log is null)
+    		log = new logger("rabbitmq", "log", null);
+    	
         //		string[] need_params = ["port", "hostname", "queuename", "vhost", "login", "credentional"];
         //		if(check_params(need_params, params) == false)
         //		{
@@ -121,17 +121,17 @@ class rabbitmq_client : mq_client
         conn = amqp_new_connection();
 
         die_on_error(sockfd =
-                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
-                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+                         amqp_open_socket(cast(char *)(params[ "host" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "host" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
-        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
+        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "amqp_vhost" ] ~ "\0"), 0, 131072, 0,
                                      amqp_sasl_method_enum.AMQP_SASL_METHOD_PLAIN, cast(char *)(params[ "login" ] ~ "\0"),
                                      cast(char *)(params[ "credentional" ] ~ "\0")), "Logging in");
         amqp_channel_open(&conn, 1);
         die_on_amqp_error(amqp_get_rpc_reply(&conn), "Opening channel");
 
-        queuename = amqp_cstring_bytes(cast(char[])params[ "queuename" ]);
+        queuename = amqp_cstring_bytes(cast(char[])params[ "queue" ]);
 
         amqp_queue_declare_ok_t *r = amqp_queue_declare(&conn, 1, queuename, 0, 0, 0, 0, amqp_empty_table);
         die_on_amqp_error(amqp_get_rpc_reply(&conn), "Declaring queue");
@@ -150,11 +150,11 @@ class rabbitmq_client : mq_client
         conn = amqp_new_connection();
 
         die_on_error(sockfd =
-                         amqp_open_socket(cast(char *)(params[ "hostname" ] ~ "\0"),
-                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "hostname" ] ~ "]"));
+                         amqp_open_socket(cast(char *)(params[ "host" ] ~ "\0"),
+                                          port), cast(char *)("Error on opening socket (AMQP) [" ~ params[ "host" ] ~ "]"));
 
         amqp_set_sockfd(&conn, sockfd);
-        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "vhost" ] ~ "\0"), 0, 131072, 0,
+        die_on_amqp_error(amqp_login(&conn, cast(char *)(params[ "amqp_vhost" ] ~ "\0"), 0, 131072, 0,
                                      amqp_sasl_method_enum.AMQP_SASL_METHOD_PLAIN, cast(char *)(params[ "login" ] ~ "\0"),
                                      cast(char *)(params[ "credentional" ] ~ "\0")), "Logging in");
         amqp_channel_open(&conn, 1);
@@ -181,6 +181,9 @@ class rabbitmq_client : mq_client
     // in thread listens to the queue and calls _message_acceptor
     listener_result listener()
     {
+    	if (log is null)
+    		log = new logger("rabbitmq", "log", null);
+    	
         amqp_frame_t            frame;
         int                     result;
 

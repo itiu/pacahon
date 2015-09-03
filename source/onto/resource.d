@@ -278,6 +278,21 @@ struct Resource
             sink("(" ~ text(type) ~ ")" ~ text(get!long ()));
     }
 
+    string asString()
+    {
+        if (type == DataType.Uri || type == DataType.String)
+            return get!string();
+        else if (type == DataType.Boolean)
+            return text(get!bool());
+        else if (type == DataType.Datetime)
+            return text(get!long ());
+        else if (type == DataType.Decimal)
+            return text(get!decimal());
+        else if (type == DataType.Integer)
+            return text(get!long ());
+        return null;    
+    }
+    
     @property string data()
     {
         return get!string();

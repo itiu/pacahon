@@ -6,17 +6,12 @@ module pacahon.thread_context;
 
 private
 {
-    import core.thread, std.json, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid,
-           std.file, std.path;
-
+    import core.thread, std.stdio, std.format, std.datetime, std.concurrency, std.conv, std.outbuffer, std.string, std.uuid, std.file, std.path;
     import type;
     import bind.xapian_d_header, bind.v8d_header;
-
     import io.mq_client;
     import util.container, util.logger, util.utils, util.cbor, util.cbor8individual;
-
     import pacahon.know_predicates, pacahon.define, pacahon.context, pacahon.bus_event, pacahon.interthread_signals, pacahon.log_msg;
-
     import onto.onto, onto.individual, onto.resource, storage.lmdb_storage;
     import az.acl;
 }
@@ -49,7 +44,6 @@ class PThreadContext : Context
     ScriptVM              script_vm;
 
     private Onto          onto;
-    private JSONValue     props;
 
     private string        name;
     private P_MODULE      id;
@@ -67,7 +61,7 @@ class PThreadContext : Context
 
     private long           local_last_update_time;
 
-    this(string property_file_path, string context_name, P_MODULE _id)
+    this(string node_id, string context_name, P_MODULE _id)
     {
         inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R, context_name ~ ":inividuals");
         tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R, context_name ~ ":tickets");
@@ -91,23 +85,7 @@ class PThreadContext : Context
         is_traced_module[ P_MODULE.fulltext_indexer ] = true;
         is_traced_module[ P_MODULE.condition ]        = true;
 
-//        writeln("@ name_2_tids=", name_2_tids);
-
-        if (property_file_path !is null)
-        {
-            try
-            {
-                props = read_props(property_file_path);
-            } catch (Exception ex1)
-            {
-                throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-            }
-        }
         _vql = new search.vql.VQL(this);
-
-        //writeln(context_name ~ ": load events");
-        //pacahon.event_filter.load_events(this);
-        //writeln(context_name ~ ": load events... ok");
 
         onto = new Onto(this);
         onto.load();
@@ -230,11 +208,6 @@ class PThreadContext : Context
 
         //writeln ("@p ### uri=", uri, " ", request_acess, " ", request_acess == res);
         return request_acess == res;
-    }
-
-    public JSONValue get_props()
-    {
-        return props;
     }
 
     public string get_name()

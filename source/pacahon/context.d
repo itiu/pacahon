@@ -8,7 +8,7 @@
  */
 module pacahon.context;
 
-private import std.concurrency, std.datetime, std.json;
+private import std.concurrency, std.datetime;
 
 private import type;
 private import util.container;
@@ -166,8 +166,6 @@ interface Context
     string get_name();
 
     ScriptVM get_ScriptVM();
-
-    JSONValue get_props();
 
     Tid getTid(P_MODULE tid_name);
 

@@ -19,6 +19,7 @@ static this()
     log = new logger("pacahon", "log", "file_reader");
 }
 
+
 BigInt[ string ] ontohashes_2_filename;
 
 private void add_to_onto_hash(Individual *indv, string name, ref BigInt[ string ] accum)
@@ -32,8 +33,10 @@ private void add_to_onto_hash(Individual *indv, string name, ref BigInt[ string 
 //    return toHex(summ_hash_this_db);
 }
 
+string path = "./ontology";
+
 /// процесс отслеживающий появление новых файлов и добавление их содержимого в базу данных
-void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
+void file_reader_thread(P_MODULE id, string node_id, int checktime)
 {
     core.thread.Thread tr = core.thread.Thread.getThis();
     tr.name = std.conv.text(id);
@@ -48,144 +51,150 @@ void file_reader_thread(P_MODULE id, string props_file_name, int checktime)
 
     ubyte[] out_data;
 
-    Context context = new PThreadContext(props_file_name, "file_reader", id);
+    Context context = new PThreadContext(node_id, "file_reader", id);
 
     core.thread.Thread.sleep(dur!("msecs")(500));
 
-    SysTime[ string ] file_modification_time;
-    string path = "./ontology";
-
     while (true)
     {
-        Set!string files_to_load;
+        processed(context);
+        core.thread.Thread.sleep(dur!("seconds")(checktime));
+    }
+}
 
-        auto oFiles = dirEntries(path, SpanMode.depth);
+SysTime[ string ] file_modification_time;
 
-        if (trace_msg[ 29 ] == 1)
-            log.trace("load directory sequence");
+void processed(Context context)
+{
+    if (log is null)
+        log = new logger("pacahon", "log", "file_reader");
 
-        foreach (o; oFiles)
+    Set!string files_to_load;
+
+    auto oFiles = dirEntries(path, SpanMode.depth);
+
+    if (trace_msg[ 29 ] == 1)
+        log.trace("load directory sequence");
+
+    foreach (o; oFiles)
+    {
+        if (extension(o.name) == ".ttl")
         {
-            if (extension(o.name) == ".ttl")
+            if ((o.name in file_modification_time) !is null)
             {
-                if ((o.name in file_modification_time) !is null)
+                if (o.timeLastModified != file_modification_time[ o.name ])
                 {
-                    if (o.timeLastModified != file_modification_time[ o.name ])
-                    {
-                        if (trace_msg[ 29 ] == 1)
-                            log.trace("look modifed file=%s", o.name);
+                    if (trace_msg[ 29 ] == 1)
+                        log.trace("look modifed file=%s", o.name);
 
-                        file_modification_time[ o.name ] = o.timeLastModified;
-                        files_to_load ~= o.name;
-                    }
-                }
-                else
-                {
                     file_modification_time[ o.name ] = o.timeLastModified;
                     files_to_load ~= o.name;
-
-                    if (trace_msg[ 29 ] == 1)
-                        log.trace("look new file=%s", o.name);
-                }
-            }
-        }
-
-        string[ string ] filename_2_prefix;
-        string[] order_in_load = [ "vdi:", "v-a:", "rdf:", "rdfs:", "owl:", "*", "td:" ];
-        Individual *[ string ][ string ] individuals_2_filename;
-        BigInt[ string ] cur_ontohashes_2_filename;
-        bool[ string ] modifed_2_file;
-
-        foreach (filename; files_to_load)
-        {
-            log.trace("prepare_file %s", filename);
-
-            auto individuals = ttl2individuals(filename, context);
-
-            foreach (indv; individuals)
-            {
-                add_to_onto_hash(indv, filename, cur_ontohashes_2_filename);
-                if (indv.isExist(rdf__type, owl__Ontology))
-                {
-                    filename_2_prefix[ indv.uri ] = filename;
-                }
-            }
-
-            individuals_2_filename[ filename ] = individuals;
-        }
-
-
-        foreach (key, value; cur_ontohashes_2_filename)
-        {
-            BigInt prev_hash = ontohashes_2_filename.get(key, BigInt.init);
-            if (prev_hash != value)
-            {
-                //writeln("onto changed=", key);
-                ontohashes_2_filename[ key ] = value;
-                modifed_2_file[ key ]        = true;
-            }
-        }
-
-        //writeln("@@1 ontohashes_2_filename=", ontohashes_2_filename);
-        //writeln("@@2 filename_2_prefix=", filename_2_prefix);
-        //writeln("@@3 modifed_2_file=", modifed_2_file);
-
-        // load index onto
-        foreach (pos; order_in_load)
-        {
-            if (pos == "*")
-            {
-                foreach (ont; filename_2_prefix.keys)
-                {
-                    bool ff = false;
-                    foreach (pos1; order_in_load)
-                    {
-                        if (ont == pos1)
-                        {
-                            ff = true;
-                            break;
-                        }
-                    }
-                    if (ff == false)
-                    {
-                        string filename = filename_2_prefix.get(ont, null);
-                        if (filename !is null)
-                        {
-                            if (modifed_2_file.get(filename, false) == true)
-                            {
-                                auto rr = individuals_2_filename.get(filename, null);
-                                prepare_list(rr.values, context, filename);
-                            }
-                        }
-                    }
                 }
             }
             else
             {
-                string filename = filename_2_prefix.get(pos, null);
-                if (filename !is null)
-                {
-                    if (modifed_2_file.get(filename, false) == true)
-                    {
-                        if (pos == "td:")
-                        {
-                            Tid tid_condition_manager = context.getTid(P_MODULE.condition);
-                            if (tid_condition_manager != Tid.init)
-                            {
-                                core.thread.Thread.sleep(dur!("seconds")(1));
-                                send(tid_condition_manager, CMD.RELOAD, thisTid);
-                                receive((bool res) {});
-                            }
-                        }
+                file_modification_time[ o.name ] = o.timeLastModified;
+                files_to_load ~= o.name;
 
-                        auto rr = individuals_2_filename.get(filename, null);
-                        prepare_list(rr.values, context, filename);
+                if (trace_msg[ 29 ] == 1)
+                    log.trace("look new file=%s", o.name);
+            }
+        }
+    }
+
+    string[ string ] filename_2_prefix;
+    string[] order_in_load = [ "vsrv:", "vdi:", "v-a:", "rdf:", "rdfs:", "owl:", "*", "td:" ];
+    Individual *[ string ][ string ] individuals_2_filename;
+    BigInt[ string ] cur_ontohashes_2_filename;
+    bool[ string ] modifed_2_file;
+
+    foreach (filename; files_to_load)
+    {
+        log.trace("prepare_file %s", filename);
+
+        auto individuals = ttl2individuals(filename, context);
+
+        foreach (indv; individuals)
+        {
+            add_to_onto_hash(indv, filename, cur_ontohashes_2_filename);
+            if (indv.isExist(rdf__type, owl__Ontology))
+            {
+                filename_2_prefix[ indv.uri ] = filename;
+            }
+        }
+
+        individuals_2_filename[ filename ] = individuals;
+    }
+
+
+    foreach (key, value; cur_ontohashes_2_filename)
+    {
+        BigInt prev_hash = ontohashes_2_filename.get(key, BigInt.init);
+        if (prev_hash != value)
+        {
+            //writeln("onto changed=", key);
+            ontohashes_2_filename[ key ] = value;
+            modifed_2_file[ key ]        = true;
+        }
+    }
+
+    //writeln("@@1 ontohashes_2_filename=", ontohashes_2_filename);
+    //writeln("@@2 filename_2_prefix=", filename_2_prefix);
+    //writeln("@@3 modifed_2_file=", modifed_2_file);
+
+    // load index onto
+    foreach (pos; order_in_load)
+    {
+        if (pos == "*")
+        {
+            foreach (ont; filename_2_prefix.keys)
+            {
+                bool ff = false;
+                foreach (pos1; order_in_load)
+                {
+                    if (ont == pos1)
+                    {
+                        ff = true;
+                        break;
+                    }
+                }
+                if (ff == false)
+                {
+                    string filename = filename_2_prefix.get(ont, null);
+                    if (filename !is null)
+                    {
+                        if (modifed_2_file.get(filename, false) == true)
+                        {
+                            auto rr = individuals_2_filename.get(filename, null);
+                            prepare_list(rr.values, context, filename);
+                        }
                     }
                 }
             }
         }
+        else
+        {
+            string filename = filename_2_prefix.get(pos, null);
+            if (filename !is null)
+            {
+                if (modifed_2_file.get(filename, false) == true)
+                {
+                    if (pos == "td:")
+                    {
+                        Tid tid_condition_manager = context.getTid(P_MODULE.condition);
+                        if (tid_condition_manager != Tid.init)
+                        {
+                            core.thread.Thread.sleep(dur!("seconds")(1));
+                            send(tid_condition_manager, CMD.RELOAD, thisTid);
+                            receive((bool res) {});
+                        }
+                    }
 
-        core.thread.Thread.sleep(dur!("seconds")(checktime));
+                    auto rr = individuals_2_filename.get(filename, null);
+                    prepare_list(rr.values, context, filename);
+                }
+            }
+        }
     }
 }
 
@@ -296,15 +305,15 @@ private void prepare_list(Individual *[] ss_list, Context context, string file_n
         if (is_load)
         {
             string doc_filename = docs_onto_path ~ "/" ~ onto_info.uri[ 0..$ - 1 ] ~ ".html";
-            
+
             try
             {
-            remove(doc_filename);
+                remove(doc_filename);
             }
             catch (Exception ex)
-            {           	            	
+            {
             }
-            
+
             append(
                    doc_filename,
                    "<html><body><head><meta charset=\"utf-8\"/><link href=\"css/bootstrap.min.css\" rel=\"stylesheet\"/><style=\"padding: 0px 0px 30px;\"></head>\n");
@@ -326,8 +335,8 @@ private void prepare_list(Individual *[] ss_list, Context context, string file_n
                     ress ~= Resource(prefix);
                     ss.resources[ veda_schema__fullUrl ] = ress;
                 }
-                
-                ss.addResource ("rdfs:isDefinedBy", Resource (DataType.Uri, onto_info.uri));
+
+                ss.addResource("rdfs:isDefinedBy", Resource(DataType.Uri, onto_info.uri));
 
                 append(doc_filename, individual2html(ss));
 

@@ -5,34 +5,14 @@ module pacahon.server;
 
 private
 {
-    import core.thread, std.stdio, std.string, std.c.string, std.json, std.outbuffer, std.datetime, std.conv, std.concurrency;
-    version (linux)
-        import std.c.linux.linux, core.stdc.stdlib;
-
-    import type;
-    import io.mq_client;
-    import io.rabbitmq_client;
-    import io.file_reader;
-
-    import az.acl;
-    import storage.storage_thread;
-
-    import util.logger;
-    import util.utils;
-    import util.load_info;
-
-    import pacahon.scripts;
-    import pacahon.context;
-    import pacahon.know_predicates;
-    import pacahon.log_msg;
-    import pacahon.thread_context;
-    import pacahon.define;
-    import pacahon.interthread_signals;
-
-    import search.xapian_indexer;
-
-    import backtrace.backtrace;
-    import Backtrace = backtrace.backtrace;
+    import core.thread, std.stdio, std.string, std.c.string, std.outbuffer, std.datetime, std.conv, std.concurrency;
+    version (linux) import std.c.linux.linux, core.stdc.stdlib;
+    import io.mq_client, io.rabbitmq_client, io.file_reader;
+    import util.logger, util.utils, util.load_info;
+    import pacahon.scripts, pacahon.context, pacahon.know_predicates, pacahon.log_msg, pacahon.thread_context, pacahon.define,
+           pacahon.interthread_signals;
+    import backtrace.backtrace, Backtrace = backtrace.backtrace;
+    import type, az.acl, storage.storage_thread, search.xapian_indexer, onto.individual, onto.resource;
 }
 
 logger log;
@@ -79,8 +59,6 @@ static this()
     io_msg = new logger("pacahon", "io", "server");
 }
 
-string props_file_path = "pacahon-properties.json";
-
 version (executable)
 {
     void main(char[][] args)
@@ -125,32 +103,24 @@ bool wait_starting_thread(P_MODULE tid_idx, ref Tid[ P_MODULE ] tids)
             {
                 res = isReady;
                 //if (trace_msg[ 50 ] == 1)
-                    log.trace("START THREAD IS SUCCESS: %s", text(tid_idx));
+                log.trace("START THREAD IS SUCCESS: %s", text(tid_idx));
                 if (res == false)
                     log.trace("FAIL START THREAD: %s", text(tid_idx));
             });
     return res;
 }
 
-void init_core(int checktime_onto_files)
+Context init_core(string node_id)
 {
+    if (node_id is null || node_id.length < 2)
+        node_id = "v-a:standart_node";
+
     Backtrace.install(stderr);
 
     log    = new logger("pacahon", "log", "server");
     io_msg = new logger("pacahon", "io", "server");
     Tid[ P_MODULE ] tids;
-/*
-    version (linux)
-    {
-        // установим обработчик сигналов прерывания процесса
-        signal(SIGABRT, &sighandler0);
-        signal(SIGTERM, &sighandler0);
-        signal(SIGQUIT, &sighandler0);
-        signal(SIGINT, &sighandler0);
-        signal(SIGSEGV, &sighandler1);
-        signal(SIGBUS, &sighandler1);
-    }
- */
+
     try
     {
 //        log.trace_log_and_console("\nPACAHON %s.%s.%s\nSOURCE: commit=%s date=%s\n", pacahon.myversion.major, pacahon.myversion.minor,
@@ -159,7 +129,7 @@ void init_core(int checktime_onto_files)
         tids[ P_MODULE.fulltext_indexer ] =
             spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer));
         if (wait_starting_thread(P_MODULE.fulltext_indexer, tids) == false)
-            return;
+            return null;
 
         tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, text(P_MODULE.interthread_signals));
         wait_starting_thread(P_MODULE.interthread_signals, tids);
@@ -196,42 +166,32 @@ void init_core(int checktime_onto_files)
         foreach (key, value; tids)
             register(text(key), value);
 
-        tids[ P_MODULE.condition ] = spawn(&condition_thread, text(P_MODULE.condition), props_file_path);
+        tids[ P_MODULE.condition ] = spawn(&condition_thread, text(P_MODULE.condition));
         wait_starting_thread(P_MODULE.condition, tids);
 
         register(text(P_MODULE.condition), tids[ P_MODULE.condition ]);
         Tid tid_condition = locate(text(P_MODULE.condition));
 
-
-        JSONValue props;
-
-        try
-        {
-            props = read_props(props_file_path);
-        } catch (Exception ex1)
-        {
-            throw new Exception("ex! parse params:" ~ ex1.msg, ex1);
-        }
-
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
+        //spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, node_id, 0);
 
-        JSONValue[] _listeners;
-        if (("listeners" in props.object) !is null)
+        Context core_context = new PThreadContext(node_id, "core_context", P_MODULE.nop);
+        io.file_reader.processed(core_context);
+        core_context.reopen_ro_subject_storage_db();
+        Individual node = core_context.get_individual(null, node_id);
+
+        //writeln ("@@@@1 node=", node, ", node_id=", node_id);
+
+        Resources listeners = node.resources.get("vsrv:listener", Resources.init);
+        foreach (listener_uri; listeners)
         {
-            _listeners = props.object[ "listeners" ].array;
-            int listener_section_count = 0;
-            foreach (listener; _listeners)
-            {
-                listener_section_count++;
-                string[ string ] params;
-                foreach (key; listener.object.keys)
-                    params[ key ] = listener[ key ].str;
+            Individual connection = core_context.get_individual(null, listener_uri.uri);
+            //writeln ("@@@@2 listener=", connection);
 
-                if (params.get("transport", "") == "file_reader")
-                {
-                    spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, "pacahon-properties.json", checktime_onto_files);
-                }
-                else if (params.get("transport", "") == "rabbitmq")
+            Resource transport = connection.getFirstResource("vsrv:transport");
+            if (transport != Resource.init)
+            {
+                if (transport.data() == "rabbitmq")
                 {
                     mq_client rabbitmq_connection = null;
 
@@ -241,16 +201,13 @@ void init_core(int checktime_onto_files)
                     try
                     {
                         rabbitmq_connection = new rabbitmq_client();
-                        rabbitmq_connection.connect_as_listener(params);
+                        rabbitmq_connection.connect_as_listener(getAsSimpleMapWithoutPrefix(connection));
 
                         if (rabbitmq_connection.is_success() == true)
                         {
                             //rabbitmq_connection.set_callback(&get_message);
 
-                            ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, props_file_path,
-                                                                                         "RABBITMQ");
-
-//                                init_ba2pacahon(thread_listener_for_rabbitmq.resource);
+                            ServerThread thread_listener_for_rabbitmq = new ServerThread(&rabbitmq_connection.listener, node_id, "RABBITMQ");
 
                             thread_listener_for_rabbitmq.start();
 
@@ -267,17 +224,30 @@ void init_core(int checktime_onto_files)
                 }
             }
         }
+
+        return core_context;
     } catch (Exception ex)
     {
         writeln("Exception: ", ex.msg);
+        return null;
     }
 }
 
-enum format : byte
+string[ string ] getAsSimpleMapWithoutPrefix(Individual indv)
 {
-    TURTLE  = 0,
-    JSON_LD = 1,
-    UNKNOWN = -1
+    string[ string ] res;
+
+    foreach (key, val; indv.resources)
+    {
+        string   ss      = val[ 0 ].asString();
+        string[] spl_key = key.split(':');
+        if (spl_key.length > 1)
+            key = spl_key[ 1 ];
+
+        res[ key ] = ss;
+    }
+
+    return res;
 }
 
 class ServerThread : core.thread.Thread

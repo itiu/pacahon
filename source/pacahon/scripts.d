@@ -39,7 +39,7 @@ private Context context;
 private         ScriptInfo[ string ] scripts;
 private VQL     vql;
 
-public void condition_thread(string thread_name, string props_file_name)
+public void condition_thread(string thread_name)
 {
     core.thread.Thread.getThis().name = thread_name;
 
