@@ -88,6 +88,17 @@ public struct Individual
         return null;
     }
 
+    long getFirstInteger(string predicate, long default_value = 0)
+    {
+        Resources rss;
+
+        rss = resources.get(predicate, rss);
+        if (rss.length > 0)
+            return rss[ 0 ].get!long;
+
+        return default_value;
+    }
+
     void addResource(string uri, Resource rs)
     {
         Resources rss = resources.get(uri, Resources.init);
