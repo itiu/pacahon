@@ -171,7 +171,7 @@ private class IndexerContext
         if (iproperty is null)
         {
             if (context is null)
-                context = new PThreadContext(null, thread_name, P_MODULE.fulltext_indexer);
+                context = new PThreadContext(node_id, thread_name, P_MODULE.fulltext_indexer);
             iproperty = new IndexerProperty(context);
         }
 
@@ -722,8 +722,11 @@ private class IndexerContext
     }
 }
 
-void xapian_indexer(string thread_name)
+string node_id;
+
+void xapian_indexer(string thread_name, string _node_id)
 {
+	node_id = _node_id;
     scope (exit)
     {
         log.trace("ERR! indexer thread dead (exit)");
