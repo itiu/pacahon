@@ -52,13 +52,22 @@ void file_reader_thread(P_MODULE id, string node_id, int checktime)
     ubyte[] out_data;
 
     Context context = new PThreadContext(node_id, "file_reader", id);
+    processed(context);
 
-    core.thread.Thread.sleep(dur!("msecs")(500));
+    // SEND ready
+    receive((Tid tid_response_reciever)
+            {
+                send(tid_response_reciever, true);
+            });
+    
+    core.thread.Thread.sleep(dur!("msecs")(1500));
 
     while (true)
     {
         processed(context);
-        core.thread.Thread.sleep(dur!("seconds")(checktime));
+        
+        if (checktime > 0)
+        	core.thread.Thread.sleep(dur!("seconds")(checktime));
     }
 }
 
@@ -80,30 +89,31 @@ void processed(Context context)
     {
         if (extension(o.name) == ".ttl")
         {
-            if ((o.name in file_modification_time) !is null)
-            {
-                if (o.timeLastModified != file_modification_time[ o.name ])
+        	string fname = o.name.dup;
+            if ((fname in file_modification_time) !is null)
+            {            	
+                if (o.timeLastModified != file_modification_time[ fname ])
                 {
                     if (trace_msg[ 29 ] == 1)
-                        log.trace("look modifed file=%s", o.name);
+                        log.trace("look modifed file=%s", fname);
 
-                    file_modification_time[ o.name ] = o.timeLastModified;
-                    files_to_load ~= o.name;
+                    file_modification_time[ fname ] = o.timeLastModified;
+                    files_to_load ~= fname;
                 }
             }
             else
             {
-                file_modification_time[ o.name ] = o.timeLastModified;
-                files_to_load ~= o.name;
+                file_modification_time[ fname ] = o.timeLastModified;
+                files_to_load ~= fname;
 
                 if (trace_msg[ 29 ] == 1)
-                    log.trace("look new file=%s", o.name);
+                    log.trace("look new file=%s", fname);
             }
         }
     }
 
     string[ string ] filename_2_prefix;
-    string[] order_in_load = [ "vsrv:", "vdi:", "v-a:", "rdf:", "rdfs:", "owl:", "*", "td:" ];
+    string[] order_in_load = [ "vdi:", "v-a:", "vsrv:", "rdf:", "rdfs:", "owl:", "*", "td:" ];
     Individual *[ string ][ string ] individuals_2_filename;
     BigInt[ string ] cur_ontohashes_2_filename;
     bool[ string ] modifed_2_file;
@@ -145,6 +155,7 @@ void processed(Context context)
     // load index onto
     foreach (pos; order_in_load)
     {
+//        log.trace("load directory sequence 2...pos=%s", pos);
         if (pos == "*")
         {
             foreach (ont; filename_2_prefix.keys)

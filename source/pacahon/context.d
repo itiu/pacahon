@@ -382,6 +382,8 @@ interface Context
        Возобновить прием операций записи на выполнение
      */
     public void unfreeze();
+    
+   	public Individual* getConfiguration ();
 }
 
 import core.atomic;

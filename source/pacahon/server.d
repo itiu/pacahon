@@ -127,17 +127,17 @@ Context init_core(string node_id)
 //                                  pacahon.myversion.patch, pacahon.myversion.hash, pacahon.myversion.date);
 
         tids[ P_MODULE.fulltext_indexer ] =
-            spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer));
+            spawn(&xapian_indexer, text(P_MODULE.fulltext_indexer), node_id);
         if (wait_starting_thread(P_MODULE.fulltext_indexer, tids) == false)
             return null;
 
         tids[ P_MODULE.interthread_signals ] = spawn(&interthread_signals_thread, text(P_MODULE.interthread_signals));
         wait_starting_thread(P_MODULE.interthread_signals, tids);
 
-        tids[ P_MODULE.subject_manager ] = spawn(&individuals_manager, text(P_MODULE.subject_manager), individuals_db_path);
+        tids[ P_MODULE.subject_manager ] = spawn(&individuals_manager, text(P_MODULE.subject_manager), individuals_db_path, node_id);
         wait_starting_thread(P_MODULE.subject_manager, tids);
 
-        tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, text(P_MODULE.ticket_manager), tickets_db_path);
+        tids[ P_MODULE.ticket_manager ] = spawn(&individuals_manager, text(P_MODULE.ticket_manager), tickets_db_path, node_id);
         wait_starting_thread(P_MODULE.ticket_manager, tids);
 
         tids[ P_MODULE.acl_manager ] = spawn(&acl_manager, text(P_MODULE.acl_manager), acl_indexes_db_path);
@@ -173,19 +173,17 @@ Context init_core(string node_id)
         Tid tid_condition = locate(text(P_MODULE.condition));
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////
-        //spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, node_id, 0);
-
+        tids[ P_MODULE.file_reader ] = spawn(&io.file_reader.file_reader_thread, P_MODULE.file_reader, node_id, 5);
+        wait_starting_thread(P_MODULE.file_reader, tids);
         Context core_context = new PThreadContext(node_id, "core_context", P_MODULE.nop);
-        io.file_reader.processed(core_context);
-        core_context.reopen_ro_subject_storage_db();
+//        io.file_reader.processed(core_context);
+//        core_context.reopen_ro_subject_storage_db();
         Individual node = core_context.get_individual(null, node_id);
 
-        //writeln ("@@@@1 node=", node, ", node_id=", node_id);
-
         Resources listeners = node.resources.get("vsrv:listener", Resources.init);
-        foreach (listener_uri; listeners)
+        foreach (listener; listeners)
         {
-            Individual connection = core_context.get_individual(null, listener_uri.uri);
+            Individual connection = core_context.get_individual(null, listener.uri);
             //writeln ("@@@@2 listener=", connection);
 
             Resource transport = connection.getFirstResource("vsrv:transport");
@@ -233,31 +231,14 @@ Context init_core(string node_id)
     }
 }
 
-string[ string ] getAsSimpleMapWithoutPrefix(Individual indv)
-{
-    string[ string ] res;
-
-    foreach (key, val; indv.resources)
-    {
-        string   ss      = val[ 0 ].asString();
-        string[] spl_key = key.split(':');
-        if (spl_key.length > 1)
-            key = spl_key[ 1 ];
-
-        res[ key ] = ss;
-    }
-
-    return res;
-}
-
 class ServerThread : core.thread.Thread
 {
     PThreadContext resource;
 
-    this(void delegate() _dd, string props_file_path, string context_name)
+    this(void delegate() _dd, string node_id, string context_name)
     {
         super(_dd);
-        resource = new PThreadContext(props_file_path, context_name, P_MODULE.nop);
+        resource = new PThreadContext(node_id, context_name, P_MODULE.nop);
 
 //		resource.sw.start();
     }

@@ -9,9 +9,26 @@ private
     import core.stdc.stdio;
     import std.file, std.datetime, std.json, std.c.string, std.c.linux.linux, std.format, std.stdio, std.conv, std.string, std.concurrency;
     import std.ascii, std.csv, std.typecons, std.outbuffer;
-
+	import onto.individual, onto.resource; 
     import util.container;
     import pacahon.know_predicates, pacahon.context;
+}
+
+public string[ string ] getAsSimpleMapWithoutPrefix(Individual indv)
+{
+    string[ string ] res;
+
+    foreach (key, val; indv.resources)
+    {
+        string   ss      = val[ 0 ].asString();
+        string[] spl_key = key.split(':');
+        if (spl_key.length > 1)
+            key = spl_key[ 1 ];
+
+        res[ key ] = ss;
+    }
+
+    return res;
 }
 
 /// serialize key2slot struct

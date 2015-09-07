@@ -23,7 +23,9 @@ static this()
     log = new logger("pacahon", "log", "server");
 }
 
-public void individuals_manager(string thread_name, string db_path)
+
+
+public void individuals_manager(string thread_name, string db_path, string node_id)
 {
     core.thread.Thread.getThis().name             = thread_name;
     LmdbStorage                  storage          = new LmdbStorage(db_path, DBMode.RW, "individuals_manager");
@@ -97,6 +99,7 @@ public void individuals_manager(string thread_name, string db_path)
                             send(tid_response_reciever, ev, msg, thisTid);
 
                             bin_log_name = write_in_binlog(msg, new_hash, bin_log_name, size_bin_log, max_size_bin_log, db_path);
+                            
                             return;
                         }
                         else if (cmd == CMD.ADD || cmd == CMD.SET || cmd == CMD.REMOVE)

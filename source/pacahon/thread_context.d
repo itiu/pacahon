@@ -60,9 +60,13 @@ class PThreadContext : Context
     private                Tid[ P_MODULE ] name_2_tids;
 
     private long           local_last_update_time;
+	private Individual	   node = Individual.init;
+	private string 		   node_id;  
 
-    this(string node_id, string context_name, P_MODULE _id)
+
+    this(string _node_id, string context_name, P_MODULE _id)
     {
+    	node_id = _node_id;
         inividuals_storage = new LmdbStorage(individuals_db_path, DBMode.R, context_name ~ ":inividuals");
         tickets_storage    = new LmdbStorage(tickets_db_path, DBMode.R, context_name ~ ":tickets");
         acl_indexes        = new Authorization(acl_indexes_db_path, DBMode.R, context_name ~ ":acl");
@@ -91,8 +95,20 @@ class PThreadContext : Context
         onto.load();
 
         local_count_put     = get_count_put();
-        local_count_indexed = get_count_indexed();        
+        local_count_indexed = get_count_indexed();                
     }
+
+	public Individual* getConfiguration ()
+	{		
+		if (node == Individual.init)
+		{
+			this.reopen_ro_subject_storage_db();
+			node = get_individual(null, node_id);
+			if (node.getStatus() != ResultCode.OK)
+				node = Individual.init;
+		}	
+		return &node;	
+	}
 
     public Onto get_onto()
     {

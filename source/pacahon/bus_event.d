@@ -5,16 +5,9 @@ module pacahon.bus_event;
 
 private import std.outbuffer, std.stdio, std.concurrency, std.datetime, std.conv;
 import type;
-private import util.container;
-private import util.logger;
-private import util.utils;
-private import util.cbor8individual;
-
-private import pacahon.know_predicates;
-private import pacahon.context;
-private import pacahon.define;
-private import onto.individual;
-private import onto.resource;
+private import util.container, util.logger, util.utils, util.cbor8individual;
+private import pacahon.know_predicates, pacahon.context, pacahon.define;
+private import onto.individual, onto.resource;
 
 logger log;
 
